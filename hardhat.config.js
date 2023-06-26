@@ -13,8 +13,8 @@ const ARBITRUM_MAINNET_DEPLOYER_PK = process.env.ARBITRUM_MAINNET_DEPLOYER_PK
 const TESTNET_DEPLOYER_PK = process.env.TESTNET_DEPLOYER_PK
 
 /******************************************** Deployer address *****************************************/
-const DEPLOYER = "0x3904F59DF9199e0d6dC3800af9f6794c9D037eb1"
-const TESTNET_DEPLOYER = "0x3904F59DF9199e0d6dC3800af9f6794c9D037eb1"
+const DEPLOYER = process.env.DEPLOYER_ADDRESS
+const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 
 /******************************************* RPC providers **********************************************/
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
