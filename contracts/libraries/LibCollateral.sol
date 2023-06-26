@@ -5,6 +5,7 @@ library LibCollateral {
     bytes32 constant TURN_SPECS_POSITION = keccak256("diamond.storage.turn.specs.struct");
     bytes32 constant TURN_GROUP_DATA = keccak256("diamond.storage.turn.group.data.struct");
 
+    // TODO: uint256 for all? Explicitness purposes
     struct TurnSpecs {
         uint totalParticipants;
         uint collateralDeposit;

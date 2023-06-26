@@ -5,37 +5,23 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-import "./ITakaturnFactory.sol";
-import "./ICollateral.sol";
-import "./IFund.sol";
+import {ITakaturnFactory} from "../interfaces/ITakaturnFactory.sol"; // TODO: needed?
+import {ICollateral} from "../interfaces/ICollateral.sol";
+import {IFund} from "../interfaces/IFund.sol";
 
 /// @title Takaturn
 /// @author Aisha El Allam
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
-contract Collateral is ICollateral, Ownable {
+contract CollateralFacet is ICollateral, Ownable {
     uint public constant version = 2;
 
     IFund private _fundInstance;
     AggregatorV3Interface public immutable priceFeed;
 
-    uint public totalParticipants;
-    uint public collateralDeposit;
-    uint public firstDepositTime;
-    uint public cycleTime;
-    uint public contributionAmount;
-    uint public contributionPeriod;
-    uint public counterMembers;
-    uint public fixedCollateralEth;
-
     mapping(address => bool) public isCollateralMember; // Determines if a participant is a valid user
     mapping(address => uint) public collateralMembersBank; // Users main balance
     mapping(address => uint) public collateralPaymentBank; // Users reimbursement balance after someone defaults
-
-    address[] public participants;
-    address public fundContract;
-    address public stableCoinAddress;
-    address public factoryContract;
 
     event OnContractDeployed(address indexed newContract);
     event OnFundContractDeployed(address indexed fund, address indexed collateral);
