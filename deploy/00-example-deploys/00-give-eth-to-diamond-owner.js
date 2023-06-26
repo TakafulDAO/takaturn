@@ -1,5 +1,5 @@
 const { parseEther } = require("ethers")
-const { isDevnet } = require("../utils/_networks")
+const { isDevnet } = require("../../utils/_networks")
 const { ethers } = require("hardhat")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {LibDiamondStorageExample} from "../libraries/LibDiamondStorageExample.sol";
+import {LibDiamondStorageExample} from "../../libraries/exampleLibraries/LibDiamondStorageExample.sol";
 
 contract ActionFacetDiamondStorage {
     function save(string calldata _name) external {

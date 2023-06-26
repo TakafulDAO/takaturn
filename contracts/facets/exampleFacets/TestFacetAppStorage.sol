@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {AppStorage} from "../AppStorage.sol";
+import {AppStorage} from "../../AppStorage.sol";
 
 contract TestFacetAppStorage {
     AppStorage internal s;

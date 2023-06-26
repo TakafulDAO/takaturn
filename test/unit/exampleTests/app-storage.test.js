@@ -1,6 +1,6 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
-const { developmentChains } = require("../../utils/_networks")
+const { developmentChains } = require("../../../utils/_networks")
 
 !developmentChains.includes(network.name)
     ? describe.skip

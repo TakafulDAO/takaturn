@@ -1,7 +1,7 @@
 // Deploy script for independent contracts
 const { network } = require("hardhat")
-const { developmentChains, VERIFICATION_BLOCK_CONFIRMATIONS } = require("../utils/_networks")
-const { verify } = require("../scripts/verify")
+const { developmentChains, VERIFICATION_BLOCK_CONFIRMATIONS } = require("../../utils/_networks")
+const { verify } = require("../../scripts/verify")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { diamond, log } = deployments

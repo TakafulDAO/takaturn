@@ -1,6 +1,6 @@
 // Deploy script for independent contracts
 const { network } = require("hardhat")
-const { developmentChains, VERIFICATION_BLOCK_CONFIRMATIONS } = require("../utils/_networks")
+const { developmentChains, VERIFICATION_BLOCK_CONFIRMATIONS } = require("../../utils/_networks")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { diamond, log, catchUnknownSigner } = deployments
@@ -10,41 +10,41 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         ? 1
         : VERIFICATION_BLOCK_CONFIRMATIONS
 
-    log("05. Upgrading Diamond...")
+    log("04. Upgrading Diamond...")
 
     const args = []
     const takaturnDiamondUpgrade = await catchUnknownSigner(
-        diamond.deploy("TakaturnDiamondStorage", {
+        diamond.deploy("TakaturnDiamondAppStorage", {
             from: deployer,
             owner: diamondOwner,
             args: args,
             log: true,
-            facets: ["ActionFacetDiamondStorage", "NewFacet", "TestFacetDiamondStorage"],
+            facets: ["ActionFacetAppStorage", "NewFacet", "TestFacetAppStorage"],
             waitConfirmations: waitBlockConfirmations,
         })
     )
 
     log("==========================================================================")
-    log("05. Upgrade recheck")
-    await diamond.deploy("TakaturnDiamondStorage", {
+    log("04. Upgrade recheck")
+    await diamond.deploy("TakaturnDiamondAppStorage", {
         from: deployer,
         owner: diamondOwner,
         args: args,
         log: true,
-        facets: ["ActionFacetDiamondStorage", "NewFacet", "TestFacetDiamondStorage"],
+        facets: ["ActionFacetAppStorage", "NewFacet", "TestFacetAppStorage"],
         waitConfirmations: waitBlockConfirmations,
     })
 
     // log("==========================================================================")
-    // log("05. Running deploy tests")
-    // const test = await deployments.read("TakaturnDiamondStorage", "sayHello")
+    // log("04. Running deploy tests")
+    // const test = await deployments.read("TakaturnDiamondAppStorage", "sayHello")
     // console.log({ test })
 
-    // const test2 = await deployments.read("TakaturnDiamondStorage", "sayHello2")
+    // const test2 = await deployments.read("TakaturnDiamondAppStorage", "sayHello2")
     // console.log({ test2 })
 
-    log("05. Diamond Upgraded!")
+    log("04. Diamond Upgraded!")
     log("==========================================================================")
 }
 
-module.exports.tags = ["all", "diamond_storage", "diamond_storage_upgrade"]
+module.exports.tags = ["all", "diamond_app_storage", "diamond_app_storage_upgrade"]

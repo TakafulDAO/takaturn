@@ -1,6 +1,6 @@
 const { network } = require("hardhat")
-const { developmentChains } = require("../utils/_networks")
-const { verify } = require("../scripts/verify")
+const { developmentChains } = require("../../utils/_networks")
+const { verify } = require("../../scripts/verify")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy, log } = deployments
