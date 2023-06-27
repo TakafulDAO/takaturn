@@ -3,36 +3,25 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-import {ITakaturnFactory} from "../interfaces/ITakaturnFactory.sol"; // TODO: needed?
+import {ITakaturnFactory} from "../interfaces/ITakaturnFactory.sol"; // TODO: remove?
 import {ICollateral} from "../interfaces/ICollateral.sol";
 import {IFund} from "../interfaces/IFund.sol";
+
+import {LibCollateral} from "../libraries/LibCollateral.sol";
 
 /// @title Takaturn
 /// @author Aisha El Allam
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
 contract CollateralFacet is ICollateral, Ownable {
-    uint public constant version = 2;
-
     IFund private _fundInstance;
     AggregatorV3Interface public immutable priceFeed;
 
     mapping(address => bool) public isCollateralMember; // Determines if a participant is a valid user
     mapping(address => uint) public collateralMembersBank; // Users main balance
     mapping(address => uint) public collateralPaymentBank; // Users reimbursement balance after someone defaults
-
-    event OnContractDeployed(address indexed newContract);
-    event OnFundContractDeployed(address indexed fund, address indexed collateral);
-    event OnStateChanged(States indexed oldState, States indexed newState);
-    event OnCollateralDeposited(address indexed user);
-    event OnReimbursementWithdrawn(address indexed user, uint indexed amount);
-    event OnCollateralWithdrawn(address indexed user, uint indexed amount);
-    event OnCollateralLiquidated(address indexed user, uint indexed amount);
-
-    // Function cannot be called at this time.
-    error FunctionInvalidAtThisState();
 
     // Current state.
     States public state = States.AcceptingCollateral;
@@ -42,6 +31,8 @@ contract CollateralFacet is ICollateral, Ownable {
         _;
     }
 
+    // ! Can not initialize storage variables on facets. Review what is needed to initialize and move it
+    // ! to the DiamondInit.sol contract
     /// @notice Constructor Function
     /// @dev Network is Arbitrum One and Aggregator is ETH/USD
     /// @param _totalParticipants Max number of participants
@@ -63,17 +54,17 @@ contract CollateralFacet is ICollateral, Ownable {
     ) {
         transferOwnership(_creator);
 
-        totalParticipants = _totalParticipants;
-        cycleTime = _cycleTime;
-        contributionAmount = _contributionAmount;
-        contributionPeriod = _contributionPeriod;
-        collateralDeposit = _collateralAmount * 10 ** 18; // Convert to Wei
-        fixedCollateralEth = _fixedCollateralEth;
-        stableCoinAddress = _stableCoinAddress;
+        LibCollateral._turnSpecs().totalParticipants = _totalParticipants;
+        LibCollateral._turnSpecs().cycleTime = _cycleTime;
+        LibCollateral._turnSpecs().contributionAmount = _contributionAmount;
+        LibCollateral._turnSpecs().contributionPeriod = _contributionPeriod;
+        LibCollateral._turnSpecs().collateralDeposit = _collateralAmount * 10 ** 18; // Convert to Wei
+        LibCollateral._turnSpecs().fixedCollateralEth = _fixedCollateralEth;
+        LibCollateral._turnGroupData().stableCoinAddress = _stableCoinAddress;
         priceFeed = AggregatorV3Interface(_aggregatorAddress);
-        factoryContract = msg.sender;
+        LibCollateral._turnGroupData().factoryContract = msg.sender;
 
-        emit OnContractDeployed(address(this));
+        // emit OnContractDeployed(address(this));
     }
 
     function setStateOwner(States newState) external onlyOwner {
@@ -83,40 +74,53 @@ contract CollateralFacet is ICollateral, Ownable {
     /// @notice Called by the manager when the cons job goes off
     /// @dev consider making the duration a variable
     function initiateFundContract() external onlyOwner atState(States.AcceptingCollateral) {
-        require(fundContract == address(0));
-        require(counterMembers == totalParticipants);
+        require(LibCollateral._turnGroupData().fundContract == address(0));
+        require(
+            LibCollateral._turnSpecs().counterMembers ==
+                LibCollateral._turnSpecs().totalParticipants
+        );
         // If one user is under collaterized, then all are.
-        require(!_isUnderCollaterized(participants[0]), "Eth prices dropped");
-
-        fundContract = ITakaturnFactory(factoryContract).createFund(
-            stableCoinAddress,
-            participants,
-            cycleTime,
-            contributionAmount,
-            contributionPeriod
+        require(
+            !_isUnderCollaterized(LibCollateral._turnGroupData().participants[0]),
+            "Eth prices dropped"
         );
 
+        // TODO: remove
+        LibCollateral._turnGroupData().fundContract = ITakaturnFactory(
+            LibCollateral._turnGroupData().factoryContract
+        ).createFund(
+                LibCollateral._turnGroupData().stableCoinAddress,
+                LibCollateral._turnGroupData().participants,
+                LibCollateral._turnSpecs().cycleTime,
+                LibCollateral._turnSpecs().contributionAmount,
+                LibCollateral._turnSpecs().contributionPeriod
+            );
+
         // TODO: check for success before initiating instance
-        _fundInstance = IFund(fundContract);
+        _fundInstance = IFund(LibCollateral._turnGroupData().fundContract);
         _setState(States.CycleOngoing);
-        emit OnFundContractDeployed(fundContract, address(this));
+        emit OnFundContractDeployed(LibCollateral._turnGroupData().fundContract, address(this));
     }
 
     /// @notice Called by each member to enter the term
     function depositCollateral() external payable atState(States.AcceptingCollateral) {
-        require(counterMembers < totalParticipants, "Members pending");
+        require(
+            LibCollateral._turnSpecs().counterMembers <
+                LibCollateral._turnSpecs().totalParticipants,
+            "Members pending"
+        );
         require(!isCollateralMember[msg.sender], "Reentry");
-        require(msg.value >= fixedCollateralEth, "Eth payment too low");
+        require(msg.value >= LibCollateral._turnSpecs().fixedCollateralEth, "Eth payment too low");
 
         collateralMembersBank[msg.sender] += msg.value;
         isCollateralMember[msg.sender] = true;
-        participants.push(msg.sender);
-        counterMembers++;
+        LibCollateral._turnGroupData().participants.push(msg.sender);
+        LibCollateral._turnSpecs().counterMembers++;
 
         emit OnCollateralDeposited(msg.sender);
 
-        if (counterMembers == 1) {
-            firstDepositTime = block.timestamp;
+        if (LibCollateral._turnSpecs().counterMembers == 1) {
+            LibCollateral._turnSpecs().firstDepositTime = block.timestamp;
         }
     }
 
@@ -128,14 +132,16 @@ contract CollateralFacet is ICollateral, Ownable {
         address beneficiary,
         address[] calldata defaulters
     ) external atState(States.CycleOngoing) returns (address[] memory) {
-        require(fundContract == msg.sender, "Wrong caller");
+        require(LibCollateral._turnGroupData().fundContract == msg.sender, "Wrong caller");
         require(defaulters.length > 0, "No defaulters");
 
         address ben = beneficiary;
         bool wasBeneficiary = false;
         address currentDefaulter;
         address currentParticipant;
-        address[] memory nonBeneficiaries = new address[](participants.length);
+        address[] memory nonBeneficiaries = new address[](
+            LibCollateral._turnGroupData().participants.length
+        );
         address[] memory expellants = new address[](defaulters.length);
 
         uint totalExpellants;
@@ -143,7 +149,9 @@ contract CollateralFacet is ICollateral, Ownable {
         uint share;
         uint currentDefaulterBank;
 
-        uint contributionAmountWei = _getToEthConversionRate(contributionAmount * 10 ** 18);
+        uint contributionAmountWei = _getToEthConversionRate(
+            LibCollateral._turnSpecs().contributionAmount * 10 ** 18
+        );
 
         // Determine who will be expelled and who will just pay the contribution
         // From their collateral.
@@ -172,11 +180,13 @@ contract CollateralFacet is ICollateral, Ownable {
             }
         }
 
-        totalParticipants = totalParticipants - totalExpellants;
+        LibCollateral._turnSpecs().totalParticipants =
+            LibCollateral._turnSpecs().totalParticipants -
+            totalExpellants;
 
         // Divide and Liquidate
-        for (uint i = 0; i < participants.length; i++) {
-            currentParticipant = participants[i];
+        for (uint i = 0; i < LibCollateral._turnGroupData().participants.length; i++) {
+            currentParticipant = LibCollateral._turnGroupData().participants[i];
             if (
                 !_fundInstance.isBeneficiary(currentParticipant) &&
                 isCollateralMember[currentParticipant]
@@ -211,15 +221,18 @@ contract CollateralFacet is ICollateral, Ownable {
 
         emit OnCollateralWithdrawn(msg.sender, amount);
 
-        --counterMembers;
+        --LibCollateral._turnSpecs().counterMembers;
         // If last person withdraws, then change state to EOL
-        if (counterMembers == 0) {
+        if (LibCollateral._turnSpecs().counterMembers == 0) {
             _setState(States.Closed);
         }
     }
 
     function withdrawReimbursement(address participant) external {
-        require(address(fundContract) == address(msg.sender), "Wrong caller");
+        require(
+            address(LibCollateral._turnGroupData().fundContract) == address(msg.sender),
+            "Wrong caller"
+        );
         uint amount = collateralPaymentBank[participant];
         require(amount > 0, "Nothing to claim");
         collateralPaymentBank[participant] = 0;
@@ -231,7 +244,10 @@ contract CollateralFacet is ICollateral, Ownable {
     }
 
     function releaseCollateral() external {
-        require(address(fundContract) == address(msg.sender), "Wrong caller");
+        require(
+            address(LibCollateral._turnGroupData().fundContract) == address(msg.sender),
+            "Wrong caller"
+        );
         _setState(States.ReleasingCollateral);
     }
 
@@ -247,8 +263,8 @@ contract CollateralFacet is ICollateral, Ownable {
     function emptyCollateralAfterEnd() external onlyOwner atState(States.ReleasingCollateral) {
         require(block.timestamp > (_fundInstance.fundEnd()) + 180 days, "Can't empty yet");
 
-        for (uint i = 0; i < participants.length; i++) {
-            address participant = participants[i];
+        for (uint i = 0; i < LibCollateral._turnGroupData().participants.length; i++) {
+            address participant = LibCollateral._turnGroupData().participants[i];
             collateralMembersBank[participant] = 0;
             collateralPaymentBank[participant] = 0;
         }
@@ -265,13 +281,13 @@ contract CollateralFacet is ICollateral, Ownable {
     {
         return (
             state, // Current state of Collateral
-            cycleTime, // Cycle duration
-            totalParticipants, // Total no. of participants
-            collateralDeposit, // Collateral
-            contributionAmount, // Required contribution per cycle
-            contributionPeriod, // Time to contribute
-            counterMembers, // Current member count
-            fixedCollateralEth // Fixed ether to deposit
+            LibCollateral._turnSpecs().cycleTime, // Cycle duration
+            LibCollateral._turnSpecs().totalParticipants, // Total no. of participants
+            LibCollateral._turnSpecs().collateralDeposit, // Collateral
+            LibCollateral._turnSpecs().contributionAmount, // Required contribution per cycle
+            LibCollateral._turnSpecs().contributionPeriod, // Time to contribute
+            LibCollateral._turnSpecs().counterMembers, // Current member count
+            LibCollateral._turnSpecs().fixedCollateralEth // Fixed ether to deposit
         );
     }
 
@@ -322,11 +338,19 @@ contract CollateralFacet is ICollateral, Ownable {
     function _isUnderCollaterized(address member) internal view returns (bool) {
         uint collateralLimit;
         uint memberCollateralUSD;
-        if (fundContract == address(0)) {
-            collateralLimit = totalParticipants * contributionAmount * 10 ** 18;
+        if (LibCollateral._turnGroupData().fundContract == address(0)) {
+            collateralLimit =
+                LibCollateral._turnSpecs().totalParticipants *
+                LibCollateral._turnSpecs().contributionAmount *
+                10 ** 18;
         } else {
-            uint remainingCycles = 1 + counterMembers - _fundInstance.currentCycle();
-            collateralLimit = remainingCycles * contributionAmount * 10 ** 18; // Convert to Wei
+            uint remainingCycles = 1 +
+                LibCollateral._turnSpecs().counterMembers -
+                _fundInstance.currentCycle();
+            collateralLimit =
+                remainingCycles *
+                LibCollateral._turnSpecs().contributionAmount *
+                10 ** 18; // Convert to Wei
         }
 
         memberCollateralUSD = _getToUSDConversionRate(collateralMembersBank[member]);

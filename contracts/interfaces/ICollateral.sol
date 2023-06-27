@@ -14,6 +14,16 @@ interface ICollateral {
         Closed //Triggers when all participants withdraw their collaterals
     }
 
+    event OnFundContractDeployed(address indexed fund, address indexed collateral);
+    event OnStateChanged(States indexed oldState, States indexed newState);
+    event OnCollateralDeposited(address indexed user);
+    event OnReimbursementWithdrawn(address indexed user, uint indexed amount);
+    event OnCollateralWithdrawn(address indexed user, uint indexed amount);
+    event OnCollateralLiquidated(address indexed user, uint indexed amount);
+
+    // Function cannot be called at this time.
+    error FunctionInvalidAtThisState();
+
     /// @notice Called by each member to enter the Fund
     /// @dev needs to call the fund creation function
     function depositCollateral() external payable;
