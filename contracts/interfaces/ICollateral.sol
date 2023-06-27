@@ -65,5 +65,6 @@ interface ICollateral {
 
     function getParticipantSummary(address participant) external view returns (uint, uint, bool);
 
-    function collateralPaymentBank(address participant) external view returns (uint);
+    // TODO: Removed it because the contract was abstract. WHY?
+    //function collateralPaymentBank(address participant) external view returns (uint);
 }

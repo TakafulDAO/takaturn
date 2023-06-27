@@ -16,16 +16,12 @@ import {LibCollateral} from "../libraries/LibCollateral.sol";
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
 contract CollateralFacet is ICollateral, Ownable {
-    IFund private _fundInstance;
+    IFund private _fundInstance; // ? How to correctly initialize interfaces on facets?
     AggregatorV3Interface public immutable priceFeed;
 
-    mapping(address => bool) public isCollateralMember; // Determines if a participant is a valid user
-    mapping(address => uint) public collateralMembersBank; // Users main balance
-    mapping(address => uint) public collateralPaymentBank; // Users reimbursement balance after someone defaults
-
     // Current state.
-    States public state = States.AcceptingCollateral;
-    uint public creationTime = block.timestamp;
+    States public state = States.AcceptingCollateral; // ? Can be set here? or on the DiamondInit contract?
+    // uint public creationTime = block.timestamp; // ? Needed if there is no factory?
     modifier atState(States _state) {
         if (state != _state) revert FunctionInvalidAtThisState();
         _;
@@ -35,42 +31,17 @@ contract CollateralFacet is ICollateral, Ownable {
     // ! to the DiamondInit.sol contract
     /// @notice Constructor Function
     /// @dev Network is Arbitrum One and Aggregator is ETH/USD
-    /// @param _totalParticipants Max number of participants
-    /// @param _cycleTime Time for single cycle (seconds)
-    /// @param _contributionAmount Amount user must pay per cycle (USD)
-    /// @param _contributionPeriod The portion of cycle user must make payment
-    /// @param _collateralAmount Total value of collateral in USD (1.5x of total fund)
     /// @param _creator owner of contract
-    constructor(
-        uint _totalParticipants,
-        uint _cycleTime,
-        uint _contributionAmount,
-        uint _contributionPeriod,
-        uint _collateralAmount,
-        uint _fixedCollateralEth,
-        address _stableCoinAddress,
-        address _aggregatorAddress,
-        address _creator
-    ) {
-        transferOwnership(_creator);
-
-        LibCollateral._turnSpecs().totalParticipants = _totalParticipants;
-        LibCollateral._turnSpecs().cycleTime = _cycleTime;
-        LibCollateral._turnSpecs().contributionAmount = _contributionAmount;
-        LibCollateral._turnSpecs().contributionPeriod = _contributionPeriod;
-        LibCollateral._turnSpecs().collateralDeposit = _collateralAmount * 10 ** 18; // Convert to Wei
-        LibCollateral._turnSpecs().fixedCollateralEth = _fixedCollateralEth;
-        LibCollateral._turnGroupData().stableCoinAddress = _stableCoinAddress;
+    constructor(address _aggregatorAddress, address _creator) {
+        transferOwnership(_creator); // ? Nedded?
         priceFeed = AggregatorV3Interface(_aggregatorAddress);
-        LibCollateral._turnGroupData().factoryContract = msg.sender;
-
-        // emit OnContractDeployed(address(this));
     }
 
     function setStateOwner(States newState) external onlyOwner {
         _setState(newState);
     }
 
+    // TODO: This now has to create a new fund and store on a mapping? with an id? an array and remove it when finished?
     /// @notice Called by the manager when the cons job goes off
     /// @dev consider making the duration a variable
     function initiateFundContract() external onlyOwner atState(States.AcceptingCollateral) {
@@ -109,11 +80,11 @@ contract CollateralFacet is ICollateral, Ownable {
                 LibCollateral._turnSpecs().totalParticipants,
             "Members pending"
         );
-        require(!isCollateralMember[msg.sender], "Reentry");
+        require(!LibCollateral._collateralMappings().isCollateralMember[msg.sender], "Reentry");
         require(msg.value >= LibCollateral._turnSpecs().fixedCollateralEth, "Eth payment too low");
 
-        collateralMembersBank[msg.sender] += msg.value;
-        isCollateralMember[msg.sender] = true;
+        LibCollateral._collateralMappings().collateralMembersBank[msg.sender] += msg.value;
+        LibCollateral._collateralMappings().isCollateralMember[msg.sender] = true;
         LibCollateral._turnGroupData().participants.push(msg.sender);
         LibCollateral._turnSpecs().counterMembers++;
 
@@ -158,7 +129,9 @@ contract CollateralFacet is ICollateral, Ownable {
         for (uint i = 0; i < defaulters.length; i++) {
             currentDefaulter = defaulters[i];
             wasBeneficiary = _fundInstance.isBeneficiary(currentDefaulter);
-            currentDefaulterBank = collateralMembersBank[currentDefaulter];
+            currentDefaulterBank = LibCollateral._collateralMappings().collateralMembersBank[
+                currentDefaulter
+            ];
 
             if (currentDefaulter == ben) continue; // Avoid expelling graced defaulter
 
@@ -166,17 +139,21 @@ contract CollateralFacet is ICollateral, Ownable {
                 (wasBeneficiary && _isUnderCollaterized(currentDefaulter)) ||
                 (currentDefaulterBank < contributionAmountWei)
             ) {
-                isCollateralMember[currentDefaulter] = false; // Expelled!
+                LibCollateral._collateralMappings().isCollateralMember[currentDefaulter] = false; // Expelled!
                 expellants[i] = currentDefaulter;
                 share += currentDefaulterBank;
-                collateralMembersBank[currentDefaulter] = 0;
+                LibCollateral._collateralMappings().collateralMembersBank[currentDefaulter] = 0;
                 totalExpellants++;
 
                 emit OnCollateralLiquidated(address(currentDefaulter), currentDefaulterBank);
             } else {
                 // Subtract contribution from defaulter and add to beneficiary.
-                collateralMembersBank[currentDefaulter] -= contributionAmountWei;
-                collateralPaymentBank[ben] += contributionAmountWei;
+                LibCollateral._collateralMappings().collateralMembersBank[
+                    currentDefaulter
+                ] -= contributionAmountWei;
+                LibCollateral._collateralMappings().collateralPaymentBank[
+                    ben
+                ] += contributionAmountWei;
             }
         }
 
@@ -189,7 +166,7 @@ contract CollateralFacet is ICollateral, Ownable {
             currentParticipant = LibCollateral._turnGroupData().participants[i];
             if (
                 !_fundInstance.isBeneficiary(currentParticipant) &&
-                isCollateralMember[currentParticipant]
+                LibCollateral._collateralMappings().isCollateralMember[currentParticipant]
             ) {
                 nonBeneficiaries[nonBeneficiaryCounter] = currentParticipant;
                 nonBeneficiaryCounter++;
@@ -201,7 +178,9 @@ contract CollateralFacet is ICollateral, Ownable {
             // This case can only happen when what?
             share = share / nonBeneficiaryCounter;
             for (uint i = 0; i < nonBeneficiaryCounter; i++) {
-                collateralPaymentBank[nonBeneficiaries[i]] += share;
+                LibCollateral._collateralMappings().collateralPaymentBank[
+                    nonBeneficiaries[i]
+                ] += share;
             }
         }
 
@@ -211,11 +190,12 @@ contract CollateralFacet is ICollateral, Ownable {
     /// @notice Called by each member after the end of the cycle to withraw collateral
     /// @dev This follows the pull-over-push pattern.
     function withdrawCollateral() external atState(States.ReleasingCollateral) {
-        uint amount = collateralMembersBank[msg.sender] + collateralPaymentBank[msg.sender];
+        uint amount = LibCollateral._collateralMappings().collateralMembersBank[msg.sender] +
+            LibCollateral._collateralMappings().collateralPaymentBank[msg.sender];
         require(amount > 0, "Nothing to claim");
 
-        collateralMembersBank[msg.sender] = 0;
-        collateralPaymentBank[msg.sender] = 0;
+        LibCollateral._collateralMappings().collateralMembersBank[msg.sender] = 0;
+        LibCollateral._collateralMappings().collateralPaymentBank[msg.sender] = 0;
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success);
 
@@ -233,9 +213,9 @@ contract CollateralFacet is ICollateral, Ownable {
             address(LibCollateral._turnGroupData().fundContract) == address(msg.sender),
             "Wrong caller"
         );
-        uint amount = collateralPaymentBank[participant];
+        uint amount = LibCollateral._collateralMappings().collateralPaymentBank[participant];
         require(amount > 0, "Nothing to claim");
-        collateralPaymentBank[participant] = 0;
+        LibCollateral._collateralMappings().collateralPaymentBank[participant] = 0;
 
         (bool success, ) = payable(participant).call{value: amount}("");
         require(success);
@@ -265,8 +245,8 @@ contract CollateralFacet is ICollateral, Ownable {
 
         for (uint i = 0; i < LibCollateral._turnGroupData().participants.length; i++) {
             address participant = LibCollateral._turnGroupData().participants[i];
-            collateralMembersBank[participant] = 0;
-            collateralPaymentBank[participant] = 0;
+            LibCollateral._collateralMappings().collateralMembersBank[participant] = 0;
+            LibCollateral._collateralMappings().collateralPaymentBank[participant] = 0;
         }
         _setState(States.Closed);
 
@@ -293,9 +273,9 @@ contract CollateralFacet is ICollateral, Ownable {
 
     function getParticipantSummary(address participant) external view returns (uint, uint, bool) {
         return (
-            collateralMembersBank[participant],
-            collateralPaymentBank[participant],
-            isCollateralMember[participant]
+            LibCollateral._collateralMappings().collateralMembersBank[participant],
+            LibCollateral._collateralMappings().collateralPaymentBank[participant],
+            LibCollateral._collateralMappings().isCollateralMember[participant]
         );
     }
 
@@ -353,7 +333,9 @@ contract CollateralFacet is ICollateral, Ownable {
                 10 ** 18; // Convert to Wei
         }
 
-        memberCollateralUSD = _getToUSDConversionRate(collateralMembersBank[member]);
+        memberCollateralUSD = _getToUSDConversionRate(
+            LibCollateral._collateralMappings().collateralMembersBank[member]
+        );
 
         return (memberCollateralUSD < collateralLimit);
     }
