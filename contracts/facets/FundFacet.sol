@@ -37,8 +37,6 @@ contract FundFacet is IFund, Ownable {
     ICollateral public collateral; // Instance of the collateral
     IERC20 public stableToken; // Instance of the stable token
 
-    States public currentState = States.InitializingFund; // Variable to keep track of the different States
-
     mapping(address => bool) public isParticipant; // Mapping to keep track of who's a participant or not
     mapping(address => bool) public isBeneficiary; // Mapping to keep track of who's a beneficiary or not
     mapping(address => bool) public paidThisCycle; // Mapping to keep track of who paid for this cycle
@@ -49,8 +47,6 @@ contract FundFacet is IFund, Ownable {
     EnumerableSet.AddressSet private _defaulters; // Both participants and beneficiaries who have defaulted this cycle
 
     uint public expelledParticipants; // Total amount of participants that have been expelled so far
-
-    uint public currentCycle; // Index of current cycle
 
     uint public fundEnd; // Timestamp of the end of the fund
 
@@ -67,7 +63,6 @@ contract FundFacet is IFund, Ownable {
         uint cycleTime,
         uint contributionAmount,
         uint contributionPeriod,
-        address fundOwner,
         address stableTokenAddress,
         address[] memory participantsArray
     ) external {
@@ -75,7 +70,6 @@ contract FundFacet is IFund, Ownable {
             cycleTime,
             contributionAmount,
             contributionPeriod,
-            fundOwner,
             stableTokenAddress,
             participantsArray
         );
@@ -87,13 +81,23 @@ contract FundFacet is IFund, Ownable {
         uint contributionAmount; // amount in stable token currency, 6 decimals
         uint contributionPeriod; // time for participants to contribute this cycle
         uint totalParticipants; // Total amount of starting participants // ? Needed?
+        uint currentCycle; // Index of current cycle
         uint totalAmountOfCycles; // Amount of cycles that this fund will have // ? Needed?
         uint fundStart; // Timestamp of the start of the fund
         address fundOwner;
         address stableTokenAddress;
+        States currentState; // Current state of the fund
         EnumerableSet.AddressSet participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
         address[] beneficiariesOrder; // The correct order of who gets to be next beneficiary, determined by collateral contract // ? Needed?
     }
+
+    event OnNewFund(
+        uint indexed fundId,
+        address indexed fundOwner,
+        address _stableTokenAddress,
+        uint cycleTime,
+        uint _contributionAmount
+    );
 
     mapping(uint256 => FundData) private fundsById; // Fund Id => Fund
 
@@ -101,14 +105,12 @@ contract FundFacet is IFund, Ownable {
     /// @param _cycleTime The time it takes to finish 1 cycle
     /// @param _contributionAmount The amount participants need to pay per cycle, amount in whole dollars
     /// @param _contributionPeriod The amount of time participants have to pay the contribution of a cycle, must be less than cycle time
-    /// @param _fundOwner The original sender of the message, this should be a collateral contract
     /// @param _stableTokenAddress Address of the stable token contract
     /// @param _participantsArray An array of all participants
     function _newFund(
         uint _cycleTime,
         uint _contributionAmount,
         uint _contributionPeriod,
-        address _fundOwner,
         address _stableTokenAddress,
         address[] memory _participantsArray
     ) internal returns (uint256) {
@@ -129,10 +131,10 @@ contract FundFacet is IFund, Ownable {
                 ++i;
             }
         }
-        collateral = ICollateral(_fundOwner);
+        collateral = ICollateral(msg.sender);
         stableToken = IERC20(_stableTokenAddress);
 
-        transferOwnership(Ownable(_fundOwner).owner()); // ? Needed? Role access control?
+        transferOwnership(Ownable(msg.sender).owner()); // ? Needed? Role access control?
 
         FundData storage fund = fundsById[_fundId];
 
@@ -142,8 +144,10 @@ contract FundFacet is IFund, Ownable {
         fund.contributionPeriod = _contributionPeriod;
         fund.totalParticipants = participantsArrayLength;
         fund.totalAmountOfCycles = participantsArrayLength;
-        fund.fundOwner = _fundOwner;
+        fund.currentCycle = 0;
+        fund.fundOwner = msg.sender;
         fund.stableTokenAddress = _stableTokenAddress;
+        fund.currentState = States.InitializingFund; // ? Needed? AcceptingContributions?
         fund.beneficiariesOrder = _participantsArray;
 
         // Set and track participants
@@ -156,12 +160,13 @@ contract FundFacet is IFund, Ownable {
             }
         }
         // Starts the first cycle
-        _startNewCycle();
+        _startNewCycle(_fundId);
 
         // Set timestamp of deployment, which will be used to determine cycle times
         // We do this after starting the first cycle to make sure the first cycle starts smoothly
         fund.fundStart = block.timestamp;
 
+        emit OnNewFund(_fundId, msg.sender, _stableTokenAddress, _cycleTime, _contributionAmount);
         ++_fundId;
 
         return _fundId;
@@ -170,6 +175,54 @@ contract FundFacet is IFund, Ownable {
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
     function startNewCycle() external onlyOwner {
         _startNewCycle();
+    }
+
+    /// @notice This starts the new cycle and can only be called internally. Used upon deploy
+    function _startNewCycle(uint fundId) internal {
+        FundData storage fund = fundsById[fundId];
+        // currentCycle is 0 when this is called for the first time
+        require(
+            block.timestamp > fund.cycleTime * fund.currentCycle + fund.fundStart,
+            "Too early to start new cycle"
+        );
+        require(
+            fund.currentState == States.InitializingFund ||
+                fund.currentState == States.CycleOngoing,
+            "Fund: Wrong state"
+        );
+
+        ++fund.currentCycle;
+        uint length = fund.beneficiariesOrder.length;
+        for (uint i; i < length; i++) {
+            paidThisCycle[fund.beneficiariesOrder[i]] = false;
+        }
+
+        _setState(States.AcceptingContributions);
+
+        // We attempt to make the autopayers pay their contribution right away
+        _autoPay(fundId);
+    }
+
+    /// @notice function to attempt to make autopayers pay their contribution
+    function _autoPay(uint fundId) internal {
+        FundData storage fund = fundsById[fundId];
+        address[] memory autoPayers = fund.beneficiariesOrder;
+        uint amount = fund.contributionAmount;
+
+        uint length = autoPayers.length;
+        for (uint i; i < length; ) {
+            if (
+                autoPayEnabled[autoPayers[i]] &&
+                !paidThisCycle[autoPayers[i]] &&
+                amount <= stableToken.allowance(autoPayers[i], address(this)) &&
+                amount <= stableToken.balanceOf(autoPayers[i])
+            ) {
+                _payContribution(autoPayers[i], autoPayers[i]);
+            }
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
@@ -247,6 +300,7 @@ contract FundFacet is IFund, Ownable {
         }
     }
 
+    // TODO: Set max allowance
     /// @notice function to enable/disable autopay
     function toggleAutoPay() external {
         require(isParticipant[msg.sender], "Not a participant");
@@ -362,46 +416,6 @@ contract FundFacet is IFund, Ownable {
         require(currentState != States.FundClosed, "Fund closed");
         currentState = newState;
         emit OnStateChanged(newState);
-    }
-
-    /// @notice This starts the new cycle and can only be called internally. Used upon deploy
-    function _startNewCycle() internal {
-        // currentCycle is 0 when this is called for the first time
-        require(
-            block.timestamp > cycleTime * currentCycle + fundStart,
-            "Too early to start new cycle"
-        );
-        require(
-            currentState == States.InitializingFund || currentState == States.CycleOngoing,
-            "Wrong state"
-        );
-
-        currentCycle++;
-        uint length = beneficiariesOrder.length;
-        for (uint i = 0; i < length; i++) {
-            paidThisCycle[beneficiariesOrder[i]] = false;
-        }
-
-        _setState(States.AcceptingContributions);
-
-        // We attempt to make the autopayers pay their contribution right away
-        _autoPay();
-    }
-
-    /// @notice function to attempt to make autopayers pay their contribution
-    function _autoPay() internal {
-        address[] memory autoPayers = beneficiariesOrder;
-        uint amount = contributionAmount;
-        for (uint i = 0; i < autoPayers.length; i++) {
-            if (
-                autoPayEnabled[autoPayers[i]] &&
-                !paidThisCycle[autoPayers[i]] &&
-                amount <= stableToken.allowance(autoPayers[i], address(this)) &&
-                amount <= stableToken.balanceOf(autoPayers[i])
-            ) {
-                _payContribution(autoPayers[i], autoPayers[i]);
-            }
-        }
     }
 
     /// @notice function to pay the actual contribution for the cycle
