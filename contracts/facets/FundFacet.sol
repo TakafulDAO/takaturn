@@ -22,7 +22,6 @@ contract FundFacet is IFund, Ownable {
     /// @param required requested amount to transfer.
     error InsufficientBalance(uint256 available, uint256 required);
 
-    event OnContractDeployed(); // Emits when contract is deployed
     event OnStateChanged(States indexed newState); // Emits when state has updated
     event OnPaidContribution(address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
     event OnBeneficiarySelected(address indexed beneficiary); // Emits when beneficiary is selected for this cycle
@@ -35,78 +34,137 @@ contract FundFacet is IFund, Ownable {
 
     uint public constant version = 2; // The version of the contract
 
-    ICollateral public immutable collateral; // Instance of the collateral
-    IERC20 public immutable stableToken; // Instance of the stable token
+    ICollateral public collateral; // Instance of the collateral
+    IERC20 public stableToken; // Instance of the stable token
 
     States public currentState = States.InitializingFund; // Variable to keep track of the different States
-
-    uint public totalAmountOfCycles; // Amount of cycles that this fund will have
-    uint public totalParticipants; // Total amount of starting participants
-    uint public immutable cycleTime; // time for a single cycle in seconds, default is 30 days
-    uint public immutable contributionAmount; // amount in stable token currency, 6 decimals
-    uint public immutable contributionPeriod; // time for participants to contribute this cycle
 
     mapping(address => bool) public isParticipant; // Mapping to keep track of who's a participant or not
     mapping(address => bool) public isBeneficiary; // Mapping to keep track of who's a beneficiary or not
     mapping(address => bool) public paidThisCycle; // Mapping to keep track of who paid for this cycle
     mapping(address => bool) public autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
     mapping(address => uint) public beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
-    EnumerableSet.AddressSet private _participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
+
     EnumerableSet.AddressSet private _beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
     EnumerableSet.AddressSet private _defaulters; // Both participants and beneficiaries who have defaulted this cycle
 
-    address[] public beneficiariesOrder; // The correct order of who gets to be next beneficiary, determined by collateral contract
     uint public expelledParticipants; // Total amount of participants that have been expelled so far
 
     uint public currentCycle; // Index of current cycle
-    uint public fundStart; // Timestamp of the start of the fund
+
     uint public fundEnd; // Timestamp of the end of the fund
 
     address public lastBeneficiary; // The last selected beneficiary, updates with every cycle
 
-    /// @notice Constructor Function
+    //TODO: New functions that create a new fund.
+    //TODO: For now here Everything here. Easier to follow.
+    //TODO: When finish moved to where it  belongs
+    //? Params from constructor?
+    //? Non reentrant?
+    uint256 private _fundId;
+
+    function newFund(
+        uint cycleTime,
+        uint contributionAmount,
+        uint contributionPeriod,
+        address fundOwner,
+        address stableTokenAddress,
+        address[] memory participantsArray
+    ) external {
+        _newFund(
+            cycleTime,
+            contributionAmount,
+            contributionPeriod,
+            fundOwner,
+            stableTokenAddress,
+            participantsArray
+        );
+    }
+
+    // TODO: Need other ones. For now this is ok. Later move the rest
+    struct FundData {
+        uint cycleTime; // time for a single cycle in seconds, default is 30 days
+        uint contributionAmount; // amount in stable token currency, 6 decimals
+        uint contributionPeriod; // time for participants to contribute this cycle
+        uint totalParticipants; // Total amount of starting participants // ? Needed?
+        uint totalAmountOfCycles; // Amount of cycles that this fund will have // ? Needed?
+        uint fundStart; // Timestamp of the start of the fund
+        address fundOwner;
+        address stableTokenAddress;
+        EnumerableSet.AddressSet participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
+        address[] beneficiariesOrder; // The correct order of who gets to be next beneficiary, determined by collateral contract // ? Needed?
+    }
+
+    mapping(uint256 => FundData) private fundsById; // Fund Id => Fund
+
     /// @dev Network is Arbitrum One and Stable Token is USDC
-    /// @param _stableTokenAddress Address of the stable token contract
-    /// @param _participantsArray An array of all participants
     /// @param _cycleTime The time it takes to finish 1 cycle
     /// @param _contributionAmount The amount participants need to pay per cycle, amount in whole dollars
     /// @param _contributionPeriod The amount of time participants have to pay the contribution of a cycle, must be less than cycle time
-    /// @param _sender The original sender of the message, this should be a collateral contract
-    constructor(
-        address _stableTokenAddress,
-        address[] memory _participantsArray,
+    /// @param _fundOwner The original sender of the message, this should be a collateral contract
+    /// @param _stableTokenAddress Address of the stable token contract
+    /// @param _participantsArray An array of all participants
+    function _newFund(
         uint _cycleTime,
         uint _contributionAmount,
         uint _contributionPeriod,
-        address _sender
-    ) {
-        collateral = ICollateral(_sender);
+        address _fundOwner,
+        address _stableTokenAddress,
+        address[] memory _participantsArray
+    ) internal returns (uint256) {
+        uint participantsArrayLength = _participantsArray.length;
+        require(
+            _cycleTime != 0 &&
+                _contributionAmount != 0 &&
+                _contributionPeriod != 0 &&
+                participantsArrayLength != 0,
+            "Fund: Invalid inputs"
+        );
+        for (uint i; i < participantsArrayLength; ) {
+            require(
+                _participantsArray[i] != address(0x00) && _participantsArray[i] != address(this),
+                "Fund: Invalid inputs"
+            );
+            unchecked {
+                ++i;
+            }
+        }
+        collateral = ICollateral(_fundOwner);
         stableToken = IERC20(_stableTokenAddress);
 
-        transferOwnership(Ownable(_sender).owner());
+        transferOwnership(Ownable(_fundOwner).owner()); // ? Needed? Role access control?
 
-        // Set and track participants
-        for (uint i = 0; i < _participantsArray.length; i++) {
-            EnumerableSet.add(_participants, _participantsArray[i]);
-            isParticipant[_participantsArray[i]] = true;
-        }
-        beneficiariesOrder = _participantsArray;
+        FundData storage fund = fundsById[_fundId];
 
         // Sets some cycle-related parameters
-        totalParticipants = _participantsArray.length;
-        totalAmountOfCycles = _participantsArray.length;
-        cycleTime = _cycleTime;
-        contributionAmount = _contributionAmount * 10 ** 6; // Convert to 6 decimals
-        contributionPeriod = _contributionPeriod;
+        fund.cycleTime = _cycleTime;
+        fund.contributionAmount = _contributionAmount * 10 ** 6; // Convert to 6 decimals
+        fund.contributionPeriod = _contributionPeriod;
+        fund.totalParticipants = participantsArrayLength;
+        fund.totalAmountOfCycles = participantsArrayLength;
+        fund.fundOwner = _fundOwner;
+        fund.stableTokenAddress = _stableTokenAddress;
+        fund.beneficiariesOrder = _participantsArray;
 
-        emit OnContractDeployed();
+        // Set and track participants
 
+        for (uint i; i < participantsArrayLength; ) {
+            EnumerableSet.add(fund.participants, _participantsArray[i]);
+            isParticipant[_participantsArray[i]] = true;
+            unchecked {
+                ++i;
+            }
+        }
         // Starts the first cycle
         _startNewCycle();
 
         // Set timestamp of deployment, which will be used to determine cycle times
         // We do this after starting the first cycle to make sure the first cycle starts smoothly
-        fundStart = block.timestamp;
+        fund.fundStart = block.timestamp;
+
+        ++_fundId;
+
+        return _fundId;
     }
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
