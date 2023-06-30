@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.18;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {AccessControl} from "@solidstate/contracts/access/access_control/AccessControl.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -342,7 +342,7 @@ contract FundFacet is IFundFacet, AccessControl {
         collateral = ICollateral(msg.sender);
         stableToken = IERC20(_stableTokenAddress);
 
-        grantRole(FUND_OWNER_ROLE, msg.sender);
+        _grantRole(FUND_OWNER_ROLE, msg.sender);
 
         FundData storage fund = fundsById[fundId];
 
