@@ -59,10 +59,10 @@ contract FundFacet is IFund, Ownable {
         uint _contributionAmount
     ); // Emits when a new fund is created
     event OnStateChanged(uint indexed id, States indexed newState); // Emits when state has updated
-    event OnPaidContribution(uint id, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
-    event OnBeneficiarySelected(uint id, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
-    event OnFundWithdrawn(uint id, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
-    event OnParticipantDefaulted(uint id, address indexed defaulter); // Emits when a participant didn't pay this cycle's contribution
+    event OnPaidContribution(uint indexed id, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
+    event OnBeneficiarySelected(uint indexed id, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
+    event OnFundWithdrawn(uint indexed id, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
+    event OnParticipantDefaulted(uint indexed id, address indexed defaulter); // Emits when a participant didn't pay this cycle's contribution
     event OnParticipantUndefaulted(uint indexed id, address indexed undefaulter); // Emits when a participant was a defaulter before but started paying on time again for this cycle
     event OnDefaulterExpelled(uint indexed id, address indexed expellant); // Emits when a defaulter can't compensate with the collateral
     event OnTotalParticipantsUpdated(uint indexed id, uint indexed newLength); // Emits when the total participants lengths has changed from its initial value
