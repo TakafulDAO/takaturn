@@ -2,18 +2,18 @@
 
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import "../interfaces/IFund.sol";
-import "../interfaces/ICollateral.sol";
+import {IFundFacet} from "../interfaces/IFundFacet.sol";
+import {ICollateral} from "../interfaces/ICollateral.sol";
 
 /// @title Takaturn Fund
 /// @author Mohammed Haddouti
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
-contract FundFacet is IFund, Ownable {
+contract FundFacet is IFundFacet, Ownable {
     // TODO: Review auto pay logic
     using EnumerableSet for EnumerableSet.AddressSet;
 
