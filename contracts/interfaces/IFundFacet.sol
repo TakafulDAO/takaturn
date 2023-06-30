@@ -6,7 +6,7 @@ pragma solidity ^0.8.18;
 /// @author Mohammed Haddouti
 /// @notice This is used to allow collateral to easily communicate with fund
 /// @dev v2.0 (post-deploy)
-interface IFund {
+interface IFundFacet {
     enum States {
         InitializingFund, // Time before the first cycle has started
         AcceptingContributions, // Triggers at the start of a cycle
