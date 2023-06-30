@@ -34,7 +34,7 @@ interface IFund {
     function emptyFundAfterEnd(uint fundId) external;
 
     /// @notice function to enable/disable autopay
-    function toggleAutoPay() external;
+    function toggleAutoPay(uint fundId) external;
 
     /// @notice This is the function participants call to pay the contribution
     function payContribution(uint fundId) external;
@@ -62,10 +62,11 @@ interface IFund {
     // @notice function to get cycle information of a specific participant
     // @param participant the user to get the info from
     function getParticipantSummary(
+        uint fundId,
         address participant
     ) external view returns (uint, bool, bool, bool, bool);
 
-    function isBeneficiary(address beneficiary) external view returns (bool);
+    function isBeneficiary(address beneficiary, uint fundId) external view returns (bool);
 
     function currentCycle(uint fundId) external view returns (uint);
 

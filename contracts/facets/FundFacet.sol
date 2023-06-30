@@ -44,11 +44,11 @@ contract FundFacet is IFund, Ownable {
         address[] beneficiariesOrder; // The correct order of who gets to be next beneficiary, determined by collateral contract
     }
 
-    mapping(address => bool) public isParticipant; // Mapping to keep track of who's a participant or not
-    mapping(address => bool) public isBeneficiary; // Mapping to keep track of who's a beneficiary or not
-    mapping(address => bool) public paidThisCycle; // Mapping to keep track of who paid for this cycle
-    mapping(address => bool) public autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
-    mapping(address => uint) public beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
+    mapping(address => mapping(uint => bool)) public isParticipant; // Mapping to keep track of who's a participant or not
+    mapping(address => mapping(uint => bool)) public isBeneficiary; // Mapping to keep track of who's a beneficiary or not
+    mapping(address => mapping(uint => bool)) public paidThisCycle; // Mapping to keep track of who paid for this cycle
+    mapping(address => mapping(uint => bool)) public autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
+    mapping(address => mapping(uint => uint)) public beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
     mapping(uint => FundData) private fundsById; // Fund Id => Fund Data
 
     event OnNewFund(
@@ -121,9 +121,9 @@ contract FundFacet is IFund, Ownable {
 
         for (uint i; i < currentParticipantsLength; ) {
             address p = currentParticipants[i];
-            if (paidThisCycle[p]) {
+            if (paidThisCycle[p][id]) {
                 // check where to restore the defaulter to, participants or beneficiaries
-                if (isBeneficiary[p]) {
+                if (isBeneficiary[p][id]) {
                     EnumerableSet.add(fund.beneficiaries, p);
                 } else {
                     EnumerableSet.add(fund.participants, p);
@@ -181,10 +181,10 @@ contract FundFacet is IFund, Ownable {
     }
 
     /// @notice function to enable/disable autopay
-    function toggleAutoPay() external {
-        require(isParticipant[msg.sender], "Not a participant");
-        bool enabled = !autoPayEnabled[msg.sender];
-        autoPayEnabled[msg.sender] = enabled;
+    function toggleAutoPay(uint id) external {
+        require(isParticipant[msg.sender][id], "Not a participant");
+        bool enabled = !autoPayEnabled[msg.sender][id];
+        autoPayEnabled[msg.sender][id] = enabled;
 
         emit OnAutoPayToggled(msg.sender, enabled);
     }
@@ -193,8 +193,8 @@ contract FundFacet is IFund, Ownable {
     function payContribution(uint id) external {
         FundData storage fund = fundsById[id];
         require(fund.currentState == States.AcceptingContributions, "Wrong state");
-        require(isParticipant[msg.sender], "Not a participant");
-        require(!paidThisCycle[msg.sender], "Already paid for cycle");
+        require(isParticipant[msg.sender][id], "Not a participant");
+        require(!paidThisCycle[msg.sender][id], "Already paid for cycle");
         _payContribution(id, msg.sender, msg.sender);
     }
 
@@ -203,8 +203,8 @@ contract FundFacet is IFund, Ownable {
     function payContributionOnBehalfOf(uint id, address participant) external {
         FundData storage fund = fundsById[id];
         require(fund.currentState == States.AcceptingContributions, "Wrong state");
-        require(isParticipant[participant], "Not a participant");
-        require(!paidThisCycle[participant], "Already paid for cycle");
+        require(isParticipant[participant][id], "Not a participant");
+        require(!paidThisCycle[participant][id], "Already paid for cycle");
         _payContribution(id, msg.sender, participant);
     }
 
@@ -213,23 +213,23 @@ contract FundFacet is IFund, Ownable {
     function withdrawFund(uint id) external {
         FundData storage fund = fundsById[id];
         require(
-            fund.currentState == States.FundClosed || paidThisCycle[msg.sender],
+            fund.currentState == States.FundClosed || paidThisCycle[msg.sender][id],
             "You must pay your cycle before withdrawing"
         );
 
-        bool hasFundPool = beneficiariesPool[msg.sender] > 0;
+        bool hasFundPool = beneficiariesPool[msg.sender][id] > 0;
         (, uint collateralPool, ) = collateral.getParticipantSummary(msg.sender);
         bool hasCollateralPool = collateralPool > 0;
         require(hasFundPool || hasCollateralPool, "Nothing to withdraw");
 
         if (hasFundPool) {
             // Get the amount this beneficiary can withdraw
-            uint transferAmount = beneficiariesPool[msg.sender];
+            uint transferAmount = beneficiariesPool[msg.sender][id];
             uint contractBalance = stableToken.balanceOf(address(this));
             if (contractBalance < transferAmount) {
                 revert InsufficientBalance({available: contractBalance, required: transferAmount});
             } else {
-                beneficiariesPool[msg.sender] = 0;
+                beneficiariesPool[msg.sender][id] = 0;
                 stableToken.transfer(msg.sender, transferAmount); // Untrusted
             }
             emit OnFundWithdrawn(id, msg.sender, transferAmount);
@@ -285,14 +285,15 @@ contract FundFacet is IFund, Ownable {
     /// @notice function to get cycle information of a specific participant
     /// @param participant the user to get the info from
     function getParticipantSummary(
+        uint id,
         address participant
     ) external view returns (uint, bool, bool, bool, bool) {
         return (
-            beneficiariesPool[participant],
-            isBeneficiary[participant],
-            paidThisCycle[participant],
-            autoPayEnabled[participant],
-            isParticipant[participant]
+            beneficiariesPool[participant][id],
+            isBeneficiary[participant][id],
+            paidThisCycle[participant][id],
+            autoPayEnabled[participant][id],
+            isParticipant[participant][id]
         );
     }
 
@@ -359,7 +360,7 @@ contract FundFacet is IFund, Ownable {
 
         for (uint i; i < participantsArrayLength; ) {
             EnumerableSet.add(fund.participants, _participantsArray[i]);
-            isParticipant[_participantsArray[i]] = true;
+            isParticipant[_participantsArray[i]][fundId] = true;
             unchecked {
                 ++i;
             }
@@ -403,7 +404,7 @@ contract FundFacet is IFund, Ownable {
         ++fund.currentCycle;
         uint length = fund.beneficiariesOrder.length;
         for (uint i; i < length; ) {
-            paidThisCycle[fund.beneficiariesOrder[i]] = false;
+            paidThisCycle[fund.beneficiariesOrder[i]][_id] = false;
             unchecked {
                 ++i;
             }
@@ -424,8 +425,8 @@ contract FundFacet is IFund, Ownable {
         uint length = autoPayers.length;
         for (uint i; i < length; ) {
             if (
-                autoPayEnabled[autoPayers[i]] &&
-                !paidThisCycle[autoPayers[i]] &&
+                autoPayEnabled[autoPayers[i]][_id] &&
+                !paidThisCycle[autoPayers[i]][_id] &&
                 amount <= stableToken.allowance(autoPayers[i], address(this)) &&
                 amount <= stableToken.balanceOf(autoPayers[i])
             ) {
@@ -450,7 +451,7 @@ contract FundFacet is IFund, Ownable {
         require(success, "Contribution failed, did you approve stable token?");
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
-        paidThisCycle[_participant] = true;
+        paidThisCycle[_participant][_id] = true;
         emit OnPaidContribution(_id, _participant, fund.currentCycle);
     }
 
@@ -484,7 +485,7 @@ contract FundFacet is IFund, Ownable {
 
         for (uint i; i < arrayToCheckLength; ) {
             address b = arrayToCheck[i];
-            if (!isBeneficiary[b]) {
+            if (!isBeneficiary[b][_id]) {
                 selectedBeneficiary = b;
                 beneficiaryIndex = i;
                 break;
@@ -495,12 +496,12 @@ contract FundFacet is IFund, Ownable {
         }
 
         // If the defaulter didn't pay this cycle, we move the first elligible beneficiary forward and everyone in between forward
-        if (!paidThisCycle[selectedBeneficiary]) {
+        if (!paidThisCycle[selectedBeneficiary][_id]) {
             // Find the index of the beneficiary to move to the end
             for (uint i = beneficiaryIndex; i < arrayToCheckLength; ) {
                 address b = arrayToCheck[i];
                 // Find the first eligible beneficiary
-                if (paidThisCycle[b]) {
+                if (paidThisCycle[b][_id]) {
                     selectedBeneficiary = b;
                     address[] memory newOrder = fund.beneficiariesOrder;
                     // Move each defaulter between current beneficiary and new beneficiary 1 position forward
@@ -548,19 +549,19 @@ contract FundFacet is IFund, Ownable {
         } // If this if-statement fails, this means we're dealing with a graced defaulter
 
         // Update the mapping to track who's been beneficiary
-        isBeneficiary[selectedBeneficiary] = true;
+        isBeneficiary[selectedBeneficiary][_id] = true;
 
         // Get the amount of participants that paid this cycle, and add that amount to the beneficiary's pool
         uint paidCount;
         address[] memory allParticipants = fund.beneficiariesOrder; // Use beneficiariesOrder here because it contains all active participants in a single array
         for (uint i = 0; i < allParticipants.length; i++) {
-            if (paidThisCycle[allParticipants[i]]) {
+            if (paidThisCycle[allParticipants[i]][_id]) {
                 paidCount++;
             }
         }
 
         // Award the beneficiary with the pool and update the lastBeneficiary
-        beneficiariesPool[selectedBeneficiary] = fund.contributionAmount * paidCount;
+        beneficiariesPool[selectedBeneficiary][_id] = fund.contributionAmount * paidCount;
         fund.lastBeneficiary = selectedBeneficiary;
 
         emit OnBeneficiarySelected(_id, selectedBeneficiary);
@@ -597,7 +598,7 @@ contract FundFacet is IFund, Ownable {
         FundData storage fund = fundsById[_id];
         //require(msg.sender == address(collateral), "Caller is not collateral");
         require(
-            isParticipant[_expellant] && EnumerableSet.remove(fund.defaulters, _expellant),
+            isParticipant[_expellant][_id] && EnumerableSet.remove(fund.defaulters, _expellant),
             "Expellant not found"
         );
 
@@ -609,11 +610,11 @@ contract FundFacet is IFund, Ownable {
         // Update the defaulters array
         _removeBeneficiaryFromOrder(_id, _expellant);
 
-        isParticipant[_expellant] = false;
+        isParticipant[_expellant][_id] = false;
         emit OnDefaulterExpelled(_id, _expellant);
 
         // If the participant is expelled before becoming beneficiary, we lose a cycle, the one which this expellant is becoming beneficiary
-        if (!isBeneficiary[_expellant]) {
+        if (!isBeneficiary[_expellant][_id]) {
             fund.totalAmountOfCycles--;
         }
 
