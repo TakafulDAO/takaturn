@@ -21,9 +21,6 @@ contract FundFacet is IFundFacet, AccessControl {
     uint public constant VERSION = 2; // The version of the contract
     uint public fundId; // The id of the fund, incremented on every new fund
 
-    ICollateral public collateral; // Instance of the collateral
-    IERC20 public stableToken; // Instance of the stable token
-
     bytes32 public constant FUND_OWNER_ROLE = keccak256("FUND_OWNER_ROLE");
 
     struct FundData {
@@ -32,13 +29,15 @@ contract FundFacet is IFundFacet, AccessControl {
         uint contributionPeriod; // time for participants to contribute this cycle
         uint totalParticipants; // Total amount of starting participants
         uint expelledParticipants; // Total amount of participants that have been expelled so far
-        address lastBeneficiary; // The last selected beneficiary, updates with every cycle
         uint currentCycle; // Index of current cycle
         uint totalAmountOfCycles; // Amount of cycles that this fund will have
         uint fundStart; // Timestamp of the start of the fund
         uint fundEnd; // Timestamp of the end of the fund
+        address lastBeneficiary; // The last selected beneficiary, updates with every cycle
         address fundOwner;
         address stableTokenAddress;
+        ICollateral collateral; // Instance of the collateral
+        IERC20 stableToken; // Instance of the stable token
         States currentState; // Current state of the fund
         EnumerableSet.AddressSet participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
         EnumerableSet.AddressSet beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
@@ -176,9 +175,9 @@ contract FundFacet is IFundFacet, AccessControl {
             "Can't empty yet"
         );
 
-        uint balance = stableToken.balanceOf(address(this));
+        uint balance = fund.stableToken.balanceOf(address(this));
         if (balance > 0) {
-            stableToken.transfer(msg.sender, balance);
+            fund.stableToken.transfer(msg.sender, balance);
         }
     }
 
@@ -220,25 +219,25 @@ contract FundFacet is IFundFacet, AccessControl {
         );
 
         bool hasFundPool = beneficiariesPool[msg.sender][id] > 0;
-        (, uint collateralPool, ) = collateral.getParticipantSummary(msg.sender);
+        (, uint collateralPool, ) = fund.collateral.getParticipantSummary(msg.sender);
         bool hasCollateralPool = collateralPool > 0;
         require(hasFundPool || hasCollateralPool, "Nothing to withdraw");
 
         if (hasFundPool) {
             // Get the amount this beneficiary can withdraw
             uint transferAmount = beneficiariesPool[msg.sender][id];
-            uint contractBalance = stableToken.balanceOf(address(this));
+            uint contractBalance = fund.stableToken.balanceOf(address(this));
             if (contractBalance < transferAmount) {
                 revert InsufficientBalance({available: contractBalance, required: transferAmount});
             } else {
                 beneficiariesPool[msg.sender][id] = 0;
-                stableToken.transfer(msg.sender, transferAmount); // Untrusted
+                fund.stableToken.transfer(msg.sender, transferAmount); // Untrusted
             }
             emit OnFundWithdrawn(id, msg.sender, transferAmount);
         }
 
         if (hasCollateralPool) {
-            collateral.withdrawReimbursement(msg.sender);
+            fund.collateral.withdrawReimbursement(msg.sender);
         }
     }
 
@@ -339,8 +338,6 @@ contract FundFacet is IFundFacet, AccessControl {
                 ++i;
             }
         }
-        collateral = ICollateral(msg.sender);
-        stableToken = IERC20(_stableTokenAddress);
 
         _grantRole(FUND_OWNER_ROLE, msg.sender);
 
@@ -357,6 +354,8 @@ contract FundFacet is IFundFacet, AccessControl {
         fund.stableTokenAddress = _stableTokenAddress;
         fund.currentState = States.InitializingFund;
         fund.beneficiariesOrder = _participantsArray;
+        fund.collateral = ICollateral(msg.sender); // TODO: Check when the collateral facet is ready
+        fund.stableToken = IERC20(_stableTokenAddress);
 
         // Set and track participants
 
@@ -429,8 +428,8 @@ contract FundFacet is IFundFacet, AccessControl {
             if (
                 autoPayEnabled[autoPayers[i]][_id] &&
                 !paidThisCycle[autoPayers[i]][_id] &&
-                amount <= stableToken.allowance(autoPayers[i], address(this)) &&
-                amount <= stableToken.balanceOf(autoPayers[i])
+                amount <= fund.stableToken.allowance(autoPayers[i], address(this)) &&
+                amount <= fund.stableToken.balanceOf(autoPayers[i])
             ) {
                 _payContribution(_id, autoPayers[i], autoPayers[i]);
             }
@@ -449,7 +448,7 @@ contract FundFacet is IFundFacet, AccessControl {
         // This will only succeed if the sender approved this contract address beforehand
         uint amount = fund.contributionAmount;
 
-        bool success = stableToken.transferFrom(_payer, address(this), amount);
+        bool success = fund.stableToken.transferFrom(_payer, address(this), amount);
         require(success, "Contribution failed, did you approve stable token?");
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
@@ -526,7 +525,7 @@ contract FundFacet is IFundFacet, AccessControl {
 
         // Request contribution from the collateral for those who haven't paid this cycle
         if (EnumerableSet.length(fund.defaulters) > 0) {
-            address[] memory expellants = collateral.requestContribution(
+            address[] memory expellants = fund.collateral.requestContribution(
                 _id,
                 selectedBeneficiary,
                 EnumerableSet.values(fund.defaulters)
@@ -633,6 +632,6 @@ contract FundFacet is IFundFacet, AccessControl {
         FundData storage fund = fundsById[_id];
         fund.fundEnd = block.timestamp;
         _setState(_id, States.FundClosed);
-        collateral.releaseCollateral();
+        fund.collateral.releaseCollateral();
     }
 }
