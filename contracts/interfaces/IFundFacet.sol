@@ -15,6 +15,14 @@ interface IFundFacet {
         FundClosed // Triggers at the end of the last contribution period, no state changes after this
     }
 
+    function newFund(
+        uint cycleTime,
+        uint contributionAmount,
+        uint contributionPeriod,
+        address stableTokenAddress,
+        address[] memory participantsArray
+    ) external;
+
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
     function startNewCycle(uint fundId) external;
 
