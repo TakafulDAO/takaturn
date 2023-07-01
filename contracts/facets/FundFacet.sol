@@ -19,7 +19,7 @@ contract FundFacet is IFundFacet, AccessControl {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint public constant VERSION = 2; // The version of the contract
-    uint public fundId; // The id of the fund, incremented on every new fund
+    uint public termId; // The id of the fund, incremented on every new fund
 
     bytes32 public constant FUND_OWNER_ROLE = keccak256("FUND_OWNER_ROLE");
 
@@ -50,9 +50,9 @@ contract FundFacet is IFundFacet, AccessControl {
     mapping(address => mapping(uint => bool)) public paidThisCycle; // Mapping to keep track of who paid for this cycle
     mapping(address => mapping(uint => bool)) public autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
     mapping(address => mapping(uint => uint)) public beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
-    mapping(uint => FundData) private fundsById; // Fund Id => Fund Data
+    mapping(uint => FundData) private termFunds; // Term Id => Fund Data
 
-    event OnNewFund(
+    event OnTermStart(
         uint indexed id,
         address indexed fundOwner,
         address _stableTokenAddress,
@@ -75,20 +75,25 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @param required requested amount to transfer.
     error InsufficientBalance(uint available, uint required);
 
-    function newFund(
+    function createTerm(
         uint cycleTime,
         uint contributionAmount,
         uint contributionPeriod,
-        address stableTokenAddress,
-        address[] memory participantsArray
+        uint totalParticipants,
+        address stableTokenAddress
     ) external {
-        _newFund(
+        _createTerm(
             cycleTime,
             contributionAmount,
             contributionPeriod,
-            stableTokenAddress,
-            participantsArray
+            totalParticipants,
+            stableTokenAddress
         );
+    }
+
+    // TODO: Still needs to call the collateral, for now only adds the participant
+    function joinTerm(uint id) external {
+        _joinTerm(id);
     }
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
@@ -98,7 +103,7 @@ contract FundFacet is IFundFacet, AccessControl {
 
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
     function closeFundingPeriod(uint id) external onlyRole(FUND_OWNER_ROLE) {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
         require(
             block.timestamp >
@@ -154,7 +159,7 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @notice Fallback function, if the internal call fails somehow and the state gets stuck, allow owner to call the function again manually
     /// @dev This shouldn't happen, but is here in case there's an edge-case we didn't take into account, can possibly be removed in the future
     function selectBeneficiary(uint id) external onlyRole(FUND_OWNER_ROLE) {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         require(fund.currentState == States.ChoosingBeneficiary, "Wrong state");
         _selectBeneficiary(id);
     }
@@ -169,7 +174,7 @@ contract FundFacet is IFundFacet, AccessControl {
     ///         this with the assumption that beneficiaries can't claim it themselves due to losing their keys for example,
     ///         and prevent the fund to be stuck in limbo
     function emptyFundAfterEnd(uint id) external onlyRole(FUND_OWNER_ROLE) {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         require(
             fund.currentState == States.FundClosed && block.timestamp > fund.fundEnd + 180 days,
             "Can't empty yet"
@@ -192,7 +197,7 @@ contract FundFacet is IFundFacet, AccessControl {
 
     /// @notice This is the function participants call to pay the contribution
     function payContribution(uint id) external {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         require(fund.currentState == States.AcceptingContributions, "Wrong state");
         require(isParticipant[msg.sender][id], "Not a participant");
         require(!paidThisCycle[msg.sender][id], "Already paid for cycle");
@@ -202,7 +207,7 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @notice This function is here to give the possibility to pay using a different wallet
     /// @param participant the address the msg.sender is paying for, the address must be part of the fund
     function payContributionOnBehalfOf(uint id, address participant) external {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         require(fund.currentState == States.AcceptingContributions, "Wrong state");
         require(isParticipant[participant][id], "Not a participant");
         require(!paidThisCycle[participant][id], "Already paid for cycle");
@@ -212,7 +217,7 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @notice Called by the beneficiary to withdraw the fund
     /// @dev This follows the pull-over-push pattern.
     function withdrawFund(uint id) external {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         require(
             fund.currentState == States.FundClosed || paidThisCycle[msg.sender][id],
             "You must pay your cycle before withdrawing"
@@ -243,7 +248,7 @@ contract FundFacet is IFundFacet, AccessControl {
 
     // @notice returns the time left for this cycle to end
     function getRemainingCycleTime(uint id) external view returns (uint) {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         uint cycleEndTimestamp = fund.cycleTime * fund.currentCycle + fund.fundStart;
         if (block.timestamp > cycleEndTimestamp) {
             return 0;
@@ -254,7 +259,7 @@ contract FundFacet is IFundFacet, AccessControl {
 
     /// @notice returns the time left to contribute for this cycle
     function getRemainingContributionTime(uint id) external view returns (uint) {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         if (fund.currentState != States.AcceptingContributions) {
             return 0;
         }
@@ -273,13 +278,13 @@ contract FundFacet is IFundFacet, AccessControl {
 
     /// @notice returns the beneficiaries order as an array
     function getBeneficiariesOrder(uint id) external view returns (address[] memory) {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         return fund.beneficiariesOrder;
     }
 
     /// @notice function to get the cycle information in one go
     function getFundSummary(uint id) external view returns (States, uint, address) {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         return (fund.currentState, fund.currentCycle, fund.lastBeneficiary);
     }
 
@@ -299,90 +304,108 @@ contract FundFacet is IFundFacet, AccessControl {
     }
 
     function currentCycle(uint id) external view returns (uint) {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         return fund.currentCycle;
     }
 
     function fundEnd(uint id) external view returns (uint) {
-        FundData storage fund = fundsById[id];
+        FundData storage fund = termFunds[id];
         return fund.fundEnd;
     }
 
-    /// @dev Network is Arbitrum One and Stable Token is USDC
-    /// @param _cycleTime The time it takes to finish 1 cycle
-    /// @param _contributionAmount The amount participants need to pay per cycle, amount in whole dollars
-    /// @param _contributionPeriod The amount of time participants have to pay the contribution of a cycle, must be less than cycle time
-    /// @param _stableTokenAddress Address of the stable token contract
-    /// @param _participantsArray An array of all participants
-    function _newFund(
+    function _createTerm(
         uint _cycleTime,
         uint _contributionAmount,
         uint _contributionPeriod,
-        address _stableTokenAddress,
-        address[] memory _participantsArray
+        uint _totalParticipants,
+        address _stableTokenAddress
     ) internal returns (uint) {
-        uint participantsArrayLength = _participantsArray.length;
         require(
             _cycleTime != 0 &&
                 _contributionAmount != 0 &&
                 _contributionPeriod != 0 &&
-                participantsArrayLength != 0,
+                _totalParticipants != 0,
             "Invalid inputs"
         );
-        for (uint i; i < participantsArrayLength; ) {
-            require(
-                _participantsArray[i] != address(0x00) && _participantsArray[i] != address(this),
-                "Invalid inputs"
-            );
-            unchecked {
-                ++i;
-            }
-        }
-
         _grantRole(FUND_OWNER_ROLE, msg.sender);
 
-        FundData storage fund = fundsById[fundId];
-
+        FundData storage fund = termFunds[termId];
+        // TODO: Check default values
         // Sets some cycle-related parameters
         fund.cycleTime = _cycleTime;
         fund.contributionAmount = _contributionAmount * 10 ** 6; // Convert to 6 decimals
         fund.contributionPeriod = _contributionPeriod;
-        fund.totalParticipants = participantsArrayLength;
-        fund.totalAmountOfCycles = participantsArrayLength;
-        fund.currentCycle = 0;
+        fund.totalParticipants = _totalParticipants;
+        fund.expelledParticipants;
+        fund.currentCycle;
+        fund.totalAmountOfCycles = _totalParticipants;
+        fund.fundStart;
+        fund.fundEnd;
+        fund.lastBeneficiary;
         fund.fundOwner = msg.sender;
         fund.stableTokenAddress = _stableTokenAddress;
-        fund.currentState = States.InitializingFund;
-        fund.beneficiariesOrder = _participantsArray;
         fund.collateral = ICollateral(msg.sender); // TODO: Check when the collateral facet is ready
         fund.stableToken = IERC20(_stableTokenAddress);
+        fund.currentState = States.InitializingFund; // TODO: Actual state?
+        fund.beneficiariesOrder = new address[](_totalParticipants);
 
-        // Set and track participants
+        termId++;
 
-        for (uint i; i < participantsArrayLength; ) {
-            EnumerableSet.add(fund.participants, _participantsArray[i]);
-            isParticipant[_participantsArray[i]][fundId] = true;
+        return termId;
+    }
+
+    function _joinTerm(uint id) internal {
+        FundData storage fund = termFunds[id];
+        uint beneficiariesLength = fund.beneficiariesOrder.length;
+        for (uint i; i < beneficiariesLength; ) {
+            if (fund.beneficiariesOrder[i] == address(0)) {
+                fund.beneficiariesOrder[i] = msg.sender;
+                if (i == fund.beneficiariesOrder.length - 1) {
+                    _startTerm(id);
+                }
+                break;
+            }
             unchecked {
                 ++i;
             }
         }
+    }
+
+    function _startTerm(uint256 _id) internal {
+        FundData storage fund = termFunds[_id];
+        fund.currentState = States.InitializingFund;
+
+        uint participantsArrayLength = fund.beneficiariesOrder.length;
+
+        // Set and track participants
+
+        for (uint i; i < participantsArrayLength; ) {
+            EnumerableSet.add(fund.participants, fund.beneficiariesOrder[i]);
+            isParticipant[fund.beneficiariesOrder[i]][termId] = true;
+            unchecked {
+                ++i;
+            }
+        }
+
         // Starts the first cycle
-        _startNewCycle(fundId);
+        _startNewCycle(termId);
 
         // Set timestamp of deployment, which will be used to determine cycle times
         // We do this after starting the first cycle to make sure the first cycle starts smoothly
         fund.fundStart = block.timestamp;
-
-        emit OnNewFund(fundId, msg.sender, _stableTokenAddress, _cycleTime, _contributionAmount);
-        ++fundId;
-
-        return fundId;
+        emit OnTermStart(
+            termId,
+            msg.sender,
+            fund.stableTokenAddress,
+            fund.cycleTime,
+            fund.contributionAmount
+        );
     }
 
     /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
     /// @param _newState The new state of the fund
     function _setState(uint _id, States _newState) internal {
-        FundData storage fund = fundsById[_id];
+        FundData storage fund = termFunds[_id];
         require(fund.currentState != States.FundClosed, "Fund closed");
         fund.currentState = _newState;
         emit OnStateChanged(_id, _newState);
@@ -390,7 +413,7 @@ contract FundFacet is IFundFacet, AccessControl {
 
     /// @notice This starts the new cycle and can only be called internally. Used upon deploy
     function _startNewCycle(uint _id) internal {
-        FundData storage fund = fundsById[_id];
+        FundData storage fund = termFunds[_id];
         // currentCycle is 0 when this is called for the first time
         require(
             block.timestamp > fund.cycleTime * fund.currentCycle + fund.fundStart,
@@ -419,7 +442,7 @@ contract FundFacet is IFundFacet, AccessControl {
 
     /// @notice function to attempt to make autopayers pay their contribution
     function _autoPay(uint _id) internal {
-        FundData storage fund = fundsById[_id];
+        FundData storage fund = termFunds[_id];
         address[] memory autoPayers = fund.beneficiariesOrder;
         uint amount = fund.contributionAmount;
 
@@ -443,7 +466,7 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @param _payer the address that's paying
     /// @param _participant the (participant) address that's being paid for
     function _payContribution(uint _id, address _payer, address _participant) internal {
-        FundData storage fund = fundsById[_id];
+        FundData storage fund = termFunds[_id];
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
         uint amount = fund.contributionAmount;
@@ -459,7 +482,7 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @notice Default the participant/beneficiary by checking the mapping first, then remove them from the appropriate array
     /// @param _defaulter The participant to default
     function _defaultParticipant(uint _id, address _defaulter) internal {
-        FundData storage fund = fundsById[_id];
+        FundData storage fund = termFunds[_id];
         // Try removing from participants first
         bool success = EnumerableSet.remove(fund.participants, _defaulter);
 
@@ -477,7 +500,7 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @notice The beneficiary will be selected here based on the beneficiariesOrder array.
     /// @notice It will loop through the array and choose the first in line to be eligible to be beneficiary.
     function _selectBeneficiary(uint _id) internal {
-        FundData storage fund = fundsById[_id];
+        FundData storage fund = termFunds[_id];
         // check if there are any participants left, else use the defaulters
         address selectedBeneficiary; // By default initialization is address(0)
         address[] memory arrayToCheck = fund.beneficiariesOrder;
@@ -572,7 +595,7 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @notice Called internally to move a defaulter in the beneficiariesOrder to the end, so that people who have paid get chosen first as beneficiary
     /// @param _beneficiary The defaulter that could have been beneficiary
     function _removeBeneficiaryFromOrder(uint _id, address _beneficiary) internal {
-        FundData storage fund = fundsById[_id];
+        FundData storage fund = termFunds[_id];
         address[] memory arrayToCheck = fund.beneficiariesOrder;
         uint arrayToCheckLength = arrayToCheck.length;
         address[] memory newArray = new address[](arrayToCheck.length - 1);
@@ -596,7 +619,7 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
     /// @param _expellant The address of the defaulter that will be expelled
     function _expelDefaulter(uint _id, address _expellant) internal {
-        FundData storage fund = fundsById[_id];
+        FundData storage fund = termFunds[_id];
         //require(msg.sender == address(collateral), "Caller is not collateral");
         require(
             isParticipant[_expellant][_id] && EnumerableSet.remove(fund.defaulters, _expellant),
@@ -629,7 +652,7 @@ contract FundFacet is IFundFacet, AccessControl {
 
     /// @notice Internal function for close fund which is used by _startNewCycle & _chooseBeneficiary to cover some edge-cases
     function _closeFund(uint _id) internal {
-        FundData storage fund = fundsById[_id];
+        FundData storage fund = termFunds[_id];
         fund.fundEnd = block.timestamp;
         _setState(_id, States.FundClosed);
         fund.collateral.releaseCollateral();
