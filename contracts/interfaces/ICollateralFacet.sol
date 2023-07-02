@@ -8,17 +8,11 @@ pragma solidity ^0.8.9;
 /// @dev v2.0 (post-deploy)
 interface ICollateralFacet {
     enum States {
-        AcceptingCollateral, //Initial state where collateral are deposited
-        CycleOngoing, //Triggered when a fund instance is created, no collateral can be accepted
-        ReleasingCollateral, //Triggered when the fund closes
-        Closed //Triggers when all participants withdraw their collaterals
+        AcceptingCollateral, // Initial state where collateral are deposited
+        CycleOngoing, // Triggered when a fund instance is created, no collateral can be accepted
+        ReleasingCollateral, // Triggered when the fund closes
+        Closed // Triggers when all participants withdraw their collaterals
     }
-
-    event OnStateChanged(uint indexed termId, States indexed oldState, States indexed newState);
-    event OnCollateralDeposited(uint indexed termId, address indexed user);
-    event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
-    event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
-    event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
 
     // Function cannot be called at this time.
     error FunctionInvalidAtThisState();

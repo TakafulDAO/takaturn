@@ -14,6 +14,12 @@ library LibCollateral {
         Closed // Triggered when all depositors withdraw their collaterals
     }
 
+    event OnStateChanged(uint indexed termId, States indexed oldState, States indexed newState);
+    event OnCollateralDeposited(uint indexed termId, address indexed user);
+    event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
+    event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
+    event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
+
     struct Collateral {
         CollateralStates state = CollateralStates.AcceptingCollateral;
         mapping(address => bool) isCollateralMember; // Determines if a depositor is a valid user
