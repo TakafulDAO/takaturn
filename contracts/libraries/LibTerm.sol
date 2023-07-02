@@ -6,8 +6,6 @@ pragma solidity 0.8.18;
 library LibTerm {
     bytes32 constant TERM_STORAGE_POSITION = keccak256("diamond.standard.term.storage");
 
-    // IMPORTANT: This struct should not be touched upon upgrade,
-    // one must create a second Term struct with only the new variables and add a new mapping in the TermStorage struct
     struct Term {
         uint totalParticipants;
         uint cycleTime;
