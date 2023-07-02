@@ -2,60 +2,57 @@
 pragma solidity 0.8.18;
 
 //import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {ICollateral} from "../interfaces/ICollateral.sol"
 
 library LibCollateral {
-    uint public constant COLLATERAL_VERSION = 2;
-    bytes32 constant TURN_SPECS_POSITION = keccak256("turn.specs.struct");
-    bytes32 constant TURN_GROUP_DATA = keccak256("turn.group.data.struct");
-    bytes32 constant COLLATERAL_MAPPINGS = keccak256("colateral.mappings.struct");
+    uint public constant FUND_VERSION = 2;
+    bytes32 constant FUND_STORAGE_POSITION = keccak256("diamond.standard.fund.storage");
+    bytes32 constant FUND_PARTICIPANT_STORAGE_POSITION = keccak256("diamond.standard.fund.participant.storage");
 
-    struct CollateralMappings {
-        mapping(address => bool) isCollateralMember; // Determines if a participant is a valid user
-        mapping(address => uint) collateralMembersBank; // Users main balance
-        mapping(address => uint) collateralPaymentBank; // Users reimbursement balance after someone defaults
+    enum States {
+        InitializingFund, // Time before the first cycle has started
+        AcceptingContributions, // Triggers at the start of a cycle
+        ChoosingBeneficiary, // Contributions are closed, beneficiary is chosen, people default etc.
+        CycleOngoing, // Time after beneficiary is chosen, up till the start of the next cycle
+        FundClosed // Triggers at the end of the last contribution period, no state changes after this
     }
 
-    // TODO: uint256 for all? Explicitness purposes
-    struct TurnSpecs {
-        uint totalParticipants;
-        uint collateralDeposit;
-        uint firstDepositTime;
-        uint cycleTime;
-        uint contributionAmount;
-        uint contributionPeriod;
-        uint counterMembers;
-        uint fixedCollateralEth;
+    struct FundStorage {
+        ICollateral immutable collateral; // Instance of the collateral
+        IERC20 immutable stableToken; // Instance of the stable token
+        States currentState = States.InitializingFund; // Variable to keep track of the different States
+        uint currentCycle; // Index of current cycle
+        uint fundStart; // Timestamp of the start of the fund
+        uint fundEnd; // Timestamp of the end of the fund
     }
 
-    struct TurnGroupData {
-        address[] participants;
-        address fundContract;
-        address stableCoinAddress;
-        address factoryContract;
+    struct FundParticipantStorage {
+        mapping(address => bool) public isParticipant; // Mapping to keep track of who's a participant or not
+        mapping(address => bool) public isBeneficiary; // Mapping to keep track of who's a beneficiary or not
+        mapping(address => bool) public paidThisCycle; // Mapping to keep track of who paid for this cycle
+        mapping(address => bool) public autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
+        mapping(address => uint) public beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
+        EnumerableSet.AddressSet private _participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
+        EnumerableSet.AddressSet private _beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
+        EnumerableSet.AddressSet private _defaulters; // Both participants and beneficiaries who have defaulted this cycle
+
+        address[] public beneficiariesOrder; // The correct order of who gets to be next beneficiary, determined by collateral contract
+        uint public expelledParticipants; // Total amount of participants that have been expelled so far
+
+        address public lastBeneficiary; // The last selected beneficiary, updates with every cycle
     }
 
-    function _turnSpecs() internal pure returns (TurnSpecs storage turnSpecs) {
-        bytes32 position = TURN_SPECS_POSITION;
+    function _fundStorage() internal pure returns (FundStorage storage fundStorage) {
+        bytes32 position = FUND_STORAGE_POSITION;
         assembly {
-            turnSpecs.slot := position
+            fundStorage.slot := position
         }
     }
 
-    function _turnGroupData() internal pure returns (TurnGroupData storage turnGroupData) {
-        bytes32 position = TURN_GROUP_DATA;
+    function _fundParticipantStorage() internal pure returns (FundParticipantStorage storage fundParticipantStorage) {
+        bytes32 position = FUND_PARTICIPANT_STORAGE_POSITION;
         assembly {
-            turnGroupData.slot := position
-        }
-    }
-
-    function _collateralMappings()
-        internal
-        pure
-        returns (CollateralMappings storage collateralMappings)
-    {
-        bytes32 position = COLLATERAL_MAPPINGS;
-        assembly {
-            collateralMappings.slot := position
+            fundParticipantStorage.slot := position
         }
     }
 }
