@@ -329,14 +329,6 @@ contract CollateralFacet is ICollateralFacet, Ownable {
         );
     }
 
-    function getParticipantSummary(address participant) external view returns (uint, uint, bool) {
-        return (
-            collateralMembersBank[participant],
-            collateralPaymentBank[participant],
-            isCollateralMember[participant]
-        );
-    }
-
     //todo: is the same as the last one
     function getDepositorSummary(address depositor) external view returns (uint, uint, bool) {
         return (
