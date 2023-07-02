@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.20;
 
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import "../interfaces/ICollateralFacet.sol";
-import "../interfaces/IFund.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {ICollateralFacet} from "../interfaces/ICollateralFacet.sol";
+import {IFund} from "../interfaces/IFund.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Takaturn
 /// @author Aisha El Allam
