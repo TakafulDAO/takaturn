@@ -16,8 +16,6 @@ library LibCollateral {
         FundClosed // Triggers at the end of the last contribution period, no state changes after this
     }
 
-    // IMPORTANT: This struct should not be touched upon upgrade,
-    // one must create a second Fund struct with only the new variables and add a new mapping in the FundStorage struct
     struct Fund {
         IERC20 stableToken; // Instance of the stable token
         FundStates currentState = FundStates.InitializingFund; // Variable to keep track of the different FundStates

@@ -14,8 +14,6 @@ library LibCollateral {
         Closed // Triggered when all depositors withdraw their collaterals
     }
 
-    // IMPORTANT: This struct should not be touched upon upgrade,
-    // one must create a second Collateral struct with only the new variables and add a new mapping in the CollateralStorage struct
     struct Collateral {
         CollateralStates state = CollateralStates.AcceptingCollateral;
         mapping(address => bool) isCollateralMember; // Determines if a depositor is a valid user
