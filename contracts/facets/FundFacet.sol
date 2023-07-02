@@ -40,7 +40,7 @@ contract FundFacet is IFundFacet {
         address stableTokenAddress;
         ICollateral collateral; // Instance of the collateral
         IERC20 stableToken; // Instance of the stable token
-        States currentState; // Current state of the fund
+        FundStates currentState; // Current state of the fund
         EnumerableSet.AddressSet participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
         EnumerableSet.AddressSet beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
         EnumerableSet.AddressSet defaulters; // Both participants and beneficiaries who have defaulted this cycle
@@ -53,23 +53,6 @@ contract FundFacet is IFundFacet {
     mapping(address => mapping(uint => bool)) public autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
     mapping(address => mapping(uint => uint)) public beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
     mapping(uint => FundData) private termFunds; // Term Id => Fund Data
-
-    event OnTermStart(
-        uint indexed id,
-        address indexed fundOwner,
-        address _stableTokenAddress,
-        uint cycleTime,
-        uint _contributionAmount
-    ); // Emits when a new fund is created
-    event OnStateChanged(uint indexed id, States indexed newState); // Emits when state has updated
-    event OnPaidContribution(uint indexed id, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
-    event OnBeneficiarySelected(uint indexed id, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
-    event OnFundWithdrawn(uint indexed id, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
-    event OnParticipantDefaulted(uint indexed id, address indexed defaulter); // Emits when a participant didn't pay this cycle's contribution
-    event OnParticipantUndefaulted(uint indexed id, address indexed undefaulter); // Emits when a participant was a defaulter before but started paying on time again for this cycle
-    event OnDefaulterExpelled(uint indexed id, address indexed expellant); // Emits when a defaulter can't compensate with the collateral
-    event OnTotalParticipantsUpdated(uint indexed id, uint indexed newLength); // Emits when the total participants lengths has changed from its initial value
-    event OnAutoPayToggled(address indexed participant, bool indexed enabled); // Emits when a participant succesfully toggles autopay
 
     /// Insufficient balance for transfer. Needed `required` but only
     /// `available` available.
@@ -112,13 +95,13 @@ contract FundFacet is IFundFacet {
                 fund.cycleTime * (fund.currentCycle - 1) + fund.fundStart + fund.contributionPeriod,
             "Still time to contribute"
         );
-        require(fund.currentState == States.AcceptingContributions, "Wrong state");
+        require(fund.currentState == FundStates.AcceptingContributions, "Wrong state");
 
         // We attempt to make the autopayers pay their contribution right away
         _autoPay(id);
 
         // Only then start choosing beneficiary
-        _setState(id, States.ChoosingBeneficiary);
+        _setState(id, FundStates.ChoosingBeneficiary);
 
         // We must check who hasn't paid and default them, check all participants based on beneficiariesOrder
         // To maintain the order and to properly push defaulters to the back based on that same order
@@ -162,7 +145,7 @@ contract FundFacet is IFundFacet {
     /// @dev This shouldn't happen, but is here in case there's an edge-case we didn't take into account, can possibly be removed in the future
     function selectBeneficiary(uint id) external onlyFundOwner(id) {
         FundData storage fund = termFunds[id];
-        require(fund.currentState == States.ChoosingBeneficiary, "Wrong state");
+        require(fund.currentState == FundStates.ChoosingBeneficiary, "Wrong state");
         _selectBeneficiary(id);
     }
 
@@ -178,7 +161,7 @@ contract FundFacet is IFundFacet {
     function emptyFundAfterEnd(uint id) external onlyFundOwner(id) {
         FundData storage fund = termFunds[id];
         require(
-            fund.currentState == States.FundClosed && block.timestamp > fund.fundEnd + 180 days,
+            fund.currentState == FundStates.FundClosed && block.timestamp > fund.fundEnd + 180 days,
             "Can't empty yet"
         );
 
@@ -200,7 +183,7 @@ contract FundFacet is IFundFacet {
     /// @notice This is the function participants call to pay the contribution
     function payContribution(uint id) external {
         FundData storage fund = termFunds[id];
-        require(fund.currentState == States.AcceptingContributions, "Wrong state");
+        require(fund.currentState == FundStates.AcceptingContributions, "Wrong state");
         require(isParticipant[msg.sender][id], "Not a participant");
         require(!paidThisCycle[msg.sender][id], "Already paid for cycle");
         _payContribution(id, msg.sender, msg.sender);
@@ -210,7 +193,7 @@ contract FundFacet is IFundFacet {
     /// @param participant the address the msg.sender is paying for, the address must be part of the fund
     function payContributionOnBehalfOf(uint id, address participant) external {
         FundData storage fund = termFunds[id];
-        require(fund.currentState == States.AcceptingContributions, "Wrong state");
+        require(fund.currentState == FundStates.AcceptingContributions, "Wrong state");
         require(isParticipant[participant][id], "Not a participant");
         require(!paidThisCycle[participant][id], "Already paid for cycle");
         _payContribution(id, msg.sender, participant);
@@ -221,7 +204,7 @@ contract FundFacet is IFundFacet {
     function withdrawFund(uint id) external {
         FundData storage fund = termFunds[id];
         require(
-            fund.currentState == States.FundClosed || paidThisCycle[msg.sender][id],
+            fund.currentState == FundStates.FundClosed || paidThisCycle[msg.sender][id],
             "You must pay your cycle before withdrawing"
         );
 
@@ -262,7 +245,7 @@ contract FundFacet is IFundFacet {
     /// @notice returns the time left to contribute for this cycle
     function getRemainingContributionTime(uint id) external view returns (uint) {
         FundData storage fund = termFunds[id];
-        if (fund.currentState != States.AcceptingContributions) {
+        if (fund.currentState != FundStates.AcceptingContributions) {
             return 0;
         }
 
@@ -285,7 +268,7 @@ contract FundFacet is IFundFacet {
     }
 
     /// @notice function to get the cycle information in one go
-    function getFundSummary(uint id) external view returns (States, uint, address) {
+    function getFundSummary(uint id) external view returns (FundStates, uint, address) {
         FundData storage fund = termFunds[id];
         return (fund.currentState, fund.currentCycle, fund.lastBeneficiary);
     }
@@ -347,7 +330,7 @@ contract FundFacet is IFundFacet {
         fund.stableTokenAddress = _stableTokenAddress;
         fund.collateral = ICollateral(msg.sender); // TODO: Check when the collateral facet is ready
         fund.stableToken = IERC20(_stableTokenAddress);
-        fund.currentState = States.InitializingFund; // TODO: Actual state?
+        fund.currentState = FundStates.InitializingFund; // TODO: Actual state?
         fund.beneficiariesOrder = new address[](_totalParticipants);
 
         termId++;
@@ -374,7 +357,7 @@ contract FundFacet is IFundFacet {
 
     function _startTerm(uint256 _id) internal {
         FundData storage fund = termFunds[_id];
-        fund.currentState = States.InitializingFund;
+        fund.currentState = FundStates.InitializingFund;
 
         uint participantsArrayLength = fund.beneficiariesOrder.length;
 
@@ -405,9 +388,9 @@ contract FundFacet is IFundFacet {
 
     /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
     /// @param _newState The new state of the fund
-    function _setState(uint _id, States _newState) internal {
+    function _setState(uint _id, FundStates _newState) internal {
         FundData storage fund = termFunds[_id];
-        require(fund.currentState != States.FundClosed, "Fund closed");
+        require(fund.currentState != FundStates.FundClosed, "Fund closed");
         fund.currentState = _newState;
         emit OnStateChanged(_id, _newState);
     }
@@ -421,8 +404,8 @@ contract FundFacet is IFundFacet {
             "Too early to start new cycle"
         );
         require(
-            fund.currentState == States.InitializingFund ||
-                fund.currentState == States.CycleOngoing,
+            fund.currentState == FundStates.InitializingFund ||
+                fund.currentState == FundStates.CycleOngoing,
             "Wrong state"
         );
 
@@ -435,7 +418,7 @@ contract FundFacet is IFundFacet {
             }
         }
 
-        _setState(_id, States.AcceptingContributions);
+        _setState(_id, FundStates.AcceptingContributions);
 
         // We attempt to make the autopayers pay their contribution right away
         _autoPay(_id);
@@ -590,7 +573,7 @@ contract FundFacet is IFundFacet {
         fund.lastBeneficiary = selectedBeneficiary;
 
         emit OnBeneficiarySelected(_id, selectedBeneficiary);
-        _setState(_id, States.CycleOngoing);
+        _setState(_id, FundStates.CycleOngoing);
     }
 
     /// @notice Called internally to move a defaulter in the beneficiariesOrder to the end, so that people who have paid get chosen first as beneficiary
@@ -655,7 +638,7 @@ contract FundFacet is IFundFacet {
     function _closeFund(uint _id) internal {
         FundData storage fund = termFunds[_id];
         fund.fundEnd = block.timestamp;
-        _setState(_id, States.FundClosed);
+        _setState(_id, FundStates.FundClosed);
         fund.collateral.releaseCollateral();
     }
 }
