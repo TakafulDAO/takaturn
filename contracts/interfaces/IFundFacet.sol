@@ -7,13 +7,7 @@ pragma solidity ^0.8.18;
 /// @notice This is used to allow collateral to easily communicate with fund
 /// @dev v2.0 (post-deploy)
 interface IFundFacet {
-    enum States {
-        InitializingFund, // Time before the first cycle has started
-        AcceptingContributions, // Triggers at the start of a cycle
-        ChoosingBeneficiary, // Contributions are closed, beneficiary is chosen, people default etc.
-        CycleOngoing, // Time after beneficiary is chosen, up till the start of the next cycle
-        FundClosed // Triggers at the end of the last contribution period, no state changes after this
-    }
+
 
     function createTerm(
         uint cycleTime,

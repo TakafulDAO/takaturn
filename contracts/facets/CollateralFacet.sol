@@ -14,17 +14,13 @@ import "../interfaces/IFundFacet.sol";
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
 contract CollateralFacet is ICollateral, Ownable {
-    uint public constant version = 2;
+    uint public constant VERSION = 2;
 
     IFundFacet private _fundInstance;
 
     uint public firstDepositTime;
 
     uint public counterMembers;
-
-    mapping(address => bool) public isCollateralMember; // Determines if a participant is a valid user
-    mapping(address => uint) public collateralMembersBank; // Users main balance
-    mapping(address => uint) public collateralPaymentBank; // Users reimbursement balance after someone defaults
 
     address[] public participants;
     address public fundContract;
@@ -51,7 +47,7 @@ contract CollateralFacet is ICollateral, Ownable {
     }
 
     // ! For now here, later I'll move it
-    uint public collateralId; // The id of the fund, incremented on every new fund
+    uint public collateralId; // The id of the term, incremented on every new term
     mapping(uint => CollateralData) private collateralById; // Collateral Id => Collateral Data
 
     struct CollateralData {
@@ -63,6 +59,9 @@ contract CollateralFacet is ICollateral, Ownable {
         uint fixedCollateralEth;
         address stableCoinAddress;
         AggregatorV3Interface priceFeed;
+        mapping(address => bool) public isCollateralMember; // Determines if a participant is a valid user
+        mapping(address => uint) public collateralMembersBank; // Users main balance
+        mapping(address => uint) public collateralPaymentBank; // Users reimbursement balance after someone defaults
     }
 
     function newCollateral(
@@ -153,12 +152,12 @@ contract CollateralFacet is ICollateral, Ownable {
     /// @notice Called by the manager when the cons job goes off
     /// @dev consider making the duration a variable
     function initiateFundContract(
-        uint fundId
+        uint termId
     ) external onlyOwner atState(States.AcceptingCollateral) {
         require(fundContract == address(0));
         require(counterMembers == totalParticipants);
         // If one user is under collaterized, then all are.
-        require(!_isUnderCollaterized(fundId, participants[0]), "Eth prices dropped");
+        require(!_isUnderCollaterized(termId, participants[0]), "Eth prices dropped");
 
         fundContract = ITakaturnFactory(factoryContract).createFund(
             stableCoinAddress,
@@ -197,7 +196,7 @@ contract CollateralFacet is ICollateral, Ownable {
     /// @param beneficiary Address that was randomly selected for the current cycle
     /// @param defaulters Address that was randomly selected for the current cycle
     function requestContribution(
-        uint fundId,
+        uint termId,
         address beneficiary,
         address[] calldata defaulters
     ) external atState(States.CycleOngoing) returns (address[] memory) {
@@ -222,13 +221,13 @@ contract CollateralFacet is ICollateral, Ownable {
         // From their collateral.
         for (uint i = 0; i < defaulters.length; i++) {
             currentDefaulter = defaulters[i];
-            wasBeneficiary = _fundInstance.isBeneficiary(currentDefaulter, fundId);
+            wasBeneficiary = _fundInstance.isBeneficiary(currentDefaulter, termId);
             currentDefaulterBank = collateralMembersBank[currentDefaulter];
 
             if (currentDefaulter == ben) continue; // Avoid expelling graced defaulter
 
             if (
-                (wasBeneficiary && _isUnderCollaterized(fundId, currentDefaulter)) ||
+                (wasBeneficiary && _isUnderCollaterized(termId, currentDefaulter)) ||
                 (currentDefaulterBank < contributionAmountWei)
             ) {
                 isCollateralMember[currentDefaulter] = false; // Expelled!
@@ -251,7 +250,7 @@ contract CollateralFacet is ICollateral, Ownable {
         for (uint i = 0; i < participants.length; i++) {
             currentParticipant = participants[i];
             if (
-                !_fundInstance.isBeneficiary(currentParticipant, fundId) &&
+                !_fundInstance.isBeneficiary(currentParticipant, termId) &&
                 isCollateralMember[currentParticipant]
             ) {
                 nonBeneficiaries[nonBeneficiaryCounter] = currentParticipant;
@@ -312,15 +311,15 @@ contract CollateralFacet is ICollateral, Ownable {
     /// @dev This will revert if called during ReleasingCollateral or after
     /// @param member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
-    function isUnderCollaterized(uint fundId, address member) external view returns (bool) {
-        return _isUnderCollaterized(fundId, member);
+    function isUnderCollaterized(uint termId, address member) external view returns (bool) {
+        return _isUnderCollaterized(termId, member);
     }
 
     /// @notice allow the owner to empty the Collateral after 180 days
     function emptyCollateralAfterEnd(
-        uint fundId
+        uint termId
     ) external onlyOwner atState(States.ReleasingCollateral) {
-        require(block.timestamp > (_fundInstance.fundEnd(fundId)) + 180 days, "Can't empty yet");
+        require(block.timestamp > (_fundInstance.fundEnd(termId)) + 180 days, "Can't empty yet");
 
         for (uint i = 0; i < participants.length; i++) {
             address participant = participants[i];
@@ -394,13 +393,13 @@ contract CollateralFacet is ICollateral, Ownable {
     /// @dev This will revert if called during ReleasingCollateral or after
     /// @param member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
-    function _isUnderCollaterized(uint fundId, address member) internal view returns (bool) {
+    function _isUnderCollaterized(uint termId, address member) internal view returns (bool) {
         uint collateralLimit;
         uint memberCollateralUSD;
         if (fundContract == address(0)) {
             collateralLimit = totalParticipants * contributionAmount * 10 ** 18;
         } else {
-            uint remainingCycles = 1 + counterMembers - _fundInstance.currentCycle(fundId);
+            uint remainingCycles = 1 + counterMembers - _fundInstance.currentCycle(termId);
             collateralLimit = remainingCycles * contributionAmount * 10 ** 18; // Convert to Wei
         }
 
