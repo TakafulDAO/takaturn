@@ -177,7 +177,7 @@ contract FundFacet is IFundFacet {
         bool enabled = !autoPayEnabled[msg.sender][id];
         autoPayEnabled[msg.sender][id] = enabled;
 
-        emit OnAutoPayToggled(msg.sender, enabled);
+        emit OnAutoPayToggled(id, msg.sender, enabled);
     }
 
     /// @notice This is the function participants call to pay the contribution

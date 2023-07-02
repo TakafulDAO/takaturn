@@ -27,14 +27,6 @@ contract CollateralFacet is ICollateral, Ownable {
 
     address public factoryContract;
 
-    event OnContractDeployed(address indexed newContract);
-    event OnFundContractDeployed(address indexed fund, address indexed collateral);
-    event OnStateChanged(CollateralStates indexed oldState, CollateralStates indexed newState);
-    event OnCollateralDeposited(address indexed user);
-    event OnReimbursementWithdrawn(address indexed user, uint indexed amount);
-    event OnCollateralWithdrawn(address indexed user, uint indexed amount);
-    event OnCollateralLiquidated(address indexed user, uint indexed amount);
-
     // Function cannot be called at this time.
     error FunctionInvalidAtThisState();
 
@@ -47,7 +39,7 @@ contract CollateralFacet is ICollateral, Ownable {
     }
 
     // ! For now here, later I'll move it
-    uint public collateralId; // The id of the term, incremented on every new term
+    uint public termId; // The id of the term, incremented on every new term
     mapping(uint => CollateralData) private collateralById; // Collateral Id => Collateral Data
 
     struct CollateralData {
@@ -129,7 +121,7 @@ contract CollateralFacet is ICollateral, Ownable {
         // ! Viene del constructor
         transferOwnership(_creator); // TODO: later change for access control
 
-        CollateralData storage collateral = collateralById[collateralId];
+        CollateralData storage collateral = collateralById[termId];
 
         collateral.totalDepositors = _totalDepositors;
         collateral.cycleTime = _cycleTime;
@@ -141,8 +133,8 @@ contract CollateralFacet is ICollateral, Ownable {
         collateral.priceFeed = AggregatorV3Interface(_aggregatorAddress); // TODO: Where to initialize
 
         // ! Hasta aqui viene del constructor
-        ++collateralId;
-        return collateralId;
+        ++termId;
+        return termId;
     }
 
     function setStateOwner(CollateralStates newState) external onlyOwner {
@@ -170,7 +162,7 @@ contract CollateralFacet is ICollateral, Ownable {
         // TODO: check for success before initiating instance
         _fundInstance = IFundFacet(fundContract);
         _setState(CollateralStates.CycleOngoing);
-        emit OnFundContractDeployed(fundContract, address(this));
+        //emit OnFundStarted(fundContract, address(this));
     }
 
     /// @notice Called by each member to enter the term
@@ -184,7 +176,7 @@ contract CollateralFacet is ICollateral, Ownable {
         depositors.push(msg.sender);
         counterMembers++;
 
-        emit OnCollateralDeposited(msg.sender);
+        emit OnCollateralDeposited(termId, msg.sender);
 
         if (counterMembers == 1) {
             firstDepositTime = block.timestamp;
@@ -236,7 +228,7 @@ contract CollateralFacet is ICollateral, Ownable {
                 collateralMembersBank[currentDefaulter] = 0;
                 totalExpellants++;
 
-                emit OnCollateralLiquidated(address(currentDefaulter), currentDefaulterBank);
+                emit OnCollateralLiquidated(termId, address(currentDefaulter), currentDefaulterBank);
             } else {
                 // Subtract contribution from defaulter and add to beneficiary.
                 collateralMembersBank[currentDefaulter] -= contributionAmountWei;
@@ -281,7 +273,7 @@ contract CollateralFacet is ICollateral, Ownable {
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success);
 
-        emit OnCollateralWithdrawn(msg.sender, amount);
+        emit OnCollateralWithdrawn(termId, msg.sender, amount);
 
         --counterMembers;
         // If last person withdraws, then change state to EOL
@@ -299,7 +291,7 @@ contract CollateralFacet is ICollateral, Ownable {
         (bool success, ) = payable(depositor).call{value: amount}("");
         require(success);
 
-        emit OnReimbursementWithdrawn(depositor, amount);
+        emit OnReimbursementWithdrawn(termId, depositor, amount);
     }
 
     function releaseCollateral() external {
@@ -368,7 +360,7 @@ contract CollateralFacet is ICollateral, Ownable {
     function _setState(CollateralStates newState) internal {
         CollateralStates oldState = state;
         state = newState;
-        emit OnStateChanged(oldState, newState);
+        emit OnStateChanged(termId, oldState, newState);
     }
 
     /// @notice Gets the conversion rate of an amount in USD to ETH
