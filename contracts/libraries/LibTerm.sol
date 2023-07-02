@@ -15,6 +15,7 @@ library LibTerm {
         uint fixedCollateralEth;
         address stableTokenAddress;
         address aggregatorAddress;
+        address owner;
         uint creationTime;
     }
 
