@@ -6,14 +6,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import "../interfaces/ITakaturnFactory.sol";
-import "../interfaces/ICollateral.sol";
+import "../interfaces/ICollateralFacet.sol";
 import "../interfaces/IFundFacet.sol";
 
 /// @title Takaturn
 /// @author Aisha El Allam
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
-contract CollateralFacet is ICollateral, Ownable {
+contract CollateralFacet is ICollateralFacet, Ownable {
     uint public constant VERSION = 2;
 
     IFundFacet private _fundInstance;

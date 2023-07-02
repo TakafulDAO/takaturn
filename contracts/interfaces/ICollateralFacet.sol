@@ -6,7 +6,7 @@ pragma solidity ^0.8.9;
 /// @author Aisha EL Allam
 /// @notice This is used to allow fund to easily communicate with collateral
 /// @dev v2.0 (post-deploy)
-interface ICollateral {
+interface ICollateralFacet {
     enum States {
         AcceptingCollateral, //Initial state where collateral are deposited
         CycleOngoing, //Triggered when a fund instance is created, no collateral can be accepted
