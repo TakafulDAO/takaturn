@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.18;
 
-import {AccessControl} from "@solidstate/contracts/access/access_control/AccessControl.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -13,7 +12,7 @@ import {ICollateral} from "../interfaces/ICollateral.sol";
 /// @author Mohammed Haddouti
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
-contract FundFacet is IFundFacet, AccessControl {
+contract FundFacet is IFundFacet {
     // TODO: Review auto pay logic
     // TODO: The fund owner can only interact with own fund
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -21,7 +20,10 @@ contract FundFacet is IFundFacet, AccessControl {
     uint public constant VERSION = 2; // The version of the contract
     uint public termId; // The id of the fund, incremented on every new fund
 
-    bytes32 public constant FUND_OWNER_ROLE = keccak256("FUND_OWNER_ROLE");
+    modifier onlyFundOwner(uint id) {
+        require(termFunds[id].fundOwner == msg.sender);
+        _;
+    }
 
     struct FundData {
         uint cycleTime; // time for a single cycle in seconds, default is 30 days
@@ -97,12 +99,12 @@ contract FundFacet is IFundFacet, AccessControl {
     }
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
-    function startNewCycle(uint id) external onlyRole(FUND_OWNER_ROLE) {
+    function startNewCycle(uint id) external onlyFundOwner(id) {
         _startNewCycle(id);
     }
 
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
-    function closeFundingPeriod(uint id) external onlyRole(FUND_OWNER_ROLE) {
+    function closeFundingPeriod(uint id) external onlyFundOwner(id) {
         FundData storage fund = termFunds[id];
         // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
         require(
@@ -158,14 +160,14 @@ contract FundFacet is IFundFacet, AccessControl {
 
     /// @notice Fallback function, if the internal call fails somehow and the state gets stuck, allow owner to call the function again manually
     /// @dev This shouldn't happen, but is here in case there's an edge-case we didn't take into account, can possibly be removed in the future
-    function selectBeneficiary(uint id) external onlyRole(FUND_OWNER_ROLE) {
+    function selectBeneficiary(uint id) external onlyFundOwner(id) {
         FundData storage fund = termFunds[id];
         require(fund.currentState == States.ChoosingBeneficiary, "Wrong state");
         _selectBeneficiary(id);
     }
 
     /// @notice called by the owner to close the fund for emergency reasons.
-    function closeFund(uint id) external onlyRole(FUND_OWNER_ROLE) {
+    function closeFund(uint id) external onlyFundOwner(id) {
         //require (!(currentCycle < totalAmountOfCycles), "Not all cycles have happened yet");
         _closeFund(id);
     }
@@ -173,7 +175,7 @@ contract FundFacet is IFundFacet, AccessControl {
     /// @notice allow the owner to empty the fund if there's any excess fund left after 180 days,
     ///         this with the assumption that beneficiaries can't claim it themselves due to losing their keys for example,
     ///         and prevent the fund to be stuck in limbo
-    function emptyFundAfterEnd(uint id) external onlyRole(FUND_OWNER_ROLE) {
+    function emptyFundAfterEnd(uint id) external onlyFundOwner(id) {
         FundData storage fund = termFunds[id];
         require(
             fund.currentState == States.FundClosed && block.timestamp > fund.fundEnd + 180 days,
@@ -327,7 +329,6 @@ contract FundFacet is IFundFacet, AccessControl {
                 _totalParticipants != 0,
             "Invalid inputs"
         );
-        _grantRole(FUND_OWNER_ROLE, msg.sender);
 
         FundData storage fund = termFunds[termId];
         // TODO: Check default values
