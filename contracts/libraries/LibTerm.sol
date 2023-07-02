@@ -7,11 +7,12 @@ library LibTerm {
     bytes32 constant TERM_STORAGE_POSITION = keccak256("diamond.standard.term.storage");
 
     struct Term {
+        bool initialized;
+        uint termId;
         uint totalParticipants;
         uint cycleTime;
         uint contributionAmount;
         uint contributionPeriod;
-        uint collateralAmount;
         uint fixedCollateralEth;
         address stableTokenAddress;
         address aggregatorAddress;
@@ -22,6 +23,10 @@ library LibTerm {
     struct TermStorage {
         uint nextTermId;
         mapping(uint => Term) terms; // termId => Term struct
+    }
+
+    function _termExists(uint termId) internal pure returns (bool) {
+        return _termStorage().terms[termId].initialized;
     }
 
     function _termStorage() internal pure returns (TermStorage storage termStorage) {

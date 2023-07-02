@@ -21,14 +21,22 @@ library LibCollateral {
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
 
     struct Collateral {
+        bool initialized;
         CollateralStates state = CollateralStates.AcceptingCollateral;
+        uint counterMembers;
+        address[] depositors;
         mapping(address => bool) isCollateralMember; // Determines if a depositor is a valid user
         mapping(address => uint) collateralMembersBank; // Users main balance
         mapping(address => uint) collateralPaymentBank; // Users reimbursement balance after someone defaults
+        uint firstDepositTime;
     }
 
     struct CollateralStorage {
         mapping(uint => CollateralStorage) collaterals; // termId => Collateral struct
+    }
+
+    function _collateralExists(uint termId) internal pure returns (bool) {
+        return _collateralStorage().collaterals[termId].initialized;
     }
 
     function _collateralStorage() internal pure returns (CollateralStorage storage collateralStorage) {

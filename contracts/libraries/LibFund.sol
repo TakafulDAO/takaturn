@@ -28,8 +28,11 @@ library LibCollateral {
     event OnAutoPayToggled(uint indexed termId, address indexed participant, bool indexed enabled); // Emits when a participant succesfully toggles autopay
 
     struct Fund {
-        IERC20 stableToken; // Instance of the stable token
+        bool initialized;
         FundStates currentState = FundStates.InitializingFund; // Variable to keep track of the different FundStates
+
+        IERC20 stableToken; // Instance of the stable token
+
         uint currentCycle; // Index of current cycle
         uint fundStart; // Timestamp of the start of the fund
         uint fundEnd; // Timestamp of the end of the fund
@@ -51,6 +54,10 @@ library LibCollateral {
 
     struct FundStorage {
         mapping(uint => Fund) funds; // termId => Fund struct
+    }
+
+    function _fundExists(uint termId) internal pure returns (bool) {
+        return _fundStorage().funds[termId].initialized;
     }
 
     function _fundStorage() internal pure returns (FundStorage storage fundStorage) {
