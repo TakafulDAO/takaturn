@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 //import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 library LibTerm {
+    uint public constant TERM_VERSION = 1;
     bytes32 constant TERM_STORAGE_POSITION = keccak256("diamond.standard.term.storage");
 
     struct Term {

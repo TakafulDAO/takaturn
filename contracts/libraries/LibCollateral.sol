@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 //import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 library LibCollateral {
-    uint public constant COLLATERAL_VERSION = 2;
+    uint public constant COLLATERAL_VERSION = 1;
     bytes32 constant COLLATERAL_STORAGE_POSITION = keccak256("diamond.standard.collateral.storage");
 
     enum CollateralStates {
@@ -23,12 +23,14 @@ library LibCollateral {
     struct Collateral {
         bool initialized;
         CollateralStates state = CollateralStates.AcceptingCollateral;
+
+        uint firstDepositTime;
         uint counterMembers;
         address[] depositors;
         mapping(address => bool) isCollateralMember; // Determines if a depositor is a valid user
         mapping(address => uint) collateralMembersBank; // Users main balance
         mapping(address => uint) collateralPaymentBank; // Users reimbursement balance after someone defaults
-        uint firstDepositTime;
+
     }
 
     struct CollateralStorage {
