@@ -7,7 +7,6 @@ import {ICollateral} from "../interfaces/ICollateral.sol"
 library LibCollateral {
     uint public constant FUND_VERSION = 2;
     bytes32 constant FUND_STORAGE_POSITION = keccak256("diamond.standard.fund.storage");
-    bytes32 constant FUND_PARTICIPANT_STORAGE_POSITION = keccak256("diamond.standard.fund.participant.storage");
 
     enum FundStates {
         InitializingFund, // Time before the first cycle has started
@@ -17,15 +16,15 @@ library LibCollateral {
         FundClosed // Triggers at the end of the last contribution period, no state changes after this
     }
 
-    struct FundStorage {
-        IERC20 immutable stableToken; // Instance of the stable token
+    // IMPORTANT: This struct should not be touched upon upgrade,
+    // one must create a second Fund struct with only the new variables and add a new mapping in the FundStorage struct
+    struct Fund {
+        IERC20 stableToken; // Instance of the stable token
         FundStates currentState = FundStates.InitializingFund; // Variable to keep track of the different FundStates
         uint currentCycle; // Index of current cycle
         uint fundStart; // Timestamp of the start of the fund
         uint fundEnd; // Timestamp of the end of the fund
-    }
 
-    struct FundParticipantStorage {
         mapping(address => bool) public isParticipant; // Mapping to keep track of who's a participant or not
         mapping(address => bool) public isBeneficiary; // Mapping to keep track of who's a beneficiary or not
         mapping(address => bool) public paidThisCycle; // Mapping to keep track of who paid for this cycle
@@ -41,17 +40,14 @@ library LibCollateral {
         address public lastBeneficiary; // The last selected beneficiary, updates with every cycle
     }
 
+    struct FundStorage {
+        mapping(uint => Fund) funds; // termId => Fund struct
+    }
+
     function _fundStorage() internal pure returns (FundStorage storage fundStorage) {
         bytes32 position = FUND_STORAGE_POSITION;
         assembly {
             fundStorage.slot := position
-        }
-    }
-
-    function _fundParticipantStorage() internal pure returns (FundParticipantStorage storage fundParticipantStorage) {
-        bytes32 position = FUND_PARTICIPANT_STORAGE_POSITION;
-        assembly {
-            fundParticipantStorage.slot := position
         }
     }
 }
