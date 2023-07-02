@@ -5,57 +5,38 @@ pragma solidity 0.8.18;
 
 library LibCollateral {
     uint public constant COLLATERAL_VERSION = 2;
-    bytes32 constant TURN_SPECS_POSITION = keccak256("turn.specs.struct");
-    bytes32 constant TURN_GROUP_DATA = keccak256("turn.group.data.struct");
-    bytes32 constant COLLATERAL_MAPPINGS = keccak256("colateral.mappings.struct");
+    bytes32 constant COLLATERAL_STORAGE_POSITION = keccak256("diamond.standard.collateral.storage");
+    bytes32 constant COLLATERAL_PARTICIPANT_STORAGE_POSITION = keccak256("diamond.standard.collateral.participant.storage");
 
-    struct CollateralMappings {
-        mapping(address => bool) isCollateralMember; // Determines if a participant is a valid user
+    enum CollateralStates {
+        AcceptingCollateral, // Initial state where collateral are deposited
+        CycleOngoing, // Triggered when a fund instance is created, no collateral can be accepted
+        ReleasingCollateral, // Triggered when the fund closes
+        Closed // Triggered when all depositors withdraw their collaterals
+    }
+
+    struct CollateralStorage {
+        CollateralStates state = CollateralStates.AcceptingCollateral;
+        uint creationTime;
+    }
+
+    struct CollateralParticipantStorage {
+        mapping(address => bool) isCollateralMember; // Determines if a depositor is a valid user
         mapping(address => uint) collateralMembersBank; // Users main balance
         mapping(address => uint) collateralPaymentBank; // Users reimbursement balance after someone defaults
     }
 
-    // TODO: uint256 for all? Explicitness purposes
-    struct TurnSpecs {
-        uint totalParticipants;
-        uint collateralDeposit;
-        uint firstDepositTime;
-        uint cycleTime;
-        uint contributionAmount;
-        uint contributionPeriod;
-        uint counterMembers;
-        uint fixedCollateralEth;
-    }
-
-    struct TurnGroupData {
-        address[] participants;
-        address fundContract;
-        address stableCoinAddress;
-        address factoryContract;
-    }
-
-    function _turnSpecs() internal pure returns (TurnSpecs storage turnSpecs) {
-        bytes32 position = TURN_SPECS_POSITION;
+    function _collateralStorage() internal pure returns (CollateralStorage storage collateralStorage) {
+        bytes32 position = COLLATERAL_STORAGE_POSITION;
         assembly {
-            turnSpecs.slot := position
+            collateralStorage.slot := position
         }
     }
 
-    function _turnGroupData() internal pure returns (TurnGroupData storage turnGroupData) {
-        bytes32 position = TURN_GROUP_DATA;
+    function _collateralParticipantStorage() internal pure returns (CollateralParticipantStorage storage collateralParticipantStorage) {
+        bytes32 position = COLLATERAL_PARTICIPANT_STORAGE_POSITION;
         assembly {
-            turnGroupData.slot := position
-        }
-    }
-
-    function _collateralMappings()
-        internal
-        pure
-        returns (CollateralMappings storage collateralMappings)
-    {
-        bytes32 position = COLLATERAL_MAPPINGS;
-        assembly {
-            collateralMappings.slot := position
+            collateralParticipantStorage.slot := position
         }
     }
 }

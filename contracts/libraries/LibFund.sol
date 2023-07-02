@@ -9,7 +9,7 @@ library LibCollateral {
     bytes32 constant FUND_STORAGE_POSITION = keccak256("diamond.standard.fund.storage");
     bytes32 constant FUND_PARTICIPANT_STORAGE_POSITION = keccak256("diamond.standard.fund.participant.storage");
 
-    enum States {
+    enum FundStates {
         InitializingFund, // Time before the first cycle has started
         AcceptingContributions, // Triggers at the start of a cycle
         ChoosingBeneficiary, // Contributions are closed, beneficiary is chosen, people default etc.
@@ -18,9 +18,8 @@ library LibCollateral {
     }
 
     struct FundStorage {
-        ICollateral immutable collateral; // Instance of the collateral
         IERC20 immutable stableToken; // Instance of the stable token
-        States currentState = States.InitializingFund; // Variable to keep track of the different States
+        FundStates currentState = FundStates.InitializingFund; // Variable to keep track of the different FundStates
         uint currentCycle; // Index of current cycle
         uint fundStart; // Timestamp of the start of the fund
         uint fundEnd; // Timestamp of the end of the fund
