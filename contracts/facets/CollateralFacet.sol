@@ -175,7 +175,7 @@ contract CollateralFacet is ICollateralFacet, Ownable {
         uint share;
         uint currentDefaulterBank;
 
-        uint contributionAmountWei = _getToEthConversionRate(
+        uint contributionAmountWei = getToEthConversionRate(
             collateral.contributionAmount * 10 ** 18
         );
 
@@ -353,6 +353,25 @@ contract CollateralFacet is ICollateralFacet, Ownable {
         return uint(price * 10 ** 10); //18 decimals
     }
 
+    /// @notice Gets the conversion rate of an amount in USD to ETH
+    /// @dev should we always deal with in Wei?
+    /// @return uint converted amount in wei
+    function getToEthConversionRate(uint USDAmount) public view returns (uint) {
+        uint ethPrice = getLatestPrice();
+        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice; //* 10 ** 18;
+        return USDAmountInEth;
+    }
+
+    /// @notice Gets the conversion rate of an amount in ETH to USD
+    /// @dev should we always deal with in Wei?
+    /// @return uint converted amount in USD correct to 18 decimals
+    function getToUSDConversionRate(uint ethAmount) public view returns (uint) {
+        // NOTE: This will be made internal
+        uint ethPrice = getLatestPrice();
+        uint ethAmountInUSD = (ethPrice * ethAmount) / 10 ** 18;
+        return ethAmountInUSD;
+    }
+
     // TODO: For now just moving constructor here, later I'll see how to interact with the Fund Facet
     /// @notice Constructor Function
     /// @dev Network is Arbitrum One and Aggregator is ETH/USD
@@ -416,30 +435,11 @@ contract CollateralFacet is ICollateralFacet, Ownable {
         return termId;
     }
 
-    function _setState(uint id, CollateralStates newState) internal {
-        CollateralData storage collateral = collateralById[id];
+    function _setState(uint _id, CollateralStates _newState) internal {
+        CollateralData storage collateral = collateralById[_id];
         CollateralStates oldState = collateral.currentCollateralState;
-        collateral.currentCollateralState = newState;
-        emit OnStateChanged(id, oldState, newState);
-    }
-
-    /// @notice Gets the conversion rate of an amount in USD to ETH
-    /// @dev should we always deal with in Wei?
-    /// @return uint converted amount in wei
-    function _getToEthConversionRate(uint USDAmount) public view returns (uint) {
-        uint ethPrice = getLatestPrice();
-        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice; //* 10 ** 18;
-        return USDAmountInEth;
-    }
-
-    /// @notice Gets the conversion rate of an amount in ETH to USD
-    /// @dev should we always deal with in Wei?
-    /// @return uint converted amount in USD correct to 18 decimals
-    function _getToUSDConversionRate(uint ethAmount) public view returns (uint) {
-        // NOTE: This will be made internal
-        uint ethPrice = getLatestPrice();
-        uint ethAmountInUSD = (ethPrice * ethAmount) / 10 ** 18;
-        return ethAmountInUSD;
+        collateral.currentCollateralState = _newState;
+        emit OnStateChanged(_id, oldState, _newState);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
@@ -461,7 +461,7 @@ contract CollateralFacet is ICollateralFacet, Ownable {
             collateralLimit = remainingCycles * collateral.contributionAmount * 10 ** 18; // Convert to Wei
         }
 
-        memberCollateralUSD = _getToUSDConversionRate(collateralMembersBank[member]);
+        memberCollateralUSD = getToUSDConversionRate(collateralMembersBank[member]);
 
         return (memberCollateralUSD < collateralLimit);
     }
