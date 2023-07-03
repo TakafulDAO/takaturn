@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IFund} from "../interfaces/IFund.sol";
-import {ICollateralFacet} from "../interfaces/ICollateralFacet.sol";
+import {ICollateral} from "../interfaces/ICollateral.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {LibFund} from "../libraries/LibFund.sol";
@@ -24,6 +24,27 @@ contract FundFacet is IFund {
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
         require(term.owner == msg.sender);
         _;
+    }
+
+    function initFund(uint termId) external {
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        uint participantsArrayLength = fund.beneficiariesOrder.length;
+        // Set and track participants
+        for (uint i; i < participantsArrayLength; ) {
+            EnumerableSet.add(fund._participants, fund.beneficiariesOrder[i]);
+            fund.isParticipant[fund.beneficiariesOrder[i]] = true;
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Starts the first cycle
+        _startNewCycle(termId);
+
+        // Set timestamp of deployment, which will be used to determine cycle times
+        // We do this after starting the first cycle to make sure the first cycle starts smoothly
+        fund.fundStart = block.timestamp;
+        emit LibFund.OnTermStart(termId);
     }
 
     /// Insufficient balance for transfer. Needed `required` but only

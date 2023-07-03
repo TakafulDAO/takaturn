@@ -4,7 +4,7 @@ pragma solidity 0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {ICollateralFacet} from "../interfaces/ICollateralFacet.sol";
+import {ICollateral} from "../interfaces/ICollateral.sol";
 
 library LibFund {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -51,16 +51,16 @@ library LibFund {
         uint expelledParticipants; // Total amount of participants that have been expelled so far
         address lastBeneficiary; // The last selected beneficiary, updates with every cycle
         uint totalAmountOfCycles; // TODO: this one is needed. Here or in term better?
-        ICollateralFacet collateral; // TODO: check later if it has to be here, but it has to initialize somewhere
+        ICollateral collateral; // TODO: check later if it has to be here, but it has to initialize somewhere
     }
 
     struct FundStorage {
         mapping(uint => Fund) funds; // termId => Fund struct
     }
 
-    // function _fundExists(uint termId) internal pure returns (bool) {
-    //     return _fundStorage().funds[termId].initialized;
-    // }
+    function _fundExists(uint termId) internal view returns (bool) {
+        return _fundStorage().funds[termId].initialized;
+    }
 
     function _fund() internal pure returns (Fund storage fund) {
         bytes32 position = FUND_POSITION;
