@@ -6,6 +6,8 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 import {ICollateralFacet} from "../interfaces/ICollateralFacet.sol";
 import {IFund} from "../interfaces/IFund.sol";
 
+import {LibCollateral} from "../libraries/LibCollateral.sol";
+
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Takaturn
@@ -38,27 +40,17 @@ contract CollateralFacet is ICollateralFacet, Ownable {
         address[] depositors;
     }
 
-    enum CollateralStates {
-        AcceptingCollateral, // Initial state where collateral are deposited
-        CycleOngoing, // Triggered when a fund instance is created, no collateral can be accepted
-        ReleasingCollateral, // Triggered when the fund closes
-        Closed // Triggered when all depositors withdraw their collaterals
-    }
-
     mapping(uint => CollateralData) private collateralById; // Collateral Id => Collateral Data
     mapping(address => bool) public isCollateralMember; // Determines if a depositor is a valid user
     mapping(address => uint) public collateralMembersBank; // Users main balance
     mapping(address => uint) public collateralPaymentBank; // Users reimbursement balance after someone defaults
 
+    // todo: why can not call from storage?
     event OnStateChanged(
         uint indexed termId,
         CollateralStates indexed oldState,
         CollateralStates indexed newState
     );
-    event OnCollateralDeposited(uint indexed termId, address indexed user);
-    event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
-    event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
-    event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
 
     modifier atState(CollateralStates _state) {
         if (state != _state) revert FunctionInvalidAtThisState();
@@ -138,7 +130,7 @@ contract CollateralFacet is ICollateralFacet, Ownable {
         for (uint i; i < depositorsLength; ) {
             if (collateral.depositors[i] == address(0)) {
                 collateral.depositors[i] = msg.sender;
-                emit OnCollateralDeposited(termId, msg.sender);
+                emit LibCollateral.OnCollateralDeposited(termId, msg.sender);
                 if (collateral.counterMembers == 1) {
                     collateral.firstDepositTime = block.timestamp;
                 }
@@ -199,7 +191,7 @@ contract CollateralFacet is ICollateralFacet, Ownable {
                 collateralMembersBank[currentDefaulter] = 0;
                 totalExpellants++;
 
-                emit OnCollateralLiquidated(
+                emit LibCollateral.OnCollateralLiquidated(
                     termId,
                     address(currentDefaulter),
                     currentDefaulterBank
@@ -256,7 +248,7 @@ contract CollateralFacet is ICollateralFacet, Ownable {
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success);
 
-        emit OnCollateralWithdrawn(id, msg.sender, amount);
+        emit LibCollateral.OnCollateralWithdrawn(id, msg.sender, amount);
 
         --collateral.counterMembers;
         // If last person withdraws, then change state to EOL
@@ -275,7 +267,7 @@ contract CollateralFacet is ICollateralFacet, Ownable {
         (bool success, ) = payable(depositor).call{value: amount}("");
         require(success);
 
-        emit OnReimbursementWithdrawn(termId, depositor, amount);
+        emit LibCollateral.OnReimbursementWithdrawn(termId, depositor, amount);
     }
 
     function releaseCollateral(uint id) external {

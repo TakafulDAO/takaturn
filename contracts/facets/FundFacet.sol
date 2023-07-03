@@ -1,18 +1,33 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {IFund} from "../interfaces/IFund.sol";
+import {ICollateralFacet} from "../interfaces/ICollateralFacet.sol";
 
-import {IFundFacet} from "../interfaces/IFundFacet.sol";
-import {ICollateral} from "../interfaces/ICollateral.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {LibFund} from "../libraries/LibFund.sol";
 
 /// @title Takaturn Fund
 /// @author Mohammed Haddouti
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
-contract FundFacet is IFundFacet {
+contract FundFacet is IFund {
+    //Todo: For now here only until I point to the storage
+    // Todo: remove later
+    enum FundStates {
+        InitializingFund, // Time before the first cycle has started
+        AcceptingContributions, // Triggers at the start of a cycle
+        ChoosingBeneficiary, // Contributions are closed, beneficiary is chosen, people default etc.
+        CycleOngoing, // Time after beneficiary is chosen, up till the start of the next cycle
+        FundClosed // Triggers at the end of the last contribution period, no state changes after this
+    }
+
+    // todo: why can not call from storage?
+    event OnStateChanged(uint indexed termId, FundStates indexed newState); // Emits when state has updated
+
+    // ! Hasta aqui en el storage
     // TODO: Review auto pay logic
     // TODO: The fund owner can only interact with own fund
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -38,7 +53,7 @@ contract FundFacet is IFundFacet {
         address lastBeneficiary; // The last selected beneficiary, updates with every cycle
         address fundOwner;
         address stableTokenAddress;
-        ICollateral collateral; // Instance of the collateral
+        ICollateralFacet collateral; // Instance of the collateral
         IERC20 stableToken; // Instance of the stable token
         FundStates currentState; // Current state of the fund
         EnumerableSet.AddressSet participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
@@ -77,8 +92,22 @@ contract FundFacet is IFundFacet {
     }
 
     // TODO: Still needs to call the collateral, for now only adds the participant
-    function joinTerm(uint id) external {
-        _joinTerm(id);
+    function joinTerm(uint id) external payable {
+        FundData storage fund = termFunds[id];
+        fund.collateral.depositCollateral{value: msg.value}(id); // TODO: Check for success. On collateral,  msg.sender or tx.origin?
+        uint beneficiariesLength = fund.beneficiariesOrder.length;
+        for (uint i; i < beneficiariesLength; ) {
+            if (fund.beneficiariesOrder[i] == address(0)) {
+                fund.beneficiariesOrder[i] = msg.sender;
+                if (i == fund.beneficiariesOrder.length - 1) {
+                    _startTerm(id);
+                }
+                break;
+            }
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
@@ -121,7 +150,7 @@ contract FundFacet is IFundFacet {
                 }
 
                 if (EnumerableSet.remove(fund.defaulters, p)) {
-                    emit OnParticipantUndefaulted(id, p);
+                    emit LibFund.OnParticipantUndefaulted(id, p);
                 }
             } else if (!EnumerableSet.contains(fund.defaulters, p)) {
                 _defaultParticipant(id, p);
@@ -177,7 +206,7 @@ contract FundFacet is IFundFacet {
         bool enabled = !autoPayEnabled[msg.sender][id];
         autoPayEnabled[msg.sender][id] = enabled;
 
-        emit OnAutoPayToggled(id, msg.sender, enabled);
+        emit LibFund.OnAutoPayToggled(id, msg.sender, enabled);
     }
 
     /// @notice This is the function participants call to pay the contribution
@@ -209,7 +238,7 @@ contract FundFacet is IFundFacet {
         );
 
         bool hasFundPool = beneficiariesPool[msg.sender][id] > 0;
-        (, uint collateralPool, ) = fund.collateral.getParticipantSummary(msg.sender);
+        (, uint collateralPool, ) = fund.collateral.getDepositorSummary(msg.sender);
         bool hasCollateralPool = collateralPool > 0;
         require(hasFundPool || hasCollateralPool, "Nothing to withdraw");
 
@@ -223,7 +252,7 @@ contract FundFacet is IFundFacet {
                 beneficiariesPool[msg.sender][id] = 0;
                 fund.stableToken.transfer(msg.sender, transferAmount); // Untrusted
             }
-            emit OnFundWithdrawn(id, msg.sender, transferAmount);
+            emit LibFund.OnFundWithdrawn(id, msg.sender, transferAmount);
         }
 
         if (hasCollateralPool) {
@@ -267,10 +296,11 @@ contract FundFacet is IFundFacet {
         return fund.beneficiariesOrder;
     }
 
+    // TODO: check return problems
     /// @notice function to get the cycle information in one go
-    function getFundSummary(uint id) external view returns (FundStates, uint, address) {
+    function getFundSummary(uint id) external view returns (/*FundStates, */ uint, address) {
         FundData storage fund = termFunds[id];
-        return (fund.currentState, fund.currentCycle, fund.lastBeneficiary);
+        return (/*fund.currentState, */ fund.currentCycle, fund.lastBeneficiary);
     }
 
     /// @notice function to get cycle information of a specific participant
@@ -298,6 +328,7 @@ contract FundFacet is IFundFacet {
         return fund.fundEnd;
     }
 
+    // TODO: This will have to create the new collateral struct and assign the termId with the collateral Id
     function _createTerm(
         uint _cycleTime,
         uint _contributionAmount,
@@ -328,7 +359,7 @@ contract FundFacet is IFundFacet {
         fund.lastBeneficiary;
         fund.fundOwner = msg.sender;
         fund.stableTokenAddress = _stableTokenAddress;
-        fund.collateral = ICollateral(msg.sender); // TODO: Check when the collateral facet is ready
+        fund.collateral = ICollateralFacet(msg.sender); // TODO: Check when the collateral facet is ready
         fund.stableToken = IERC20(_stableTokenAddress);
         fund.currentState = FundStates.InitializingFund; // TODO: Actual state?
         fund.beneficiariesOrder = new address[](_totalParticipants);
@@ -338,26 +369,28 @@ contract FundFacet is IFundFacet {
         return termId;
     }
 
-    function _joinTerm(uint id) internal {
-        FundData storage fund = termFunds[id];
-        uint beneficiariesLength = fund.beneficiariesOrder.length;
-        for (uint i; i < beneficiariesLength; ) {
-            if (fund.beneficiariesOrder[i] == address(0)) {
-                fund.beneficiariesOrder[i] = msg.sender;
-                if (i == fund.beneficiariesOrder.length - 1) {
-                    _startTerm(id);
-                }
-                break;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-    }
+    // TODO: Consider move this logic completly to joinTerm
+    // function _joinTerm(uint id) internal payable {
+    //     ICollateralFacet.depositCollateral{value: msg.value}(msg.sender); // TODO: Check for success
+    //     FundData storage fund = termFunds[id];
+    //     uint beneficiariesLength = fund.beneficiariesOrder.length;
+    //     for (uint i; i < beneficiariesLength; ) {
+    //         if (fund.beneficiariesOrder[i] == address(0)) {
+    //             fund.beneficiariesOrder[i] = msg.sender;
+    //             if (i == fund.beneficiariesOrder.length - 1) {
+    //                 _startTerm(id);
+    //             }
+    //             break;
+    //         }
+    //         unchecked {
+    //             ++i;
+    //         }
+    //     }
+    // }
 
     function _startTerm(uint256 _id) internal {
         FundData storage fund = termFunds[_id];
-        fund.currentState = FundStates.InitializingFund;
+        //currentState = FundStates.InitializingFund;
 
         uint participantsArrayLength = fund.beneficiariesOrder.length;
 
@@ -377,13 +410,7 @@ contract FundFacet is IFundFacet {
         // Set timestamp of deployment, which will be used to determine cycle times
         // We do this after starting the first cycle to make sure the first cycle starts smoothly
         fund.fundStart = block.timestamp;
-        emit OnTermStart(
-            termId,
-            msg.sender,
-            fund.stableTokenAddress,
-            fund.cycleTime,
-            fund.contributionAmount
-        );
+        emit LibFund.OnTermStart(termId);
     }
 
     /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
@@ -460,7 +487,7 @@ contract FundFacet is IFundFacet {
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
         paidThisCycle[_participant][_id] = true;
-        emit OnPaidContribution(_id, _participant, fund.currentCycle);
+        emit LibFund.OnPaidContribution(_id, _participant, fund.currentCycle);
     }
 
     /// @notice Default the participant/beneficiary by checking the mapping first, then remove them from the appropriate array
@@ -478,7 +505,7 @@ contract FundFacet is IFundFacet {
         require(success, "Can't remove defaulter");
         EnumerableSet.add(fund.defaulters, _defaulter);
 
-        emit OnParticipantDefaulted(_id, _defaulter);
+        emit LibFund.OnParticipantDefaulted(_id, _defaulter);
     }
 
     /// @notice The beneficiary will be selected here based on the beneficiariesOrder array.
@@ -572,7 +599,7 @@ contract FundFacet is IFundFacet {
         beneficiariesPool[selectedBeneficiary][_id] = fund.contributionAmount * paidCount;
         fund.lastBeneficiary = selectedBeneficiary;
 
-        emit OnBeneficiarySelected(_id, selectedBeneficiary);
+        emit LibFund.OnBeneficiarySelected(_id, selectedBeneficiary);
         _setState(_id, FundStates.CycleOngoing);
     }
 
@@ -619,7 +646,7 @@ contract FundFacet is IFundFacet {
         _removeBeneficiaryFromOrder(_id, _expellant);
 
         isParticipant[_expellant][_id] = false;
-        emit OnDefaulterExpelled(_id, _expellant);
+        emit LibFund.OnDefaulterExpelled(_id, _expellant);
 
         // If the participant is expelled before becoming beneficiary, we lose a cycle, the one which this expellant is becoming beneficiary
         if (!isBeneficiary[_expellant][_id]) {
@@ -631,7 +658,7 @@ contract FundFacet is IFundFacet {
         fund.totalParticipants = newLength;
         ++fund.expelledParticipants;
 
-        emit OnTotalParticipantsUpdated(_id, newLength);
+        emit LibFund.OnTotalParticipantsUpdated(_id, newLength);
     }
 
     /// @notice Internal function for close fund which is used by _startNewCycle & _chooseBeneficiary to cover some edge-cases
@@ -639,6 +666,6 @@ contract FundFacet is IFundFacet {
         FundData storage fund = termFunds[_id];
         fund.fundEnd = block.timestamp;
         _setState(_id, FundStates.FundClosed);
-        fund.collateral.releaseCollateral();
+        fund.collateral.releaseCollateral(_id);
     }
 }
