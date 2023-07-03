@@ -26,9 +26,9 @@ library LibTerm {
         mapping(uint => Term) terms; // termId => Term struct
     }
 
-    // function _termExists(uint termId) internal pure returns (bool) {
-    //     return _termStorage().terms[termId].initialized;
-    // }
+    function _termExists(uint termId) internal view returns (bool) {
+        return _termStorage().terms[termId].initialized;
+    }
 
     function _termStorage() internal pure returns (TermStorage storage termStorage) {
         bytes32 position = TERM_STORAGE_POSITION;

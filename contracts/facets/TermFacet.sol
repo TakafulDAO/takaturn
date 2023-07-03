@@ -1,22 +1,26 @@
-// SPDX-License-Identifier: GPL-3.0        
+// SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.9;
 
-import "./ITakaturnFactory.sol";
-import "./Collateral.sol";
-import "./Fund.sol";
+import {IFund} from "../interfaces/IFund.sol";
+import {ICollateral} from "../interfaces/ICollateral.sol";
+import {ITakaturnFactory} from "../interfaces/ITakaturnFactory.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
-import {LibFund} from "../libraries/LibFund.sol";
+
+import {FundFacet} from "./FundFacet.sol";
+import {CollateralFacet} from "./CollateralFacet.sol";
 
 /// @title Takaturn Factory
 /// @author Aisha El Allam / Mohammed Haddouti
 /// @notice This is used to deploy the collateral & fund contracts
 /// @dev v2.0 (post-deploy)
-contract TermFacet is ITakaturnFactory {
-
-    uint constant public VERSION = 1;
+// TODO: remove abstract keyword
+abstract contract TermFacet is ITakaturnFactory {
+    uint public constant VERSION = 1;
 
     function createTerm(
         uint totalParticipants,
@@ -27,15 +31,16 @@ contract TermFacet is ITakaturnFactory {
         address stableTokenAddress,
         address aggregatorAddress
     ) external returns (uint) {
-        return _createTerm(
-            totalParticipants,
-            cycleTime,
-            contributionAmount,
-            contributionPeriod,
-            fixedCollateralEth,
-            stableTokenAddress,
-            aggregatorAddress
-        );
+        return
+            _createTerm(
+                totalParticipants,
+                cycleTime,
+                contributionAmount,
+                contributionPeriod,
+                fixedCollateralEth,
+                stableTokenAddress,
+                aggregatorAddress
+            );
     }
 
     function joinTerm(uint termId) external {
@@ -45,7 +50,6 @@ contract TermFacet is ITakaturnFactory {
     function startTerm(uint termId) external {
         _startTerm(termId);
     }
-
 
     function _createTerm(
         uint _totalParticipants,
@@ -57,7 +61,7 @@ contract TermFacet is ITakaturnFactory {
         address _aggregatorAddress
     ) internal returns (uint) {
         require(
-                _cycleTime != 0 &&
+            _cycleTime != 0 &&
                 _contributionAmount != 0 &&
                 _contributionPeriod != 0 &&
                 _totalParticipants != 0 &&
@@ -70,10 +74,9 @@ contract TermFacet is ITakaturnFactory {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         uint termId = termStorage.nextTermId;
 
-        require(!termStorage.terms[termId].initialized, "Term already exists")
+        require(!termStorage.terms[termId].initialized, "Term already exists");
 
         LibTerm.Term memory newTerm;
-
 
         newTerm.termId = termId;
         newTerm.totalParticipants = _totalParticipants;
@@ -95,15 +98,14 @@ contract TermFacet is ITakaturnFactory {
         return termId;
     }
 
-
     function _joinTerm(uint termId) internal {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         LibTerm.Term memory term = termStorage.terms[termId];
-        
-        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral._collateralStorage();
+
+        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
+            ._collateralStorage();
         LibCollateral.Collateral storage collateral = collateralStorage.collaterals[termId];
         require(LibTerm._termExists(termId) && LibCollateral._collateralExists(termId));
-
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
@@ -115,7 +117,7 @@ contract TermFacet is ITakaturnFactory {
         collateral.depositors.push(msg.sender);
         collateral.counterMembers++;
 
-        emit LibCollateral.OnCollateralDeposited(msg.sender);
+        emit LibCollateral.OnCollateralDeposited(termId, msg.sender);
 
         if (collateral.counterMembers == 1) {
             collateral.firstDepositTime = block.timestamp;
@@ -127,18 +129,25 @@ contract TermFacet is ITakaturnFactory {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         LibTerm.Term memory term = termStorage.terms[termId];
 
-        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral._collateralStorage();
+        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
+            ._collateralStorage();
         LibCollateral.Collateral storage collateral = collateralStorage.collaterals[termId];
 
         require(collateral.counterMembers == term.totalParticipants);
         // If one user is under collaterized, then all are.
-        require(!ICollateralFacet(address(this)).isUnderCollaterized(termId, collateral.depositors[0]), "Eth prices dropped");
+        require(
+            !ICollateral(address(this)).isUnderCollaterized(termId, collateral.depositors[0]),
+            "Eth prices dropped"
+        );
 
         // Actually reate and initialize the fund
         _createFund(termId);
 
         // Tell the collateral that the term has started
-        ICollateralFacet(address(this)).setState(LibCollateral.CollateralStates.CycleOngoing);
+        ICollateral(address(this)).setStateOwner(
+            termId,
+            LibCollateral.CollateralStates.CycleOngoing
+        );
 
         /*
         
@@ -170,26 +179,29 @@ contract TermFacet is ITakaturnFactory {
     function _createCollateral(uint termId) internal {
         require(!LibCollateral._collateralExists(termId), "Collateral already exists");
 
-        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral._collateralStorage();
-        LibCollateral.Collateral memory newCollateral;
+        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
+            ._collateralStorage();
+        LibCollateral.Collateral storage newCollateral;
         newCollateral.initialized = true;
 
         collateralStorage.collaterals[termId] = newCollateral;
     }
 
-
     function _createFund(uint termId) internal {
         require(!LibFund._fundExists(termId), "Fund already exists");
-        
-        LibFund.FundStorage storage fundStorage = LibFund._fundStorage();
-        LibFund.Fund memory newFund;
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibTerm.Term memory term = LibTerm._termStorage().terms[termId];
+        LibCollateral.Collateral storage collateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[termId];
+        LibFund.Fund storage newFund;
 
-        fund.stableToken = IERC20(_stableTokenAddress);
+        fund.stableToken = IERC20(term.stableTokenAddress);
         fund.beneficiariesOrder = collateral.depositors;
-        
-        IFundFacet(address(this)).initFund(termId);
+
+        IFund(address(this)).initFund(termId); // TODO: Write the init function. Done I have to review the logic and rename
         fund.initialized = true;
 
-        fundStorage.funds[termId] = newFund;
+        fund.funds[termId] = newFund;
     }
 }
