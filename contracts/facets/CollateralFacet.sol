@@ -20,7 +20,7 @@ contract CollateralFacet is ICollateral {
     ITerm private _termInstance; // TODO: init here?
     AggregatorV3Interface priceFeed;
 
-    uint public constant VERSION = 2;
+    uint public constant COLLATERAL_VERSION = 2; // TODO: initialize this on diamond init?
 
     modifier atState(uint id, LibCollateral.CollateralStates _state) {
         LibCollateral.CollateralStates state = LibCollateral

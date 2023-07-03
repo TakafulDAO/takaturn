@@ -18,7 +18,7 @@ contract FundFacet is IFund {
     // TODO: Review auto pay logic
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint public constant VERSION = 2; // The version of the contract // TODO: can not set state variables on facets. on Init? Library?
+    uint public constant FUND_VERSION = 2; // The version of the contract // TODO: can not set state variables on facets. on Init? Library?
 
     modifier onlyFundOwner(uint id) {
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
