@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.20;
 
 //import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
@@ -14,7 +14,11 @@ library LibCollateral {
         Closed // Triggered when all depositors withdraw their collaterals
     }
 
-    event OnStateChanged(uint indexed termId, States indexed oldState, States indexed newState);
+    event OnStateChanged(
+        uint indexed termId,
+        CollateralStates indexed oldState,
+        CollateralStates indexed newState
+    );
     event OnCollateralDeposited(uint indexed termId, address indexed user);
     event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
@@ -22,26 +26,30 @@ library LibCollateral {
 
     struct Collateral {
         bool initialized;
-        CollateralStates state = CollateralStates.AcceptingCollateral;
-
+        CollateralStates state;
         uint firstDepositTime;
         uint counterMembers;
         address[] depositors;
         mapping(address => bool) isCollateralMember; // Determines if a depositor is a valid user
         mapping(address => uint) collateralMembersBank; // Users main balance
         mapping(address => uint) collateralPaymentBank; // Users reimbursement balance after someone defaults
-
+        uint collateralDeposit;
     }
 
     struct CollateralStorage {
-        mapping(uint => CollateralStorage) collaterals; // termId => Collateral struct
+        mapping(uint => Collateral) collaterals; // termId => Collateral struct
     }
 
-    function _collateralExists(uint termId) internal pure returns (bool) {
-        return _collateralStorage().collaterals[termId].initialized;
-    }
+    //TODO: comment out  when point here
+    // function _collateralExists(uint termId) internal pure returns (bool) {
+    //     return _collateralStorage().collaterals[termId].initialized;
+    // }
 
-    function _collateralStorage() internal pure returns (CollateralStorage storage collateralStorage) {
+    function _collateralStorage()
+        internal
+        pure
+        returns (CollateralStorage storage collateralStorage)
+    {
         bytes32 position = COLLATERAL_STORAGE_POSITION;
         assembly {
             collateralStorage.slot := position
