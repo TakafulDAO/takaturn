@@ -2,26 +2,25 @@
 
 pragma solidity 0.8.20;
 
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import {ICollateral} from "../interfaces/ICollateral.sol";
 import {IFund} from "../interfaces/IFund.sol";
+import {ITerm} from "../interfaces/ITerm.sol";
+import {ICollateral} from "../interfaces/ICollateral.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
-
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {LibCollateral} from "../libraries/LibCollateral.sol";
 
 /// @title Takaturn
 /// @author Aisha El Allam
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
-contract CollateralFacet is ICollateral, Ownable {
-    IFund private _fundInstance;
+contract CollateralFacet is ICollateral {
+    IFund private _fundInstance; // TODO: init here?
+    ITerm private _termInstance; // TODO: init here?
     AggregatorV3Interface priceFeed;
 
-    address public fundContract; // TODO: remove later
     uint public constant VERSION = 2;
-    uint public creationTime = block.timestamp; // TODO: remove?
 
     modifier atState(uint id, LibCollateral.CollateralStates _state) {
         LibCollateral.CollateralStates state = LibCollateral
@@ -29,6 +28,12 @@ contract CollateralFacet is ICollateral, Ownable {
             .collaterals[id]
             .state;
         if (state != _state) revert FunctionInvalidAtThisState();
+        _;
+    }
+
+    modifier onlyFundOwner(uint id) {
+        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
+        require(term.owner == msg.sender);
         _;
     }
 
@@ -57,7 +62,10 @@ contract CollateralFacet is ICollateral, Ownable {
     //     );
     // }
 
-    function setStateOwner(uint id, LibCollateral.CollateralStates newState) external onlyOwner {
+    function setStateOwner(
+        uint id,
+        LibCollateral.CollateralStates newState
+    ) external onlyFundOwner(id) {
         _setState(id, newState);
     }
 
@@ -66,29 +74,27 @@ contract CollateralFacet is ICollateral, Ownable {
     /// @dev consider making the duration a variable
     function initiateFund(
         uint id
-    ) external onlyOwner atState(id, LibCollateral.CollateralStates.AcceptingCollateral) {
+    ) external onlyFundOwner(id) atState(id, LibCollateral.CollateralStates.AcceptingCollateral) {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
         // TODO: I replace totalDepositors for totalParticipants from the term. Better totalDepositors on Collateral struct?
         //(collateral.counterMembers == collateral.totalDepositors);
-        (collateral.counterMembers == term.totalParticipants); // TODO: check!!!!
-        // TODO: check this call later. 02/07/2023 10:27
+        (collateral.counterMembers == term.totalParticipants);
         // If one user is under collaterized, then all are.
         require(!_isUnderCollaterized(id, collateral.depositors[0]), "Eth prices dropped");
 
-        // TODO: comment out this after work with the term facet!!!!!!!!!!!
-        // _fundInstance.createTerm(
-        //     collateral.cycleTime,
-        //     collateral.contributionAmount,
-        //     collateral.contributionPeriod,
-        //     collateral.totalDepositors,
-        //     collateral.stableCoinAddress
-        // );
+        _termInstance.createTerm(
+            term.totalParticipants,
+            term.cycleTime,
+            term.contributionAmount,
+            term.contributionPeriod,
+            term.fixedCollateralEth,
+            term.stableTokenAddress,
+            term.aggregatorAddress
+        );
 
-        // TODO: check for success before initiating instance
-        //_fundInstance = IFundFacet(fundContract);
         _setState(id, LibCollateral.CollateralStates.CycleOngoing);
         //emit OnFundStarted(fundContract, address(this));
     }
@@ -159,7 +165,7 @@ contract CollateralFacet is ICollateral, Ownable {
 
         // Determine who will be expelled and who will just pay the contribution
         // From their collateral.
-        uint defaultersLength = defaulters.length; // TODO: This sack is to deep. Refactor later to avoid deploy  problems
+        uint defaultersLength = defaulters.length; // TODO: This stack is to deep. Refactor later to avoid deploy  problems
         for (uint i; i < defaultersLength; ) {
             currentDefaulter = defaulters[i];
             wasBeneficiary = _fundInstance.isBeneficiary(id, currentDefaulter);
@@ -253,7 +259,7 @@ contract CollateralFacet is ICollateral, Ownable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        require(address(fundContract) == address(msg.sender), "Wrong caller");
+        require(!LibFund._fundExists(id), "Fund already exists");
         uint amount = collateral.collateralPaymentBank[depositor];
         require(amount > 0, "Nothing to claim");
 
@@ -266,7 +272,7 @@ contract CollateralFacet is ICollateral, Ownable {
     }
 
     function releaseCollateral(uint id) external {
-        require(address(fundContract) == address(msg.sender), "Wrong caller");
+        require(!LibFund._fundExists(id), "Fund already exists");
         _setState(id, LibCollateral.CollateralStates.ReleasingCollateral);
     }
 
@@ -281,7 +287,7 @@ contract CollateralFacet is ICollateral, Ownable {
     /// @notice allow the owner to empty the Collateral after 180 days
     function emptyCollateralAfterEnd(
         uint id
-    ) external onlyOwner atState(id, LibCollateral.CollateralStates.ReleasingCollateral) {
+    ) external onlyFundOwner(id) atState(id, LibCollateral.CollateralStates.ReleasingCollateral) {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
@@ -405,7 +411,7 @@ contract CollateralFacet is ICollateral, Ownable {
     //     );
     //     require(_creator != address(0x00) && _creator != address(this), "Invalid inputs");
     //     // ! Viene del constructor
-    //     transferOwnership(_creator); // TODO: later change for access control
+    //     transferOwnership(_creator);
 
     //     CollateralData storage collateral = collateralById[termId];
 
@@ -449,8 +455,7 @@ contract CollateralFacet is ICollateral, Ownable {
         LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
         uint collateralLimit;
         uint memberCollateralUSD;
-        // TODO: reference to the bool exist later
-        if (fundContract == address(0)) {
+        if (LibFund._fundExists(_id)) {
             collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
         } else {
             uint remainingCycles = 1 + collateral.counterMembers - _fundInstance.currentCycle(_id); // TODO: check this call later. 02/07/2023 12:31
