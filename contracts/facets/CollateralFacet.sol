@@ -137,6 +137,7 @@ contract CollateralFacet is ICollateral {
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
     /// @param beneficiary Address that was randomly selected for the current cycle
     /// @param defaulters Address that was randomly selected for the current cycle
+    // TODO: Recheck this function, it was refactorized on internal functions because the stack was too deep and the EVM can not access variables
     function requestContribution(
         uint id,
         address beneficiary,
@@ -146,75 +147,18 @@ contract CollateralFacet is ICollateral {
             ._collateralStorage()
             .collaterals[id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        //require(fundContract == msg.sender, "Wrong caller");
-        require(defaulters.length > 0, "No defaulters");
 
-        address ben = beneficiary;
-        bool wasBeneficiary; // By default is false;
-        address currentDefaulter;
-        address currentDepositor;
-        address[] memory nonBeneficiaries = new address[](collateral.depositors.length);
-        address[] memory expellants = new address[](defaulters.length);
+        (uint share, address[] memory expellants) = _whoExpelled(
+            collateral,
+            term,
+            beneficiary,
+            defaulters
+        );
 
-        uint totalExpellants;
-        uint nonBeneficiaryCounter;
-        uint share;
-        uint currentDefaulterBank;
-
-        uint contributionAmountWei = getToEthConversionRate(term.contributionAmount * 10 ** 18);
-
-        // Determine who will be expelled and who will just pay the contribution
-        // From their collateral.
-        uint defaultersLength = defaulters.length; // TODO: This stack is to deep. Refactor later to avoid deploy  problems
-        for (uint i; i < defaultersLength; ) {
-            currentDefaulter = defaulters[i];
-            wasBeneficiary = _fundInstance.isBeneficiary(id, currentDefaulter);
-            currentDefaulterBank = collateral.collateralMembersBank[currentDefaulter];
-
-            if (currentDefaulter == ben) continue; // Avoid expelling graced defaulter
-
-            if (
-                (wasBeneficiary && _isUnderCollaterized(id, currentDefaulter)) ||
-                (currentDefaulterBank < contributionAmountWei)
-            ) {
-                collateral.isCollateralMember[currentDefaulter] = false; // Expelled!
-                expellants[i] = currentDefaulter;
-                share += currentDefaulterBank;
-                collateral.collateralMembersBank[currentDefaulter] = 0;
-                totalExpellants++;
-
-                emit LibCollateral.OnCollateralLiquidated(
-                    id,
-                    address(currentDefaulter),
-                    currentDefaulterBank
-                );
-            } else {
-                // Subtract contribution from defaulter and add to beneficiary.
-                collateral.collateralMembersBank[currentDefaulter] -= contributionAmountWei;
-                collateral.collateralPaymentBank[ben] += contributionAmountWei;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-
-        term.totalParticipants = term.totalParticipants - totalExpellants;
-
-        // Divide and Liquidate
-        uint depositorsLength = collateral.depositors.length;
-        for (uint i; i < depositorsLength; ) {
-            currentDepositor = collateral.depositors[i];
-            if (
-                !_fundInstance.isBeneficiary(id, currentDepositor) &&
-                collateral.isCollateralMember[currentDepositor]
-            ) {
-                nonBeneficiaries[nonBeneficiaryCounter] = currentDepositor;
-                nonBeneficiaryCounter++;
-            }
-            unchecked {
-                ++i;
-            }
-        }
+        (uint nonBeneficiaryCounter, address[] memory nonBeneficiaries) = _liquidateCollateral(
+            collateral,
+            term
+        );
 
         // Finally, divide the share equally among non-beneficiaries
         if (nonBeneficiaryCounter > 0) {
@@ -466,5 +410,86 @@ contract CollateralFacet is ICollateral {
         memberCollateralUSD = getToUSDConversionRate(collateral.collateralMembersBank[_member]);
 
         return (memberCollateralUSD < collateralLimit);
+    }
+
+    function _whoExpelled(
+        LibCollateral.Collateral storage _collateral,
+        LibTerm.Term storage _term,
+        address _beneficiary,
+        address[] calldata _defaulters
+    ) internal returns (uint, address[] memory) {
+        require(_defaulters.length > 0, "No defaulters");
+
+        bool wasBeneficiary;
+        uint8 totalExpellants;
+        address[] memory expellants = new address[](_defaulters.length);
+        uint share;
+        uint currentDefaulterBank;
+        uint contributionAmountWei = getToEthConversionRate(_term.contributionAmount * 10 ** 18);
+
+        // Determine who will be expelled and who will just pay the contribution
+        // From their collateral.
+        for (uint i; i < _defaulters.length; ) {
+            wasBeneficiary = _fundInstance.isBeneficiary(_term.termId, _defaulters[i]);
+            currentDefaulterBank = _collateral.collateralMembersBank[_defaulters[i]];
+
+            if (_defaulters[i] == _beneficiary) continue; // Avoid expelling graced defaulter
+
+            if (
+                (wasBeneficiary && _isUnderCollaterized(_term.termId, _defaulters[i])) ||
+                (currentDefaulterBank < contributionAmountWei)
+            ) {
+                _collateral.isCollateralMember[_defaulters[i]] = false; // Expelled!
+                expellants[i] = _defaulters[i];
+                share += currentDefaulterBank;
+                _collateral.collateralMembersBank[_defaulters[i]] = 0;
+                totalExpellants++;
+
+                emit LibCollateral.OnCollateralLiquidated(
+                    _term.termId,
+                    address(_defaulters[i]),
+                    currentDefaulterBank
+                );
+            } else {
+                // Subtract contribution from defaulter and add to beneficiary.
+                _collateral.collateralMembersBank[_defaulters[i]] -= contributionAmountWei;
+                _collateral.collateralPaymentBank[_beneficiary] += contributionAmountWei;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        _term.totalParticipants = _term.totalParticipants - totalExpellants;
+
+        return (share, expellants);
+    }
+
+    function _liquidateCollateral(
+        LibCollateral.Collateral storage _collateral,
+        LibTerm.Term storage _term
+    ) internal view returns (uint, address[] memory) {
+        address currentDepositor;
+        address[] memory nonBeneficiaries = new address[](_collateral.depositors.length);
+
+        uint nonBeneficiaryCounter;
+
+        // Divide and Liquidate
+        uint depositorsLength = _collateral.depositors.length;
+        for (uint i; i < depositorsLength; ) {
+            currentDepositor = _collateral.depositors[i];
+            if (
+                !_fundInstance.isBeneficiary(_term.termId, currentDepositor) &&
+                _collateral.isCollateralMember[currentDepositor]
+            ) {
+                nonBeneficiaries[nonBeneficiaryCounter] = currentDepositor;
+                nonBeneficiaryCounter++;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        return (nonBeneficiaryCounter, nonBeneficiaries);
     }
 }
