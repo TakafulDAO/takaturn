@@ -34,7 +34,7 @@ library LibFund {
 
     struct Fund {
         bool initialized;
-        FundStates currentState /* = FundStates.InitializingFund*/; // Variable to keep track of the different FundStates // todo: cannot initialize here
+        FundStates currentState; // Variable to keep track of the different FundStates
         IERC20 stableToken; // Instance of the stable token
         address[] beneficiariesOrder; // The correct order of who gets to be next beneficiary, determined by collateral contract
         uint fundStart; // Timestamp of the start of the fund
@@ -50,8 +50,8 @@ library LibFund {
         EnumerableSet.AddressSet _defaulters; // Both participants and beneficiaries who have defaulted this cycle
         uint expelledParticipants; // Total amount of participants that have been expelled so far
         address lastBeneficiary; // The last selected beneficiary, updates with every cycle
-        uint totalAmountOfCycles; // todo: this one is needed. Here or in term better?
-        ICollateralFacet collateral; // todo: check later if it has to be here, but it has to initialize somewhere
+        uint totalAmountOfCycles; // TODO: this one is needed. Here or in term better?
+        ICollateralFacet collateral; // TODO: check later if it has to be here, but it has to initialize somewhere
     }
 
     struct FundStorage {

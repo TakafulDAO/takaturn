@@ -18,19 +18,13 @@ contract FundFacet is IFund {
     // TODO: Review auto pay logic
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint public constant VERSION = 2; // The version of the contract // todo: can not set state variables on facets. on Init?
+    uint public constant VERSION = 2; // The version of the contract // TODO: can not set state variables on facets. on Init?
 
     modifier onlyFundOwner(uint id) {
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id]; //termFunds[id];
+        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
         require(term.owner == msg.sender);
         _;
     }
-
-    // mapping(address => mapping(uint => bool)) public isParticipant; // Mapping to keep track of who's a participant or not
-    // mapping(address => mapping(uint => bool)) public isBeneficiary; // Mapping to keep track of who's a beneficiary or not
-    // mapping(address => mapping(uint => bool)) public paidThisCycle; // Mapping to keep track of who paid for this cycle
-    // mapping(address => mapping(uint => bool)) public autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
-    // mapping(address => mapping(uint => uint)) public beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
 
     /// Insufficient balance for transfer. Needed `required` but only
     /// `available` available.
@@ -169,7 +163,7 @@ contract FundFacet is IFund {
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
-        (, uint collateralPool, ) = fund.collateral.getDepositorSummary(msg.sender);
+        (, uint collateralPool, ) = fund.collateral.getDepositorSummary(id, msg.sender);
         bool hasCollateralPool = collateralPool > 0;
         require(hasFundPool || hasCollateralPool, "Nothing to withdraw");
 
@@ -187,7 +181,7 @@ contract FundFacet is IFund {
         }
 
         if (hasCollateralPool) {
-            fund.collateral.withdrawReimbursement(msg.sender);
+            fund.collateral.withdrawReimbursement(id, msg.sender);
         }
     }
 
@@ -229,7 +223,6 @@ contract FundFacet is IFund {
         return fund.beneficiariesOrder;
     }
 
-    // TODO: check return problems
     /// @notice function to get the cycle information in one go
     function getFundSummary(uint id) external view returns (LibFund.FundStates, uint, address) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
