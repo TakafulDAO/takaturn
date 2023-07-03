@@ -295,6 +295,11 @@ contract FundFacet is IFund {
         return fund.fundEnd;
     }
 
+    function isBeneficiary(uint id, address beneficiary) external view returns (bool) {
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
+        return fund.isBeneficiary[beneficiary];
+    }
+
     // TODO: This will have to create the new collateral struct and assign the termId with the collateral Id
     function _createTerm(
         uint _cycleTime,

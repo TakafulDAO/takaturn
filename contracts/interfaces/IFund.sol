@@ -81,7 +81,7 @@ interface IFund {
     ) external view returns (uint, bool, bool, bool, bool);
 
     // todo: later maybe remove. It is not implemented so the facet is abstract to compile
-    function isBeneficiary(address beneficiary) external view returns (bool);
+    function isBeneficiary(uint termId, address beneficiary) external view returns (bool);
 
     function currentCycle(uint termId) external view returns (uint);
 
