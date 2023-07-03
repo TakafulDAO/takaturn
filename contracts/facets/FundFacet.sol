@@ -13,61 +13,23 @@ import {LibFund} from "../libraries/LibFund.sol";
 /// @author Mohammed Haddouti
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
-contract FundFacet is IFund {
-    //Todo: For now here only until I point to the storage
-    // Todo: remove later
-    enum FundStates {
-        InitializingFund, // Time before the first cycle has started
-        AcceptingContributions, // Triggers at the start of a cycle
-        ChoosingBeneficiary, // Contributions are closed, beneficiary is chosen, people default etc.
-        CycleOngoing, // Time after beneficiary is chosen, up till the start of the next cycle
-        FundClosed // Triggers at the end of the last contribution period, no state changes after this
-    }
-
-    // todo: why can not call from storage?
-    event OnStateChanged(uint indexed termId, FundStates indexed newState); // Emits when state has updated
-
-    // ! Hasta aqui en el storage
+abstract contract FundFacet is IFund {
     // TODO: Review auto pay logic
-    // TODO: The fund owner can only interact with own fund
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint public constant VERSION = 2; // The version of the contract
-    uint public termId; // The id of the fund, incremented on every new fund
+    uint public constant VERSION = 2; // The version of the contract // todo: can not set state variables on facets. on Init?
 
     modifier onlyFundOwner(uint id) {
-        require(termFunds[id].fundOwner == msg.sender);
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id]; //termFunds[id];
+        require(fund.fundOwner == msg.sender);
         _;
     }
 
-    struct FundData {
-        uint cycleTime; // time for a single cycle in seconds, default is 30 days
-        uint contributionAmount; // amount in stable token currency, 6 decimals
-        uint contributionPeriod; // time for participants to contribute this cycle
-        uint totalParticipants; // Total amount of starting participants
-        uint expelledParticipants; // Total amount of participants that have been expelled so far
-        uint currentCycle; // Index of current cycle
-        uint totalAmountOfCycles; // Amount of cycles that this fund will have
-        uint fundStart; // Timestamp of the start of the fund
-        uint fundEnd; // Timestamp of the end of the fund
-        address lastBeneficiary; // The last selected beneficiary, updates with every cycle
-        address fundOwner;
-        address stableTokenAddress;
-        ICollateralFacet collateral; // Instance of the collateral
-        IERC20 stableToken; // Instance of the stable token
-        FundStates currentState; // Current state of the fund
-        EnumerableSet.AddressSet participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
-        EnumerableSet.AddressSet beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
-        EnumerableSet.AddressSet defaulters; // Both participants and beneficiaries who have defaulted this cycle
-        address[] beneficiariesOrder; // The correct order of who gets to be next beneficiary, determined by collateral contract
-    }
-
-    mapping(address => mapping(uint => bool)) public isParticipant; // Mapping to keep track of who's a participant or not
-    mapping(address => mapping(uint => bool)) public isBeneficiary; // Mapping to keep track of who's a beneficiary or not
-    mapping(address => mapping(uint => bool)) public paidThisCycle; // Mapping to keep track of who paid for this cycle
-    mapping(address => mapping(uint => bool)) public autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
-    mapping(address => mapping(uint => uint)) public beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
-    mapping(uint => FundData) private termFunds; // Term Id => Fund Data
+    // mapping(address => mapping(uint => bool)) public isParticipant; // Mapping to keep track of who's a participant or not
+    // mapping(address => mapping(uint => bool)) public isBeneficiary; // Mapping to keep track of who's a beneficiary or not
+    // mapping(address => mapping(uint => bool)) public paidThisCycle; // Mapping to keep track of who paid for this cycle
+    // mapping(address => mapping(uint => bool)) public autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
+    // mapping(address => mapping(uint => uint)) public beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
 
     /// Insufficient balance for transfer. Needed `required` but only
     /// `available` available.
@@ -92,8 +54,10 @@ contract FundFacet is IFund {
     }
 
     // TODO: Still needs to call the collateral, for now only adds the participant
+    // todo: it was moved to term facet. remove from here
     function joinTerm(uint id) external payable {
-        FundData storage fund = termFunds[id];
+        //FundData storage fund = termFunds[id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         fund.collateral.depositCollateral{value: msg.value}(id); // TODO: Check for success. On collateral,  msg.sender or tx.origin?
         uint beneficiariesLength = fund.beneficiariesOrder.length;
         for (uint i; i < beneficiariesLength; ) {
@@ -117,20 +81,20 @@ contract FundFacet is IFund {
 
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
     function closeFundingPeriod(uint id) external onlyFundOwner(id) {
-        FundData storage fund = termFunds[id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
         require(
             block.timestamp >
                 fund.cycleTime * (fund.currentCycle - 1) + fund.fundStart + fund.contributionPeriod,
             "Still time to contribute"
         );
-        require(fund.currentState == FundStates.AcceptingContributions, "Wrong state");
+        require(fund.currentState == LibFund.FundStates.AcceptingContributions, "Wrong state");
 
         // We attempt to make the autopayers pay their contribution right away
         _autoPay(id);
 
         // Only then start choosing beneficiary
-        _setState(id, FundStates.ChoosingBeneficiary);
+        _setState(id, LibFund.FundStates.ChoosingBeneficiary);
 
         // We must check who hasn't paid and default them, check all participants based on beneficiariesOrder
         // To maintain the order and to properly push defaulters to the back based on that same order
@@ -141,9 +105,9 @@ contract FundFacet is IFund {
 
         for (uint i; i < currentParticipantsLength; ) {
             address p = currentParticipants[i];
-            if (paidThisCycle[p][id]) {
+            if (fund.paidThisCycle[p]) {
                 // check where to restore the defaulter to, participants or beneficiaries
-                if (isBeneficiary[p][id]) {
+                if (fund.isBeneficiary[p]) {
                     EnumerableSet.add(fund.beneficiaries, p);
                 } else {
                     EnumerableSet.add(fund.participants, p);
@@ -173,8 +137,8 @@ contract FundFacet is IFund {
     /// @notice Fallback function, if the internal call fails somehow and the state gets stuck, allow owner to call the function again manually
     /// @dev This shouldn't happen, but is here in case there's an edge-case we didn't take into account, can possibly be removed in the future
     function selectBeneficiary(uint id) external onlyFundOwner(id) {
-        FundData storage fund = termFunds[id];
-        require(fund.currentState == FundStates.ChoosingBeneficiary, "Wrong state");
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
+        require(fund.currentState == LibFund.FundStates.ChoosingBeneficiary, "Wrong state");
         _selectBeneficiary(id);
     }
 
@@ -188,9 +152,10 @@ contract FundFacet is IFund {
     ///         this with the assumption that beneficiaries can't claim it themselves due to losing their keys for example,
     ///         and prevent the fund to be stuck in limbo
     function emptyFundAfterEnd(uint id) external onlyFundOwner(id) {
-        FundData storage fund = termFunds[id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         require(
-            fund.currentState == FundStates.FundClosed && block.timestamp > fund.fundEnd + 180 days,
+            fund.currentState == LibFund.FundStates.FundClosed &&
+                block.timestamp > fund.fundEnd + 180 days,
             "Can't empty yet"
         );
 
@@ -202,54 +167,55 @@ contract FundFacet is IFund {
 
     /// @notice function to enable/disable autopay
     function toggleAutoPay(uint id) external {
-        require(isParticipant[msg.sender][id], "Not a participant");
-        bool enabled = !autoPayEnabled[msg.sender][id];
-        autoPayEnabled[msg.sender][id] = enabled;
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
+        require(fund.isParticipant[msg.sender], "Not a participant");
+        bool enabled = !fund.autoPayEnabled[msg.sender];
+        fund.autoPayEnabled[msg.sender] = enabled;
 
         emit LibFund.OnAutoPayToggled(id, msg.sender, enabled);
     }
 
     /// @notice This is the function participants call to pay the contribution
     function payContribution(uint id) external {
-        FundData storage fund = termFunds[id];
-        require(fund.currentState == FundStates.AcceptingContributions, "Wrong state");
-        require(isParticipant[msg.sender][id], "Not a participant");
-        require(!paidThisCycle[msg.sender][id], "Already paid for cycle");
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
+        require(fund.currentState == LibFund.FundStates.AcceptingContributions, "Wrong state");
+        require(fund.isParticipant[msg.sender], "Not a participant");
+        require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
         _payContribution(id, msg.sender, msg.sender);
     }
 
     /// @notice This function is here to give the possibility to pay using a different wallet
     /// @param participant the address the msg.sender is paying for, the address must be part of the fund
     function payContributionOnBehalfOf(uint id, address participant) external {
-        FundData storage fund = termFunds[id];
-        require(fund.currentState == FundStates.AcceptingContributions, "Wrong state");
-        require(isParticipant[participant][id], "Not a participant");
-        require(!paidThisCycle[participant][id], "Already paid for cycle");
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
+        require(fund.currentState == LibFund.FundStates.AcceptingContributions, "Wrong state");
+        require(fund.isParticipant[participant], "Not a participant");
+        require(!fund.paidThisCycle[participant], "Already paid for cycle");
         _payContribution(id, msg.sender, participant);
     }
 
     /// @notice Called by the beneficiary to withdraw the fund
     /// @dev This follows the pull-over-push pattern.
     function withdrawFund(uint id) external {
-        FundData storage fund = termFunds[id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         require(
-            fund.currentState == FundStates.FundClosed || paidThisCycle[msg.sender][id],
+            fund.currentState == LibFund.FundStates.FundClosed || fund.paidThisCycle[msg.sender],
             "You must pay your cycle before withdrawing"
         );
 
-        bool hasFundPool = beneficiariesPool[msg.sender][id] > 0;
+        bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
         (, uint collateralPool, ) = fund.collateral.getDepositorSummary(msg.sender);
         bool hasCollateralPool = collateralPool > 0;
         require(hasFundPool || hasCollateralPool, "Nothing to withdraw");
 
         if (hasFundPool) {
             // Get the amount this beneficiary can withdraw
-            uint transferAmount = beneficiariesPool[msg.sender][id];
+            uint transferAmount = fund.beneficiariesPool[msg.sender];
             uint contractBalance = fund.stableToken.balanceOf(address(this));
             if (contractBalance < transferAmount) {
                 revert InsufficientBalance({available: contractBalance, required: transferAmount});
             } else {
-                beneficiariesPool[msg.sender][id] = 0;
+                fund.beneficiariesPool[msg.sender] = 0;
                 fund.stableToken.transfer(msg.sender, transferAmount); // Untrusted
             }
             emit LibFund.OnFundWithdrawn(id, msg.sender, transferAmount);
@@ -262,7 +228,7 @@ contract FundFacet is IFund {
 
     // @notice returns the time left for this cycle to end
     function getRemainingCycleTime(uint id) external view returns (uint) {
-        FundData storage fund = termFunds[id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         uint cycleEndTimestamp = fund.cycleTime * fund.currentCycle + fund.fundStart;
         if (block.timestamp > cycleEndTimestamp) {
             return 0;
@@ -273,8 +239,8 @@ contract FundFacet is IFund {
 
     /// @notice returns the time left to contribute for this cycle
     function getRemainingContributionTime(uint id) external view returns (uint) {
-        FundData storage fund = termFunds[id];
-        if (fund.currentState != FundStates.AcceptingContributions) {
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
+        if (fund.currentState != LibFund.FundStates.AcceptingContributions) {
             return 0;
         }
 
@@ -292,14 +258,14 @@ contract FundFacet is IFund {
 
     /// @notice returns the beneficiaries order as an array
     function getBeneficiariesOrder(uint id) external view returns (address[] memory) {
-        FundData storage fund = termFunds[id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         return fund.beneficiariesOrder;
     }
 
     // TODO: check return problems
     /// @notice function to get the cycle information in one go
     function getFundSummary(uint id) external view returns (/*FundStates, */ uint, address) {
-        FundData storage fund = termFunds[id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         return (/*fund.currentState, */ fund.currentCycle, fund.lastBeneficiary);
     }
 
@@ -309,22 +275,23 @@ contract FundFacet is IFund {
         uint id,
         address participant
     ) external view returns (uint, bool, bool, bool, bool) {
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         return (
-            beneficiariesPool[participant][id],
-            isBeneficiary[participant][id],
-            paidThisCycle[participant][id],
-            autoPayEnabled[participant][id],
-            isParticipant[participant][id]
+            fund.beneficiariesPool[participant],
+            fund.isBeneficiary[participant],
+            fund.paidThisCycle[participant],
+            fund.autoPayEnabled[participant],
+            fund.isParticipant[participant]
         );
     }
 
     function currentCycle(uint id) external view returns (uint) {
-        FundData storage fund = termFunds[id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         return fund.currentCycle;
     }
 
     function fundEnd(uint id) external view returns (uint) {
-        FundData storage fund = termFunds[id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[id];
         return fund.fundEnd;
     }
 
@@ -344,7 +311,8 @@ contract FundFacet is IFund {
             "Invalid inputs"
         );
 
-        FundData storage fund = termFunds[termId];
+        uint _id = LibFund._fundTracking().termId;
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         // TODO: Check default values
         // Sets some cycle-related parameters
         fund.cycleTime = _cycleTime;
@@ -361,35 +329,16 @@ contract FundFacet is IFund {
         fund.stableTokenAddress = _stableTokenAddress;
         fund.collateral = ICollateralFacet(msg.sender); // TODO: Check when the collateral facet is ready
         fund.stableToken = IERC20(_stableTokenAddress);
-        fund.currentState = FundStates.InitializingFund; // TODO: Actual state?
+        fund.currentState = LibFund.FundStates.InitializingFund; // TODO: Actual state?
         fund.beneficiariesOrder = new address[](_totalParticipants);
 
-        termId++;
+        ++LibFund._fundTracking().termId;
 
-        return termId;
+        return _id;
     }
 
-    // TODO: Consider move this logic completly to joinTerm
-    // function _joinTerm(uint id) internal payable {
-    //     ICollateralFacet.depositCollateral{value: msg.value}(msg.sender); // TODO: Check for success
-    //     FundData storage fund = termFunds[id];
-    //     uint beneficiariesLength = fund.beneficiariesOrder.length;
-    //     for (uint i; i < beneficiariesLength; ) {
-    //         if (fund.beneficiariesOrder[i] == address(0)) {
-    //             fund.beneficiariesOrder[i] = msg.sender;
-    //             if (i == fund.beneficiariesOrder.length - 1) {
-    //                 _startTerm(id);
-    //             }
-    //             break;
-    //         }
-    //         unchecked {
-    //             ++i;
-    //         }
-    //     }
-    // }
-
     function _startTerm(uint256 _id) internal {
-        FundData storage fund = termFunds[_id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         //currentState = FundStates.InitializingFund;
 
         uint participantsArrayLength = fund.beneficiariesOrder.length;
@@ -398,54 +347,54 @@ contract FundFacet is IFund {
 
         for (uint i; i < participantsArrayLength; ) {
             EnumerableSet.add(fund.participants, fund.beneficiariesOrder[i]);
-            isParticipant[fund.beneficiariesOrder[i]][termId] = true;
+            fund.isParticipant[fund.beneficiariesOrder[i]] = true;
             unchecked {
                 ++i;
             }
         }
 
         // Starts the first cycle
-        _startNewCycle(termId);
+        _startNewCycle(_id);
 
         // Set timestamp of deployment, which will be used to determine cycle times
         // We do this after starting the first cycle to make sure the first cycle starts smoothly
         fund.fundStart = block.timestamp;
-        emit LibFund.OnTermStart(termId);
+        emit LibFund.OnTermStart(_id);
     }
 
     /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
     /// @param _newState The new state of the fund
-    function _setState(uint _id, FundStates _newState) internal {
-        FundData storage fund = termFunds[_id];
-        require(fund.currentState != FundStates.FundClosed, "Fund closed");
+    function _setState(uint _id, LibFund.FundStates _newState) internal {
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
+        require(fund.currentState != LibFund.FundStates.FundClosed, "Fund closed");
         fund.currentState = _newState;
-        emit OnStateChanged(_id, _newState);
+        emit LibFund.OnStateChanged(_id, _newState);
     }
 
     /// @notice This starts the new cycle and can only be called internally. Used upon deploy
     function _startNewCycle(uint _id) internal {
-        FundData storage fund = termFunds[_id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         // currentCycle is 0 when this is called for the first time
         require(
             block.timestamp > fund.cycleTime * fund.currentCycle + fund.fundStart,
             "Too early to start new cycle"
         );
         require(
-            fund.currentState == FundStates.InitializingFund ||
-                fund.currentState == FundStates.CycleOngoing,
+            fund.currentState == LibFund.FundStates.InitializingFund ||
+                fund.currentState == LibFund.FundStates.CycleOngoing,
             "Wrong state"
         );
 
         ++fund.currentCycle;
         uint length = fund.beneficiariesOrder.length;
         for (uint i; i < length; ) {
-            paidThisCycle[fund.beneficiariesOrder[i]][_id] = false;
+            fund.paidThisCycle[fund.beneficiariesOrder[i]] = false;
             unchecked {
                 ++i;
             }
         }
 
-        _setState(_id, FundStates.AcceptingContributions);
+        _setState(_id, LibFund.FundStates.AcceptingContributions);
 
         // We attempt to make the autopayers pay their contribution right away
         _autoPay(_id);
@@ -453,15 +402,15 @@ contract FundFacet is IFund {
 
     /// @notice function to attempt to make autopayers pay their contribution
     function _autoPay(uint _id) internal {
-        FundData storage fund = termFunds[_id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         address[] memory autoPayers = fund.beneficiariesOrder;
         uint amount = fund.contributionAmount;
 
         uint length = autoPayers.length;
         for (uint i; i < length; ) {
             if (
-                autoPayEnabled[autoPayers[i]][_id] &&
-                !paidThisCycle[autoPayers[i]][_id] &&
+                fund.autoPayEnabled[autoPayers[i]] &&
+                !fund.paidThisCycle[autoPayers[i]] &&
                 amount <= fund.stableToken.allowance(autoPayers[i], address(this)) &&
                 amount <= fund.stableToken.balanceOf(autoPayers[i])
             ) {
@@ -477,7 +426,7 @@ contract FundFacet is IFund {
     /// @param _payer the address that's paying
     /// @param _participant the (participant) address that's being paid for
     function _payContribution(uint _id, address _payer, address _participant) internal {
-        FundData storage fund = termFunds[_id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
         uint amount = fund.contributionAmount;
@@ -486,14 +435,14 @@ contract FundFacet is IFund {
         require(success, "Contribution failed, did you approve stable token?");
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
-        paidThisCycle[_participant][_id] = true;
+        fund.paidThisCycle[_participant] = true;
         emit LibFund.OnPaidContribution(_id, _participant, fund.currentCycle);
     }
 
     /// @notice Default the participant/beneficiary by checking the mapping first, then remove them from the appropriate array
     /// @param _defaulter The participant to default
     function _defaultParticipant(uint _id, address _defaulter) internal {
-        FundData storage fund = termFunds[_id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         // Try removing from participants first
         bool success = EnumerableSet.remove(fund.participants, _defaulter);
 
@@ -511,7 +460,7 @@ contract FundFacet is IFund {
     /// @notice The beneficiary will be selected here based on the beneficiariesOrder array.
     /// @notice It will loop through the array and choose the first in line to be eligible to be beneficiary.
     function _selectBeneficiary(uint _id) internal {
-        FundData storage fund = termFunds[_id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         // check if there are any participants left, else use the defaulters
         address selectedBeneficiary; // By default initialization is address(0)
         address[] memory arrayToCheck = fund.beneficiariesOrder;
@@ -520,7 +469,7 @@ contract FundFacet is IFund {
 
         for (uint i; i < arrayToCheckLength; ) {
             address b = arrayToCheck[i];
-            if (!isBeneficiary[b][_id]) {
+            if (!fund.isBeneficiary[b]) {
                 selectedBeneficiary = b;
                 beneficiaryIndex = i;
                 break;
@@ -531,12 +480,12 @@ contract FundFacet is IFund {
         }
 
         // If the defaulter didn't pay this cycle, we move the first elligible beneficiary forward and everyone in between forward
-        if (!paidThisCycle[selectedBeneficiary][_id]) {
+        if (!fund.paidThisCycle[selectedBeneficiary]) {
             // Find the index of the beneficiary to move to the end
             for (uint i = beneficiaryIndex; i < arrayToCheckLength; ) {
                 address b = arrayToCheck[i];
                 // Find the first eligible beneficiary
-                if (paidThisCycle[b][_id]) {
+                if (fund.paidThisCycle[b]) {
                     selectedBeneficiary = b;
                     address[] memory newOrder = fund.beneficiariesOrder;
                     // Move each defaulter between current beneficiary and new beneficiary 1 position forward
@@ -584,29 +533,29 @@ contract FundFacet is IFund {
         } // If this if-statement fails, this means we're dealing with a graced defaulter
 
         // Update the mapping to track who's been beneficiary
-        isBeneficiary[selectedBeneficiary][_id] = true;
+        fund.isBeneficiary[selectedBeneficiary] = true;
 
         // Get the amount of participants that paid this cycle, and add that amount to the beneficiary's pool
         uint paidCount;
         address[] memory allParticipants = fund.beneficiariesOrder; // Use beneficiariesOrder here because it contains all active participants in a single array
         for (uint i = 0; i < allParticipants.length; i++) {
-            if (paidThisCycle[allParticipants[i]][_id]) {
+            if (fund.paidThisCycle[allParticipants[i]]) {
                 paidCount++;
             }
         }
 
         // Award the beneficiary with the pool and update the lastBeneficiary
-        beneficiariesPool[selectedBeneficiary][_id] = fund.contributionAmount * paidCount;
+        fund.beneficiariesPool[selectedBeneficiary] = fund.contributionAmount * paidCount;
         fund.lastBeneficiary = selectedBeneficiary;
 
         emit LibFund.OnBeneficiarySelected(_id, selectedBeneficiary);
-        _setState(_id, FundStates.CycleOngoing);
+        _setState(_id, LibFund.FundStates.CycleOngoing);
     }
 
     /// @notice Called internally to move a defaulter in the beneficiariesOrder to the end, so that people who have paid get chosen first as beneficiary
     /// @param _beneficiary The defaulter that could have been beneficiary
     function _removeBeneficiaryFromOrder(uint _id, address _beneficiary) internal {
-        FundData storage fund = termFunds[_id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         address[] memory arrayToCheck = fund.beneficiariesOrder;
         uint arrayToCheckLength = arrayToCheck.length;
         address[] memory newArray = new address[](arrayToCheck.length - 1);
@@ -630,10 +579,10 @@ contract FundFacet is IFund {
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
     /// @param _expellant The address of the defaulter that will be expelled
     function _expelDefaulter(uint _id, address _expellant) internal {
-        FundData storage fund = termFunds[_id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         //require(msg.sender == address(collateral), "Caller is not collateral");
         require(
-            isParticipant[_expellant][_id] && EnumerableSet.remove(fund.defaulters, _expellant),
+            fund.isParticipant[_expellant] && EnumerableSet.remove(fund.defaulters, _expellant),
             "Expellant not found"
         );
 
@@ -645,11 +594,11 @@ contract FundFacet is IFund {
         // Update the defaulters array
         _removeBeneficiaryFromOrder(_id, _expellant);
 
-        isParticipant[_expellant][_id] = false;
+        fund.isParticipant[_expellant] = false;
         emit LibFund.OnDefaulterExpelled(_id, _expellant);
 
         // If the participant is expelled before becoming beneficiary, we lose a cycle, the one which this expellant is becoming beneficiary
-        if (!isBeneficiary[_expellant][_id]) {
+        if (!fund.isBeneficiary[_expellant]) {
             fund.totalAmountOfCycles--;
         }
 
@@ -663,9 +612,9 @@ contract FundFacet is IFund {
 
     /// @notice Internal function for close fund which is used by _startNewCycle & _chooseBeneficiary to cover some edge-cases
     function _closeFund(uint _id) internal {
-        FundData storage fund = termFunds[_id];
+        LibFund.Fund storage fund = LibFund._fundTracking().funds[_id];
         fund.fundEnd = block.timestamp;
-        _setState(_id, FundStates.FundClosed);
+        _setState(_id, LibFund.FundStates.FundClosed);
         fund.collateral.releaseCollateral(_id);
     }
 }
