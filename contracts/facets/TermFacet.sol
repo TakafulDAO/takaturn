@@ -4,8 +4,9 @@ pragma solidity ^0.8.9;
 
 import {IFund} from "../interfaces/IFund.sol";
 import {ICollateral} from "../interfaces/ICollateral.sol";
-import {ITakaturnFactory} from "../interfaces/ITakaturnFactory.sol";
+//import {ITakaturnFactory} from "../interfaces/ITakaturnFactory.sol"; // TODO: Needed?
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ITerm} from "../interfaces/ITerm.sol";
 
 import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
@@ -19,8 +20,8 @@ import {CollateralFacet} from "./CollateralFacet.sol";
 /// @notice This is used to deploy the collateral & fund contracts
 /// @dev v2.0 (post-deploy)
 // TODO: remove abstract keyword, missing implementations of createCollateral, createFund, getDeployedCollaterals, getDeployedFunds
-abstract contract TermFacet is ITakaturnFactory {
-    uint public constant VERSION = 1;
+contract TermFacet is ITerm {
+    uint public constant TERM_VERSION = 1;
 
     function createTerm(
         uint totalParticipants,
@@ -93,7 +94,7 @@ abstract contract TermFacet is ITakaturnFactory {
         termStorage.terms[termId] = newTerm;
         termStorage.nextTermId++;
 
-        _createCollateral(termId);
+        _createCollateral(termId, _totalParticipants, _fixedCollateralEth);
 
         return termId;
     }
@@ -148,60 +149,44 @@ abstract contract TermFacet is ITakaturnFactory {
             termId,
             LibCollateral.CollateralStates.CycleOngoing
         );
-
-        /*
-        
-        uint participantsArrayLength = fund.beneficiariesOrder.length;
-        // Set and track participants
-        for (uint i; i < participantsArrayLength; ) {
-            EnumerableSet.add(fund.participants, fund.beneficiariesOrder[i]);
-            isParticipant[fund.beneficiariesOrder[i]][termId] = true;
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Starts the first cycle
-        _startNewCycle(termId);
-
-        // Set timestamp of deployment, which will be used to determine cycle times
-        // We do this after starting the first cycle to make sure the first cycle starts smoothly
-        fund.fundStart = block.timestamp;
-        emit OnTermStart(
-            termId,
-            msg.sender,
-            fund.stableTokenAddress,
-            fund.cycleTime,
-            fund.contributionAmount
-        );*/
     }
 
-    function _createCollateral(uint termId) internal {
+    function _createCollateral(
+        uint termId,
+        uint _totalParticipants,
+        uint _fixedCollateralEth
+    ) internal {
         require(!LibCollateral._collateralExists(termId), "Collateral already exists");
+        LibCollateral.Collateral storage newCollateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[termId];
 
-        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
-            ._collateralStorage();
-        LibCollateral.Collateral storage newCollateral;
+        // LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
+        //     ._collateralStorage();
+
         newCollateral.initialized = true;
+        newCollateral.state = LibCollateral.CollateralStates.AcceptingCollateral;
+        newCollateral.depositors = new address[](_totalParticipants);
+        newCollateral.collateralDeposit = _fixedCollateralEth; // TODO: This is the correct value?
 
-        collateralStorage.collaterals[termId] = newCollateral; // TODO: Can not be assigned this way due to have nested mappings
+        //collateralStorage.collaterals[termId] = newCollateral; // TODO: Can not be assigned this way due to have nested mappings
     }
 
     function _createFund(uint termId) internal {
         require(!LibFund._fundExists(termId), "Fund already exists");
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFund.Fund storage newFund = LibFund._fundStorage().funds[termId];
         LibTerm.Term memory term = LibTerm._termStorage().terms[termId];
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];
-        LibFund.Fund storage newFund;
+        //LibFund.Fund storage newFund;
 
-        fund.stableToken = IERC20(term.stableTokenAddress);
-        fund.beneficiariesOrder = collateral.depositors;
+        newFund.initialized = true;
+        newFund.stableToken = IERC20(term.stableTokenAddress);
+        newFund.beneficiariesOrder = collateral.depositors;
 
         IFund(address(this)).initFund(termId);
-        fund.initialized = true;
 
-        fund.funds[termId] = newFund; // TODO: Can not be assigned this way due to have nested mappings
+        //fund.funds[termId] = newFund; // TODO: Can not be assigned this way due to have nested mappings
     }
 }
