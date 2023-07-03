@@ -3,7 +3,7 @@
 pragma solidity 0.8.20;
 
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import {ICollateralFacet} from "../interfaces/ICollateralFacet.sol";
+import {ICollateral} from "../interfaces/ICollateral.sol";
 import {IFund} from "../interfaces/IFund.sol";
 
 import {LibCollateral} from "../libraries/LibCollateral.sol";
@@ -15,7 +15,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @author Aisha El Allam
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
-contract CollateralFacet is ICollateralFacet, Ownable {
+contract CollateralFacet is ICollateral, Ownable {
     IFund private _fundInstance;
     AggregatorV3Interface priceFeed;
 

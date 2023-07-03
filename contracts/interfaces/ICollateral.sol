@@ -9,9 +9,11 @@ pragma solidity 0.8.20;
 
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 
-interface ICollateralFacet {
+interface ICollateral {
     // Function cannot be called at this time.
     error FunctionInvalidAtThisState();
+
+    function setStateOwner(uint id, LibCollateral.CollateralStates newState) external;
 
     /// @notice Called by each member to enter the Fund
     /// @dev needs to call the fund creation function
