@@ -18,7 +18,7 @@ import {CollateralFacet} from "./CollateralFacet.sol";
 /// @author Aisha El Allam / Mohammed Haddouti
 /// @notice This is used to deploy the collateral & fund contracts
 /// @dev v2.0 (post-deploy)
-// TODO: remove abstract keyword
+// TODO: remove abstract keyword, missing implementations of createCollateral, createFund, getDeployedCollaterals, getDeployedFunds
 abstract contract TermFacet is ITakaturnFactory {
     uint public constant VERSION = 1;
 
@@ -184,7 +184,7 @@ abstract contract TermFacet is ITakaturnFactory {
         LibCollateral.Collateral storage newCollateral;
         newCollateral.initialized = true;
 
-        collateralStorage.collaterals[termId] = newCollateral;
+        collateralStorage.collaterals[termId] = newCollateral; // TODO: Can not be assigned this way due to have nested mappings
     }
 
     function _createFund(uint termId) internal {
@@ -199,9 +199,9 @@ abstract contract TermFacet is ITakaturnFactory {
         fund.stableToken = IERC20(term.stableTokenAddress);
         fund.beneficiariesOrder = collateral.depositors;
 
-        IFund(address(this)).initFund(termId); // TODO: Write the init function. Done I have to review the logic and rename
+        IFund(address(this)).initFund(termId);
         fund.initialized = true;
 
-        fund.funds[termId] = newFund;
+        fund.funds[termId] = newFund; // TODO: Can not be assigned this way due to have nested mappings
     }
 }
