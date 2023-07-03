@@ -62,13 +62,6 @@ library LibFund {
         return _fundStorage().funds[termId].initialized;
     }
 
-    function _fund() internal pure returns (Fund storage fund) {
-        bytes32 position = FUND_POSITION;
-        assembly {
-            fund.slot := position
-        }
-    }
-
     function _fundStorage() internal pure returns (FundStorage storage fundStorage) {
         bytes32 position = FUND_STORAGE_POSITION;
         assembly {
