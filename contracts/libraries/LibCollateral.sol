@@ -41,9 +41,9 @@ library LibCollateral {
     }
 
     //TODO: comment out  when point here
-    // function _collateralExists(uint termId) internal pure returns (bool) {
-    //     return _collateralStorage().collaterals[termId].initialized;
-    // }
+    function _collateralExists(uint termId) internal view returns (bool) {
+        return _collateralStorage().collaterals[termId].initialized;
+    }
 
     function _collateralStorage()
         internal
