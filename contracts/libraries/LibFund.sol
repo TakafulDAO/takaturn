@@ -11,7 +11,7 @@ library LibFund {
 
     uint public constant FUND_VERSION = 1;
     bytes32 constant FUND_POSITION = keccak256("diamond.standard.fund");
-    bytes32 constant FUND_TRACKING_POSITION = keccak256("diamond.standard.fund.tracking");
+    bytes32 constant FUND_STORAGE_POSITION = keccak256("diamond.standard.fund.storage");
 
     enum FundStates {
         InitializingFund, // Time before the first cycle has started
@@ -33,35 +33,28 @@ library LibFund {
     event OnAutoPayToggled(uint indexed termId, address indexed participant, bool indexed enabled); // Emits when a participant succesfully toggles autopay
 
     struct Fund {
-        uint cycleTime; // time for a single cycle in seconds, default is 30 days
-        uint contributionAmount; // amount in stable token currency, 6 decimals
-        uint contributionPeriod; // time for participants to contribute this cycle
-        uint totalParticipants; // Total amount of starting participants
-        uint expelledParticipants; // Total amount of participants that have been expelled so far
-        uint currentCycle; // Index of current cycle
-        uint totalAmountOfCycles; // Amount of cycles that this fund will have
+        bool initialized;
+        FundStates currentState /* = FundStates.InitializingFund*/; // Variable to keep track of the different FundStates // todo: cannot initialize here
+        IERC20 stableToken; // Instance of the stable token
+        address[] beneficiariesOrder; // The correct order of who gets to be next beneficiary, determined by collateral contract
         uint fundStart; // Timestamp of the start of the fund
         uint fundEnd; // Timestamp of the end of the fund
-        address lastBeneficiary; // The last selected beneficiary, updates with every cycle
-        address fundOwner; // The owner of the fund
-        address stableTokenAddress;
-        ICollateralFacet collateral; // Instance of the collateral // todo: check later if it has to be here
-        IERC20 stableToken; // Instance of the stable token
-        FundStates currentState /* = FundStates.InitializingFund*/; // Variable to keep track of the different FundStates // todo: cannot assign here
-        address[] beneficiariesOrder; // The correct order of who gets to be next beneficiary, determined by collateral contract
+        uint currentCycle; // Index of current cycle
         mapping(address => bool) isParticipant; // Mapping to keep track of who's a participant or not
         mapping(address => bool) isBeneficiary; // Mapping to keep track of who's a beneficiary or not
         mapping(address => bool) paidThisCycle; // Mapping to keep track of who paid for this cycle
         mapping(address => bool) autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
         mapping(address => uint) beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
-        EnumerableSet.AddressSet participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
-        EnumerableSet.AddressSet beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
-        EnumerableSet.AddressSet defaulters; // Both participants and beneficiaries who have defaulted this cycle
-        bool initialized;
+        EnumerableSet.AddressSet _participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
+        EnumerableSet.AddressSet _beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
+        EnumerableSet.AddressSet _defaulters; // Both participants and beneficiaries who have defaulted this cycle
+        uint expelledParticipants; // Total amount of participants that have been expelled so far
+        address lastBeneficiary; // The last selected beneficiary, updates with every cycle
+        uint totalAmountOfCycles; // todo: this one is needed. Here or in term better?
+        ICollateralFacet collateral; // todo: check later if it has to be here, but it has to initialize somewhere
     }
 
-    struct FundTracking {
-        uint termId; // termId of the fund
+    struct FundStorage {
         mapping(uint => Fund) funds; // termId => Fund struct
     }
 
@@ -76,10 +69,10 @@ library LibFund {
         }
     }
 
-    function _fundTracking() internal pure returns (FundTracking storage fundTracking) {
-        bytes32 position = FUND_TRACKING_POSITION;
+    function _fundStorage() internal pure returns (FundStorage storage fundStorage) {
+        bytes32 position = FUND_STORAGE_POSITION;
         assembly {
-            fundTracking.slot := position
+            fundStorage.slot := position
         }
     }
 }

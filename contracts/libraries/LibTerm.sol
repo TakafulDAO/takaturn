@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity 0.8.20;
 
 //import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
@@ -26,9 +26,9 @@ library LibTerm {
         mapping(uint => Term) terms; // termId => Term struct
     }
 
-    function _termExists(uint termId) internal pure returns (bool) {
-        return _termStorage().terms[termId].initialized;
-    }
+    // function _termExists(uint termId) internal pure returns (bool) {
+    //     return _termStorage().terms[termId].initialized;
+    // }
 
     function _termStorage() internal pure returns (TermStorage storage termStorage) {
         bytes32 position = TERM_STORAGE_POSITION;

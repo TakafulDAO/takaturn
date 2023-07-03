@@ -10,25 +10,6 @@ pragma solidity 0.8.20;
 import {LibFund} from "../libraries/LibFund.sol";
 
 interface IFund {
-    // todo: commented because of error with return values on fund state
-    // enum FundStates {
-    //     InitializingFund, // Time before the first cycle has started
-    //     AcceptingContributions, // Triggers at the start of a cycle
-    //     ChoosingBeneficiary, // Contributions are closed, beneficiary is chosen, people default etc.
-    //     CycleOngoing, // Time after beneficiary is chosen, up till the start of the next cycle
-    //     FundClosed // Triggers at the end of the last contribution period, no state changes after this
-    // }
-
-    function createTerm(
-        uint cycleTime,
-        uint contributionAmount,
-        uint contributionPeriod,
-        uint totalParticipants,
-        address stableTokenAddress
-    ) external;
-
-    function joinTerm(uint id) external payable;
-
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
     function startNewCycle(uint termId) external;
 
@@ -71,7 +52,7 @@ interface IFund {
     function getBeneficiariesOrder(uint termId) external view returns (address[] memory);
 
     // @notice function to get the cycle information in one go
-    function getFundSummary(uint termId) external view returns (/*FundStates,*/ uint, address);
+    function getFundSummary(uint termId) external view returns (LibFund.FundStates, uint, address);
 
     // @notice function to get cycle information of a specific participant
     // @param participant the user to get the info from
