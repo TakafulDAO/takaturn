@@ -13,7 +13,7 @@ import {LibFund} from "../libraries/LibFund.sol";
 /// @author Mohammed Haddouti
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
-abstract contract FundFacet is IFund {
+contract FundFacet is IFund {
     // TODO: Review auto pay logic
     using EnumerableSet for EnumerableSet.AddressSet;
 

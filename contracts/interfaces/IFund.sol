@@ -1,12 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.20;
 
 /// @title Takaturn Fund Interface
 /// @author Mohammed Haddouti
 /// @notice This is used to allow collateral to easily communicate with fund
 /// @dev v2.0 (post-deploy)
-interface IFundFacet {
+
+import {LibFund} from "../libraries/LibFund.sol";
+
+interface IFund {
+    // todo: commented because of error with return values on fund state
+    // enum FundStates {
+    //     InitializingFund, // Time before the first cycle has started
+    //     AcceptingContributions, // Triggers at the start of a cycle
+    //     ChoosingBeneficiary, // Contributions are closed, beneficiary is chosen, people default etc.
+    //     CycleOngoing, // Time after beneficiary is chosen, up till the start of the next cycle
+    //     FundClosed // Triggers at the end of the last contribution period, no state changes after this
+    // }
 
     function createTerm(
         uint cycleTime,
@@ -16,7 +27,7 @@ interface IFundFacet {
         address stableTokenAddress
     ) external;
 
-    function joinTerm(uint id) external;
+    function joinTerm(uint id) external payable;
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
     function startNewCycle(uint termId) external;
@@ -60,7 +71,7 @@ interface IFundFacet {
     function getBeneficiariesOrder(uint termId) external view returns (address[] memory);
 
     // @notice function to get the cycle information in one go
-    function getFundSummary(uint termId) external view returns (States, uint, address);
+    function getFundSummary(uint termId) external view returns (/*FundStates,*/ uint, address);
 
     // @notice function to get cycle information of a specific participant
     // @param participant the user to get the info from
@@ -69,7 +80,8 @@ interface IFundFacet {
         address participant
     ) external view returns (uint, bool, bool, bool, bool);
 
-    function isBeneficiary(address beneficiary, uint termId) external view returns (bool);
+    // todo: later maybe remove. It is not implemented so the facet is abstract to compile
+    function isBeneficiary(address beneficiary) external view returns (bool);
 
     function currentCycle(uint termId) external view returns (uint);
 
