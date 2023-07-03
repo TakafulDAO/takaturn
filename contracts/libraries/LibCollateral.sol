@@ -40,7 +40,6 @@ library LibCollateral {
         mapping(uint => Collateral) collaterals; // termId => Collateral struct
     }
 
-    //TODO: comment out  when point here
     function _collateralExists(uint termId) internal view returns (bool) {
         return _collateralStorage().collaterals[termId].initialized;
     }
