@@ -26,6 +26,14 @@ contract FundFacet is IFund {
         _;
     }
 
+    /// Insufficient balance for transfer. Needed `required` but only
+    /// `available` available.
+    /// @param available balance available.
+    /// @param required requested amount to transfer.
+    error InsufficientBalance(uint available, uint required);
+
+    /// @notice called by the term to init the fund
+    /// @param termId the id of the term
     function initFund(uint termId) external {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
         uint participantsArrayLength = fund.beneficiariesOrder.length;
@@ -46,12 +54,6 @@ contract FundFacet is IFund {
         fund.fundStart = block.timestamp;
         emit LibFund.OnTermStart(termId);
     }
-
-    /// Insufficient balance for transfer. Needed `required` but only
-    /// `available` available.
-    /// @param available balance available.
-    /// @param required requested amount to transfer.
-    error InsufficientBalance(uint available, uint required);
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
     function startNewCycle(uint id) external onlyTermOwner(id) {

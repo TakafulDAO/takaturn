@@ -22,6 +22,8 @@ contract CollateralFacet is ICollateral {
 
     uint public constant COLLATERAL_VERSION = 2; // TODO: initialize this on diamond init?
 
+    ///@param id term id
+    ///@param _state collateral state
     modifier atState(uint id, LibCollateral.CollateralStates _state) {
         LibCollateral.CollateralStates state = LibCollateral
             ._collateralStorage()
@@ -31,36 +33,12 @@ contract CollateralFacet is ICollateral {
         _;
     }
 
+    ///@param id term id
     modifier onlyFundOwner(uint id) {
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
         require(term.owner == msg.sender);
         _;
     }
-
-    // TODO: on the term facet?
-    // function newCollateral(
-    //     uint totalDepositors,
-    //     uint cycleTime,
-    //     uint contributionAmount,
-    //     uint contributionPeriod,
-    //     uint collateralAmount,
-    //     uint fixedCollateralEth,
-    //     address stableCoinAddress,
-    //     address aggregatorAddress,
-    //     address creator
-    // ) external {
-    //     _newCollateral(
-    //         totalDepositors,
-    //         cycleTime,
-    //         contributionAmount,
-    //         contributionPeriod,
-    //         collateralAmount,
-    //         fixedCollateralEth,
-    //         stableCoinAddress,
-    //         aggregatorAddress,
-    //         creator
-    //     );
-    // }
 
     function setStateOwner(
         uint id,
@@ -70,8 +48,6 @@ contract CollateralFacet is ICollateral {
     }
 
     // TODO: Believe this function is not needed anymore
-    /// @notice Called by the manager when the cons job goes off
-    /// @dev consider making the duration a variable
     function initiateFund(
         uint id
     ) external onlyFundOwner(id) atState(id, LibCollateral.CollateralStates.AcceptingCollateral) {
@@ -198,7 +174,6 @@ contract CollateralFacet is ICollateral {
         }
     }
 
-    // TODO: check this one
     function withdrawReimbursement(uint id, address depositor) external {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
@@ -315,70 +290,6 @@ contract CollateralFacet is ICollateral {
         return ethAmountInUSD;
     }
 
-    // TODO: On the term facet?
-    // /// @notice Constructor Function
-    // /// @dev Network is Arbitrum One and Aggregator is ETH/USD
-    // /// @param _totalDepositors Max number of depositors
-    // /// @param _cycleTime Time for single cycle (seconds)
-    // /// @param _contributionAmount Amount user must pay per cycle (USD)
-    // /// @param _contributionPeriod The portion of cycle user must make payment
-    // /// @param _collateralAmount Total value of collateral in USD (1.5x of total fund)
-    // /// @param _creator owner of contract
-    // function _newCollateral(
-    //     uint _id,
-    //     uint _totalDepositors,
-    //     uint _cycleTime,
-    //     uint _contributionAmount,
-    //     uint _contributionPeriod,
-    //     uint _collateralAmount,
-    //     uint _fixedCollateralEth,
-    //     address _stableCoinAddress,
-    //     address _aggregatorAddress,
-    //     address _creator
-    // ) internal returns (uint) {
-    //     require(
-    //         _totalDepositors != 0 &&
-    //             _cycleTime != 0 &&
-    //             _contributionAmount != 0 &&
-    //             _contributionPeriod != 0 &&
-    //             _collateralAmount != 0 &&
-    //             _fixedCollateralEth != 0,
-    //         "Invalid inputs"
-    //     );
-    //     require(
-    //         _stableCoinAddress != address(0x00) && _stableCoinAddress != address(this),
-    //         "Invalid inputs"
-    //     );
-    //     require(
-    //         _aggregatorAddress != address(0x00) && _aggregatorAddress != address(this),
-    //         "Invalid inputs"
-    //     );
-    //     require(_creator != address(0x00) && _creator != address(this), "Invalid inputs");
-    //     // ! Viene del constructor
-    //     transferOwnership(_creator);
-
-    //     CollateralData storage collateral = collateralById[termId];
-
-    //     collateral.totalDepositors = _totalDepositors;
-    //     collateral.counterMembers;
-    //     collateral.cycleTime = _cycleTime;
-    //     collateral.contributionAmount = _contributionAmount;
-    //     collateral.contributionPeriod = _contributionPeriod;
-    //     collateral.collateralDeposit = _collateralAmount * 10 ** 18; // Convert to Wei
-    //     collateral.fixedCollateralEth = _fixedCollateralEth;
-    //     collateral.firstDepositTime;
-    //     collateral.stableCoinAddress = _stableCoinAddress;
-    //     collateral.currentCollateralState = CollateralStates.AcceptingCollateral;
-
-    //     collateral.depositors = new address[](_totalDepositors);
-
-    //     priceFeed = AggregatorV3Interface(_aggregatorAddress); // TODO: Where to initialize
-
-    //     // ! Hasta aqui viene del constructor
-    //     ++termId;
-    //     return termId;
-    // }
-
     function _setState(uint _id, LibCollateral.CollateralStates _newState) internal {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
@@ -390,6 +301,7 @@ contract CollateralFacet is ICollateral {
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
     /// @dev This will revert if called during ReleasingCollateral or after
+    /// @param _id The fund id
     /// @param _member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
     function _isUnderCollaterized(uint _id, address _member) internal view returns (bool) {

@@ -4,7 +4,6 @@ pragma solidity ^0.8.9;
 
 import {IFund} from "../interfaces/IFund.sol";
 import {ICollateral} from "../interfaces/ICollateral.sol";
-//import {ITakaturnFactory} from "../interfaces/ITakaturnFactory.sol"; // TODO: Needed?
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITerm} from "../interfaces/ITerm.sol";
 
@@ -19,7 +18,6 @@ import {CollateralFacet} from "./CollateralFacet.sol";
 /// @author Aisha El Allam / Mohammed Haddouti
 /// @notice This is used to deploy the collateral & fund contracts
 /// @dev v2.0 (post-deploy)
-// TODO: remove abstract keyword, missing implementations of createCollateral, createFund, getDeployedCollaterals, getDeployedFunds
 contract TermFacet is ITerm {
     uint public constant TERM_VERSION = 1;
 
@@ -161,15 +159,10 @@ contract TermFacet is ITerm {
             ._collateralStorage()
             .collaterals[termId];
 
-        // LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
-        //     ._collateralStorage();
-
         newCollateral.initialized = true;
         newCollateral.state = LibCollateral.CollateralStates.AcceptingCollateral;
         newCollateral.depositors = new address[](_totalParticipants);
         newCollateral.collateralDeposit = _fixedCollateralEth; // TODO: This is the correct value?
-
-        //collateralStorage.collaterals[termId] = newCollateral; // TODO: Can not be assigned this way due to have nested mappings
     }
 
     function _createFund(uint termId) internal {
@@ -179,14 +172,11 @@ contract TermFacet is ITerm {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];
-        //LibFund.Fund storage newFund;
 
         newFund.initialized = true;
         newFund.stableToken = IERC20(term.stableTokenAddress);
         newFund.beneficiariesOrder = collateral.depositors;
 
         IFund(address(this)).initFund(termId);
-
-        //fund.funds[termId] = newFund; // TODO: Can not be assigned this way due to have nested mappings
     }
 }
