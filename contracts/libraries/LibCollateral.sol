@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-//import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 library LibCollateral {
     uint public constant COLLATERAL_VERSION = 1;
     bytes32 constant COLLATERAL_STORAGE_POSITION = keccak256("diamond.standard.collateral.storage");
+    bytes32 constant AGGREGATOR_POSITION = keccak256("diamond.standard.aggregator");
 
     enum CollateralStates {
         AcceptingCollateral, // Initial state where collateral are deposited
@@ -24,6 +25,10 @@ library LibCollateral {
     event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
 
+    struct Aggregator {
+        AggregatorV3Interface priceFeed;
+    }
+
     struct Collateral {
         bool initialized;
         CollateralStates state;
@@ -38,6 +43,13 @@ library LibCollateral {
 
     struct CollateralStorage {
         mapping(uint => Collateral) collaterals; // termId => Collateral struct
+    }
+
+    function _aggregator() internal pure returns (Aggregator storage aggregator) {
+        bytes32 position = AGGREGATOR_POSITION;
+        assembly {
+            aggregator.slot := position
+        }
     }
 
     function _collateralExists(uint termId) internal view returns (bool) {
