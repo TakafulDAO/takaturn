@@ -14,16 +14,20 @@ const isProtocolChain = isMemnet || isFork || isLocalhost || isMainnet || isTest
 const networkConfig = {
     31337: {
         name: "hardhat",
+        decimals: "8",
+        initialPrice: "200000000000", // 2000 // todo: check this values
     },
     42161: {
         name: "mainnet_arbitrum",
-        // Here can go usefull address or variables needed for deployment
+        ethUsdPriceFeed: "", // todo: add correct address
     },
     421613: {
         name: "testnet_arbitrum",
+        ethUsdPriceFeed: "", // todo: add correct address
     },
     80001: {
         name: "testnet_mumbai",
+        ethUsdPriceFeed: "", // todo: add correct address
     },
 }
 

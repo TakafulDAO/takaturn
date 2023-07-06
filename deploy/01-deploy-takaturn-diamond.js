@@ -1,6 +1,10 @@
-// Deploy script for independent contracts
 const { network } = require("hardhat")
-const { developmentChains, VERIFICATION_BLOCK_CONFIRMATIONS } = require("../utils/_networks")
+const {
+    networkConfig,
+    developmentChains,
+    VERIFICATION_BLOCK_CONFIRMATIONS,
+    isDevnet,
+} = require("../utils/_networks")
 const { verify } = require("../scripts/verify")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
@@ -10,21 +14,31 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const waitBlockConfirmations = developmentChains.includes(network.name)
         ? 1
         : VERIFICATION_BLOCK_CONFIRMATIONS
+    let ethUsdPriceFeedAddress
 
     log("01. Deploying Takaturn Diamond...")
 
+    if (isDevnet) {
+        const ethUsdAggregator = await deployments.get("MockV3Aggregator")
+        ethUsdPriceFeedAddress = ethUsdAggregator.address
+    } else {
+        ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
+    }
+
     const args = []
+    const initArgs = [ethUsdPriceFeedAddress]
+
     const takaturnDiamond = await diamond.deploy("TakaturnDiamond", {
         from: deployer,
         owner: diamondOwner,
         args: args,
         log: true,
         facets: ["CollateralFacet", "FundFacet", "TermFacet"],
-        // execute: {
-        //     contract: "DiamondInit",
-        //     methodName: "init",
-        //     args: [],
-        // },
+        execute: {
+            contract: "DiamondInit",
+            methodName: "init",
+            args: initArgs,
+        },
         waitConfirmations: waitBlockConfirmations,
     })
 
@@ -39,4 +53,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 }
 
-module.exports.tags = ["all", "diamond_diamond_storage", "diamond_storage_deploy"]
+module.exports.tags = ["all", "diamond", "takaturn_deploy"]
