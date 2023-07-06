@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.9;
+pragma solidity 0.8.20;
 
 import {IFund} from "../interfaces/IFund.sol";
 import {ICollateral} from "../interfaces/ICollateral.sol";

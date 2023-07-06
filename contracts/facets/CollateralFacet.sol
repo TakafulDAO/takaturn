@@ -18,9 +18,6 @@ import {LibCollateral} from "../libraries/LibCollateral.sol";
 contract CollateralFacet is ICollateral {
     IFund private _fundInstance; // TODO: init here?
     ITerm private _termInstance; // TODO: init here?
-    AggregatorV3Interface priceFeed;
-
-    uint public constant COLLATERAL_VERSION = 2; // TODO: initialize this on diamond init?
 
     ///@param id term id
     ///@param _state collateral state
@@ -267,7 +264,7 @@ contract CollateralFacet is ICollateral {
     /// @notice Gets latest ETH / USD price
     /// @return uint latest price in Wei
     function getLatestPrice() public view returns (uint) {
-        (, int price, , , ) = priceFeed.latestRoundData(); //8 decimals
+        (, int price, , , ) = LibCollateral._aggregator().priceFeed.latestRoundData(); //8 decimals
         return uint(price * 10 ** 10); //18 decimals
     }
 
