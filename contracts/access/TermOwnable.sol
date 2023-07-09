@@ -33,7 +33,7 @@ contract TermOwnable is Context {
     /**
      * @dev Returns the address of the current owner.
      */
-    function termOwner(uint termId) public view virtual returns (address) {
+    function termOwner(uint termId) internal view virtual returns (address) {
         return LibTerm._termStorage().terms[termId].termOwner;
     }
 
@@ -51,7 +51,7 @@ contract TermOwnable is Context {
      * NOTE: Renouncing ownership will leave the contract without an owner,
      * thereby disabling any functionality that is only available to the owner.
      */
-    function renounceTermOwnership(uint termId) public virtual onlyTermOwner(termId) {
+    function renounceTermOwnership(uint termId) internal virtual onlyTermOwner(termId) {
         _transferTermOwnership(termId, address(0));
     }
 
@@ -62,7 +62,7 @@ contract TermOwnable is Context {
     function transferTermOwnership(
         uint termId,
         address newTermOwner
-    ) public virtual onlyTermOwner(termId) {
+    ) internal virtual onlyTermOwner(termId) {
         require(newTermOwner != address(0), "Ownable: new owner is the zero address");
         _transferTermOwnership(termId, newTermOwner);
     }
