@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-//import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-
 library LibTerm {
     uint public constant TERM_VERSION = 1;
+    bytes32 constant TERM_CONSTS_POSITION = keccak256("diamond.standard.term.consts");
     bytes32 constant TERM_STORAGE_POSITION = keccak256("diamond.standard.term.storage");
+    
+    struct TermConsts {
+        uint sequencerStartupTime;
+        address sequencerUptimeFeedAddress;
+    }
 
     struct Term {
         bool initialized;
@@ -28,6 +32,13 @@ library LibTerm {
 
     function _termExists(uint termId) internal view returns (bool) {
         return _termStorage().terms[termId].initialized;
+    }
+
+    function _termConsts() internal pure returns (TermConsts storage termConsts) {
+        bytes32 position = TERM_CONSTS_POSITION;
+        assembly {
+            termConsts.slot := position
+        }
     }
 
     function _termStorage() internal pure returns (TermStorage storage termStorage) {
