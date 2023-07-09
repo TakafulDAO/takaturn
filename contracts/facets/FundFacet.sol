@@ -321,8 +321,7 @@ contract FundFacet is IFund, TermOwnable {
     /// @notice function to attempt to make autopayers pay their contribution
     function _autoPay(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
-        address[] memory autoPayers = fund.beneficiariesOrder;
+        address[] memory autoPayers = fund.beneficiariesOrder; // use beneficiariesOrder because it is a single array with all participants
 
         uint length = autoPayers.length;
         for (uint i; i < length; ) {
