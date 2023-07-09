@@ -33,7 +33,7 @@ contract TermOwnable is Context {
     /**
      * @dev Returns the address of the current owner.
      */
-    function termOwner(uint termId) internal view virtual returns (address) {
+    function _termOwner(uint termId) internal view virtual returns (address) {
         return LibTerm._termStorage().terms[termId].termOwner;
     }
 
@@ -41,7 +41,7 @@ contract TermOwnable is Context {
      * @dev Throws if the sender is not the owner.
      */
     function _checkTermOwner(uint termId) internal view virtual {
-        require(termOwner(termId) == _msgSender(), "TermOwnable: caller is not the owner");
+        require(_termOwner(termId) == _msgSender(), "TermOwnable: caller is not the owner");
     }
 
     /**
@@ -51,7 +51,7 @@ contract TermOwnable is Context {
      * NOTE: Renouncing ownership will leave the contract without an owner,
      * thereby disabling any functionality that is only available to the owner.
      */
-    function renounceTermOwnership(uint termId) internal virtual onlyTermOwner(termId) {
+    function _renounceTermOwnership(uint termId) internal virtual onlyTermOwner(termId) {
         _transferTermOwnership(termId, address(0));
     }
 
@@ -59,19 +59,23 @@ contract TermOwnable is Context {
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Can only be called by the current owner.
      */
-    function transferTermOwnership(
-        uint termId,
-        address newTermOwner
-    ) internal virtual onlyTermOwner(termId) {
-        require(newTermOwner != address(0), "Ownable: new owner is the zero address");
-        _transferTermOwnership(termId, newTermOwner);
-    }
+    // function transferTermOwnership(
+    //     uint termId,
+    //     address newTermOwner
+    // ) internal virtual onlyTermOwner(termId) {
+    //     require(newTermOwner != address(0), "Ownable: new owner is the zero address");
+    //     _transferTermOwnership(termId, newTermOwner);
+    // }
 
     /**
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      * Internal function without access restriction.
      */
-    function _transferTermOwnership(uint termId, address newTermOwner) internal virtual {
+    function _transferTermOwnership(
+        uint termId,
+        address newTermOwner
+    ) internal virtual onlyTermOwner(termId) {
+        require(newTermOwner != address(0), "Ownable: new owner is the zero address");
         LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
         address oldOwner = term.termOwner;
         term.termOwner = newTermOwner;
