@@ -229,25 +229,33 @@ contract CollateralFacet is ICollateral, TermOwnable {
     /// @return uint latest price in Wei
     function getLatestPrice(uint id) public view returns (uint) {
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        
+        LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
+
+        (
+            /*uint80 roundID*/,
+            int256 answer,
+            uint256 startedAt,
+            /*uint256 updatedAt*/,
+            /*uint80 answeredInRound*/
+        ) = AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
+
+        // Answer == 0: Sequencer is up
+        // Answer == 1: Sequencer is down
+        require(answer == 0, "Sequencer down");
+
+        // We must wait at least an hour after the sequencer started up
+        require(termConsts.sequencerStartupTime > block.timestamp - startedAt, "Sequencer starting up");
+
         (
             uint80 roundID,
             int256 price,
-            ,
+            /*uint startedAt*/,
             uint256 timeStamp,
             uint80 answeredInRound
         ) = AggregatorV3Interface(term.aggregatorAddress).latestRoundData(); //8 decimals
 
-
-        require(
-            timeStamp != 0,
-            "ChainlinkOracle: round is not complete"
-        );
-        require(
-            answeredInRound >= roundID,
-            "ChainlinkOracle: stale data"
-        );
-        require(price > 0, "Chainlink Malfunction");
+        // Check if chainlink data is not stale or incorrect
+        require(timeStamp != 0 && answeredInRound >= roundID && price > 0,"ChainlinkOracle: stale data");
 
         return uint(price * 10 ** 10); //18 decimals
     }
