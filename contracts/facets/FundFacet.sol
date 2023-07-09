@@ -10,21 +10,17 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
 
+import {TermOwnable} from "../access/TermOwnable.sol";
+
 /// @title Takaturn Fund
 /// @author Mohammed Haddouti
 /// @notice This is used to operate the Takaturn fund
-/// @dev v2.0 (post-deploy)
-contract FundFacet is IFund {
+/// @dev v3.0 (Diamond)
+contract FundFacet is IFund, TermOwnable {
     // TODO: Review auto pay logic
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint public constant FUND_VERSION = 2; // The version of the contract // TODO: can not set state variables on facets. on Init? Library?
-
-    modifier onlyTermOwner(uint id) {
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        require(term.owner == msg.sender);
-        _;
-    }
 
     /// Insufficient balance for transfer. Needed `required` but only
     /// `available` available.

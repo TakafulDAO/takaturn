@@ -9,6 +9,8 @@ library LibTerm {
 
     struct Term {
         bool initialized;
+        address owner;
+        uint creationTime;
         uint termId;
         uint totalParticipants;
         uint cycleTime;
@@ -17,8 +19,6 @@ library LibTerm {
         uint fixedCollateralEth;
         address stableTokenAddress;
         address aggregatorAddress;
-        address owner;
-        uint creationTime;
     }
 
     struct TermStorage {

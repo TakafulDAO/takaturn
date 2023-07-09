@@ -10,11 +10,13 @@ import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 
-/// @title Takaturn
+import {TermOwnable} from "../access/TermOwnable.sol";
+
+/// @title Takaturn Collateral
 /// @author Aisha El Allam
-/// @notice This is used to operate the Takaturn fund
-/// @dev v2.0 (post-deploy)
-contract CollateralFacet is ICollateral {
+/// @notice This is used to operate the Takaturn collateral
+/// @dev v3.0 (Diamond)
+contract CollateralFacet is ICollateral, TermOwnable {
 
     ///@param id term id
     ///@param _state collateral state
@@ -27,17 +29,10 @@ contract CollateralFacet is ICollateral {
         _;
     }
 
-    ///@param id term id
-    modifier onlyFundOwner(uint id) {
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        require(term.owner == msg.sender);
-        _;
-    }
-
     function setStateOwner(
         uint id,
         LibCollateral.CollateralStates newState
-    ) external onlyFundOwner(id) {
+    ) external onlyTermOwner(id) {
         _setState(id, newState);
     }
 
@@ -172,7 +167,7 @@ contract CollateralFacet is ICollateral {
     /// @notice allow the owner to empty the Collateral after 180 days
     function emptyCollateralAfterEnd(
         uint id
-    ) external onlyFundOwner(id) atState(id, LibCollateral.CollateralStates.ReleasingCollateral) {
+    ) external onlyTermOwner(id) atState(id, LibCollateral.CollateralStates.ReleasingCollateral) {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
