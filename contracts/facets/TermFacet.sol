@@ -14,10 +14,10 @@ import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {FundFacet} from "./FundFacet.sol";
 import {CollateralFacet} from "./CollateralFacet.sol";
 
-/// @title Takaturn Factory
-/// @author Aisha El Allam / Mohammed Haddouti
+/// @title Takaturn Term
+/// @author Mohammed Haddouti
 /// @notice This is used to deploy the collateral & fund contracts
-/// @dev v2.0 (post-deploy)
+/// @dev v3.0 (Diamond)
 contract TermFacet is ITerm {
     uint public constant TERM_VERSION = 1;
 
@@ -132,12 +132,21 @@ contract TermFacet is ITerm {
             ._collateralStorage();
         LibCollateral.Collateral storage collateral = collateralStorage.collaterals[termId];
 
+        address[] memory depositors = collateral.depositors;
+        uint depositorsArrayLength = depositors.length;
+
         require(collateral.counterMembers == term.totalParticipants);
-        // If one user is under collaterized, then all are.
-        require(
-            !ICollateral(address(this)).isUnderCollaterized(termId, collateral.depositors[0]),
-            "Eth prices dropped"
-        );
+
+        // Need to check each user because they can have different collateral amounts
+        for (uint i; i < depositorsArrayLength; ) {
+            require(
+                !ICollateral(address(this)).isUnderCollaterized(termId, depositors[i]),
+                "Eth prices dropped"
+            );
+            unchecked {
+                ++i;
+            }
+        }
 
         // Actually reate and initialize the fund
         _createFund(termId);
