@@ -7,16 +7,18 @@ const isMemnet = hre.network.name === "hardhat"
 const isMainnet = hre.network.name.startsWith("mainnet_")
 const isTestnet = hre.network.name.startsWith("testnet_")
 
-const isDevnet = isLocalhost //|| isMemnet
+const isDevnet = isLocalhost || isMemnet
 const isRealChain = !isLocalhost && !isMemnet
 const isProtocolChain = isMemnet || isFork || isLocalhost || isMainnet || isTestnet
 
 const networkConfig = {
     31337: {
         name: "hardhat",
+        // !Alert: The next two values are only used when working on localhost WITHOUT FORK. On your .env file, set FORK=false
         decimals: "8",
-        ethUsdPriceFeed: "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612",
         initialPrice: "200000000000", // 2000 // todo: check this values
+        // !Alert: The next values are only used when FORKING MAINNET. On your .env file, set FORK=true
+        ethUsdPriceFeed: "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612",
     },
     42161: {
         name: "mainnet_arbitrum",
