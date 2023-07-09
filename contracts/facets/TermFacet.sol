@@ -85,7 +85,7 @@ contract TermFacet is ITerm {
         newTerm.fixedCollateralEth = _fixedCollateralEth;
         newTerm.stableTokenAddress = _stableTokenAddress;
         newTerm.aggregatorAddress = _aggregatorAddress;
-        newTerm.owner = msg.sender;
+        newTerm.termOwner = msg.sender;
         newTerm.creationTime = block.timestamp;
         newTerm.initialized = true;
 

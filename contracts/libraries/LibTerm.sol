@@ -5,7 +5,7 @@ library LibTerm {
     uint public constant TERM_VERSION = 1;
     bytes32 constant TERM_CONSTS_POSITION = keccak256("diamond.standard.term.consts");
     bytes32 constant TERM_STORAGE_POSITION = keccak256("diamond.standard.term.storage");
-    
+
     struct TermConsts {
         uint sequencerStartupTime;
         address sequencerUptimeFeedAddress;
@@ -13,7 +13,7 @@ library LibTerm {
 
     struct Term {
         bool initialized;
-        address owner;
+        address termOwner;
         uint creationTime;
         uint termId;
         uint totalParticipants;
