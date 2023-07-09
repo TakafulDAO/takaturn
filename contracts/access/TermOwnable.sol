@@ -19,7 +19,7 @@ import {LibTerm} from "../libraries/LibTerm.sol";
  * `onlyTermOwner`, which can be applied to your functions to restrict their use to
  * the owner.
  */
-abstract contract TermOwnable is Context {
+contract TermOwnable is Context {
     event TermOwnershipTransferred(address indexed previousTermOwner, address indexed newTermOwner);
 
     /**
