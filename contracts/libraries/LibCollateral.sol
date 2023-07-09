@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+pragma solidity 0.8.18;
 
 library LibCollateral {
     uint public constant COLLATERAL_VERSION = 1;
@@ -37,7 +37,6 @@ library LibCollateral {
     struct CollateralStorage {
         mapping(uint => Collateral) collaterals; // termId => Collateral struct
     }
-
 
     function _collateralExists(uint termId) internal view returns (bool) {
         return _collateralStorage().collaterals[termId].initialized;

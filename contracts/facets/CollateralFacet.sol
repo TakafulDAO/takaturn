@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.18;
 
 import {IFund} from "../interfaces/IFund.sol";
 import {ICollateral} from "../interfaces/ICollateral.sol";
@@ -17,7 +17,6 @@ import {TermOwnable} from "../access/TermOwnable.sol";
 /// @notice This is used to operate the Takaturn collateral
 /// @dev v3.0 (Diamond)
 contract CollateralFacet is ICollateral, TermOwnable {
-
     ///@param id term id
     ///@param _state collateral state
     modifier atState(uint id, LibCollateral.CollateralStates _state) {
@@ -231,31 +230,32 @@ contract CollateralFacet is ICollateral, TermOwnable {
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
         LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
 
-        (
-            /*uint80 roundID*/,
-            int256 answer,
-            uint256 startedAt,
-            /*uint256 updatedAt*/,
-            /*uint80 answeredInRound*/
-        ) = AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
+        (, /*uint80 roundID*/ int256 answer, uint256 startedAt, , ) = /*uint256 updatedAt*/ /*uint80 answeredInRound*/
+        AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
 
         // Answer == 0: Sequencer is up
         // Answer == 1: Sequencer is down
         require(answer == 0, "Sequencer down");
 
         // We must wait at least an hour after the sequencer started up
-        require(termConsts.sequencerStartupTime > block.timestamp - startedAt, "Sequencer starting up");
+        require(
+            termConsts.sequencerStartupTime > block.timestamp - startedAt,
+            "Sequencer starting up"
+        );
 
         (
             uint80 roundID,
             int256 price,
-            /*uint startedAt*/,
-            uint256 timeStamp,
+            ,
+            /*uint startedAt*/ uint256 timeStamp,
             uint80 answeredInRound
         ) = AggregatorV3Interface(term.aggregatorAddress).latestRoundData(); //8 decimals
 
         // Check if chainlink data is not stale or incorrect
-        require(timeStamp != 0 && answeredInRound >= roundID && price > 0,"ChainlinkOracle: stale data");
+        require(
+            timeStamp != 0 && answeredInRound >= roundID && price > 0,
+            "ChainlinkOracle: stale data"
+        );
 
         return uint(price * 10 ** 10); //18 decimals
     }
@@ -303,12 +303,17 @@ contract CollateralFacet is ICollateral, TermOwnable {
         if (LibFund._fundExists(_id)) {
             collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
         } else {
-            uint remainingCycles = 1 + collateral.counterMembers - IFund(address(this)).currentCycle(_id); // TODO: check this call later. 02/07/2023 12:31
+            uint remainingCycles = 1 +
+                collateral.counterMembers -
+                IFund(address(this)).currentCycle(_id); // TODO: check this call later. 02/07/2023 12:31
 
             collateralLimit = remainingCycles * term.contributionAmount * 10 ** 18; // Convert to Wei
         }
 
-        memberCollateralUSD = getToUSDConversionRate(_id, collateral.collateralMembersBank[_member]);
+        memberCollateralUSD = getToUSDConversionRate(
+            _id,
+            collateral.collateralMembersBank[_member]
+        );
 
         return (memberCollateralUSD < collateralLimit);
     }
@@ -326,7 +331,10 @@ contract CollateralFacet is ICollateral, TermOwnable {
         address[] memory expellants = new address[](_defaulters.length);
         uint share;
         uint currentDefaulterBank;
-        uint contributionAmountWei = getToEthConversionRate(_term.termId, _term.contributionAmount * 10 ** 18);
+        uint contributionAmountWei = getToEthConversionRate(
+            _term.termId,
+            _term.contributionAmount * 10 ** 18
+        );
 
         // Determine who will be expelled and who will just pay the contribution
         // From their collateral.

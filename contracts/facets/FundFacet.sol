@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.18;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IFund} from "../interfaces/IFund.sol";
@@ -325,10 +325,7 @@ contract FundFacet is IFund, TermOwnable {
 
         uint length = autoPayers.length;
         for (uint i; i < length; ) {
-            if (
-                fund.autoPayEnabled[autoPayers[i]] &&
-                !fund.paidThisCycle[autoPayers[i]]
-            ) {
+            if (fund.autoPayEnabled[autoPayers[i]] && !fund.paidThisCycle[autoPayers[i]]) {
                 _payContributionSafe(_id, autoPayers[i], autoPayers[i]);
             }
             unchecked {
@@ -353,8 +350,7 @@ contract FundFacet is IFund, TermOwnable {
                 fund.paidThisCycle[_participant] = true;
                 emit LibFund.OnPaidContribution(_id, _participant, fund.currentCycle);
             }
-        }
-        catch {}
+        } catch {}
     }
 
     /// @notice function to pay the actual contribution for the cycle
@@ -446,7 +442,7 @@ contract FundFacet is IFund, TermOwnable {
 
         // Request contribution from the collateral for those who haven't paid this cycle
         if (EnumerableSet.length(fund._defaulters) > 0) {
-            address[] memory expellants =  ICollateral(address(this)).requestContribution(
+            address[] memory expellants = ICollateral(address(this)).requestContribution(
                 _id,
                 selectedBeneficiary,
                 EnumerableSet.values(fund._defaulters)
