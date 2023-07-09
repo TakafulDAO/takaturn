@@ -4,6 +4,7 @@ const {
     developmentChains,
     VERIFICATION_BLOCK_CONFIRMATIONS,
     isDevnet,
+    isFork,
 } = require("../utils/_networks")
 const { verify } = require("../scripts/verify")
 
@@ -18,7 +19,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("01. Deploying Takaturn Diamond...")
 
-    if (isDevnet) {
+    if (isDevnet && !isFork) {
         const ethUsdAggregator = await deployments.get("MockV3Aggregator")
         ethUsdPriceFeedAddress = ethUsdAggregator.address
     } else {
@@ -26,14 +27,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 
     const args = []
-    const initArgs = [ethUsdPriceFeedAddress]
+    const initArgs = []
 
     const takaturnDiamond = await diamond.deploy("TakaturnDiamond", {
         from: deployer,
         owner: diamondOwner,
         args: args,
         log: true,
-        facets: ["CollateralFacet", "FundFacet", "TermFacet"],
+        facets: ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet"],
         execute: {
             contract: "DiamondInit",
             methodName: "init",
