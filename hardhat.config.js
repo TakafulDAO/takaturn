@@ -40,7 +40,16 @@ module.exports = {
     solidity: {
         compilers: [
             {
-                version: "0.8.20",
+                version: "0.6.12",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+            {
+                version: "0.8.18",
                 settings: {
                     optimizer: {
                         enabled: true,
@@ -115,29 +124,70 @@ module.exports = {
             default: 0,
             localhost: 0,
         },
-        diamondOwner: {
-            default: 0,
-            localhost: 0,
-        },
-        Takaturn_User_1: {
-            default: 1,
-            localhost: 1,
-        },
-        Takaturn_User_2: {
+        participant_2: {
             default: 2,
             localhost: 2,
         },
-        Takaturn_User_3: {
+        participant_3: {
             default: 3,
             localhost: 3,
         },
-        Takaturn_User_4: {
+        participant_4: {
             default: 4,
             localhost: 4,
         },
-        diamondOwner: {
+        participant_5: {
             default: 5,
             localhost: 5,
+        },
+        participant_6: {
+            default: 6,
+            localhost: 6,
+        },
+        participant_7: {
+            default: 7,
+            localhost: 7,
+        },
+        participant_8: {
+            default: 8,
+            localhost: 8,
+        },
+        participant_9: {
+            default: 9,
+            localhost: 9,
+        },
+        participant_10: {
+            default: 10,
+            localhost: 10,
+        },
+        participant_11: {
+            default: 11,
+            localhost: 11,
+        },
+        participant_12: {
+            default: 12,
+            localhost: 12,
+        },
+        usdcOwner: {
+            default: 13,
+            localhost: 13,
+            // owner, blacklister,pauser
+        },
+        usdcMasterMinter: {
+            default: 14,
+            localhost: 14,
+        },
+        usdcRegularMinter: {
+            default: 15,
+            localhost: 15,
+        },
+        usdcLostAndFound: {
+            default: 16,
+            localhost: 16,
+        },
+        diamondOwner: {
+            default: 17,
+            localhost: 17,
         },
     },
     mocha: {
