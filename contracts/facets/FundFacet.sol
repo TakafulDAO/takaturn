@@ -333,16 +333,34 @@ contract FundFacet is IFund {
         for (uint i; i < length; ) {
             if (
                 fund.autoPayEnabled[autoPayers[i]] &&
-                !fund.paidThisCycle[autoPayers[i]] &&
-                amount <= fund.stableToken.allowance(autoPayers[i], address(this)) &&
-                amount <= fund.stableToken.balanceOf(autoPayers[i])
+                !fund.paidThisCycle[autoPayers[i]]
             ) {
-                _payContribution(_id, autoPayers[i], autoPayers[i]);
+                _payContributionSafe(_id, autoPayers[i], autoPayers[i]);
             }
             unchecked {
                 ++i;
             }
         }
+    }
+
+    /// @notice function to pay the actual contribution for the cycle, used for autopay to prevent reverts
+    /// @param _payer the address that's paying
+    /// @param _participant the (participant) address that's being paid for
+    function _payContributionSafe(uint _id, address _payer, address _participant) internal {
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
+        LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
+
+        // Get the amount and do the actual transfer
+        // This will only succeed if the sender approved this contract address beforehand
+        uint amount = term.contributionAmount;
+        try fund.stableToken.transferFrom(_payer, address(this), amount) returns (bool success) {
+            if (success) {
+                // Finish up, set that the participant paid for this cycle and emit an event that it's been done
+                fund.paidThisCycle[_participant] = true;
+                emit LibFund.OnPaidContribution(_id, _participant, fund.currentCycle);
+            }
+        }
+        catch {}
     }
 
     /// @notice function to pay the actual contribution for the cycle
