@@ -323,7 +323,6 @@ contract FundFacet is IFund, TermOwnable {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
         address[] memory autoPayers = fund.beneficiariesOrder;
-        uint amount = term.contributionAmount;
 
         uint length = autoPayers.length;
         for (uint i; i < length; ) {
