@@ -3,7 +3,6 @@
 pragma solidity 0.8.20;
 
 import {IFund} from "../interfaces/IFund.sol";
-import {ITerm} from "../interfaces/ITerm.sol";
 import {ICollateral} from "../interfaces/ICollateral.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
@@ -16,8 +15,6 @@ import {LibCollateral} from "../libraries/LibCollateral.sol";
 /// @notice This is used to operate the Takaturn fund
 /// @dev v2.0 (post-deploy)
 contract CollateralFacet is ICollateral {
-    IFund private _fundInstance; // TODO: init here?
-    ITerm private _termInstance; // TODO: init here?
 
     ///@param id term id
     ///@param _state collateral state
@@ -42,34 +39,6 @@ contract CollateralFacet is ICollateral {
         LibCollateral.CollateralStates newState
     ) external onlyFundOwner(id) {
         _setState(id, newState);
-    }
-
-    // TODO: Believe this function is not needed anymore
-    function initiateFund(
-        uint id
-    ) external onlyFundOwner(id) atState(id, LibCollateral.CollateralStates.AcceptingCollateral) {
-        LibCollateral.Collateral storage collateral = LibCollateral
-            ._collateralStorage()
-            .collaterals[id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        // TODO: I replace totalDepositors for totalParticipants from the term. Better totalDepositors on Collateral struct?
-        //(collateral.counterMembers == collateral.totalDepositors);
-        (collateral.counterMembers == term.totalParticipants);
-        // If one user is under collaterized, then all are.
-        require(!_isUnderCollaterized(id, collateral.depositors[0]), "Eth prices dropped");
-
-        _termInstance.createTerm(
-            term.totalParticipants,
-            term.cycleTime,
-            term.contributionAmount,
-            term.contributionPeriod,
-            term.fixedCollateralEth,
-            term.stableTokenAddress,
-            term.aggregatorAddress
-        );
-
-        _setState(id, LibCollateral.CollateralStates.CycleOngoing);
-        //emit OnFundStarted(fundContract, address(this));
     }
 
     /// @notice Called by each member to enter the term
@@ -207,7 +176,7 @@ contract CollateralFacet is ICollateral {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        require(block.timestamp > (_fundInstance.fundEnd(id)) + 180 days, "Can't empty yet");
+        require(block.timestamp > IFund(address(this)).fundEnd(id) + 180 days, "Can't empty yet");
 
         uint depositorsLength = collateral.depositors.length;
         for (uint i; i < depositorsLength; i++) {
@@ -311,7 +280,7 @@ contract CollateralFacet is ICollateral {
         if (LibFund._fundExists(_id)) {
             collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
         } else {
-            uint remainingCycles = 1 + collateral.counterMembers - _fundInstance.currentCycle(_id); // TODO: check this call later. 02/07/2023 12:31
+            uint remainingCycles = 1 + collateral.counterMembers - IFund(address(this)).currentCycle(_id); // TODO: check this call later. 02/07/2023 12:31
 
             collateralLimit = remainingCycles * term.contributionAmount * 10 ** 18; // Convert to Wei
         }
@@ -339,7 +308,7 @@ contract CollateralFacet is ICollateral {
         // Determine who will be expelled and who will just pay the contribution
         // From their collateral.
         for (uint i; i < _defaulters.length; ) {
-            wasBeneficiary = _fundInstance.isBeneficiary(_term.termId, _defaulters[i]);
+            wasBeneficiary = IFund(address(this)).isBeneficiary(_term.termId, _defaulters[i]);
             currentDefaulterBank = _collateral.collateralMembersBank[_defaulters[i]];
 
             if (_defaulters[i] == _beneficiary) continue; // Avoid expelling graced defaulter
@@ -388,7 +357,7 @@ contract CollateralFacet is ICollateral {
         for (uint i; i < depositorsLength; ) {
             currentDepositor = _collateral.depositors[i];
             if (
-                !_fundInstance.isBeneficiary(_term.termId, currentDepositor) &&
+                !IFund(address(this)).isBeneficiary(_term.termId, currentDepositor) &&
                 _collateral.isCollateralMember[currentDepositor]
             ) {
                 nonBeneficiaries[nonBeneficiaryCounter] = currentDepositor;

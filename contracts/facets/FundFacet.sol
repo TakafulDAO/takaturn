@@ -186,7 +186,7 @@ contract FundFacet is IFund {
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
-        (, uint collateralPool, ) = fund.collateral.getDepositorSummary(id, msg.sender);
+        (, uint collateralPool, ) = ICollateral(address(this)).getDepositorSummary(id, msg.sender);
         bool hasCollateralPool = collateralPool > 0;
         require(hasFundPool || hasCollateralPool, "Nothing to withdraw");
 
@@ -204,7 +204,7 @@ contract FundFacet is IFund {
         }
 
         if (hasCollateralPool) {
-            fund.collateral.withdrawReimbursement(id, msg.sender);
+            ICollateral(address(this)).withdrawReimbursement(id, msg.sender);
         }
     }
 
@@ -351,6 +351,7 @@ contract FundFacet is IFund {
     function _payContribution(uint _id, address _payer, address _participant) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
+
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
         uint amount = term.contributionAmount;
@@ -433,7 +434,7 @@ contract FundFacet is IFund {
 
         // Request contribution from the collateral for those who haven't paid this cycle
         if (EnumerableSet.length(fund._defaulters) > 0) {
-            address[] memory expellants = fund.collateral.requestContribution(
+            address[] memory expellants =  ICollateral(address(this)).requestContribution(
                 _id,
                 selectedBeneficiary,
                 EnumerableSet.values(fund._defaulters)
@@ -541,6 +542,6 @@ contract FundFacet is IFund {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         fund.fundEnd = block.timestamp;
         _setState(_id, LibFund.FundStates.FundClosed);
-        fund.collateral.releaseCollateral(_id);
+        ICollateral(address(this)).releaseCollateral(_id);
     }
 }

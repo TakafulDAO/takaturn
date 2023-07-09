@@ -51,7 +51,6 @@ library LibFund {
         uint expelledParticipants; // Total amount of participants that have been expelled so far
         address lastBeneficiary; // The last selected beneficiary, updates with every cycle
         uint totalAmountOfCycles; // TODO: this one is needed. Here or in term better?
-        ICollateral collateral; // TODO: check later if it has to be here, but it has to initialize somewhere
     }
 
     struct FundStorage {
