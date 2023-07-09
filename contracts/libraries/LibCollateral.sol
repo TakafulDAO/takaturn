@@ -6,7 +6,6 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 library LibCollateral {
     uint public constant COLLATERAL_VERSION = 1;
     bytes32 constant COLLATERAL_STORAGE_POSITION = keccak256("diamond.standard.collateral.storage");
-    bytes32 constant AGGREGATOR_POSITION = keccak256("diamond.standard.aggregator");
 
     enum CollateralStates {
         AcceptingCollateral, // Initial state where collateral are deposited
