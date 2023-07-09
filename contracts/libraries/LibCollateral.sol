@@ -25,10 +25,6 @@ library LibCollateral {
     event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
 
-    struct Aggregator {
-        AggregatorV3Interface priceFeed;
-    }
-
     struct Collateral {
         bool initialized;
         CollateralStates state;
@@ -45,12 +41,6 @@ library LibCollateral {
         mapping(uint => Collateral) collaterals; // termId => Collateral struct
     }
 
-    function _aggregator() internal pure returns (Aggregator storage aggregator) {
-        bytes32 position = AGGREGATOR_POSITION;
-        assembly {
-            aggregator.slot := position
-        }
-    }
 
     function _collateralExists(uint termId) internal view returns (bool) {
         return _collateralStorage().collaterals[termId].initialized;

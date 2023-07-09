@@ -232,16 +232,17 @@ contract CollateralFacet is ICollateral {
 
     /// @notice Gets latest ETH / USD price
     /// @return uint latest price in Wei
-    function getLatestPrice() public view returns (uint) {
-        (, int price, , , ) = LibCollateral._aggregator().priceFeed.latestRoundData(); //8 decimals
+    function getLatestPrice(uint id) public view returns (uint) {
+        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
+        (, int price, , , ) = AggregatorV3Interface(term.aggregatorAddress).latestRoundData(); //8 decimals
         return uint(price * 10 ** 10); //18 decimals
     }
 
     /// @notice Gets the conversion rate of an amount in USD to ETH
     /// @dev should we always deal with in Wei?
     /// @return uint converted amount in wei
-    function getToEthConversionRate(uint USDAmount) public view returns (uint) {
-        uint ethPrice = getLatestPrice();
+    function getToEthConversionRate(uint id, uint USDAmount) public view returns (uint) {
+        uint ethPrice = getLatestPrice(id);
         uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice; //* 10 ** 18;
         return USDAmountInEth;
     }
@@ -249,9 +250,9 @@ contract CollateralFacet is ICollateral {
     /// @notice Gets the conversion rate of an amount in ETH to USD
     /// @dev should we always deal with in Wei?
     /// @return uint converted amount in USD correct to 18 decimals
-    function getToUSDConversionRate(uint ethAmount) public view returns (uint) {
+    function getToUSDConversionRate(uint id, uint ethAmount) public view returns (uint) {
         // NOTE: This will be made internal
-        uint ethPrice = getLatestPrice();
+        uint ethPrice = getLatestPrice(id);
         uint ethAmountInUSD = (ethPrice * ethAmount) / 10 ** 18;
         return ethAmountInUSD;
     }
@@ -285,7 +286,7 @@ contract CollateralFacet is ICollateral {
             collateralLimit = remainingCycles * term.contributionAmount * 10 ** 18; // Convert to Wei
         }
 
-        memberCollateralUSD = getToUSDConversionRate(collateral.collateralMembersBank[_member]);
+        memberCollateralUSD = getToUSDConversionRate(_id, collateral.collateralMembersBank[_member]);
 
         return (memberCollateralUSD < collateralLimit);
     }
@@ -303,7 +304,7 @@ contract CollateralFacet is ICollateral {
         address[] memory expellants = new address[](_defaulters.length);
         uint share;
         uint currentDefaulterBank;
-        uint contributionAmountWei = getToEthConversionRate(_term.contributionAmount * 10 ** 18);
+        uint contributionAmountWei = getToEthConversionRate(_term.termId, _term.contributionAmount * 10 ** 18);
 
         // Determine who will be expelled and who will just pay the contribution
         // From their collateral.

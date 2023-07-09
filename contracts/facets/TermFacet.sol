@@ -173,10 +173,9 @@ contract TermFacet is ITerm {
             ._collateralStorage()
             .collaterals[termId];
 
-        newFund.initialized = true;
         newFund.stableToken = IERC20(term.stableTokenAddress);
         newFund.beneficiariesOrder = collateral.depositors;
-
+        newFund.initialized = true;
         IFund(address(this)).initFund(termId);
     }
 }
