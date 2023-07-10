@@ -187,28 +187,29 @@ contract CollateralFacet is ICollateral, TermOwnable {
         require(success);
     }
 
-    function getCollateralSummary(
-        uint id
-    )
-        external
-        view
-        returns (LibCollateral.CollateralStates, uint, uint, uint, uint, uint, uint, uint)
-    {
-        LibCollateral.Collateral storage collateral = LibCollateral
-            ._collateralStorage()
-            .collaterals[id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        return (
-            collateral.state, // Current state of Collateral
-            term.cycleTime, // Cycle duration
-            term.totalParticipants, // Total no. of depositors
-            collateral.collateralDeposit, // Collateral
-            term.contributionAmount, // Required contribution per cycle
-            term.contributionPeriod, // Time to contribute
-            collateral.counterMembers, // Current member count
-            term.fixedCollateralEth // Fixed ether to deposit
-        );
-    }
+    // todo: this was moved to the getter facet
+    // function getCollateralSummary(
+    //     uint id
+    // )
+    //     external
+    //     view
+    //     returns (LibCollateral.CollateralStates, uint, uint, uint, uint, uint, uint, uint)
+    // {
+    //     LibCollateral.Collateral storage collateral = LibCollateral
+    //         ._collateralStorage()
+    //         .collaterals[id];
+    //     LibTerm.Term storage term = LibTerm._termStorage().terms[id];
+    //     return (
+    //         collateral.state, // Current state of Collateral
+    //         term.cycleTime, // Cycle duration
+    //         term.totalParticipants, // Total no. of depositors
+    //         collateral.collateralDeposit, // Collateral
+    //         term.contributionAmount, // Required contribution per cycle
+    //         term.contributionPeriod, // Time to contribute
+    //         collateral.counterMembers, // Current member count
+    //         term.fixedCollateralEth // Fixed ether to deposit
+    //     );
+    // }
 
     function getDepositorSummary(
         uint id,
@@ -230,8 +231,13 @@ contract CollateralFacet is ICollateral, TermOwnable {
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
         LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
 
-        (, /*uint80 roundID*/ int256 answer, uint256 startedAt, , ) = /*uint256 updatedAt*/ /*uint80 answeredInRound*/
-        AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
+        (
+            ,
+            /*uint80 roundID*/ int256 answer,
+            uint256 startedAt /*uint256 updatedAt*/ /*uint80 answeredInRound*/,
+            ,
+
+        ) = AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
 
         // Answer == 0: Sequencer is up
         // Answer == 1: Sequencer is down

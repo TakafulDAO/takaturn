@@ -46,12 +46,13 @@ interface ICollateral {
     /// @notice allow the owner to empty the Collateral after 180 days
     function emptyCollateralAfterEnd(uint id) external;
 
-    function getCollateralSummary(
-        uint id
-    )
-        external
-        view
-        returns (LibCollateral.CollateralStates, uint, uint, uint, uint, uint, uint, uint);
+    // todo: moved to getter facet
+    // function getCollateralSummary(
+    //     uint id
+    // )
+    //     external
+    //     view
+    //     returns (LibCollateral.CollateralStates, uint, uint, uint, uint, uint, uint, uint);
 
     function getDepositorSummary(
         uint id,
