@@ -21,6 +21,8 @@ import {CollateralFacet} from "./CollateralFacet.sol";
 contract TermFacet is ITerm {
     uint public constant TERM_VERSION = 1;
 
+    event OnCollateralDeposited(uint indexed termId, address indexed user);
+
     function createTerm(
         uint totalParticipants,
         uint cycleTime,
@@ -42,7 +44,7 @@ contract TermFacet is ITerm {
             );
     }
 
-    function joinTerm(uint termId) external {
+    function joinTerm(uint termId) external payable {
         _joinTerm(termId);
     }
 
@@ -73,7 +75,7 @@ contract TermFacet is ITerm {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         uint termId = termStorage.nextTermId;
 
-        require(!termStorage.terms[termId].initialized, "Term already exists");
+        //require(!termStorage.terms[termId].initialized, "Term already exists");
 
         LibTerm.Term memory newTerm;
 
@@ -116,7 +118,8 @@ contract TermFacet is ITerm {
         collateral.depositors.push(msg.sender);
         collateral.counterMembers++;
 
-        emit LibCollateral.OnCollateralDeposited(termId, msg.sender);
+        // emit LibCollateral.OnCollateralDeposited(termId, msg.sender);
+        emit OnCollateralDeposited(termId, msg.sender);
 
         if (collateral.counterMembers == 1) {
             collateral.firstDepositTime = block.timestamp;
@@ -163,7 +166,7 @@ contract TermFacet is ITerm {
         uint _totalParticipants,
         uint _fixedCollateralEth
     ) internal {
-        require(!LibCollateral._collateralExists(termId), "Collateral already exists");
+        //require(!LibCollateral._collateralExists(termId), "Collateral already exists");
         LibCollateral.Collateral storage newCollateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];

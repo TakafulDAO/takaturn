@@ -13,7 +13,7 @@ interface ITerm {
         address aggregatorAddress
     ) external returns (uint);
 
-    function joinTerm(uint termId) external;
+    function joinTerm(uint termId) external payable;
 
     function startTerm(uint termId) external;
 }
