@@ -1,6 +1,29 @@
 const { network } = require("hardhat")
 const { now } = require("./units")
 
+const CollateralStates = {
+    AcceptingCollateral: "AcceptingCollateral",
+    CycleOngoing: "CycleOngoing",
+    ReleasingCollateral: "ReleasingCollateral",
+    Closed: "Closed",
+}
+
+const FundStates = {
+    InitializingFund: "InitializingFund",
+    AcceptingContributions: "AcceptingContributions",
+    ChoosingBeneficiary: "ChoosingBeneficiary",
+    CycleOngoing: "CycleOngoing",
+    FundClosed: "FundClosed",
+}
+
+const getCollateralStateFromIndex = (index) => {
+    return Object.keys(CollateralStates)[index]
+}
+
+const getFundStateFromIndex = (index) => {
+    return Object.keys(FundStates)[index]
+}
+
 const advanceTime = async (seconds) => {
     await network.provider.send("evm_increaseTime", [seconds])
     await network.provider.send("evm_mine", [])
@@ -28,6 +51,10 @@ const advanceBlocks = async (numBlocks) => {
 }
 
 module.exports = {
+    CollateralStates,
+    FundStates,
+    getCollateralStateFromIndex,
+    getFundStateFromIndex,
     // Time utilities
     advanceTime,
     advanceTimeByDate,
