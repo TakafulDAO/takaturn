@@ -20,7 +20,9 @@ contract FundFacet is IFund, TermOwnable {
     // TODO: Review auto pay logic
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint public constant FUND_VERSION = 2; // The version of the contract // TODO: can not set state variables on facets. on Init? Library?
+    uint public constant FUND_VERSION = 2; // The version of the contract
+
+    event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
 
     /// Insufficient balance for transfer. Needed `required` but only
     /// `available` available.
@@ -48,7 +50,8 @@ contract FundFacet is IFund, TermOwnable {
         // Set timestamp of deployment, which will be used to determine cycle times
         // We do this after starting the first cycle to make sure the first cycle starts smoothly
         fund.fundStart = block.timestamp;
-        emit LibFund.OnTermStart(termId);
+        //emit LibFund.OnTermStart(termId);
+        emit OnTermStart(termId);
     }
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
@@ -240,12 +243,6 @@ contract FundFacet is IFund, TermOwnable {
     function getBeneficiariesOrder(uint id) external view returns (address[] memory) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         return fund.beneficiariesOrder;
-    }
-
-    /// @notice function to get the cycle information in one go
-    function getFundSummary(uint id) external view returns (LibFund.FundStates, uint, address) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        return (fund.currentState, fund.currentCycle, fund.lastBeneficiary);
     }
 
     /// @notice function to get cycle information of a specific participant

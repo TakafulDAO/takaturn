@@ -53,9 +53,6 @@ interface IFund {
     /// @notice returns the beneficiaries order as an array
     function getBeneficiariesOrder(uint termId) external view returns (address[] memory);
 
-    // @notice function to get the cycle information in one go
-    function getFundSummary(uint termId) external view returns (LibFund.FundStates, uint, address);
-
     // @notice function to get cycle information of a specific participant
     // @param participant the user to get the info from
     function getParticipantSummary(
