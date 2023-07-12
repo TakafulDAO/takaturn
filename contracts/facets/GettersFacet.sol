@@ -2,8 +2,11 @@
 
 pragma solidity 0.8.18;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibFund} from "../libraries/LibFund.sol";
 
 contract GettersFacet {
     function getTermsId() external view returns (uint, uint) {
@@ -48,6 +51,52 @@ contract GettersFacet {
             collateral.counterMembers, // Current member count
             collateral.depositors, // List of depositors
             collateral.collateralDeposit // Collateral
+        );
+    }
+
+    /// @notice function to get the cycle information in one go
+    function getFundSummary(
+        uint id
+    )
+        external
+        view
+        returns (
+            bool,
+            LibFund.FundStates,
+            IERC20,
+            uint,
+            address[] memory,
+            uint,
+            uint,
+            address,
+            uint
+        )
+    {
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        return (
+            fund.initialized,
+            fund.currentState,
+            fund.stableToken,
+            fund.currentCycle,
+            fund.beneficiariesOrder,
+            fund.fundStart,
+            fund.currentCycle,
+            fund.lastBeneficiary,
+            fund.totalAmountOfCycles
+        );
+    }
+
+    function getDepositorFundSummary(
+        address depositor,
+        uint id
+    ) external view returns (bool, bool, bool, bool, uint) {
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        return (
+            fund.isParticipant[depositor],
+            fund.isBeneficiary[depositor],
+            fund.paidThisCycle[depositor],
+            fund.autoPayEnabled[depositor],
+            fund.beneficiariesPool[depositor]
         );
     }
 }
