@@ -31,7 +31,7 @@ library LibCollateral {
         mapping(address => bool) isCollateralMember; // Determines if a depositor is a valid user
         mapping(address => uint) collateralMembersBank; // Users main balance
         mapping(address => uint) collateralPaymentBank; // Users reimbursement balance after someone defaults
-        uint collateralDeposit;
+        uint collateralDeposit; // Total value of collateral in USD (1.5x of total fund)
     }
 
     struct CollateralStorage {

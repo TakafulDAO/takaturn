@@ -29,6 +29,7 @@ contract TermFacet is ITerm {
         uint contributionAmount,
         uint contributionPeriod,
         uint fixedCollateralEth,
+        uint collateralAmount,
         address stableTokenAddress,
         address aggregatorAddress
     ) external returns (uint) {
@@ -39,6 +40,7 @@ contract TermFacet is ITerm {
                 contributionAmount,
                 contributionPeriod,
                 fixedCollateralEth,
+                collateralAmount,
                 stableTokenAddress,
                 aggregatorAddress
             );
@@ -58,6 +60,7 @@ contract TermFacet is ITerm {
         uint _contributionAmount,
         uint _contributionPeriod,
         uint _fixedCollateralEth,
+        uint _collateralAmount,
         address _stableTokenAddress,
         address _aggregatorAddress
     ) internal returns (uint) {
@@ -67,6 +70,7 @@ contract TermFacet is ITerm {
                 _contributionPeriod != 0 &&
                 _totalParticipants != 0 &&
                 _contributionPeriod < _cycleTime &&
+                _collateralAmount != 0 &&
                 _stableTokenAddress != address(0) &&
                 _aggregatorAddress != address(0),
             "Invalid inputs"
@@ -94,7 +98,7 @@ contract TermFacet is ITerm {
         termStorage.terms[termId] = newTerm;
         termStorage.nextTermId++;
 
-        _createCollateral(termId, _totalParticipants, _fixedCollateralEth);
+        _createCollateral(termId, _totalParticipants, _collateralAmount);
 
         return termId;
     }
@@ -115,14 +119,21 @@ contract TermFacet is ITerm {
 
         collateral.collateralMembersBank[msg.sender] += msg.value;
         collateral.isCollateralMember[msg.sender] = true;
-        collateral.depositors.push(msg.sender);
-        collateral.counterMembers++;
 
-        // emit LibCollateral.OnCollateralDeposited(termId, msg.sender);
-        emit OnCollateralDeposited(termId, msg.sender);
-
-        if (collateral.counterMembers == 1) {
-            collateral.firstDepositTime = block.timestamp;
+        uint depositorsLength = collateral.depositors.length;
+        for (uint i; i < depositorsLength; ) {
+            if (collateral.depositors[i] == address(0)) {
+                collateral.depositors[i] = msg.sender;
+                collateral.counterMembers++;
+                emit OnCollateralDeposited(termId, msg.sender);
+                if (collateral.counterMembers == 1) {
+                    collateral.firstDepositTime = block.timestamp;
+                }
+                break;
+            }
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -136,6 +147,7 @@ contract TermFacet is ITerm {
         LibCollateral.Collateral storage collateral = collateralStorage.collaterals[termId];
 
         address[] memory depositors = collateral.depositors;
+
         uint depositorsArrayLength = depositors.length;
 
         require(collateral.counterMembers == term.totalParticipants);
@@ -151,7 +163,7 @@ contract TermFacet is ITerm {
             }
         }
 
-        // Actually reate and initialize the fund
+        // Actually create and initialize the fund
         _createFund(termId);
 
         // Tell the collateral that the term has started
@@ -164,7 +176,7 @@ contract TermFacet is ITerm {
     function _createCollateral(
         uint termId,
         uint _totalParticipants,
-        uint _fixedCollateralEth
+        uint _collateralAmount
     ) internal {
         //require(!LibCollateral._collateralExists(termId), "Collateral already exists");
         LibCollateral.Collateral storage newCollateral = LibCollateral
@@ -174,7 +186,7 @@ contract TermFacet is ITerm {
         newCollateral.initialized = true;
         newCollateral.state = LibCollateral.CollateralStates.AcceptingCollateral;
         newCollateral.depositors = new address[](_totalParticipants);
-        newCollateral.collateralDeposit = _fixedCollateralEth; // TODO: This is the correct value?
+        newCollateral.collateralDeposit = _collateralAmount * 10 ** 18; // Convert to Wei; // TODO: This is the correct value?
     }
 
     function _createFund(uint termId) internal {
@@ -188,6 +200,7 @@ contract TermFacet is ITerm {
         newFund.stableToken = IERC20(term.stableTokenAddress);
         newFund.beneficiariesOrder = collateral.depositors;
         newFund.initialized = true;
+
         IFund(address(this)).initFund(termId);
     }
 }

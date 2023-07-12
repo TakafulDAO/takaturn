@@ -16,10 +16,10 @@ library LibTerm {
         address termOwner;
         uint creationTime;
         uint termId;
-        uint totalParticipants;
-        uint cycleTime;
-        uint contributionAmount;
-        uint contributionPeriod;
+        uint totalParticipants; // Max number of participants
+        uint cycleTime; // Time for single cycle (seconds)
+        uint contributionAmount; // Amount user must pay per cycle (USD)
+        uint contributionPeriod; // The portion of cycle user must make payment
         uint fixedCollateralEth;
         address stableTokenAddress;
         address aggregatorAddress;

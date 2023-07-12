@@ -9,6 +9,7 @@ interface ITerm {
         uint contributionAmount,
         uint contributionPeriod,
         uint fixedCollateralEth,
+        uint collateralAmount,
         address stableTokenAddress,
         address aggregatorAddress
     ) external returns (uint);
