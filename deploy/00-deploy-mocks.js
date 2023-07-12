@@ -4,7 +4,7 @@ const { isDevnet, isFork } = require("../utils/_networks")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy, log } = deployments
-    const { deployer, usdcOwner, usdcMasterMinter } = await getNamedAccounts()
+    const { deployer, usdcOwner } = await getNamedAccounts()
     const chainId = network.config.chainId
 
     if (isDevnet && !isFork) {
@@ -35,35 +35,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         log("==========================================================================")
         log("00. Deploying USDC mock...")
 
-        const tokenName = "USD Coin"
-        const tokenSymbol = "USDC"
-        const tokenCurrency = "USD"
-        const tokenDecimals = 6
-        const newMasterMinter = usdcMasterMinter
-        const newPauser = usdcOwner
-        const newBlacklister = usdcOwner
-        const newOwner = usdcOwner
-
-        const initializeArgs = [
-            tokenName,
-            tokenSymbol,
-            tokenCurrency,
-            tokenDecimals,
-            newMasterMinter,
-            newPauser,
-            newBlacklister,
-            newOwner,
-        ]
-
-        await deploy("FiatTokenV2_1", {
+        const usdc = await deploy("FiatTokenV2_1", {
             contract: "FiatTokenV2_1",
-            from: deployer,
+            from: usdcOwner,
             log: true,
             args: [],
-            execute: {
-                methodName: "initialize",
-                args: initializeArgs,
-            },
         })
 
         log("00. USDC mock Deployed!...")
