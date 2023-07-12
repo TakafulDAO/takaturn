@@ -31,42 +31,8 @@ contract CollateralFacet is ICollateral, TermOwnable {
     function setStateOwner(
         uint id,
         LibCollateral.CollateralStates newState
-    ) external onlyTermOwner(id) {
+    ) external /*onlyTermOwner(id)*/ {
         _setState(id, newState);
-    }
-
-    /// @notice Called by each member to enter the term
-    // TODO: better internal?
-    function depositCollateral(
-        uint id
-    ) external payable atState(id, LibCollateral.CollateralStates.AcceptingCollateral) {
-        LibCollateral.Collateral storage collateral = LibCollateral
-            ._collateralStorage()
-            .collaterals[id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        require(collateral.counterMembers < term.totalParticipants, "Members pending"); // TODO: this check is already on _joinTerm
-        require(!collateral.isCollateralMember[msg.sender], "Reentry");
-        require(msg.value >= term.fixedCollateralEth, "Eth payment too low");
-
-        collateral.collateralMembersBank[msg.sender] += msg.value;
-        collateral.isCollateralMember[msg.sender] = true;
-        //collateral.depositors.push(msg.sender);
-        //collaterall.counterMembers++;
-
-        uint depositorsLength = collateral.depositors.length;
-        for (uint i; i < depositorsLength; ) {
-            if (collateral.depositors[i] == address(0)) {
-                collateral.depositors[i] = msg.sender;
-                emit LibCollateral.OnCollateralDeposited(id, msg.sender);
-                if (collateral.counterMembers == 1) {
-                    collateral.firstDepositTime = block.timestamp;
-                }
-                break;
-            }
-            unchecked {
-                ++i;
-            }
-        }
     }
 
     /// @notice Called from Fund contract when someone defaults
@@ -187,30 +153,6 @@ contract CollateralFacet is ICollateral, TermOwnable {
         require(success);
     }
 
-    // todo: this was moved to the getter facet
-    // function getCollateralSummary(
-    //     uint id
-    // )
-    //     external
-    //     view
-    //     returns (LibCollateral.CollateralStates, uint, uint, uint, uint, uint, uint, uint)
-    // {
-    //     LibCollateral.Collateral storage collateral = LibCollateral
-    //         ._collateralStorage()
-    //         .collaterals[id];
-    //     LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-    //     return (
-    //         collateral.state, // Current state of Collateral
-    //         term.cycleTime, // Cycle duration
-    //         term.totalParticipants, // Total no. of depositors
-    //         collateral.collateralDeposit, // Collateral
-    //         term.contributionAmount, // Required contribution per cycle
-    //         term.contributionPeriod, // Time to contribute
-    //         collateral.counterMembers, // Current member count
-    //         term.fixedCollateralEth // Fixed ether to deposit
-    //     );
-    // }
-
     function getDepositorSummary(
         uint id,
         address depositor
@@ -230,7 +172,6 @@ contract CollateralFacet is ICollateral, TermOwnable {
     function getLatestPrice(uint id) public view returns (uint) {
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
         LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
-
         (
             ,
             /*uint80 roundID*/ int256 answer,
@@ -243,9 +184,9 @@ contract CollateralFacet is ICollateral, TermOwnable {
         // Answer == 1: Sequencer is down
         require(answer == 0, "Sequencer down");
 
-        // We must wait at least an hour after the sequencer started up
+        //We must wait at least an hour after the sequencer started up
         require(
-            termConsts.sequencerStartupTime > block.timestamp - startedAt,
+            termConsts.sequencerStartupTime <= block.timestamp - startedAt,
             "Sequencer starting up"
         );
 
@@ -311,7 +252,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
         } else {
             uint remainingCycles = 1 +
                 collateral.counterMembers -
-                IFund(address(this)).currentCycle(_id); // TODO: check this call later. 02/07/2023 12:31
+                IFund(address(this)).currentCycle(_id);
 
             collateralLimit = remainingCycles * term.contributionAmount * 10 ** 18; // Convert to Wei
         }
@@ -320,7 +261,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
             _id,
             collateral.collateralMembersBank[_member]
         );
-
+        // todo: check memberCollateralUSD is not in wei (18 decimals) collateralLimit is in wei (18 decimals)
         return (memberCollateralUSD < collateralLimit);
     }
 

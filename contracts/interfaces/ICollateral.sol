@@ -15,10 +15,6 @@ interface ICollateral {
 
     function setStateOwner(uint id, LibCollateral.CollateralStates newState) external;
 
-    /// @notice Called by each member to enter the Fund
-    /// @dev needs to call the fund creation function
-    function depositCollateral(uint id) external payable;
-
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
     /// @param beneficiary Address that was randomly selected for the current cycle
@@ -45,14 +41,6 @@ interface ICollateral {
 
     /// @notice allow the owner to empty the Collateral after 180 days
     function emptyCollateralAfterEnd(uint id) external;
-
-    // todo: moved to getter facet
-    // function getCollateralSummary(
-    //     uint id
-    // )
-    //     external
-    //     view
-    //     returns (LibCollateral.CollateralStates, uint, uint, uint, uint, uint, uint, uint);
 
     function getDepositorSummary(
         uint id,
