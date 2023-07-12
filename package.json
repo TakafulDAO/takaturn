@@ -8,6 +8,7 @@
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@openzeppelin/contracts": "^4.9.2",
     "@openzeppelin/contracts-upgradeable": "^4.9.2",
+    "@openzeppelin/test-helpers": "^0.5.16",
     "@solidstate/contracts": "^0.0.57",
     "@solidstate/spec": "^0.0.57",
     "chai": "^4.3.7",
