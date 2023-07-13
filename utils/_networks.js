@@ -16,21 +16,27 @@ const networkConfig = {
         name: "hardhat",
         // !Alert: The next two values are only used when working on localhost WITHOUT FORK. On your .env file, set FORK=false
         decimals: "8",
-        initialPrice: "200000000000", // 2000 // todo: check this values
+        initialPrice: "200000000000", // 2000 USD
         // !Alert: The next values are only used when FORKING MAINNET. On your .env file, set FORK=true
-        ethUsdPriceFeed: "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612",
+        ethUsdPriceFeed: "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
+        usdc: "0xfd064A18f3BF249cf1f87FC203E90D8f650f2d63", // https://developers.circle.com/developer/docs/usdc-on-testnet#usdc-on-arbitrum-testnet
     },
     42161: {
         name: "mainnet_arbitrum",
-        ethUsdPriceFeed: "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612", // todo: add correct address
+        ethUsdPriceFeed: "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
+        usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // https://developers.circle.com/developer/docs/supported-chains-and-currencies#native-usdc
+        l2SequencerFeed: "0xFdB631F5EE196F0ed6FAa767959853A9F217697D", // https://docs.chain.link/data-feeds/l2-sequencer-feeds
     },
     421613: {
         name: "testnet_arbitrum",
-        ethUsdPriceFeed: "", // todo: add correct address
+        ethUsdPriceFeed: "0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
+        usdc: "0xfd064A18f3BF249cf1f87FC203E90D8f650f2d63", // https://developers.circle.com/developer/docs/usdc-on-testnet#usdc-on-arbitrum-testnet
+        l2SequencerFeed: "0x4da69F028a5790fCCAfe81a75C0D24f46ceCDd69", // https://docs.chain.link/data-feeds/l2-sequencer-feeds
     },
     80001: {
         name: "testnet_mumbai",
-        ethUsdPriceFeed: "", // todo: add correct address
+        ethUsdPriceFeed: "0x0715A7794a1dc8e42615F059dD6e406A6594651A", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=polygon
+        usdc: "0x0fa8781a83e46826621b3bc094ea2a0212e71b23", // https://developers.circle.com/developer/docs/usdc-on-testnet#bridged-usdc-on-polygon-testnet
     },
 }
 
