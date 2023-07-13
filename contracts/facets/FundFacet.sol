@@ -23,6 +23,7 @@ contract FundFacet is IFund, TermOwnable {
     uint public constant FUND_VERSION = 2; // The version of the contract
 
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
+    event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
 
     /// Insufficient balance for transfer. Needed `required` but only
     /// `available` available.
@@ -345,7 +346,7 @@ contract FundFacet is IFund, TermOwnable {
             if (success) {
                 // Finish up, set that the participant paid for this cycle and emit an event that it's been done
                 fund.paidThisCycle[_participant] = true;
-                emit LibFund.OnPaidContribution(_id, _participant, fund.currentCycle);
+                emit OnPaidContribution(_id, _participant, fund.currentCycle);
             }
         } catch {}
     }
@@ -366,7 +367,7 @@ contract FundFacet is IFund, TermOwnable {
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
         fund.paidThisCycle[_participant] = true;
-        emit LibFund.OnPaidContribution(_id, _participant, fund.currentCycle);
+        emit OnPaidContribution(_id, _participant, fund.currentCycle);
     }
 
     /// @notice Default the participant/beneficiary by checking the mapping first, then remove them from the appropriate array

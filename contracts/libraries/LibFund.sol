@@ -23,7 +23,7 @@ library LibFund {
 
     //     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycleevent OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
     event OnStateChanged(uint indexed termId, FundStates indexed newState); // Emits when state has updated
-    event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
+    // event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
     event OnBeneficiarySelected(uint indexed termId, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
     event OnFundWithdrawn(uint indexed termId, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
     event OnParticipantDefaulted(uint indexed termId, address indexed defaulter); // Emits when a participant didn't pay this cycle's contribution
