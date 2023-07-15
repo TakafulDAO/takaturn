@@ -17,7 +17,7 @@ import {TermOwnable} from "../access/TermOwnable.sol";
 /// @notice This is used to operate the Takaturn collateral
 /// @dev v3.0 (Diamond)
 contract CollateralFacet is ICollateral, TermOwnable {
-    event OnStateChanged(
+    event OnCollateralStateChanged(
         uint indexed termId,
         LibCollateral.CollateralStates indexed oldState,
         LibCollateral.CollateralStates indexed newState
@@ -241,7 +241,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
             .collaterals[_id];
         LibCollateral.CollateralStates oldState = collateral.state;
         collateral.state = _newState;
-        emit OnStateChanged(_id, oldState, _newState);
+        emit OnCollateralStateChanged(_id, oldState, _newState);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount

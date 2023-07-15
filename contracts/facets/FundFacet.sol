@@ -23,7 +23,7 @@ contract FundFacet is IFund, TermOwnable {
     uint public constant FUND_VERSION = 2; // The version of the contract
 
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
-    event OnStateChanged(uint indexed termId, LibFund.FundStates indexed newState); // Emits when state has updated
+    event OnFundStateChanged(uint indexed termId, LibFund.FundStates indexed newState); // Emits when state has updated
     event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
     event OnBeneficiarySelected(uint indexed termId, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
     event OnFundWithdrawn(uint indexed termId, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
@@ -290,7 +290,7 @@ contract FundFacet is IFund, TermOwnable {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         require(fund.currentState != LibFund.FundStates.FundClosed, "Fund closed");
         fund.currentState = _newState;
-        emit OnStateChanged(_id, _newState);
+        emit OnFundStateChanged(_id, _newState);
     }
 
     /// @notice This starts the new cycle and can only be called internally. Used upon deploy

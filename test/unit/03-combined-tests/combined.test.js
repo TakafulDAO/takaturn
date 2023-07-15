@@ -323,9 +323,9 @@ async function everyonePaysAndCloseCycle(termId) {
               await everyonePaysAndCloseCycle(termId)
               await advanceTime(cycleTime + 1)
 
-              await fund.methods.startNewCycle().send({
-                  from: accounts[12],
-              })
+              //   await fund.methods.startNewCycle().send({
+              //       from: accounts[12],
+              //   })
               //   let firstBeneficiary = await fund.methods.beneficiariesOrder(0).call()
               //   await executeCycle(1, [0])
               //   let firstBeneficiaryAfterDefault = await fund.methods.beneficiariesOrder(0).call()
