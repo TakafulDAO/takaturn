@@ -50,6 +50,16 @@ const advanceBlocks = async (numBlocks) => {
     }
 }
 
+const impersonateAccount = async (account) => {
+    return hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [account],
+    })
+}
+
+const toWei = (num) => String(ethers.utils.parseEther(String(num)))
+const fromWei = (num) => Number(ethers.utils.formatEther(num))
+
 module.exports = {
     CollateralStates,
     FundStates,
@@ -60,4 +70,9 @@ module.exports = {
     advanceTimeByDate,
     setTimeFromNow,
     advanceBlocks,
+    // Accounts
+    impersonateAccount,
+    // Payments
+    toWei,
+    fromWei,
 }
