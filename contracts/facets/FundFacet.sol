@@ -24,6 +24,7 @@ contract FundFacet is IFund, TermOwnable {
 
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
     event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
+    event OnFundWithdrawn(uint indexed termId, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
 
     /// Insufficient balance for transfer. Needed `required` but only
     /// `available` available.
@@ -108,7 +109,6 @@ contract FundFacet is IFund, TermOwnable {
 
         // Once we decided who defaulted and who paid, we can select the beneficiary for this cycle
         _selectBeneficiary(id);
-
         if (!(fund.currentCycle < fund.totalAmountOfCycles)) {
             // If all cycles have passed, and the last cycle's time has passed, close the fund
             _closeFund(id);
@@ -449,8 +449,12 @@ contract FundFacet is IFund, TermOwnable {
             uint expellantsLength = expellants.length;
             for (uint i; i < expellantsLength; ) {
                 if (expellants[i] == address(0)) {
+                    unchecked {
+                        ++i;
+                    }
                     continue;
                 }
+
                 _expelDefaulter(_id, expellants[i]);
                 unchecked {
                     ++i;
