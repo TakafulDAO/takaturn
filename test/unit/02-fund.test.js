@@ -1,16 +1,10 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../utils/_networks")
-const { constants } = require("@openzeppelin/test-helpers")
-const {
-    CollateralStates,
-    FundStates,
-    getCollateralStateFromIndex,
-    getFundStateFromIndex,
-} = require("../../utils/_helpers")
+
+const { advanceTimeByDate, toWei } = require("../../utils/_helpers")
 const { BigNumber } = require("ethers")
-const { hour, erc20Units } = require("../../utils/units")
-const { advanceTimeByDate } = require("../../utils/_helpers")
+const { hour } = require("../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -21,7 +15,7 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
           const cycleTime = BigNumber.from("60") // Create term param
           const contributionAmount = BigNumber.from("100") // Create term param
           const contributionPeriod = BigNumber.from("20") // Create term param
-          const collateralEth = ethers.utils.parseEther("3")
+          const collateralEth = toWei(3)
           const fixedCollateralEth = BigNumber.from(collateralEth) // Create term param
           const collateralFundingPeriod = BigNumber.from("604800")
           const collateralAmount = "60"
@@ -77,7 +71,10 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
                   aggregator = await ethers.getContract("MockV3Aggregator")
               } else {
                   const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
-                  aggregator = await ethers.getContractAt("MockV3Aggregator", aggregatorAddress)
+                  aggregator = await ethers.getContractAt(
+                      "AggregatorV3Interface",
+                      aggregatorAddress
+                  )
               }
 
               // Connect the accounts
