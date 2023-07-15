@@ -7,10 +7,11 @@ const {
     FundStates,
     getCollateralStateFromIndex,
     getFundStateFromIndex,
+    advanceTimeByDate,
+    toWei,
 } = require("../../utils/_helpers")
 const { BigNumber } = require("ethers")
 const { hour, erc20Units } = require("../../utils/units")
-const { advanceTimeByDate } = require("../../utils/_helpers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -21,7 +22,7 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
           const cycleTime = BigNumber.from("60") // Create term param
           const contributionAmount = BigNumber.from("100") // Create term param
           const contributionPeriod = BigNumber.from("20") // Create term param
-          const collateralEth = ethers.utils.parseEther("3")
+          const collateralEth = toWei(3)
           const fixedCollateralEth = BigNumber.from(collateralEth) // Create term param
           const collateralFundingPeriod = BigNumber.from("604800")
           const collateralAmount = "60"
@@ -42,7 +43,7 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
               participant_11,
               participant_12
 
-          let takaturnDiamondDeployer
+          let takaturnDiamondDeployer, takaturnDiamondParticipant_1
 
           beforeEach(async () => {
               // Get the accounts
@@ -60,23 +61,29 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
               participant_10 = accounts[10]
               participant_11 = accounts[11]
               participant_12 = accounts[12]
-              //   usdcOwner = accounts[13]
-              //   usdcMasterMinter = accounts[14]
-              //   usdcRegularMinter = accounts[15]
-              //   usdcLostAndFound = accounts[16]
 
               // Deploy contracts
               await deployments.fixture(["all"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
-              usdc = await ethers.getContract("FiatTokenV2_1")
+              //   usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
               } else {
                   const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
-                  aggregator = await ethers.getContractAt("MockV3Aggregator", aggregatorAddress)
+                  const usdcAddress = networkConfig[chainId]["usdc"]
+                  aggregator = await ethers.getContractAt(
+                      "AggregatorV3Interface",
+                      aggregatorAddress
+                  )
+                  usdc = await ethers.getContractAt(
+                      // contracts/mocks/USDC.sol:IERC20
+                      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+                      usdcAddress
+                  )
               }
               // Connect the accounts
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
+              takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
           })
 
           describe("Create term function", function () {
@@ -198,7 +205,7 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
 
               describe("Create term tests", function () {
                   it("Should create a new term with the default values", async function () {
-                      await takaturnDiamondDeployer.createTerm(
+                      await takaturnDiamondParticipant_1.createTerm(
                           totalParticipants,
                           cycleTime,
                           contributionAmount,
@@ -215,6 +222,7 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
                       const newTerm = await takaturnDiamondDeployer.getTermSummary(lastTermId)
 
                       expect(nextTermId).to.equal(lastTermId.add(1))
+                      assert.equal(newTerm.termOwner, participant_1.address)
                       assert.equal(newTerm.initialized, true)
                       assert.equal(newTerm.totalParticipants.toString(), totalParticipants)
                       assert.equal(newTerm.cycleTime.toString(), cycleTime)
@@ -226,7 +234,7 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
                   })
 
                   it("Should create a new collateral with the default values", async function () {
-                      await takaturnDiamondDeployer.createTerm(
+                      await takaturnDiamondParticipant_1.createTerm(
                           totalParticipants,
                           cycleTime,
                           contributionAmount,
@@ -264,7 +272,7 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
 
           describe("Join term function", function () {
               beforeEach(async function () {
-                  await takaturnDiamondDeployer.createTerm(
+                  await takaturnDiamondParticipant_1.createTerm(
                       totalParticipants,
                       cycleTime,
                       contributionAmount,
@@ -285,16 +293,16 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
                       const entrance = term.fixedCollateralEth
 
                       await expect(
-                          takaturnDiamondDeployer.joinTerm(lastTermId, { value: 0 })
+                          takaturnDiamondParticipant_1.joinTerm(lastTermId, { value: 0 })
                       ).to.be.revertedWith("Eth payment too low")
                       await expect(
-                          takaturnDiamondDeployer.joinTerm(nextTermId, { value: entrance })
+                          takaturnDiamondParticipant_1.joinTerm(nextTermId, { value: entrance })
                       ).to.be.reverted
 
-                      await takaturnDiamondDeployer.joinTerm(lastTermId, { value: entrance })
+                      await takaturnDiamondParticipant_1.joinTerm(lastTermId, { value: entrance })
 
                       await expect(
-                          takaturnDiamondDeployer.joinTerm(lastTermId, { value: 0 })
+                          takaturnDiamondParticipant_1.joinTerm(lastTermId, { value: entrance })
                       ).to.be.revertedWith("Reentry")
                   })
               })
@@ -380,9 +388,9 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
               describe("Revert errors tests", function () {
                   it("Should not enter until all requires passes", async function () {
                       // The participant must join the term
-                      await expect(takaturnDiamondDeployer.startTerm(0)).to.be.reverted
+                      await expect(takaturnDiamondParticipant_1.startTerm(0)).to.be.reverted
 
-                      const termId = await takaturnDiamondDeployer.createTerm(
+                      const termId = await takaturnDiamondParticipant_1.createTerm(
                           totalParticipants,
                           cycleTime,
                           contributionAmount,
@@ -393,12 +401,12 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
                           aggregator.address
                       )
 
-                      await expect(takaturnDiamondDeployer.startTerm(termId)).to.be.reverted
+                      await expect(takaturnDiamondParticipant_1.startTerm(termId)).to.be.reverted
                   })
               })
               describe("Start term", function () {
                   beforeEach(async function () {
-                      await takaturnDiamondDeployer.createTerm(
+                      await takaturnDiamondParticipant_1.createTerm(
                           totalParticipants,
                           cycleTime,
                           contributionAmount,
@@ -429,7 +437,7 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
 
                       await advanceTimeByDate(1, hour)
 
-                      await expect(takaturnDiamondDeployer.startTerm(lastTermId))
+                      await expect(takaturnDiamondParticipant_1.startTerm(lastTermId))
                           .to.emit(takaturnDiamond, "OnTermStart")
                           .withArgs(lastTermId)
 
@@ -443,12 +451,12 @@ const { advanceTimeByDate } = require("../../utils/_helpers")
 
                       assert.equal(newFund[3].toString(), "1")
                       for (let i = 0; i < totalParticipants; i++) {
-                          assert.equal(newFund[4][i], accounts[i + 1].address)
                           const participantSummary =
                               await takaturnDiamondDeployer.getDepositorFundSummary(
                                   accounts[i + 1].address,
                                   lastTermId
                               )
+                          assert.equal(newFund[4][i], accounts[i + 1].address)
                           assert.equal(participantSummary[0], true)
                           assert.equal(participantSummary[2], false)
                       }
