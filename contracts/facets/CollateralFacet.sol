@@ -104,7 +104,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        require(!LibFund._fundExists(id), "Fund already exists");
+        require(LibFund._fundExists(id), "Fund does not exists");
         uint amount = collateral.collateralPaymentBank[depositor];
         require(amount > 0, "Nothing to claim");
 
@@ -117,7 +117,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
     }
 
     function releaseCollateral(uint id) external {
-        require(!LibFund._fundExists(id), "Fund already exists");
+        require(LibFund._fundExists(id), "Fund does not exists");
         _setState(id, LibCollateral.CollateralStates.ReleasingCollateral);
     }
 
