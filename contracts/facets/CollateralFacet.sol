@@ -17,6 +17,15 @@ import {TermOwnable} from "../access/TermOwnable.sol";
 /// @notice This is used to operate the Takaturn collateral
 /// @dev v3.0 (Diamond)
 contract CollateralFacet is ICollateral, TermOwnable {
+    event OnStateChanged(
+        uint indexed termId,
+        LibCollateral.CollateralStates indexed oldState,
+        LibCollateral.CollateralStates indexed newState
+    );
+    event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
+    event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
+    event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
+
     ///@param id term id
     ///@param _state collateral state
     modifier atState(uint id, LibCollateral.CollateralStates _state) {
@@ -91,7 +100,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         require(success);
 
-        emit LibCollateral.OnCollateralWithdrawn(id, msg.sender, amount);
+        emit OnCollateralWithdrawn(id, msg.sender, amount);
 
         --collateral.counterMembers;
         // If last person withdraws, then change state to EOL
@@ -113,7 +122,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
         (bool success, ) = payable(depositor).call{value: amount}("");
         require(success);
 
-        emit LibCollateral.OnReimbursementWithdrawn(id, depositor, amount);
+        emit OnReimbursementWithdrawn(id, depositor, amount);
     }
 
     function releaseCollateral(uint id) external {
@@ -232,7 +241,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
             .collaterals[_id];
         LibCollateral.CollateralStates oldState = collateral.state;
         collateral.state = _newState;
-        emit LibCollateral.OnStateChanged(_id, oldState, _newState);
+        emit OnStateChanged(_id, oldState, _newState);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
@@ -301,7 +310,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
                 _collateral.collateralMembersBank[_defaulters[i]] = 0;
                 totalExpellants++;
 
-                emit LibCollateral.OnCollateralLiquidated(
+                emit OnCollateralLiquidated(
                     _term.termId,
                     address(_defaulters[i]),
                     currentDefaulterBank

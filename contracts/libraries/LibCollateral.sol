@@ -12,16 +12,6 @@ library LibCollateral {
         Closed // Triggered when all depositors withdraw their collaterals
     }
 
-    event OnStateChanged(
-        uint indexed termId,
-        CollateralStates indexed oldState,
-        CollateralStates indexed newState
-    );
-    event OnCollateralDeposited(uint indexed termId, address indexed user);
-    event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
-    event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
-    event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
-
     struct Collateral {
         bool initialized;
         CollateralStates state;

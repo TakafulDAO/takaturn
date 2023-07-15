@@ -23,8 +23,15 @@ contract FundFacet is IFund, TermOwnable {
     uint public constant FUND_VERSION = 2; // The version of the contract
 
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
+    event OnStateChanged(uint indexed termId, LibFund.FundStates indexed newState); // Emits when state has updated
     event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
+    event OnBeneficiarySelected(uint indexed termId, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
     event OnFundWithdrawn(uint indexed termId, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
+    event OnParticipantDefaulted(uint indexed termId, address indexed defaulter); // Emits when a participant didn't pay this cycle's contribution
+    event OnParticipantUndefaulted(uint indexed termId, address indexed undefaulter); // Emits when a participant was a defaulter before but started paying on time again for this cycle
+    event OnDefaulterExpelled(uint indexed termId, address indexed expellant); // Emits when a defaulter can't compensate with the collateral
+    event OnTotalParticipantsUpdated(uint indexed termId, uint indexed newLength); // Emits when the total participants lengths has changed from its initial value
+    event OnAutoPayToggled(uint indexed termId, address indexed participant, bool indexed enabled); // Emits when a participant succesfully toggles autopay
 
     /// Insufficient balance for transfer. Needed `required` but only
     /// `available` available.
@@ -97,7 +104,7 @@ contract FundFacet is IFund, TermOwnable {
                 }
 
                 if (EnumerableSet.remove(fund._defaulters, p)) {
-                    emit LibFund.OnParticipantUndefaulted(id, p);
+                    emit OnParticipantUndefaulted(id, p);
                 }
             } else if (!EnumerableSet.contains(fund._defaulters, p)) {
                 _defaultParticipant(id, p);
@@ -154,7 +161,7 @@ contract FundFacet is IFund, TermOwnable {
         bool enabled = !fund.autoPayEnabled[msg.sender];
         fund.autoPayEnabled[msg.sender] = enabled;
 
-        emit LibFund.OnAutoPayToggled(id, msg.sender, enabled);
+        emit OnAutoPayToggled(id, msg.sender, enabled);
     }
 
     /// @notice This is the function participants call to pay the contribution
@@ -200,7 +207,7 @@ contract FundFacet is IFund, TermOwnable {
                 fund.beneficiariesPool[msg.sender] = 0;
                 fund.stableToken.transfer(msg.sender, transferAmount); // Untrusted
             }
-            emit LibFund.OnFundWithdrawn(id, msg.sender, transferAmount);
+            emit OnFundWithdrawn(id, msg.sender, transferAmount);
         }
 
         if (hasCollateralPool) {
@@ -283,7 +290,7 @@ contract FundFacet is IFund, TermOwnable {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         require(fund.currentState != LibFund.FundStates.FundClosed, "Fund closed");
         fund.currentState = _newState;
-        emit LibFund.OnStateChanged(_id, _newState);
+        emit OnStateChanged(_id, _newState);
     }
 
     /// @notice This starts the new cycle and can only be called internally. Used upon deploy
@@ -385,7 +392,7 @@ contract FundFacet is IFund, TermOwnable {
         require(success, "Can't remove defaulter");
         EnumerableSet.add(fund._defaulters, _defaulter);
 
-        emit LibFund.OnParticipantDefaulted(_id, _defaulter);
+        emit OnParticipantDefaulted(_id, _defaulter);
     }
 
     /// @notice The beneficiary will be selected here based on the beneficiariesOrder array.
@@ -484,7 +491,7 @@ contract FundFacet is IFund, TermOwnable {
         fund.beneficiariesPool[selectedBeneficiary] = term.contributionAmount * paidCount;
         fund.lastBeneficiary = selectedBeneficiary;
 
-        emit LibFund.OnBeneficiarySelected(_id, selectedBeneficiary);
+        emit OnBeneficiarySelected(_id, selectedBeneficiary);
         _setState(_id, LibFund.FundStates.CycleOngoing);
     }
 
@@ -532,7 +539,7 @@ contract FundFacet is IFund, TermOwnable {
         _removeBeneficiaryFromOrder(_id, _expellant);
 
         fund.isParticipant[_expellant] = false;
-        emit LibFund.OnDefaulterExpelled(_id, _expellant);
+        emit OnDefaulterExpelled(_id, _expellant);
 
         // If the participant is expelled before becoming beneficiary, we lose a cycle, the one which this expellant is becoming beneficiary
         if (!fund.isBeneficiary[_expellant]) {
@@ -544,7 +551,7 @@ contract FundFacet is IFund, TermOwnable {
         term.totalParticipants = newLength;
         ++fund.expelledParticipants;
 
-        emit LibFund.OnTotalParticipantsUpdated(_id, newLength);
+        emit OnTotalParticipantsUpdated(_id, newLength);
     }
 
     /// @notice Internal function for close fund which is used by _startNewCycle & _chooseBeneficiary to cover some edge-cases
