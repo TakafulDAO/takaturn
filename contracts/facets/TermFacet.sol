@@ -200,6 +200,7 @@ contract TermFacet is ITerm {
         newFund.stableToken = IERC20(term.stableTokenAddress);
         newFund.beneficiariesOrder = collateral.depositors;
         newFund.initialized = true;
+        newFund.totalAmountOfCycles = newFund.beneficiariesOrder.length;
 
         IFund(address(this)).initFund(termId);
     }
