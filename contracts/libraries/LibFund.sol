@@ -39,7 +39,7 @@ library LibFund {
         EnumerableSet.AddressSet _defaulters; // Both participants and beneficiaries who have defaulted this cycle
         uint expelledParticipants; // Total amount of participants that have been expelled so far
         address lastBeneficiary; // The last selected beneficiary, updates with every cycle
-        uint totalAmountOfCycles; // TODO: this one is needed. Here or in term better?
+        uint totalAmountOfCycles;
     }
 
     struct FundStorage {
