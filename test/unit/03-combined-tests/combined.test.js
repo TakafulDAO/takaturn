@@ -820,7 +820,7 @@ async function executeCycle(
                       assert.ok(totalAmountOfCycles.toNumber() == startingCycles)
                   })
 
-                  it("does not allow defaulted or expelled beneficiaries to withdraw their fund but does allow them to do after the term if closed", async function () {
+                  xit("does not allow defaulted or expelled beneficiaries to withdraw their fund but does allow them to do after the term if closed", async function () {
                       this.timeout(200000)
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]

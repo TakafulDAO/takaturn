@@ -10,6 +10,7 @@ let contributionAmount = 5
 let contributionPeriod = 40
 let fixedCollateralEth = toWei(0.055)
 let collateralAmount = 60
+let collateralFundingPeriod = 604800
 
 const states = {
     0: "InitializingFund",
@@ -40,6 +41,7 @@ module.exports = {
     contributionPeriod,
     fixedCollateralEth,
     collateralAmount,
+    collateralFundingPeriod,
     // helper functions
     getRandomInt,
 }
