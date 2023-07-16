@@ -58,6 +58,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
             ._collateralStorage()
             .collaterals[id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
 
         (uint share, address[] memory expellants) = _whoExpelled(
             collateral,
@@ -65,6 +66,9 @@ contract CollateralFacet is ICollateral, TermOwnable {
             beneficiary,
             defaulters
         );
+        if (expellants.length != 0) {
+            fund.totalAmountOfCycles = fund.totalAmountOfCycles - expellants.length;
+        }
 
         (uint nonBeneficiaryCounter, address[] memory nonBeneficiaries) = _liquidateCollateral(
             collateral,
@@ -254,6 +258,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
             ._collateralStorage()
             .collaterals[_id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
+
         uint collateralLimit;
         uint memberCollateralUSD;
         if (LibFund._fundExists(_id)) {
@@ -292,13 +297,17 @@ contract CollateralFacet is ICollateral, TermOwnable {
             _term.contributionAmount * 10 ** 18
         );
 
-        // Determine who will be expelled and who will just pay the contribution
-        // From their collateral.
+        // Determine who will be expelled and who will just pay the contribution from their collateral.
         for (uint i; i < _defaulters.length; ) {
             wasBeneficiary = IFund(address(this)).isBeneficiary(_term.termId, _defaulters[i]);
             currentDefaulterBank = _collateral.collateralMembersBank[_defaulters[i]];
 
-            if (_defaulters[i] == _beneficiary) continue; // Avoid expelling graced defaulter
+            if (_defaulters[i] == _beneficiary) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            } // Avoid expelling graced defaulter
 
             if (
                 (wasBeneficiary && _isUnderCollaterized(_term.termId, _defaulters[i])) ||
@@ -308,7 +317,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
                 expellants[i] = _defaulters[i];
                 share += currentDefaulterBank;
                 _collateral.collateralMembersBank[_defaulters[i]] = 0;
-                totalExpellants++;
+                ++totalExpellants;
 
                 emit OnCollateralLiquidated(
                     _term.termId,
