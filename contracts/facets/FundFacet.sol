@@ -149,7 +149,8 @@ contract FundFacet is IFund, TermOwnable {
 
         uint balance = fund.stableToken.balanceOf(address(this));
         if (balance > 0) {
-            fund.stableToken.transfer(msg.sender, balance);
+            bool success = fund.stableToken.transfer(msg.sender, balance);
+            require(success, "Transfer failed");
         }
     }
 
@@ -204,7 +205,8 @@ contract FundFacet is IFund, TermOwnable {
                 revert InsufficientBalance({available: contractBalance, required: transferAmount});
             } else {
                 fund.beneficiariesPool[msg.sender] = 0;
-                fund.stableToken.transfer(msg.sender, transferAmount); // todo: change transfer
+                bool success = fund.stableToken.transfer(msg.sender, transferAmount);
+                require(success, "Transfer failed");
             }
             emit OnFundWithdrawn(id, msg.sender, transferAmount);
         }
