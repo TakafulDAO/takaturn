@@ -205,7 +205,7 @@ contract FundFacet is IFund, TermOwnable {
                 revert InsufficientBalance({available: contractBalance, required: transferAmount});
             } else {
                 fund.beneficiariesPool[msg.sender] = 0;
-                fund.stableToken.transfer(msg.sender, transferAmount); // Untrusted
+                fund.stableToken.transfer(msg.sender, transferAmount); // todo: change transfer
             }
             emit OnFundWithdrawn(id, msg.sender, transferAmount);
         }
@@ -245,28 +245,6 @@ contract FundFacet is IFund, TermOwnable {
         } else {
             return contributionEndTimestamp - block.timestamp;
         }
-    }
-
-    /// @notice returns the beneficiaries order as an array
-    function getBeneficiariesOrder(uint id) external view returns (address[] memory) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        return fund.beneficiariesOrder;
-    }
-
-    /// @notice function to get cycle information of a specific participant
-    /// @param participant the user to get the info from
-    function getParticipantSummary(
-        uint id,
-        address participant
-    ) external view returns (uint, bool, bool, bool, bool) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        return (
-            fund.beneficiariesPool[participant],
-            fund.isBeneficiary[participant],
-            fund.paidThisCycle[participant],
-            fund.autoPayEnabled[participant],
-            fund.isParticipant[participant]
-        );
     }
 
     function currentCycle(uint id) external view returns (uint) {
