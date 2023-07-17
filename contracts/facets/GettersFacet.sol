@@ -86,17 +86,25 @@ contract GettersFacet {
         );
     }
 
-    function getDepositorFundSummary(
-        address depositor,
+    /// @notice returns the beneficiaries order as an array
+    function getBeneficiariesOrder(uint id) external view returns (address[] memory) {
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        return fund.beneficiariesOrder;
+    }
+
+    /// @notice function to get cycle information of a specific participant
+    /// @param participant the user to get the info from
+    function getParticipantFundSummary(
+        address participant,
         uint id
     ) external view returns (bool, bool, bool, bool, uint) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         return (
-            fund.isParticipant[depositor],
-            fund.isBeneficiary[depositor],
-            fund.paidThisCycle[depositor],
-            fund.autoPayEnabled[depositor],
-            fund.beneficiariesPool[depositor]
+            fund.isParticipant[participant],
+            fund.isBeneficiary[participant],
+            fund.paidThisCycle[participant],
+            fund.autoPayEnabled[participant],
+            fund.beneficiariesPool[participant]
         );
     }
 }
