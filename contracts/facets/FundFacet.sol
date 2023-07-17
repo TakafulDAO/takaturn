@@ -17,7 +17,6 @@ import {TermOwnable} from "../access/TermOwnable.sol";
 /// @notice This is used to operate the Takaturn fund
 /// @dev v3.0 (Diamond)
 contract FundFacet is IFund, TermOwnable {
-    // TODO: Review auto pay logic
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint public constant FUND_VERSION = 2; // The version of the contract

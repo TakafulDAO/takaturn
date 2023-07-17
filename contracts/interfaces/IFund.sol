@@ -50,7 +50,6 @@ interface IFund {
     // @notice returns the time left to contribute for this cycle
     function getRemainingContributionTime(uint termId) external view returns (uint);
 
-    // todo: getter functions on term facet. when done remove from here
     function isBeneficiary(uint termId, address beneficiary) external view returns (bool);
 
     function currentCycle(uint termId) external view returns (uint);

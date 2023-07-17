@@ -46,7 +46,4 @@ interface ICollateral {
         uint id,
         address participant
     ) external view returns (uint, uint, bool);
-
-    // TODO: add getters to the term facet
-    //function collateralPaymentBank(address participant) external view returns (uint);
 }
