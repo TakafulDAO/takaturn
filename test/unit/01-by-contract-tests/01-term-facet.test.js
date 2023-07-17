@@ -1,6 +1,6 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
-const { developmentChains, isDevnet, isFork, networkConfig } = require("../../utils/_networks")
+const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
 const { constants } = require("@openzeppelin/test-helpers")
 const {
     CollateralStates,
@@ -9,9 +9,9 @@ const {
     getFundStateFromIndex,
     advanceTimeByDate,
     toWei,
-} = require("../../utils/_helpers")
+} = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
-const { hour, erc20Units } = require("../../utils/units")
+const { hour, erc20Units } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
