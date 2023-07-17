@@ -1,16 +1,16 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
-const { developmentChains, isDevnet, isFork, networkConfig } = require("../../utils/_networks")
+const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
 const { constants } = require("@openzeppelin/test-helpers")
 const {
     CollateralStates,
     FundStates,
     getCollateralStateFromIndex,
     getFundStateFromIndex,
-} = require("../../utils/_helpers")
+} = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
-const { hour, erc20Units, day } = require("../../utils/units")
-const { advanceTimeByDate } = require("../../utils/_helpers")
+const { hour, erc20Units, day } = require("../../../utils/units")
+const { advanceTimeByDate } = require("../../../utils/_helpers")
 
 let takaturnDiamond
 
@@ -37,59 +37,59 @@ const withdrawCollateral = async (termId, address) => {
 
           let takaturnDiamondDeployer, takaturnDiamondParticipant_1
 
-          beforeEach(async () => {
-              // Get the accounts
-              accounts = await ethers.getSigners()
-              deployer = accounts[0]
-              participant_1 = accounts[1]
-              participant_2 = accounts[2]
-              participant_3 = accounts[3]
-              participant_4 = accounts[4]
-
-              // Deploy contracts
-              await deployments.fixture(["all"])
-              takaturnDiamond = await ethers.getContract("TakaturnDiamond")
-              //   usdc = await ethers.getContract("FiatTokenV2_1")
-              if (isDevnet && !isFork) {
-                  aggregator = await ethers.getContract("MockV3Aggregator")
-              } else {
-                  const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
-                  const usdcAddress = networkConfig[chainId]["usdc"]
-                  aggregator = await ethers.getContractAt(
-                      "AggregatorV3Interface",
-                      aggregatorAddress
-                  )
-                  usdc = await ethers.getContractAt(
-                      // contracts/mocks/USDC.sol:IERC20
-                      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-                      usdcAddress
-                  )
-              }
-              // Connect the accounts
-              takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
-              takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
-
-              participants = []
-
-              for (let i = 1; i <= totalParticipants; i++) {
-                  participants.push(accounts[i])
-              }
-
-              // Create a new term where participant_1 is the term owner
-              // This create the term and collateral
-              await takaturnDiamondParticipant_1.createTerm(
-                  totalParticipants,
-                  cycleTime,
-                  contributionAmount,
-                  contributionPeriod,
-                  fixedCollateralEth,
-                  collateralAmount,
-                  usdc.address,
-                  aggregator.address
-              )
-          })
-
           describe("Collateral tests", function () {
+              beforeEach(async () => {
+                  // Get the accounts
+                  accounts = await ethers.getSigners()
+                  deployer = accounts[0]
+                  participant_1 = accounts[1]
+                  participant_2 = accounts[2]
+                  participant_3 = accounts[3]
+                  participant_4 = accounts[4]
+
+                  // Deploy contracts
+                  await deployments.fixture(["all"])
+                  takaturnDiamond = await ethers.getContract("TakaturnDiamond")
+                  //   usdc = await ethers.getContract("FiatTokenV2_1")
+                  if (isDevnet && !isFork) {
+                      aggregator = await ethers.getContract("MockV3Aggregator")
+                  } else {
+                      const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
+                      const usdcAddress = networkConfig[chainId]["usdc"]
+                      aggregator = await ethers.getContractAt(
+                          "AggregatorV3Interface",
+                          aggregatorAddress
+                      )
+                      usdc = await ethers.getContractAt(
+                          // contracts/mocks/USDC.sol:IERC20
+                          "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+                          usdcAddress
+                      )
+                  }
+                  // Connect the accounts
+                  takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
+                  takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
+
+                  participants = []
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      participants.push(accounts[i])
+                  }
+
+                  // Create a new term where participant_1 is the term owner
+                  // This create the term and collateral
+                  await takaturnDiamondParticipant_1.createTerm(
+                      totalParticipants,
+                      cycleTime,
+                      contributionAmount,
+                      contributionPeriod,
+                      fixedCollateralEth,
+                      collateralAmount,
+                      usdc.address,
+                      aggregator.address
+                  )
+              })
+
               it("allows users to deposit a collateral and accepts them as participants", async () => {
                   const term = await takaturnDiamondDeployer.getTermsId()
                   const termId = term[0]
@@ -185,7 +185,7 @@ const withdrawCollateral = async (termId, address) => {
                   assert.equal(currentStage, 3) //closed stage
               })
 
-              it.only("prevents re-enterency to collateral", async () => {
+              it("prevents re-enterency to collateral", async () => {
                   const term = await takaturnDiamondDeployer.getTermsId()
                   const termId = term[0]
                   await takaturnDiamond
@@ -198,6 +198,39 @@ const withdrawCollateral = async (termId, address) => {
                   } catch (err) {
                       assert(err)
                   }
+              })
+
+              xit("switchs to CycleOngoing state when members are complete", async () => {
+                  const term = await takaturnDiamondDeployer.getTermsId()
+                  const termId = term[0]
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, { value: fixedCollateralEth })
+                  await takaturnDiamond
+                      .connect(participant_2)
+                      .joinTerm(termId, { value: fixedCollateralEth })
+                  await takaturnDiamond
+                      .connect(participant_3)
+                      .joinTerm(termId, { value: fixedCollateralEth })
+                  await takaturnDiamond
+                      .connect(participant_4)
+                      .joinTerm(termId, { value: fixedCollateralEth })
+
+                  try {
+                      awa
+                      await takaturnDiamond
+                          .connect(participant_5)
+                          .joinTerm(termId, { value: fixedCollateralEth })
+                      assert(false)
+                  } catch (err) {
+                      assert(err)
+                  }
+                  await takaturnDiamondParticipant_1.setStateOwner(termId, "2")
+                  let collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
+
+                  collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
+                  const currentStage = collateral[1]
+                  assert.equal(currentStage, 1) //cycle ongoing stage
               })
           })
       })
