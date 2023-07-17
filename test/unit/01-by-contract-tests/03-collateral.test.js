@@ -266,8 +266,6 @@ const withdrawCollateral = async (termId, address) => {
                       if (bool) {
                           count++
                           lastSelectedBen = accounts[i]
-                          console.log("count", count)
-                          console.log("lastSelectedBen", lastSelectedBen.address)
                       }
                   }
                   assert.equal(count, 1)
@@ -276,7 +274,6 @@ const withdrawCollateral = async (termId, address) => {
                       termId
                   )
                   let balance = beneficiarySummary[4]
-                  console.log("balance", balance.toString())
                   assert(balance >= 40) //atleast 40$
               })
           })
