@@ -135,6 +135,10 @@ contract TermFacet is ITerm {
                 ++i;
             }
         }
+        // If all the spots are filled, change the collateral
+        if (collateral.counterMembers == term.totalParticipants) {
+            collateral.state = LibCollateral.CollateralStates.CycleOngoing;
+        }
     }
 
     function _startTerm(uint termId) internal {
