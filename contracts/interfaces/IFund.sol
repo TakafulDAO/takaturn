@@ -50,16 +50,6 @@ interface IFund {
     // @notice returns the time left to contribute for this cycle
     function getRemainingContributionTime(uint termId) external view returns (uint);
 
-    /// @notice returns the beneficiaries order as an array
-    function getBeneficiariesOrder(uint termId) external view returns (address[] memory);
-
-    // @notice function to get cycle information of a specific participant
-    // @param participant the user to get the info from
-    function getParticipantSummary(
-        uint termId,
-        address participant
-    ) external view returns (uint, bool, bool, bool, bool);
-
     // todo: getter functions on term facet. when done remove from here
     function isBeneficiary(uint termId, address beneficiary) external view returns (bool);
 
