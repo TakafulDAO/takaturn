@@ -225,7 +225,7 @@ const { hour } = require("../../../utils/units")
                           )
 
                           const depositorSummary =
-                              await takaturnDiamondDeployer.getDepositorFundSummary(
+                              await takaturnDiamondDeployer.getParticipantFundSummary(
                                   participant_1.address,
                                   termId
                               )
@@ -292,7 +292,7 @@ const { hour } = require("../../../utils/units")
                           )
 
                           const depositorSummary =
-                              await takaturnDiamondDeployer.getDepositorFundSummary(
+                              await takaturnDiamondDeployer.getParticipantFundSummary(
                                   participant_2.address,
                                   termId
                               )

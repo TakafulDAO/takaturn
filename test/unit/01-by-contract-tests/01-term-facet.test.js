@@ -332,10 +332,11 @@ const { hour, erc20Units } = require("../../../utils/units")
                           const memberBankBefore = depositorSummaryBefore[1]
 
                           // Get the collateral summary before the participant joins
-                          const collateralBefore =
-                              await takaturnDiamondDeployer.getCollateralSummary(lastTermId)
+                          let collateral = await takaturnDiamondDeployer.getCollateralSummary(
+                              lastTermId
+                          )
 
-                          let counterMembersBefore = collateralBefore[3]
+                          const counterMembersBefore = collateral[3]
 
                           // Join
                           await expect(
@@ -354,14 +355,15 @@ const { hour, erc20Units } = require("../../../utils/units")
                           const memberAfter = depositorSummaryAfter[0]
                           const memberBankAfter = depositorSummaryAfter[1]
                           // Get the collateral summary after the participant joins
-                          const collateralAfter =
-                              await takaturnDiamondDeployer.getCollateralSummary(lastTermId)
+                          collateral = await takaturnDiamondDeployer.getCollateralSummary(
+                              lastTermId
+                          )
 
-                          const counterMembersAfter = collateralAfter[3]
-                          const depositorsArray = collateralAfter[4]
+                          const counterMembersAfter = collateral[3]
+                          const depositorsArray = collateral[4]
 
                           if (i === 1) {
-                              const firstDepositTime = collateralAfter[2]
+                              const firstDepositTime = collateral[2]
                               assert(firstDepositTime.toString() > "0")
                           }
                           // Assertions before joining
@@ -374,12 +376,20 @@ const { hour, erc20Units } = require("../../../utils/units")
                           assert.equal(memberBankAfter.toString(), entrance.toString())
                           assert(memberBankAfter > memberBankBefore)
                           assert.equal(depositorsArray[i - 1], depositor.address)
+                          if (i < totalParticipants) {
+                              expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                                  CollateralStates.AcceptingCollateral
+                              )
+                          } else {
+                              expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                                  CollateralStates.CycleOngoing
+                              )
+                              // Nobody else can enter
+                              await expect(
+                                  takaturnDiamondDeployer.joinTerm(lastTermId, { value: entrance })
+                              ).to.be.revertedWith("No space")
+                          }
                       }
-
-                      // Nobody else can enter
-                      await expect(
-                          takaturnDiamondDeployer.joinTerm(lastTermId, { value: entrance })
-                      ).to.be.revertedWith("No space")
                   })
               })
           })
@@ -452,7 +462,7 @@ const { hour, erc20Units } = require("../../../utils/units")
                       assert.equal(newFund[3].toString(), "1")
                       for (let i = 0; i < totalParticipants; i++) {
                           const participantSummary =
-                              await takaturnDiamondDeployer.getDepositorFundSummary(
+                              await takaturnDiamondDeployer.getParticipantFundSummary(
                                   accounts[i + 1].address,
                                   lastTermId
                               )
