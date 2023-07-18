@@ -792,7 +792,6 @@ async function executeCycle(
 
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
                       const startingCycles = fund[8]
-                      console.log("startingCycles", startingCycles.toNumber())
                       // We let the participant 1 default constantly, before becoming beneficiary
                       while (
                           (
@@ -816,11 +815,9 @@ async function executeCycle(
                           termId
                       )
                       let member = collateral[0]
-                      console.log("member", member)
 
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
                       const totalAmountOfCycles = fund[8]
-                      console.log("totalAmountOfCycles", totalAmountOfCycles.toNumber())
 
                       assert.ok(!member) // todo: fix this, return true
                       assert.ok(totalAmountOfCycles.toNumber() == startingCycles)
