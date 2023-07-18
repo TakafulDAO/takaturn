@@ -63,12 +63,10 @@ contract CollateralFacet is ICollateral, TermOwnable {
         (uint share, address[] memory expellants) = _whoExpelled(
             collateral,
             term,
+            fund,
             beneficiary,
             defaulters
         );
-        if (expellants.length != 0) {
-            fund.totalAmountOfCycles = fund.totalAmountOfCycles - expellants.length;
-        }
 
         (uint nonBeneficiaryCounter, address[] memory nonBeneficiaries) = _liquidateCollateral(
             collateral,
@@ -261,6 +259,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
 
         uint collateralLimit;
         uint memberCollateralUSD;
+        // todo: check this if statement. fund will always esist
         if (LibFund._fundExists(_id)) {
             collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
         } else {
@@ -282,6 +281,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
     function _whoExpelled(
         LibCollateral.Collateral storage _collateral,
         LibTerm.Term storage _term,
+        LibFund.Fund storage fund,
         address _beneficiary,
         address[] calldata _defaulters
     ) internal returns (uint, address[] memory) {
@@ -301,7 +301,6 @@ contract CollateralFacet is ICollateral, TermOwnable {
         for (uint i; i < _defaulters.length; ) {
             wasBeneficiary = IFund(address(this)).isBeneficiary(_term.termId, _defaulters[i]);
             currentDefaulterBank = _collateral.collateralMembersBank[_defaulters[i]];
-
             if (_defaulters[i] == _beneficiary) {
                 unchecked {
                     ++i;
@@ -334,8 +333,11 @@ contract CollateralFacet is ICollateral, TermOwnable {
             }
         }
 
-        _term.totalParticipants = _term.totalParticipants - totalExpellants;
+        if (!wasBeneficiary && expellants.length != 0) {
+            fund.totalAmountOfCycles = fund.totalAmountOfCycles - expellants.length;
+        }
 
+        _term.totalParticipants = _term.totalParticipants - totalExpellants;
         return (share, expellants);
     }
 

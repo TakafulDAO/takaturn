@@ -7,6 +7,7 @@ import {IFund} from "../interfaces/IFund.sol";
 import {ICollateral} from "../interfaces/ICollateral.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
 
@@ -114,6 +115,7 @@ contract FundFacet is IFund, TermOwnable {
         }
 
         // Once we decided who defaulted and who paid, we can select the beneficiary for this cycle
+
         _selectBeneficiary(id);
         if (!(fund.currentCycle < fund.totalAmountOfCycles)) {
             // If all cycles have passed, and the last cycle's time has passed, close the fund
@@ -306,7 +308,6 @@ contract FundFacet is IFund, TermOwnable {
     function _autoPay(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         address[] memory autoPayers = fund.beneficiariesOrder; // use beneficiariesOrder because it is a single array with all participants
-
         uint length = autoPayers.length;
         for (uint i; i < length; ) {
             if (fund.autoPayEnabled[autoPayers[i]] && !fund.paidThisCycle[autoPayers[i]]) {
@@ -440,7 +441,6 @@ contract FundFacet is IFund, TermOwnable {
                     }
                     continue;
                 }
-
                 _expelDefaulter(_id, expellants[i]);
                 unchecked {
                     ++i;
@@ -501,6 +501,9 @@ contract FundFacet is IFund, TermOwnable {
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
     /// @param _expellant The address of the defaulter that will be expelled
     function _expelDefaulter(uint _id, address _expellant) internal {
+        LibCollateral.Collateral storage collateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[_id];
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
         //require(msg.sender == address(collateral), "Caller is not collateral");
@@ -528,6 +531,7 @@ contract FundFacet is IFund, TermOwnable {
         // Lastly, lower the amount of participants with the amount expelled
         uint newLength = term.totalParticipants - 1;
         term.totalParticipants = newLength;
+        collateral.isCollateralMember[_expellant] = false;
         ++fund.expelledParticipants;
 
         emit OnTotalParticipantsUpdated(_id, newLength);

@@ -581,7 +581,8 @@ async function executeCycle(
                           } catch (e) {}
                       }
 
-                      assert.ok((await usdc.balanceOf(takaturnDiamond.address)) == 0)
+                      const takaturnBalance = await usdc.balanceOf(takaturnDiamond.address)
+                      assert.ok(takaturnBalance == 0)
                   })
 
                   it("makes sure the fund is closed correctly", async function () {
@@ -659,7 +660,7 @@ async function executeCycle(
                   })
 
                   // This happens in the 1st cycle
-                  xit("returns remaining cycle time properly", async function () {
+                  it("returns remaining cycle time properly", async function () {
                       //todo: this one sometimes fails. check where to wait
                       this.timeout(200000)
 
@@ -703,7 +704,7 @@ async function executeCycle(
                   })
 
                   // This happens in the 1st cycle
-                  xit("returns remaining contribution time properly", async function () {
+                  it("returns remaining contribution time properly", async function () {
                       //todo: this one sometimes fails. check where to wait
                       this.timeout(200000)
 
@@ -780,7 +781,7 @@ async function executeCycle(
                       assert.ok(fund[8].toNumber() < startingCycles)
                   })
 
-                  xit("does not reduce the no. of cycles if a past beneficiary is expelled", async function () {
+                  it("does not reduce the no. of cycles if a past beneficiary is expelled", async function () {
                       this.timeout(200000)
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
@@ -790,7 +791,8 @@ async function executeCycle(
                       await takaturnDiamondParticipant_1.startNewCycle(termId)
 
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let startingCycles = fund[8]
+                      const startingCycles = fund[8]
+                      console.log("startingCycles", startingCycles.toNumber())
                       // We let the participant 1 default constantly, before becoming beneficiary
                       while (
                           (
@@ -806,7 +808,7 @@ async function executeCycle(
                           if (parseInt(currentState) == 4 || parseInt(currentState) == 5) {
                               break
                           }
-                          await executeCycle(termId, 1, [0])
+                          await executeCycle(termId, 1, [1])
                       }
 
                       let collateral = await takaturnDiamondDeployer.getDepositorCollateralSummary(
@@ -817,9 +819,10 @@ async function executeCycle(
                       console.log("member", member)
 
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let totalAmountOfCycles = fund[8]
+                      const totalAmountOfCycles = fund[8]
+                      console.log("totalAmountOfCycles", totalAmountOfCycles.toNumber())
 
-                      //   assert.ok(!member) // todo: fix this, return true
+                      assert.ok(!member) // todo: fix this, return true
                       assert.ok(totalAmountOfCycles.toNumber() == startingCycles)
                   })
 
@@ -1086,7 +1089,7 @@ async function executeCycle(
                   await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
                   await advanceTime(cycleTime + 1)
 
-                  await takaturnDiamondParticipant_1.startNewCycle(termId) // todo: fix this it return wrong state
+                  // await takaturnDiamondParticipant_1.startNewCycle(termId) // todo: fix this it return wrong state
                   //   await fund.methods.startNewCycle().send({
                   //       from: accounts[12],
                   //   })
