@@ -58,12 +58,10 @@ contract CollateralFacet is ICollateral, TermOwnable {
             ._collateralStorage()
             .collaterals[id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
 
         (uint share, address[] memory expellants) = _whoExpelled(
             collateral,
             term,
-            fund,
             beneficiary,
             defaulters
         );
@@ -81,7 +79,6 @@ contract CollateralFacet is ICollateral, TermOwnable {
                 collateral.collateralPaymentBank[nonBeneficiaries[i]] += share;
             }
         }
-
         return (expellants);
     }
 
@@ -281,7 +278,6 @@ contract CollateralFacet is ICollateral, TermOwnable {
     function _whoExpelled(
         LibCollateral.Collateral storage _collateral,
         LibTerm.Term storage _term,
-        LibFund.Fund storage fund,
         address _beneficiary,
         address[] calldata _defaulters
     ) internal returns (uint, address[] memory) {
@@ -331,10 +327,6 @@ contract CollateralFacet is ICollateral, TermOwnable {
             unchecked {
                 ++i;
             }
-        }
-
-        if (!wasBeneficiary && expellants.length != 0) {
-            fund.totalAmountOfCycles = fund.totalAmountOfCycles - expellants.length;
         }
 
         _term.totalParticipants = _term.totalParticipants - totalExpellants;

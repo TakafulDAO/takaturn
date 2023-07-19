@@ -239,11 +239,8 @@ const withdrawCollateral = async (termId, address) => {
 
                   const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
                   expect(getCollateralStateFromIndex(collateral[1])).to.equal(
-                      CollateralStates.ReleasingCollateral
+                      CollateralStates.CycleOngoing
                   )
-                  // todo: Why on legacy test check that cycle is ongoing?
-                  // currentState = await fund.methods.currentState().call()
-                  // assert.equal(currentState, 3) //cycle ongoing. It feels like selecting ben is an internal state becaseu i cannot check for it
               })
 
               it("selects a beneficiary correctly", async () => {
