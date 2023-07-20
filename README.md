@@ -30,12 +30,12 @@
 5. Scans api keys. [here](https://docs.etherscan.io/getting-started/viewing-api-usage-statistics) is the process for etherscan. For Polygon is the same process
     + ETHERSCAN_API_KEY
     + POLYGONSCAN_API_KEY=
-6. Price feeds api keys. You canget it [here](https://coinmarketcap.com/api/)
+6. Price feeds api keys. You can get it [here](https://coinmarketcap.com/api/)
     + COINMARKETCAP_API_KEY=
 7. Features. Especial features for tests
-FORK= true to fork arbitrum mainnet. Most of the tests require this to be set to true
-GAS_REPORT= true to get gas report on the output file
-SIZE= true to get contract's size report when compile
+    + FORK= true to fork arbitrum mainnet. Most of the tests require this to be set to true
+    + GAS_REPORT= true to get gas report on the output file
+    + SIZE= true to get contract's size report when compile
 
 
 
@@ -43,7 +43,10 @@ SIZE= true to get contract's size report when compile
 
 ## :dart: Deploy test and coverage
 
-1. For deploy on localhost run `yarn deploy`
+There are some scripts set on the package.json file. Check them out
+
+1. Deploy with `yarn deploy`
+2. For deploy on localhost run `yarn deploy`
     + You can also run a node to interact with the deploys with `yarn hardhat node`
 3. For the tests run  `yarn test`.
     + You can also check the coverage of the tests with `yarn coverage`
