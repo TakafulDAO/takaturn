@@ -10,6 +10,7 @@ import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibFund} from "../libraries/LibFund.sol";
 
 contract GettersFacet is IGetters {
+    // TERM GETTERS
     function getTermsId() external view returns (uint, uint) {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         uint lastTermId = termStorage.nextTermId - 1;
@@ -20,6 +21,19 @@ contract GettersFacet is IGetters {
     function getTermSummary(uint id) external view returns (LibTerm.Term memory) {
         return (LibTerm._termStorage().terms[id]);
     }
+
+    function getRemainingCycleTime(uint id) external view returns (uint) {
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
+        uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
+        if (block.timestamp > cycleEndTimestamp) {
+            return 0;
+        } else {
+            return cycleEndTimestamp - block.timestamp;
+        }
+    }
+
+    // COLLATERAL GETTERS
 
     function getDepositorCollateralSummary(
         address depositor,
@@ -54,6 +68,8 @@ contract GettersFacet is IGetters {
             collateral.collateralDeposit // Collateral
         );
     }
+
+    // FUND GETTERS
 
     /// @notice function to get the cycle information in one go
     function getFundSummary(
@@ -109,17 +125,6 @@ contract GettersFacet is IGetters {
             fund.autoPayEnabled[participant],
             fund.beneficiariesPool[participant]
         );
-    }
-
-    function getRemainingCycleTime(uint id) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
-        if (block.timestamp > cycleEndTimestamp) {
-            return 0;
-        } else {
-            return cycleEndTimestamp - block.timestamp;
-        }
     }
 
     /// @notice returns the time left to contribute for this cycle

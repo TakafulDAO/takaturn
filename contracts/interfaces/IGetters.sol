@@ -13,6 +13,8 @@ interface IGetters {
 
     function getTermSummary(uint id) external view returns (LibTerm.Term memory);
 
+    function getRemainingCycleTime(uint id) external view returns (uint);
+
     function getDepositorCollateralSummary(
         address depositor,
         uint id
@@ -49,8 +51,6 @@ interface IGetters {
         address participant,
         uint id
     ) external view returns (bool, bool, bool, bool, uint);
-
-    function getRemainingCycleTime(uint id) external view returns (uint);
 
     function getRemainingContributionTime(uint id) external view returns (uint);
 }
