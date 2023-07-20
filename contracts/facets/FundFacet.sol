@@ -65,11 +65,13 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
+    /// @param id the id of the term
     function startNewCycle(uint id) external onlyTermOwner(id) {
         _startNewCycle(id);
     }
 
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
+    /// @param id the id of the term
     function closeFundingPeriod(uint id) external onlyTermOwner(id) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
@@ -127,6 +129,7 @@ contract FundFacet is IFund, TermOwnable {
 
     /// @notice Fallback function, if the internal call fails somehow and the state gets stuck, allow owner to call the function again manually
     /// @dev This shouldn't happen, but is here in case there's an edge-case we didn't take into account, can possibly be removed in the future
+    /// @param id the id of the term
     function selectBeneficiary(uint id) external onlyTermOwner(id) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         require(fund.currentState == LibFund.FundStates.ChoosingBeneficiary, "Wrong state");
@@ -134,6 +137,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice called by the owner to close the fund for emergency reasons.
+    /// @param id the id of the term
     function closeFund(uint id) external onlyTermOwner(id) {
         //require (!(currentCycle < totalAmountOfCycles), "Not all cycles have happened yet");
         _closeFund(id);
@@ -142,6 +146,7 @@ contract FundFacet is IFund, TermOwnable {
     /// @notice allow the owner to empty the fund if there's any excess fund left after 180 days,
     ///         this with the assumption that beneficiaries can't claim it themselves due to losing their keys for example,
     ///         and prevent the fund to be stuck in limbo
+    /// @param id the id of the term
     function emptyFundAfterEnd(uint id) external onlyTermOwner(id) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         require(
@@ -158,6 +163,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice function to enable/disable autopay
+    /// @param id the id of the term
     function toggleAutoPay(uint id) external {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         require(fund.isParticipant[msg.sender], "Not a participant");
@@ -168,6 +174,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice This is the function participants call to pay the contribution
+    /// @param id the id of the term
     function payContribution(uint id) external {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         require(fund.currentState == LibFund.FundStates.AcceptingContributions, "Wrong state");
@@ -177,6 +184,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice This function is here to give the possibility to pay using a different wallet
+    /// @param id the id of the term
     /// @param participant the address the msg.sender is paying for, the address must be part of the fund
     function payContributionOnBehalfOf(uint id, address participant) external {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
@@ -188,6 +196,7 @@ contract FundFacet is IFund, TermOwnable {
 
     /// @notice Called by the beneficiary to withdraw the fund
     /// @dev This follows the pull-over-push pattern.
+    /// @param id the id of the term
     function withdrawFund(uint id) external {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         require(
@@ -222,12 +231,16 @@ contract FundFacet is IFund, TermOwnable {
         }
     }
 
+    /// @param id the id of the term
+    /// @param beneficiary the address of the participant to check
+    /// @return true if the participant is a beneficiary
     function isBeneficiary(uint id, address beneficiary) external view returns (bool) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         return fund.isBeneficiary[beneficiary];
     }
 
     /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
+    /// @param _id The id of the term
     /// @param _newState The new state of the fund
     function _setState(uint _id, LibFund.FundStates _newState) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
@@ -237,6 +250,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice This starts the new cycle and can only be called internally. Used upon deploy
+    /// @param _id The id of the term
     function _startNewCycle(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
@@ -267,6 +281,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice function to attempt to make autopayers pay their contribution
+    /// @param _id the id of the term
     function _autoPay(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         address[] memory autoPayers = fund.beneficiariesOrder; // use beneficiariesOrder because it is a single array with all participants
@@ -282,6 +297,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice function to pay the actual contribution for the cycle, used for autopay to prevent reverts
+    /// @param _id the id of the term
     /// @param _payer the address that's paying
     /// @param _participant the (participant) address that's being paid for
     function _payContributionSafe(uint _id, address _payer, address _participant) internal {
@@ -301,6 +317,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice function to pay the actual contribution for the cycle
+    /// @param _id the id of the term
     /// @param _payer the address that's paying
     /// @param _participant the (participant) address that's being paid for
     function _payContribution(uint _id, address _payer, address _participant) internal {
@@ -320,6 +337,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice Default the participant/beneficiary by checking the mapping first, then remove them from the appropriate array
+    /// @param _id The id of the term
     /// @param _defaulter The participant to default
     function _defaultParticipant(uint _id, address _defaulter) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
@@ -339,6 +357,7 @@ contract FundFacet is IFund, TermOwnable {
 
     /// @notice The beneficiary will be selected here based on the beneficiariesOrder array.
     /// @notice It will loop through the array and choose the first in line to be eligible to be beneficiary.
+    /// @param _id The id of the term
     function _selectBeneficiary(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
@@ -438,6 +457,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice Called internally to move a defaulter in the beneficiariesOrder to the end, so that people who have paid get chosen first as beneficiary
+    /// @param _id The id of the term
     /// @param _beneficiary The defaulter that could have been beneficiary
     function _removeBeneficiaryFromOrder(uint _id, address _beneficiary) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
@@ -462,6 +482,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
+    /// @param _id The id of the term
     /// @param _expellant The address of the defaulter that will be expelled
     function _expelDefaulter(uint _id, address _expellant) internal {
         LibCollateral.Collateral storage collateral = LibCollateral
@@ -501,6 +522,7 @@ contract FundFacet is IFund, TermOwnable {
     }
 
     /// @notice Internal function for close fund which is used by _startNewCycle & _chooseBeneficiary to cover some edge-cases
+    /// @param _id The id of the term
     function _closeFund(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         fund.fundEnd = block.timestamp;

@@ -27,8 +27,8 @@ contract CollateralFacet is ICollateral, TermOwnable {
     event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
 
-    ///@param id term id
-    ///@param _state collateral state
+    /// @param id term id
+    /// @param _state collateral state
     modifier atState(uint id, LibCollateral.CollateralStates _state) {
         LibCollateral.CollateralStates state = LibCollateral
             ._collateralStorage()
@@ -38,6 +38,8 @@ contract CollateralFacet is ICollateral, TermOwnable {
         _;
     }
 
+    /// @param id term id
+    /// @param newState collateral state
     function setStateOwner(
         uint id,
         LibCollateral.CollateralStates newState
@@ -47,8 +49,10 @@ contract CollateralFacet is ICollateral, TermOwnable {
 
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
+    /// @param id term id
     /// @param beneficiary Address that was randomly selected for the current cycle
     /// @param defaulters Address that was randomly selected for the current cycle
+    /// @return expellants array of addresses that were expelled
     // TODO: Recheck this function, it was refactorized on internal functions because the stack was too deep and the EVM can not access variables
     function requestContribution(
         uint id,
@@ -85,6 +89,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
 
     /// @notice Called by each member after the end of the cycle to withraw collateral
     /// @dev This follows the pull-over-push pattern.
+    /// @param id term id
     function withdrawCollateral(
         uint id
     ) external atState(id, LibCollateral.CollateralStates.ReleasingCollateral) {
@@ -109,6 +114,8 @@ contract CollateralFacet is ICollateral, TermOwnable {
         }
     }
 
+    /// @param id term id
+    /// @param depositor Address of the depositor
     function withdrawReimbursement(uint id, address depositor) external {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
@@ -125,6 +132,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
         emit OnReimbursementWithdrawn(id, depositor, amount);
     }
 
+    /// @param id term id
     function releaseCollateral(uint id) external {
         require(LibFund._fundExists(id), "Fund does not exists");
         _setState(id, LibCollateral.CollateralStates.ReleasingCollateral);
@@ -132,6 +140,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
     /// @dev This will revert if called during ReleasingCollateral or after
+    /// @param id The term id
     /// @param member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
     function isUnderCollaterized(uint id, address member) external view returns (bool) {
@@ -139,6 +148,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
     }
 
     /// @notice allow the owner to empty the Collateral after 180 days
+    /// @param id The term id
     function emptyCollateralAfterEnd(
         uint id
     ) external onlyTermOwner(id) atState(id, LibCollateral.CollateralStates.ReleasingCollateral) {
@@ -164,7 +174,8 @@ contract CollateralFacet is ICollateral, TermOwnable {
     }
 
     /// @notice Gets latest ETH / USD price
-    /// @return uint latest price in Wei
+    /// @param id The term id
+    /// @return uint latest price in Wei Note: 18 decimals
     function getLatestPrice(uint id) public view returns (uint) {
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
         LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
@@ -205,15 +216,19 @@ contract CollateralFacet is ICollateral, TermOwnable {
 
     /// @notice Gets the conversion rate of an amount in USD to ETH
     /// @dev should we always deal with in Wei?
+    /// @param id The term id
+    /// @param USDAmount The amount in USD
     /// @return uint converted amount in wei
     function getToEthConversionRate(uint id, uint USDAmount) public view returns (uint) {
         uint ethPrice = getLatestPrice(id);
-        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice; //* 10 ** 18;
+        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice; //* 10 ** 18; // todo: fix this
         return USDAmountInEth;
     }
 
     /// @notice Gets the conversion rate of an amount in ETH to USD
     /// @dev should we always deal with in Wei?
+    /// @param id The term id
+    /// @param ethAmount The amount in ETH
     /// @return uint converted amount in USD correct to 18 decimals
     function getToUSDConversionRate(uint id, uint ethAmount) public view returns (uint) {
         // NOTE: This will be made internal
@@ -222,6 +237,8 @@ contract CollateralFacet is ICollateral, TermOwnable {
         return ethAmountInUSD;
     }
 
+    /// @param _id term id
+    /// @param _newState collateral state
     function _setState(uint _id, LibCollateral.CollateralStates _newState) internal {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
@@ -262,6 +279,12 @@ contract CollateralFacet is ICollateral, TermOwnable {
         return (memberCollateralUSD < collateralLimit);
     }
 
+    /// @param _collateral Collateral storage
+    /// @param _term Term storage
+    /// @param _beneficiary Address that was randomly selected for the current cycle
+    /// @param _defaulters Address that was randomly selected for the current cycle
+    /// @return share The total amount of collateral to be divided among non-beneficiaries
+    /// @return expellants array of addresses that were expelled
     function _whoExpelled(
         LibCollateral.Collateral storage _collateral,
         LibTerm.Term storage _term,
@@ -320,6 +343,10 @@ contract CollateralFacet is ICollateral, TermOwnable {
         return (share, expellants);
     }
 
+    /// @param _collateral Collateral storage
+    /// @param _term Term storage
+    /// @return nonBeneficiaryCounter The total amount of collateral to be divided among non-beneficiaries
+    /// @return nonBeneficiaries array of addresses that were expelled
     function _liquidateCollateral(
         LibCollateral.Collateral storage _collateral,
         LibTerm.Term storage _term

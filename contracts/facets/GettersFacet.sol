@@ -11,6 +11,8 @@ import {LibFund} from "../libraries/LibFund.sol";
 
 contract GettersFacet is IGetters {
     // TERM GETTERS
+    /// @return the current term id
+    /// @return the next term id
     function getTermsId() external view returns (uint, uint) {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         uint lastTermId = termStorage.nextTermId - 1;
@@ -18,10 +20,14 @@ contract GettersFacet is IGetters {
         return (lastTermId, nextTermId);
     }
 
+    /// @param id the term id
+    /// @return the term struct
     function getTermSummary(uint id) external view returns (LibTerm.Term memory) {
         return (LibTerm._termStorage().terms[id]);
     }
 
+    /// @param id the term id
+    /// @return remaining time in the current cycle
     function getRemainingCycleTime(uint id) external view returns (uint) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
@@ -35,6 +41,9 @@ contract GettersFacet is IGetters {
 
     // COLLATERAL GETTERS
 
+    /// @param depositor the depositor address
+    /// @param id the collateral id
+    /// @return isCollateralMember, collateralMembersBank, collateralPaymentBank
     function getDepositorCollateralSummary(
         address depositor,
         uint id
@@ -49,6 +58,8 @@ contract GettersFacet is IGetters {
         );
     }
 
+    /// @param id the collateral id
+    /// @return collateral: initialized, state, firstDepositTime, counterMembers, depositors, collateralDeposit
     function getCollateralSummary(
         uint id
     )
@@ -72,6 +83,8 @@ contract GettersFacet is IGetters {
     // FUND GETTERS
 
     /// @notice function to get the cycle information in one go
+    /// @param id the fund id
+    /// @return initialized, currentState, stableToken, currentCycle, beneficiariesOrder, fundStart, currentCycle, lastBeneficiary, totalAmountOfCycles, fundEnd
     function getFundSummary(
         uint id
     )
@@ -106,6 +119,8 @@ contract GettersFacet is IGetters {
     }
 
     /// @notice returns the beneficiaries order as an array
+    /// @param id the fund id
+    /// @return the beneficiaries order
     function getBeneficiariesOrder(uint id) external view returns (address[] memory) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         return fund.beneficiariesOrder;
@@ -113,6 +128,8 @@ contract GettersFacet is IGetters {
 
     /// @notice function to get cycle information of a specific participant
     /// @param participant the user to get the info from
+    /// @param id the fund id
+    /// @return isParticipant, isBeneficiary, paidThisCycle, autoPayEnabled, beneficiariesPool
     function getParticipantFundSummary(
         address participant,
         uint id
@@ -128,6 +145,8 @@ contract GettersFacet is IGetters {
     }
 
     /// @notice returns the time left to contribute for this cycle
+    /// @param id the fund id
+    /// @return the time left to contribute
     function getRemainingContributionTime(uint id) external view returns (uint) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         LibTerm.Term storage term = LibTerm._termStorage().terms[id];
