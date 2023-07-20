@@ -209,7 +209,7 @@ const withdrawCollateral = async (termId, address) => {
                       let userAddress
                       for (let i = 1; i <= totalParticipants; i++) {
                           userAddress = accounts[i].address
-                          await usdcWhaleSigner.transfer(userAddress, contributionAmount)
+                          await usdcWhaleSigner.transfer(userAddress, contributionAmount * 10 ** 6)
 
                           await usdc
                               .connect(accounts[i])

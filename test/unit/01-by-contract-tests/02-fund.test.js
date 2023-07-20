@@ -203,12 +203,11 @@ const { hour } = require("../../../utils/units")
                           const term = await takaturnDiamondDeployer.getTermSummary(termId)
                           const contributionAmount = term.contributionAmount
 
-                          const takaturnBalanceBefore = await usdc.balanceOf(
-                              takaturnDiamond.address
-                          )
-                          const participantBalanceBefore = await usdc.balanceOf(
-                              participant_1.address
-                          )
+                          let takaturnBalance = await usdc.balanceOf(takaturnDiamond.address)
+                          const takaturnBalanceBefore = takaturnBalance.toNumber()
+
+                          let participantBalance = await usdc.balanceOf(participant_1.address)
+                          const participantBalanceBefore = participantBalance.toNumber()
 
                           await expect(takaturnParticipant_1.payContribution(termId)).to.emit(
                               takaturnDiamond,
@@ -219,10 +218,11 @@ const { hour } = require("../../../utils/units")
                               takaturnParticipant_1.payContribution(termId)
                           ).to.be.revertedWith("Already paid for cycle")
 
-                          const takaturnBalanceAfter = await usdc.balanceOf(takaturnDiamond.address)
-                          const participantBalanceAfter = await usdc.balanceOf(
-                              participant_1.address
-                          )
+                          takaturnBalance = await usdc.balanceOf(takaturnDiamond.address)
+                          const takaturnBalanceAfter = takaturnBalance.toNumber()
+
+                          participantBalance = await usdc.balanceOf(participant_1.address)
+                          const participantBalanceAfter = participantBalance.toNumber()
 
                           const depositorSummary =
                               await takaturnDiamondDeployer.getParticipantFundSummary(
@@ -235,11 +235,11 @@ const { hour } = require("../../../utils/units")
                           assert(participantBalanceBefore > participantBalanceAfter)
                           assert.equal(
                               takaturnBalanceAfter - takaturnBalanceBefore,
-                              contributionAmount
+                              contributionAmount * 10 ** 6
                           )
                           assert.equal(
                               participantBalanceBefore - participantBalanceAfter,
-                              contributionAmount
+                              contributionAmount * 10 ** 6
                           )
                       })
                   })
@@ -265,12 +265,11 @@ const { hour } = require("../../../utils/units")
                           const term = await takaturnDiamondDeployer.getTermSummary(termId)
                           const contributionAmount = term.contributionAmount
 
-                          const takaturnBalanceBefore = await usdc.balanceOf(
-                              takaturnDiamond.address
-                          )
-                          const participantBalanceBefore = await usdc.balanceOf(
-                              participant_1.address
-                          )
+                          let takaturnBalance = await usdc.balanceOf(takaturnDiamond.address)
+                          const takaturnBalanceBefore = takaturnBalance.toNumber()
+
+                          let participantBalance = await usdc.balanceOf(participant_1.address)
+                          const participantBalanceBefore = participantBalance.toNumber()
 
                           await expect(
                               takaturnParticipant_1.payContributionOnBehalfOf(
@@ -286,10 +285,11 @@ const { hour } = require("../../../utils/units")
                               )
                           ).to.be.revertedWith("Already paid for cycle")
 
-                          const takaturnBalanceAfter = await usdc.balanceOf(takaturnDiamond.address)
-                          const participantBalanceAfter = await usdc.balanceOf(
-                              participant_1.address
-                          )
+                          takaturnBalance = await usdc.balanceOf(takaturnDiamond.address)
+                          const takaturnBalanceAfter = takaturnBalance.toNumber()
+
+                          participantBalance = await usdc.balanceOf(participant_1.address)
+                          const participantBalanceAfter = participantBalance.toNumber()
 
                           const depositorSummary =
                               await takaturnDiamondDeployer.getParticipantFundSummary(
@@ -302,11 +302,11 @@ const { hour } = require("../../../utils/units")
                           assert(participantBalanceBefore > participantBalanceAfter)
                           assert.equal(
                               takaturnBalanceAfter - takaturnBalanceBefore,
-                              contributionAmount
+                              contributionAmount * 10 ** 6
                           )
                           assert.equal(
                               participantBalanceBefore - participantBalanceAfter,
-                              contributionAmount
+                              contributionAmount * 10 ** 6
                           )
                       })
                   })
