@@ -42,8 +42,8 @@ interface ICollateral {
     /// @notice allow the owner to empty the Collateral after 180 days
     function emptyCollateralAfterEnd(uint id) external;
 
-    function getDepositorSummary(
-        uint id,
-        address participant
-    ) external view returns (uint, uint, bool);
+    // function getDepositorSummary(
+    //     uint id,
+    //     address participant
+    // ) external view returns (uint, uint, bool);
 }

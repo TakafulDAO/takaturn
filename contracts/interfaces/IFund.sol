@@ -44,15 +44,5 @@ interface IFund {
     /// @dev This follows the pull-over-push pattern.
     function withdrawFund(uint termId) external;
 
-    // @notice returns the time left for this cycle to end
-    function getRemainingCycleTime(uint termId) external view returns (uint);
-
-    // @notice returns the time left to contribute for this cycle
-    function getRemainingContributionTime(uint termId) external view returns (uint);
-
     function isBeneficiary(uint termId, address beneficiary) external view returns (bool);
-
-    function currentCycle(uint termId) external view returns (uint);
-
-    function fundEnd(uint termId) external view returns (uint);
 }

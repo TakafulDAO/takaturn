@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 
 import {IFund} from "../interfaces/IFund.sol";
 import {ICollateral} from "../interfaces/ICollateral.sol";
+import {IGetters} from "../interfaces/IGetters.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import {LibFund} from "../libraries/LibFund.sol";
@@ -144,7 +145,8 @@ contract CollateralFacet is ICollateral, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        require(block.timestamp > IFund(address(this)).fundEnd(id) + 180 days, "Can't empty yet");
+        (, , , , , , , , , uint fundEnd) = IGetters(address(this)).getFundSummary(id);
+        require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
 
         uint depositorsLength = collateral.depositors.length;
         for (uint i; i < depositorsLength; i++) {
@@ -159,20 +161,6 @@ contract CollateralFacet is ICollateral, TermOwnable {
 
         (bool success, ) = payable(msg.sender).call{value: address(this).balance}("");
         require(success);
-    }
-
-    function getDepositorSummary(
-        uint id,
-        address depositor
-    ) external view returns (uint, uint, bool) {
-        LibCollateral.Collateral storage collateral = LibCollateral
-            ._collateralStorage()
-            .collaterals[id];
-        return (
-            collateral.collateralMembersBank[depositor],
-            collateral.collateralPaymentBank[depositor],
-            collateral.isCollateralMember[depositor]
-        );
     }
 
     /// @notice Gets latest ETH / USD price
@@ -256,15 +244,14 @@ contract CollateralFacet is ICollateral, TermOwnable {
 
         uint collateralLimit;
         uint memberCollateralUSD;
+        (, , , uint currentCycle, , , , , , ) = IGetters(address(this)).getFundSummary(_id);
         // todo: check this if statement. fund will always esist
         if (LibFund._fundExists(_id)) {
             collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
         } else {
-            uint remainingCycles = 1 +
-                collateral.counterMembers -
-                IFund(address(this)).currentCycle(_id);
+            uint remainingCycles = 1 + collateral.counterMembers - currentCycle;
 
-            collateralLimit = remainingCycles * term.contributionAmount * 10 ** 18; // Convert to Wei
+            collateralLimit = remainingCycles * term.contributionAmount * 10 ** 18; // 18 decimals
         }
 
         memberCollateralUSD = getToUSDConversionRate(
@@ -292,7 +279,6 @@ contract CollateralFacet is ICollateral, TermOwnable {
             _term.termId,
             _term.contributionAmount * 10 ** 18
         );
-
         // Determine who will be expelled and who will just pay the contribution from their collateral.
         for (uint i; i < _defaulters.length; ) {
             wasBeneficiary = IFund(address(this)).isBeneficiary(_term.termId, _defaulters[i]);
@@ -321,6 +307,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
                 );
             } else {
                 // Subtract contribution from defaulter and add to beneficiary.
+                // todo: check if this is correct
                 _collateral.collateralMembersBank[_defaulters[i]] -= contributionAmountWei;
                 _collateral.collateralPaymentBank[_beneficiary] += contributionAmountWei;
             }

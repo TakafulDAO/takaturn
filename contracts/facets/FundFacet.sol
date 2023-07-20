@@ -5,6 +5,7 @@ pragma solidity 0.8.18;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IFund} from "../interfaces/IFund.sol";
 import {ICollateral} from "../interfaces/ICollateral.sol";
+import {IGetters} from "../interfaces/IGetters.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
@@ -195,7 +196,10 @@ contract FundFacet is IFund, TermOwnable {
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
-        (, uint collateralPool, ) = ICollateral(address(this)).getDepositorSummary(id, msg.sender);
+        (, , uint collateralPool) = IGetters(address(this)).getDepositorCollateralSummary(
+            msg.sender,
+            id
+        );
         bool hasCollateralPool = collateralPool > 0;
         require(hasFundPool || hasCollateralPool, "Nothing to withdraw");
 
@@ -216,48 +220,6 @@ contract FundFacet is IFund, TermOwnable {
         if (hasCollateralPool) {
             ICollateral(address(this)).withdrawReimbursement(id, msg.sender);
         }
-    }
-
-    // @notice returns the time left for this cycle to end
-    function getRemainingCycleTime(uint id) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
-        if (block.timestamp > cycleEndTimestamp) {
-            return 0;
-        } else {
-            return cycleEndTimestamp - block.timestamp;
-        }
-    }
-
-    /// @notice returns the time left to contribute for this cycle
-    function getRemainingContributionTime(uint id) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        if (fund.currentState != LibFund.FundStates.AcceptingContributions) {
-            return 0;
-        }
-
-        // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
-        uint contributionEndTimestamp = term.cycleTime *
-            (fund.currentCycle - 1) +
-            fund.fundStart +
-            term.contributionPeriod;
-        if (block.timestamp > contributionEndTimestamp) {
-            return 0;
-        } else {
-            return contributionEndTimestamp - block.timestamp;
-        }
-    }
-
-    function currentCycle(uint id) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        return fund.currentCycle;
-    }
-
-    function fundEnd(uint id) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        return fund.fundEnd;
     }
 
     function isBeneficiary(uint id, address beneficiary) external view returns (bool) {
@@ -328,7 +290,7 @@ contract FundFacet is IFund, TermOwnable {
 
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
-        uint amount = term.contributionAmount;
+        uint amount = term.contributionAmount * 10 ** 6;
         try fund.stableToken.transferFrom(_payer, address(this), amount) returns (bool success) {
             if (success) {
                 // Finish up, set that the participant paid for this cycle and emit an event that it's been done
@@ -347,7 +309,7 @@ contract FundFacet is IFund, TermOwnable {
 
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
-        uint amount = term.contributionAmount;
+        uint amount = term.contributionAmount * 10 ** 6;
 
         bool success = fund.stableToken.transferFrom(_payer, address(this), amount);
         require(success, "Contribution failed, did you approve stable token?");
@@ -467,7 +429,8 @@ contract FundFacet is IFund, TermOwnable {
         }
 
         // Award the beneficiary with the pool and update the lastBeneficiary
-        fund.beneficiariesPool[selectedBeneficiary] = term.contributionAmount * paidCount;
+        // todo: check if this is correct
+        fund.beneficiariesPool[selectedBeneficiary] = term.contributionAmount * paidCount * 10 ** 6;
         fund.lastBeneficiary = selectedBeneficiary;
 
         emit OnBeneficiarySelected(_id, selectedBeneficiary);

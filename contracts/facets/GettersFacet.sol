@@ -3,12 +3,13 @@
 pragma solidity 0.8.18;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IGetters} from "../interfaces/IGetters.sol";
 
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibFund} from "../libraries/LibFund.sol";
 
-contract GettersFacet {
+contract GettersFacet is IGetters {
     function getTermsId() external view returns (uint, uint) {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         uint lastTermId = termStorage.nextTermId - 1;
@@ -69,6 +70,7 @@ contract GettersFacet {
             uint,
             uint,
             address,
+            uint,
             uint
         )
     {
@@ -82,7 +84,8 @@ contract GettersFacet {
             fund.fundStart,
             fund.currentCycle,
             fund.lastBeneficiary,
-            fund.totalAmountOfCycles
+            fund.totalAmountOfCycles,
+            fund.fundEnd
         );
     }
 
@@ -106,5 +109,36 @@ contract GettersFacet {
             fund.autoPayEnabled[participant],
             fund.beneficiariesPool[participant]
         );
+    }
+
+    function getRemainingCycleTime(uint id) external view returns (uint) {
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
+        uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
+        if (block.timestamp > cycleEndTimestamp) {
+            return 0;
+        } else {
+            return cycleEndTimestamp - block.timestamp;
+        }
+    }
+
+    /// @notice returns the time left to contribute for this cycle
+    function getRemainingContributionTime(uint id) external view returns (uint) {
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
+        if (fund.currentState != LibFund.FundStates.AcceptingContributions) {
+            return 0;
+        }
+
+        // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
+        uint contributionEndTimestamp = term.cycleTime *
+            (fund.currentCycle - 1) +
+            fund.fundStart +
+            term.contributionPeriod;
+        if (block.timestamp > contributionEndTimestamp) {
+            return 0;
+        } else {
+            return contributionEndTimestamp - block.timestamp;
+        }
     }
 }
