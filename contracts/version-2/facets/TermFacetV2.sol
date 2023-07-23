@@ -122,6 +122,7 @@ contract TermFacetV2 is ITerm {
             if (collateral.depositors[i] == address(0)) {
                 collateral.depositors[i] = msg.sender;
                 collateral.counterMembers++;
+                termStorage.participantToTermId[msg.sender].push(termId);
                 emit OnCollateralDeposited(termId, msg.sender);
                 if (collateral.counterMembers == 1) {
                     collateral.firstDepositTime = block.timestamp;
