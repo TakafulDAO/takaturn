@@ -2,24 +2,21 @@
 
 pragma solidity 0.8.18;
 
-import {IFund} from "../interfaces/IFund.sol";
-import {ICollateral} from "../interfaces/ICollateral.sol";
+import {IFund} from "../../version-1/interfaces/IFund.sol";
+import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ITerm} from "../interfaces/ITerm.sol";
+import {ITerm} from "../../version-1/interfaces/ITerm.sol";
 
-import {LibFund} from "../libraries/LibFund.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
-
-import {FundFacet} from "./FundFacet.sol";
-import {CollateralFacet} from "./CollateralFacet.sol";
+import {LibFund} from "../../version-1/libraries/LibFund.sol";
+import {LibTermV2} from "../libraries/LibTermV2.sol";
+import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
 
 /// @title Takaturn Term
 /// @author Mohammed Haddouti
 /// @notice This is used to deploy the collateral & fund contracts
 /// @dev v3.0 (Diamond)
 contract TermFacetV2 is ITerm {
-    uint public constant TERM_VERSION = 1;
+    uint public constant TERM_VERSION = 2;
 
     event OnCollateralDeposited(uint indexed termId, address indexed user);
 
@@ -76,12 +73,12 @@ contract TermFacetV2 is ITerm {
             "Invalid inputs"
         );
 
-        LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
+        LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
         uint termId = termStorage.nextTermId;
 
         //require(!termStorage.terms[termId].initialized, "Term already exists");
 
-        LibTerm.Term memory newTerm;
+        LibTermV2.Term memory newTerm;
 
         newTerm.termId = termId;
         newTerm.totalParticipants = _totalParticipants;
@@ -104,13 +101,13 @@ contract TermFacetV2 is ITerm {
     }
 
     function _joinTerm(uint termId) internal {
-        LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
-        LibTerm.Term memory term = termStorage.terms[termId];
+        LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
+        LibTermV2.Term memory term = termStorage.terms[termId];
 
         LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
             ._collateralStorage();
         LibCollateral.Collateral storage collateral = collateralStorage.collaterals[termId];
-        require(LibTerm._termExists(termId) && LibCollateral._collateralExists(termId));
+        require(LibTermV2._termExists(termId) && LibCollateral._collateralExists(termId));
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
@@ -142,9 +139,9 @@ contract TermFacetV2 is ITerm {
     }
 
     function _startTerm(uint termId) internal {
-        require(LibTerm._termExists(termId) && LibCollateral._collateralExists(termId));
-        LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
-        LibTerm.Term memory term = termStorage.terms[termId];
+        require(LibTermV2._termExists(termId) && LibCollateral._collateralExists(termId));
+        LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
+        LibTermV2.Term memory term = termStorage.terms[termId];
 
         LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
             ._collateralStorage();
@@ -196,7 +193,7 @@ contract TermFacetV2 is ITerm {
     function _createFund(uint termId) internal {
         require(!LibFund._fundExists(termId), "Fund already exists");
         LibFund.Fund storage newFund = LibFund._fundStorage().funds[termId];
-        LibTerm.Term memory term = LibTerm._termStorage().terms[termId];
+        LibTermV2.Term memory term = LibTermV2._termStorage().terms[termId];
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];

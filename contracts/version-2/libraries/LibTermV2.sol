@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-library LibTerm {
-    uint public constant TERM_VERSION = 1;
+library LibTermV2 {
+    uint public constant TERM_VERSION = 2;
     bytes32 constant TERM_CONSTS_POSITION = keccak256("diamond.standard.term.consts");
     bytes32 constant TERM_STORAGE_POSITION = keccak256("diamond.standard.term.storage");
 
@@ -28,6 +28,7 @@ library LibTerm {
     struct TermStorage {
         uint nextTermId;
         mapping(uint => Term) terms; // termId => Term struct
+        mapping(address => uint[]) participantToTermId; // userAddress => [termId1, termId2, ...]
     }
 
     function _termExists(uint termId) internal view returns (bool) {
