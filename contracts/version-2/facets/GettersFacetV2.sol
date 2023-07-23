@@ -26,6 +26,14 @@ contract GettersFacetV2 is IGettersV2 {
         return (LibTermV2._termStorage().terms[id]);
     }
 
+    /// @param participant the participant address
+    /// @return the term ids the participant is part of
+    function getParticipantTerms(address participant) external view returns (uint[] memory) {
+        LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
+        uint[] memory participantTermIds = termStorage.participantToTermId[participant];
+        return participantTermIds;
+    }
+
     /// @param id the term id
     /// @return remaining time in the current cycle
     function getRemainingCycleTime(uint id) external view returns (uint) {
