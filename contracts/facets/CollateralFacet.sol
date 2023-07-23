@@ -263,7 +263,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
         uint memberCollateralUSD;
         (, , , uint currentCycle, , , , , , ) = IGetters(address(this)).getFundSummary(_id);
         // todo: check this if statement. fund will always esist
-        if (LibFund._fundExists(_id)) {
+        if (!LibFund._fundExists(_id)) {
             collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
         } else {
             uint remainingCycles = 1 + collateral.counterMembers - currentCycle;
