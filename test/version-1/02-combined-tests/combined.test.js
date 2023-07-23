@@ -201,7 +201,7 @@ async function executeCycle(
               }
 
               // Deploy contracts
-              await deployments.fixture(["all"])
+              await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
 
               if (isDevnet && !isFork) {
@@ -217,8 +217,8 @@ async function executeCycle(
                       aggregatorAddress
                   )
                   usdc = await ethers.getContractAt(
-                      "contracts/mocks/USDC.sol:IERC20",
-                      //"@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+                      //"contracts/version-1/mocks/USDC.sol:IERC20",
+                      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
                       usdcAddress
                   )
               }
@@ -749,11 +749,11 @@ async function executeCycle(
               })
 
               describe("Combined Tests Part 2", function () {
-                  it.only("reduces the no. of cycles if a non-beneficiary user is expelled", async function () {
+                  it("reduces the no. of cycles if a non-beneficiary user is expelled", async function () {
                       // todo: check this one. collateralMembersBank and contributionAmountWei
                       this.timeout(200000)
-                      console.log("=======================================================")
-                      console.log("entrando al test 1")
+                      //   console.log("=======================================================")
+                      //   console.log("entrando al test 1")
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
@@ -766,13 +766,13 @@ async function executeCycle(
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
                       let startingCycles = fund[8]
                       let currentCycle = fund[3]
-                      console.log("starting cycles 1:", startingCycles.toNumber())
+                      //   console.log("starting cycles 1:", startingCycles.toNumber())
 
                       // We let the participant 3 default constantly, before becoming beneficiary
-                      console.log("participant_3.address:", participant_3.address)
+                      //   console.log("participant_3.address:", participant_3.address)
                       for (let i = 1; i <= totalParticipants; i++) {
-                          console.log("=======================================================")
-                          console.log("i:", i)
+                          //   console.log("=======================================================")
+                          //   console.log("i:", i)
                           let collateralSummary =
                               await takaturnDiamondDeployer.getDepositorCollateralSummary(
                                   participant_3.address,
@@ -790,12 +790,12 @@ async function executeCycle(
 
                           fund = await takaturnDiamondDeployer.getFundSummary(termId)
                           let currentState = fund[1]
-                          console.log("is collateral member:", isCollateralMember)
-                          console.log("was beneficiary:", wasBeneficiary)
-                          console.log("paid cycle:", paidCycle)
+                          //   console.log("is collateral member:", isCollateralMember)
+                          //   console.log("was beneficiary:", wasBeneficiary)
+                          //   console.log("paid cycle:", paidCycle)
 
                           if (getFundStateFromIndex(currentState) == FundStates.FundClosed) {
-                              console.log("fund closed")
+                              //   console.log("fund closed")
                               break
                           }
 
@@ -835,12 +835,12 @@ async function executeCycle(
                       const finishingCycles = fund[8]
                       currentCycle = fund[3]
 
-                      console.log("finishing cycles 1:", finishingCycles.toNumber())
-                      console.log("member 1:", member)
+                      //   console.log("finishing cycles 1:", finishingCycles.toNumber())
+                      //   console.log("member 1:", member)
                       // console.log("was beneficiary 1:", wasBeneficiary)
 
-                      console.log("saliendo del test 1")
-                      console.log("=======================================================")
+                      //   console.log("saliendo del test 1")
+                      //   console.log("=======================================================")
                       //assert.ok(!wasBeneficiary) // todo: this one fails
                       assert.ok(!member) // todo: this one fails
                       assert.ok(finishingCycles < startingCycles) // todo: this one fails
@@ -849,8 +849,8 @@ async function executeCycle(
                   it("does not reduce the no. of cycles if a past beneficiary is expelled", async function () {
                       // todo: check this one. _isUnderCollaterized is returning false
                       this.timeout(200000)
-                      console.log("=======================================================")
-                      console.log("entrando al test 2")
+                      //   console.log("=======================================================")
+                      //   console.log("entrando al test 2")
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
@@ -861,7 +861,7 @@ async function executeCycle(
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
                       const startingCycles = fund[8]
                       let currentCycle = fund[3]
-                      console.log("starting cycles 2:", startingCycles.toNumber())
+                      //   console.log("starting cycles 2:", startingCycles.toNumber())
 
                       // We let the participant 1 default constantly, before becoming beneficiary
                       while (
@@ -896,12 +896,12 @@ async function executeCycle(
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
                       const finishingCycles = fund[8]
                       currentCycle = fund[3]
-                      console.log("finishing cycles 2:", finishingCycles.toNumber())
-                      console.log("member 2:", member)
-                      console.log("was beneficiary 2:", wasBeneficiary)
+                      //   console.log("finishing cycles 2:", finishingCycles.toNumber())
+                      //   console.log("member 2:", member)
+                      //   console.log("was beneficiary 2:", wasBeneficiary)
 
-                      console.log("saliendo del test 2")
-                      console.log("=======================================================")
+                      //   console.log("saliendo del test 2")
+                      //   console.log("=======================================================")
                       assert.ok(wasBeneficiary) // todo: this one fails
                       assert.ok(!member) // todo: this one fails
                       assert.ok(finishingCycles.toNumber() == startingCycles) // todo: this one passes

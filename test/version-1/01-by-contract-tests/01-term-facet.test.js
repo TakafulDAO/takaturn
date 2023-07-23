@@ -63,7 +63,7 @@ const { hour, erc20Units } = require("../../../utils/units")
               participant_12 = accounts[12]
 
               // Deploy contracts
-              await deployments.fixture(["all"])
+              await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               //   usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {
@@ -76,7 +76,7 @@ const { hour, erc20Units } = require("../../../utils/units")
                       aggregatorAddress
                   )
                   usdc = await ethers.getContractAt(
-                      // contracts/mocks/USDC.sol:IERC20
+                      // "contracts/version-1/mocks/USDC.sol:IERC20"
                       "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
                       usdcAddress
                   )

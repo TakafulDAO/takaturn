@@ -64,7 +64,7 @@ const { hour } = require("../../../utils/units")
               usdcLostAndFound = accounts[16]
 
               // Deploy contracts
-              await deployments.fixture(["all"])
+              await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {

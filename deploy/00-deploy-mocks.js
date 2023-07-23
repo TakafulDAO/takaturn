@@ -49,4 +49,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log("==========================================================================")
 }
 
-module.exports.tags = ["all", "mocks"]
+module.exports.tags = ["all", "mocks", "takaturn_deploy", "takaturn_upgrade"]

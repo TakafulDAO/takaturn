@@ -44,7 +44,7 @@ const withdrawCollateral = async (termId, address) => {
               participant_4 = accounts[4]
 
               // Deploy contracts
-              await deployments.fixture(["all"])
+              await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               //   usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {
@@ -57,7 +57,7 @@ const withdrawCollateral = async (termId, address) => {
                       aggregatorAddress
                   )
                   usdc = await ethers.getContractAt(
-                      // contracts/mocks/USDC.sol:IERC20
+                      // "contracts/version-1/mocks/USDC.sol:IERC20"
                       "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
                       usdcAddress
                   )

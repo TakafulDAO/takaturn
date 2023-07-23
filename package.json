@@ -36,6 +36,8 @@
     "coverage": "yarn hardhat coverage",
     "n": "yarn hardhat node",
     "deploy": "yarn hardhat deploy",
+    "deploy:original": "yarn hardhat deploy --tags takaturn_deploy",
+    "deploy:upgrade": "yarn hardhat deploy --tags takaturn_upgrade",
     "goerli": "yarn hardhat deploy --network testnet_arbitrum",
     "mumbai": "yarn hardhat deploy --network testnet_mumbai",
     "format": "yarn prettier --write ."
