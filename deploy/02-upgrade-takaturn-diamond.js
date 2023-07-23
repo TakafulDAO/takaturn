@@ -27,14 +27,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 
     const args = []
-    const initArgs = []
 
     const takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
         from: deployer,
         owner: diamondOwner,
         args: args,
         log: true,
-        facets: ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet"],
+        facets: ["CollateralFacetV2", "FundFacetV2", "TermFacetV2", "GettersFacetV2"],
         waitConfirmations: waitBlockConfirmations,
     })
 
