@@ -2,16 +2,16 @@
 
 pragma solidity 0.8.18;
 
-import {IFund} from "../interfaces/IFund.sol";
-import {ICollateral} from "../interfaces/ICollateral.sol";
-import {IGetters} from "../interfaces/IGetters.sol";
+import {IFund} from "../../version-1/interfaces/IFund.sol";
+import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
+import {IGettersV2} from "../interfaces/IGettersV2.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-import {LibFund} from "../libraries/LibFund.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibFund} from "../../version-1/libraries/LibFund.sol";
+import {LibTermV2} from "../libraries/LibTermV2.sol";
+import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
 
-import {TermOwnable} from "../access/TermOwnable.sol";
+import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 
 /// @title Takaturn Collateral
 /// @author Aisha El Allam
@@ -62,7 +62,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
 
         (uint share, address[] memory expellants) = _whoExpelled(
             collateral,
@@ -155,7 +155,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        (, , , , , , , , , uint fundEnd) = IGetters(address(this)).getFundSummary(id);
+        (, , , , , , , , , uint fundEnd) = IGettersV2(address(this)).getFundSummary(id);
         require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
 
         uint depositorsLength = collateral.depositors.length;
@@ -177,8 +177,8 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @param id The term id
     /// @return uint latest price in Wei Note: 18 decimals
     function getLatestPrice(uint id) public view returns (uint) {
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
-        LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+        LibTermV2.TermConsts storage termConsts = LibTermV2._termConsts();
         (
             ,
             /*uint80 roundID*/ int256 answer,
@@ -257,11 +257,11 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[_id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
 
         uint collateralLimit;
         uint memberCollateralUSD;
-        (, , , uint currentCycle, , , , , , ) = IGetters(address(this)).getFundSummary(_id);
+        (, , , uint currentCycle, , , , , , ) = IGettersV2(address(this)).getFundSummary(_id);
         // todo: check this if statement. fund will always esist
         if (!LibFund._fundExists(_id)) {
             collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
@@ -287,7 +287,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @return expellants array of addresses that were expelled
     function _whoExpelled(
         LibCollateral.Collateral storage _collateral,
-        LibTerm.Term storage _term,
+        LibTermV2.Term storage _term,
         address _beneficiary,
         address[] calldata _defaulters
     ) internal returns (uint, address[] memory) {
@@ -349,7 +349,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @return nonBeneficiaries array of addresses that were expelled
     function _liquidateCollateral(
         LibCollateral.Collateral storage _collateral,
-        LibTerm.Term storage _term
+        LibTermV2.Term storage _term
     ) internal view returns (uint, address[] memory) {
         address currentDepositor;
         address[] memory nonBeneficiaries = new address[](_collateral.depositors.length);

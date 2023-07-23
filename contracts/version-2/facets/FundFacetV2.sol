@@ -3,16 +3,16 @@
 pragma solidity 0.8.18;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IFund} from "../interfaces/IFund.sol";
-import {ICollateral} from "../interfaces/ICollateral.sol";
-import {IGetters} from "../interfaces/IGetters.sol";
+import {IFund} from "../../version-1/interfaces/IFund.sol";
+import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
+import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
-import {LibFund} from "../libraries/LibFund.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
+import {LibFund} from "../../version-1/libraries/LibFund.sol";
+import {LibTermV2} from "../libraries/LibTermV2.sol";
 
-import {TermOwnable} from "../access/TermOwnable.sol";
+import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 
 /// @title Takaturn Fund
 /// @author Mohammed Haddouti
@@ -74,7 +74,7 @@ contract FundFacetV2 is IFund, TermOwnable {
     /// @param id the id of the term
     function closeFundingPeriod(uint id) external onlyTermOwner(id) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
         // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
         require(
             block.timestamp >
@@ -205,7 +205,7 @@ contract FundFacetV2 is IFund, TermOwnable {
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
-        (, , uint collateralPool) = IGetters(address(this)).getDepositorCollateralSummary(
+        (, , uint collateralPool) = IGettersV2(address(this)).getDepositorCollateralSummary(
             msg.sender,
             id
         );
@@ -253,7 +253,7 @@ contract FundFacetV2 is IFund, TermOwnable {
     /// @param _id The id of the term
     function _startNewCycle(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
         // currentCycle is 0 when this is called for the first time
         require(
             block.timestamp > term.cycleTime * fund.currentCycle + fund.fundStart,
@@ -302,7 +302,7 @@ contract FundFacetV2 is IFund, TermOwnable {
     /// @param _participant the (participant) address that's being paid for
     function _payContributionSafe(uint _id, address _payer, address _participant) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
 
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
@@ -322,7 +322,7 @@ contract FundFacetV2 is IFund, TermOwnable {
     /// @param _participant the (participant) address that's being paid for
     function _payContribution(uint _id, address _payer, address _participant) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
 
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
@@ -360,7 +360,7 @@ contract FundFacetV2 is IFund, TermOwnable {
     /// @param _id The id of the term
     function _selectBeneficiary(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
         // check if there are any participants left, else use the defaulters
         address selectedBeneficiary; // By default initialization is address(0)
         address[] memory arrayToCheck = fund.beneficiariesOrder;
@@ -489,7 +489,7 @@ contract FundFacetV2 is IFund, TermOwnable {
             ._collateralStorage()
             .collaterals[_id];
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
         //require(msg.sender == address(collateral), "Caller is not collateral");
         require(
             fund.isParticipant[_expellant] && EnumerableSet.remove(fund._defaulters, _expellant),
