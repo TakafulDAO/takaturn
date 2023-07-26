@@ -199,8 +199,10 @@ contract FundFacetV2 is IFund, TermOwnable {
     /// @param id the id of the term
     function withdrawFund(uint id) external {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
+        // any of the past cycles. Note: This last requirement is to avoid unnecessary gas costs
         require(
-            fund.currentState == LibFund.FundStates.FundClosed || fund.paidThisCycle[msg.sender],
+            fund.currentState == LibFund.FundStates.FundClosed || fund.isBeneficiary[msg.sender],
             "You must pay your cycle before withdrawing"
         );
 
