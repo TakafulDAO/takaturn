@@ -317,9 +317,21 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
                 (wasBeneficiary && _isUnderCollaterized(_term.termId, _defaulters[i])) ||
                 (currentDefaulterBank < contributionAmountWei)
             ) {
+                // If enter this statement through the second condition, then the defaulter may not be a beneficiary
+                // In that case
+                if (!wasBeneficiary) {
+                    // Nothing to share, reimburse all the securities left
+                    // share = 0;
+                    uint amount = _collateral.collateralMembersBank[_defaulters[i]];
+
+                    (bool success, ) = payable(_defaulters[i]).call{value: amount}("");
+                    require(success);
+                } else {
+                    share += currentDefaulterBank;
+                }
+
                 _collateral.isCollateralMember[_defaulters[i]] = false; // Expelled!
                 expellants[i] = _defaulters[i];
-                share += currentDefaulterBank;
                 _collateral.collateralMembersBank[_defaulters[i]] = 0;
                 ++totalExpellants;
 
