@@ -381,29 +381,9 @@ contract FundFacetV2 is IFund, TermOwnable {
 
         // If the defaulter didn't pay this cycle, we move the first elligible beneficiary forward and everyone in between forward
         if (!fund.paidThisCycle[selectedBeneficiary]) {
-            // Find the index of the beneficiary to move to the end
-            for (uint i = beneficiaryIndex; i < arrayToCheckLength; ) {
-                address b = arrayToCheck[i];
-                // Find the first eligible beneficiary
-                if (fund.paidThisCycle[b]) {
-                    selectedBeneficiary = b;
-                    address[] memory newOrder = fund.beneficiariesOrder;
-                    // Move each defaulter between current beneficiary and new beneficiary 1 position forward
-                    for (uint j = beneficiaryIndex; j < i; ) {
-                        newOrder[j + 1] = arrayToCheck[j];
-                        unchecked {
-                            ++j;
-                        }
-                    }
-                    // Move new beneficiary to original beneficiary's position
-                    newOrder[beneficiaryIndex] = selectedBeneficiary;
-                    fund.beneficiariesOrder = newOrder;
-                    break;
-                }
-                unchecked {
-                    ++i;
-                }
-            }
+            // The beneficiary is not required to paid this cycle, so we can set this to true.
+            // But don't remove from the defaulters set, because they're still a defaulter
+            fund.paidThisCycle[selectedBeneficiary] = true;
         }
 
         // Request contribution from the collateral for those who haven't paid this cycle
