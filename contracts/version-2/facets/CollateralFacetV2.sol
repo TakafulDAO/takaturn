@@ -221,8 +221,8 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @return uint converted amount in wei
     function getToEthConversionRate(uint id, uint USDAmount) public view returns (uint) {
         uint ethPrice = getLatestPrice(id);
-        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice; //* 10 ** 18; // todo: fix this
-        return USDAmountInEth;
+        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice;
+        return USDAmountInEth * 10 ** 18;
     }
 
     /// @notice Gets the conversion rate of an amount in ETH to USD
@@ -262,7 +262,6 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         uint collateralLimit;
         uint memberCollateralUSD;
         (, , , uint currentCycle, , , , , , ) = IGettersV2(address(this)).getFundSummary(_id);
-        // todo: check this if statement. fund will always esist
         if (!LibFund._fundExists(_id)) {
             collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
         } else {
@@ -275,7 +274,6 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
             _id,
             collateral.collateralMembersBank[_member]
         );
-        // todo: check memberCollateralUSD is not in wei (18 decimals) collateralLimit is in wei (18 decimals)
         return (memberCollateralUSD < collateralLimit);
     }
 
@@ -298,10 +296,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         address[] memory expellants = new address[](_defaulters.length);
         uint share;
         uint currentDefaulterBank;
-        uint contributionAmountWei = getToEthConversionRate(
-            _term.termId,
-            _term.contributionAmount * 10 ** 18
-        );
+        uint contributionAmountWei = getToEthConversionRate(_term.termId, _term.contributionAmount);
         // Determine who will be expelled and who will just pay the contribution from their collateral.
         for (uint i; i < _defaulters.length; ) {
             wasBeneficiary = IFund(address(this)).isBeneficiary(_term.termId, _defaulters[i]);
