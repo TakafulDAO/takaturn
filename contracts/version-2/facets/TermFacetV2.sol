@@ -5,7 +5,8 @@ pragma solidity 0.8.18;
 import {IFund} from "../../version-1/interfaces/IFund.sol";
 import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ITerm} from "../../version-1/interfaces/ITerm.sol";
+import {ITermV2} from "../interfaces/ITermV2.sol";
+import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {LibFund} from "../../version-1/libraries/LibFund.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
@@ -15,7 +16,7 @@ import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
 /// @author Mohammed Haddouti
 /// @notice This is used to deploy the collateral & fund contracts
 /// @dev v3.0 (Diamond)
-contract TermFacetV2 is ITerm {
+contract TermFacetV2 is ITermV2 {
     uint public constant TERM_VERSION = 2;
 
     event OnCollateralDeposited(uint indexed termId, address indexed user);
@@ -25,10 +26,8 @@ contract TermFacetV2 is ITerm {
         uint cycleTime,
         uint contributionAmount,
         uint contributionPeriod,
-        uint fixedCollateralEth,
         uint collateralAmount,
-        address stableTokenAddress,
-        address aggregatorAddress
+        address stableTokenAddress
     ) external returns (uint) {
         return
             _createTerm(
@@ -36,10 +35,8 @@ contract TermFacetV2 is ITerm {
                 cycleTime,
                 contributionAmount,
                 contributionPeriod,
-                fixedCollateralEth,
                 collateralAmount,
-                stableTokenAddress,
-                aggregatorAddress
+                stableTokenAddress
             );
     }
 
@@ -56,10 +53,8 @@ contract TermFacetV2 is ITerm {
         uint _cycleTime,
         uint _contributionAmount,
         uint _contributionPeriod,
-        uint _fixedCollateralEth,
         uint _collateralAmount,
-        address _stableTokenAddress,
-        address _aggregatorAddress
+        address _stableTokenAddress
     ) internal returns (uint) {
         require(
             _cycleTime != 0 &&
@@ -68,8 +63,7 @@ contract TermFacetV2 is ITerm {
                 _totalParticipants != 0 &&
                 _contributionPeriod < _cycleTime &&
                 _collateralAmount != 0 &&
-                _stableTokenAddress != address(0) &&
-                _aggregatorAddress != address(0),
+                _stableTokenAddress != address(0),
             "Invalid inputs"
         );
 
@@ -78,6 +72,9 @@ contract TermFacetV2 is ITerm {
 
         //require(!termStorage.terms[termId].initialized, "Term already exists");
 
+        uint fundAmount = _totalParticipants * _contributionAmount;
+        uint fundAmountInWei = IGettersV2(address(this)).getToEthConversionRate(fundAmount); // 18 decimals
+
         LibTermV2.Term memory newTerm;
 
         newTerm.termId = termId;
@@ -85,9 +82,9 @@ contract TermFacetV2 is ITerm {
         newTerm.cycleTime = _cycleTime;
         newTerm.contributionAmount = _contributionAmount;
         newTerm.contributionPeriod = _contributionPeriod;
-        newTerm.fixedCollateralEth = _fixedCollateralEth;
+        newTerm.maxCollateralEth = (150 * fundAmountInWei) / 100; // 1.5x more than the fund amount
+        newTerm.minCollateralEth = (110 * fundAmountInWei) / 100; // 1.1x than the fund amount
         newTerm.stableTokenAddress = _stableTokenAddress;
-        newTerm.aggregatorAddress = _aggregatorAddress;
         newTerm.termOwner = msg.sender;
         newTerm.creationTime = block.timestamp;
         newTerm.initialized = true;
@@ -112,7 +109,10 @@ contract TermFacetV2 is ITerm {
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
         require(!collateral.isCollateralMember[msg.sender], "Reentry");
-        require(msg.value >= term.fixedCollateralEth, "Eth payment too low");
+
+        uint amount = IGettersV2(address(this)).minCollateralToDeposit(termId);
+
+        require(msg.value >= amount, "Eth payment too low");
 
         collateral.collateralMembersBank[msg.sender] += msg.value;
         collateral.isCollateralMember[msg.sender] = true;

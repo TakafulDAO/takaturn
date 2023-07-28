@@ -21,20 +21,21 @@ const networkConfig = {
         ethUsdPriceFeed: "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612", // Same as mainnet
         usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // Same as mainnet
         usdcWhale: "0xe68ee8a12c611fd043fb05d65e1548dc1383f2b9", // Same as mainnet
+        sequencerUptimeFeed: "0xFdB631F5EE196F0ed6FAa767959853A9F217697D", // Same as mainnet
     },
     42161: {
         name: "mainnet_arbitrum",
         ethUsdPriceFeed: "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
         usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // https://developers.circle.com/developer/docs/supported-chains-and-currencies#native-usdc
         usdcWhale: "0xe68ee8a12c611fd043fb05d65e1548dc1383f2b9",
-        l2SequencerFeed: "0xFdB631F5EE196F0ed6FAa767959853A9F217697D", // https://docs.chain.link/data-feeds/l2-sequencer-feeds
+        sequencerUptimeFeed: "0xFdB631F5EE196F0ed6FAa767959853A9F217697D", // https://docs.chain.link/data-feeds/l2-sequencer-feeds
     },
     421613: {
         name: "testnet_arbitrum",
         ethUsdPriceFeed: "0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
         usdc: "0xfd064A18f3BF249cf1f87FC203E90D8f650f2d63", // https://developers.circle.com/developer/docs/usdc-on-testnet#usdc-on-arbitrum-testnet
         usdcWhale: "0x6ed0c4addc308bb800096b8daa41de5ae219cd36",
-        l2SequencerFeed: "0x4da69F028a5790fCCAfe81a75C0D24f46ceCDd69", // https://docs.chain.link/data-feeds/l2-sequencer-feeds
+        sequencerUptimeFeed: "0x4da69F028a5790fCCAfe81a75C0D24f46ceCDd69", // https://docs.chain.link/data-feeds/l2-sequencer-feeds
     },
     80001: {
         name: "testnet_mumbai",

@@ -8,10 +8,8 @@ interface ITermV2 {
         uint cycleTime,
         uint contributionAmount,
         uint contributionPeriod,
-        uint fixedCollateralEth,
         uint collateralAmount,
-        address stableTokenAddress,
-        address aggregatorAddress
+        address stableTokenAddress
     ) external returns (uint);
 
     function joinTerm(uint termId) external payable;

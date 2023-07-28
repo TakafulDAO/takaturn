@@ -5,7 +5,6 @@ pragma solidity 0.8.18;
 import {IFund} from "../../version-1/interfaces/IFund.sol";
 import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 import {LibFund} from "../../version-1/libraries/LibFund.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
@@ -173,70 +172,6 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         require(success);
     }
 
-    /// @notice Gets latest ETH / USD price
-    /// @param id The term id
-    /// @return uint latest price in Wei Note: 18 decimals
-    function getLatestPrice(uint id) public view returns (uint) {
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
-        LibTermV2.TermConsts storage termConsts = LibTermV2._termConsts();
-        (
-            ,
-            /*uint80 roundID*/ int256 answer,
-            uint256 startedAt /*uint256 updatedAt*/ /*uint80 answeredInRound*/,
-            ,
-
-        ) = AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
-
-        // Answer == 0: Sequencer is up
-        // Answer == 1: Sequencer is down
-        require(answer == 0, "Sequencer down");
-
-        //We must wait at least an hour after the sequencer started up
-        require(
-            termConsts.sequencerStartupTime <= block.timestamp - startedAt,
-            "Sequencer starting up"
-        );
-
-        (
-            uint80 roundID,
-            int256 price,
-            ,
-            /*uint startedAt*/ uint256 timeStamp,
-            uint80 answeredInRound
-        ) = AggregatorV3Interface(term.aggregatorAddress).latestRoundData(); //8 decimals
-
-        // Check if chainlink data is not stale or incorrect
-        require(
-            timeStamp != 0 && answeredInRound >= roundID && price > 0,
-            "ChainlinkOracle: stale data"
-        );
-
-        return uint(price * 10 ** 10); //18 decimals
-    }
-
-    /// @notice Gets the conversion rate of an amount in USD to ETH
-    /// @dev should we always deal with in Wei?
-    /// @param id The term id
-    /// @param USDAmount The amount in USD
-    /// @return uint converted amount in wei
-    function getToEthConversionRate(uint id, uint USDAmount) public view returns (uint) {
-        uint ethPrice = getLatestPrice(id);
-        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice;
-        return USDAmountInEth * 10 ** 18;
-    }
-
-    /// @notice Gets the conversion rate of an amount in ETH to USD
-    /// @dev should we always deal with in Wei?
-    /// @param id The term id
-    /// @param ethAmount The amount in ETH
-    /// @return uint converted amount in USD correct to 18 decimals
-    function getToUSDConversionRate(uint id, uint ethAmount) public view returns (uint) {
-        // NOTE: This will be made internal
-        uint ethPrice = getLatestPrice(id);
-        uint ethAmountInUSD = (ethPrice * ethAmount) / 10 ** 18;
-        return ethAmountInUSD;
-    }
-
     /// @param _id term id
     /// @param _newState collateral state
     function _setState(uint _id, LibCollateral.CollateralStates _newState) internal {
@@ -270,8 +205,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
             collateralLimit = remainingCycles * term.contributionAmount * 10 ** 18; // 18 decimals
         }
 
-        memberCollateralUSD = getToUSDConversionRate(
-            _id,
+        memberCollateralUSD = IGettersV2(address(this)).getToUSDConversionRate(
             collateral.collateralMembersBank[_member]
         );
         return (memberCollateralUSD < collateralLimit);
@@ -296,7 +230,9 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         address[] memory expellants = new address[](_defaulters.length);
         uint share;
         uint currentDefaulterBank;
-        uint contributionAmountWei = getToEthConversionRate(_term.termId, _term.contributionAmount);
+        uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
+            _term.contributionAmount
+        );
         // Determine who will be expelled and who will just pay the contribution from their collateral.
         for (uint i; i < _defaulters.length; ) {
             wasBeneficiary = IFund(address(this)).isBeneficiary(_term.termId, _defaulters[i]);

@@ -1,17 +1,8 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
-const { constants } = require("@openzeppelin/test-helpers")
-const {
-    CollateralStates,
-    FundStates,
-    getCollateralStateFromIndex,
-    getFundStateFromIndex,
-    advanceTimeByDate,
-    toWei,
-} = require("../../../utils/_helpers")
+const { toWei } = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
-const { hour, erc20Units } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -92,10 +83,8 @@ const { hour, erc20Units } = require("../../../utils/units")
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      fixedCollateralEth,
                       collateralAmount,
-                      usdc.address,
-                      aggregator.address
+                      usdc.address
                   )
               }
           })

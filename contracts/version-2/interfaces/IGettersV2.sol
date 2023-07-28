@@ -17,6 +17,8 @@ interface IGettersV2 {
 
     function getRemainingCycleTime(uint id) external view returns (uint);
 
+    function minCollateralToDeposit(uint id) external view returns (uint);
+
     function getDepositorCollateralSummary(
         address depositor,
         uint id
@@ -55,4 +57,8 @@ interface IGettersV2 {
     ) external view returns (bool, bool, bool, bool, uint);
 
     function getRemainingContributionTime(uint id) external view returns (uint);
+
+    function getToEthConversionRate(uint USDAmount) external view returns (uint);
+
+    function getToUSDConversionRate(uint ethAmount) external view returns (uint);
 }

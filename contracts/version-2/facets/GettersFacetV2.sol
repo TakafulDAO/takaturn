@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {LibTermV2} from "../libraries/LibTermV2.sol";
@@ -45,6 +46,30 @@ contract GettersFacetV2 is IGettersV2 {
         } else {
             return cycleEndTimestamp - block.timestamp;
         }
+    }
+
+    /// @notice Called to check the minimum collateral amount to deposit in wei
+    /// @return the minimum collateral amount to deposit in wei
+    /// @dev The minimum collateral amount is calculated based on the number of participants
+    /// @dev The return value should be the msg.value when calling joinTerm
+    function minCollateralToDeposit(uint id) external view returns (uint) {
+        LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
+        LibTermV2.Term memory term = termStorage.terms[id];
+
+        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
+            ._collateralStorage();
+        LibCollateral.Collateral storage collateral = collateralStorage.collaterals[id];
+
+        uint amount;
+
+        if (collateral.counterMembers == 0) {
+            amount = term.maxCollateralEth;
+        } else if (collateral.counterMembers == term.totalParticipants - 1) {
+            amount = term.minCollateralEth;
+        } else {
+            amount = (term.maxCollateralEth + term.minCollateralEth) / 2;
+        }
+        return amount;
     }
 
     // COLLATERAL GETTERS
@@ -172,5 +197,67 @@ contract GettersFacetV2 is IGettersV2 {
         } else {
             return contributionEndTimestamp - block.timestamp;
         }
+    }
+
+    // CONVERSION GETTERS
+
+    /// @notice Gets latest ETH / USD price
+    /// @return uint latest price in Wei Note: 18 decimals
+    function getLatestPrice() public view returns (uint) {
+        LibTermV2.TermConsts storage termConsts = LibTermV2._termConsts();
+        (
+            ,
+            /*uint80 roundID*/ int256 answer,
+            uint256 startedAt /*uint256 updatedAt*/ /*uint80 answeredInRound*/,
+            ,
+
+        ) = AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
+
+        // Answer == 0: Sequencer is up
+        // Answer == 1: Sequencer is down
+        require(answer == 0, "Sequencer down");
+
+        //We must wait at least an hour after the sequencer started up
+        require(
+            termConsts.sequencerStartupTime <= block.timestamp - startedAt,
+            "Sequencer starting up"
+        );
+
+        (
+            uint80 roundID,
+            int256 price,
+            ,
+            /*uint startedAt*/ uint256 timeStamp,
+            uint80 answeredInRound
+        ) = AggregatorV3Interface(termConsts.aggregatorAddress).latestRoundData(); //8 decimals
+
+        // Check if chainlink data is not stale or incorrect
+        require(
+            timeStamp != 0 && answeredInRound >= roundID && price > 0,
+            "ChainlinkOracle: stale data"
+        );
+
+        return uint(price * 10 ** 10); //18 decimals
+    }
+
+    /// @notice Gets the conversion rate of an amount in USD to ETH
+    /// @dev should we always deal with in Wei?
+    /// @param USDAmount The amount in USD
+    /// @return uint converted amount in wei
+    function getToEthConversionRate(uint USDAmount) external view returns (uint) {
+        uint ethPrice = getLatestPrice();
+        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice;
+        return USDAmountInEth * 10 ** 18;
+    }
+
+    /// @notice Gets the conversion rate of an amount in ETH to USD
+    /// @dev should we always deal with in Wei?
+    /// @param ethAmount The amount in ETH
+    /// @return uint converted amount in USD correct to 18 decimals
+    function getToUSDConversionRate(uint ethAmount) external view returns (uint) {
+        // NOTE: This will be made internal
+        uint ethPrice = getLatestPrice();
+        uint ethAmountInUSD = (ethPrice * ethAmount) / 10 ** 18;
+        return ethAmountInUSD;
     }
 }

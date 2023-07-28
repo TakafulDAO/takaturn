@@ -25,8 +25,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     } else {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
     }
+    const sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
 
     const args = []
+    const initArgs = [ethUsdPriceFeedAddress, sequencerUptimeFeedAddress]
 
     const takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
         from: deployer,
@@ -34,6 +36,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         args: args,
         log: true,
         facets: ["CollateralFacetV2", "FundFacetV2", "TermFacetV2", "GettersFacetV2"],
+        execute: {
+            contract: "DiamondInitV2",
+            methodName: "init",
+            args: initArgs,
+        },
         waitConfirmations: waitBlockConfirmations,
     })
 

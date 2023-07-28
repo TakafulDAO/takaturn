@@ -9,6 +9,7 @@ library LibTermV2 {
     struct TermConsts {
         uint sequencerStartupTime;
         address sequencerUptimeFeedAddress;
+        address aggregatorAddress;
     }
 
     struct Term {
@@ -20,9 +21,9 @@ library LibTermV2 {
         uint cycleTime; // Time for single cycle (seconds)
         uint contributionAmount; // Amount user must pay per cycle (USD)
         uint contributionPeriod; // The portion of cycle user must make payment
-        uint fixedCollateralEth;
+        uint maxCollateralEth; // Max collateral amount (ETH), 1.5x of total fund
+        uint minCollateralEth; // Min collateral amount (ETH), 1.1x of total fund
         address stableTokenAddress;
-        address aggregatorAddress;
     }
 
     struct TermStorage {
