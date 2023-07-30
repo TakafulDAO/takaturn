@@ -95,18 +95,34 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        uint amount = collateral.collateralMembersBank[msg.sender] +
-            collateral.collateralPaymentBank[msg.sender];
-        require(amount > 0, "Nothing to claim");
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+        require(fund.paidThisCycle[msg.sender], "You have not paid this cycle");
+        require(fund.currentState == LibFund.FundStates.CycleOngoing, "Wrong state");
 
-        collateral.collateralMembersBank[msg.sender] = 0;
-        collateral.collateralPaymentBank[msg.sender] = 0;
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success);
+        uint amount = IGettersV2(address(this)).getToEthConversionRate(term.contributionAmount);
+
+        if (amount <= collateral.collateralMembersBank[msg.sender]) {
+            collateral.collateralMembersBank[msg.sender] -= amount;
+            (bool success, ) = payable(msg.sender).call{value: amount}("");
+            require(success);
+        } else if (amount <= collateral.collateralPaymentBank[msg.sender]) {
+            collateral.collateralPaymentBank[msg.sender] -= amount;
+            (bool success, ) = payable(msg.sender).call{value: amount}("");
+            require(success);
+        } else {
+            amount =
+                collateral.collateralMembersBank[msg.sender] +
+                collateral.collateralPaymentBank[msg.sender];
+            collateral.collateralMembersBank[msg.sender] = 0;
+            collateral.collateralPaymentBank[msg.sender] = 0;
+            (bool success, ) = payable(msg.sender).call{value: amount}("");
+            require(success);
+            --collateral.counterMembers;
+        }
 
         emit OnCollateralWithdrawn(id, msg.sender, amount);
 
-        --collateral.counterMembers;
         // If last person withdraws, then change state to EOL
         if (collateral.counterMembers == 0) {
             _setState(id, LibCollateral.CollateralStates.Closed);
