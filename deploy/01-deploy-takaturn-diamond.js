@@ -5,6 +5,8 @@ const {
     VERIFICATION_BLOCK_CONFIRMATIONS,
     isDevnet,
     isFork,
+    isMainnet,
+    isTestnet,
 } = require("../utils/_networks")
 const { verify } = require("../scripts/verify")
 
@@ -16,18 +18,25 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         ? 1
         : VERIFICATION_BLOCK_CONFIRMATIONS
     let ethUsdPriceFeedAddress
+    let sequencerUptimeFeedAddress
 
     log("01. Deploying Takaturn Diamond...")
+
+    if (isMainnet || isTestnet || isFork) {
+        ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
+        sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
+    }
 
     if (isDevnet && !isFork) {
         const ethUsdAggregator = await deployments.get("MockV3Aggregator")
         ethUsdPriceFeedAddress = ethUsdAggregator.address
-    } else {
-        ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
+
+        const sequencer = await deployments.get("MockSequencer")
+        sequencerUptimeFeedAddress = sequencer.address
     }
 
     const args = []
-    const initArgs = []
+    const initArgs = [sequencerUptimeFeedAddress]
 
     const takaturnDiamond = await diamond.deploy("TakaturnDiamond", {
         from: deployer,

@@ -3,6 +3,8 @@ const {
     networkConfig,
     developmentChains,
     VERIFICATION_BLOCK_CONFIRMATIONS,
+    isMainnet,
+    isTestnet,
     isDevnet,
     isFork,
 } = require("../utils/_networks")
@@ -16,16 +18,22 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         ? 1
         : VERIFICATION_BLOCK_CONFIRMATIONS
     let ethUsdPriceFeedAddress
+    let sequencerUptimeFeedAddress
 
     log("02. Upgrading Takaturn Diamond...")
+
+    if (isMainnet || isTestnet || isFork) {
+        ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
+        sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
+    }
 
     if (isDevnet && !isFork) {
         const ethUsdAggregator = await deployments.get("MockV3Aggregator")
         ethUsdPriceFeedAddress = ethUsdAggregator.address
-    } else {
-        ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
+
+        const sequencer = await deployments.get("MockSequencer")
+        sequencerUptimeFeedAddress = sequencer.address
     }
-    const sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
 
     const args = []
     const initArgs = [ethUsdPriceFeedAddress, sequencerUptimeFeedAddress]
