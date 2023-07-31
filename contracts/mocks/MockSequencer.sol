@@ -7,14 +7,12 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 contract MockSequencer is AggregatorV3Interface {
     int256 price;
     uint8 numDecimals;
-    uint256 age;
     int256 sequencerAnswer;
     uint256 time;
 
     constructor(uint8 _numDecimals, int256 _price) {
         price = _price;
         numDecimals = _numDecimals;
-        age = 30;
         sequencerAnswer = 0;
         time = block.timestamp;
     }
@@ -47,10 +45,6 @@ contract MockSequencer is AggregatorV3Interface {
 
     function setDecimals(uint8 _decimals) public {
         numDecimals = _decimals;
-    }
-
-    function setAge(uint256 _age) public {
-        age = _age;
     }
 
     // getRoundData and latestRoundData should both raise "No data present"
