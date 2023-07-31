@@ -68,6 +68,7 @@ const { hour, erc20Units } = require("../../../utils/units")
               //   usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
+                  usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
                   const usdcAddress = networkConfig[chainId]["usdc"]

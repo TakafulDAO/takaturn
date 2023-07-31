@@ -171,7 +171,11 @@ async function executeCycle(
               participant_9,
               participant_10,
               participant_11,
-              participant_12
+              participant_12,
+              usdcOwner,
+              usdcMasterMinter,
+              usdcRegularMinter,
+              usdcLostAndFound
           beforeEach(async function () {
               // Get the accounts
               accounts = await ethers.getSigners()
@@ -193,6 +197,10 @@ async function executeCycle(
               participant_10 = accounts[10]
               participant_11 = accounts[11]
               participant_12 = accounts[12]
+              usdcOwner = accounts[13]
+              usdcMasterMinter = accounts[14]
+              usdcRegularMinter = accounts[15]
+              usdcLostAndFound = accounts[16]
 
               participants = []
               // From account[1] to account[12]
@@ -206,6 +214,7 @@ async function executeCycle(
 
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
+                  sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   // Fork
@@ -239,6 +248,44 @@ async function executeCycle(
 
                       await usdc
                           .connect(accounts[i])
+                          .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                  }
+              } else {
+                  // Initialize USDC
+                  const tokenName = "USD Coin"
+                  const tokenSymbol = "USDC"
+                  const tokenCurrency = "USD"
+                  const tokenDecimals = 6
+
+                  await usdc
+                      .connect(usdcOwner)
+                      .initialize(
+                          tokenName,
+                          tokenSymbol,
+                          tokenCurrency,
+                          tokenDecimals,
+                          usdcMasterMinter.address,
+                          usdcOwner.address,
+                          usdcOwner.address,
+                          usdcOwner.address
+                      )
+
+                  await usdc
+                      .connect(usdcMasterMinter)
+                      .configureMinter(usdcRegularMinter.address, 10000000000000)
+
+                  await usdc.connect(usdcOwner).initializeV2(tokenName)
+
+                  await usdc.connect(usdcOwner).initializeV2_1(usdcLostAndFound.address)
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      let depositor = accounts[i]
+
+                      // Mint USDC for depositor
+                      await usdc.connect(usdcRegularMinter).mint(depositor.address, balanceForUser)
+
+                      await usdc
+                          .connect(depositor)
                           .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
                   }
               }

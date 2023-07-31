@@ -1,8 +1,9 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
-const { toWei } = require("../../../utils/_helpers")
+const { toWei, advanceTimeByDate } = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
+const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -52,6 +53,10 @@ const { BigNumber } = require("ethers")
               participant_10 = accounts[10]
               participant_11 = accounts[11]
               participant_12 = accounts[12]
+              usdcOwner = accounts[13]
+              usdcMasterMinter = accounts[14]
+              usdcRegularMinter = accounts[15]
+              usdcLostAndFound = accounts[16]
 
               // Deploy contracts
               await deployments.fixture(["takaturn_upgrade"])
@@ -59,9 +64,13 @@ const { BigNumber } = require("ethers")
               //   usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
+                  sequencer = await ethers.getContract("MockSequencer")
+                  usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
+                  // Fork
                   const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
                   const usdcAddress = networkConfig[chainId]["usdc"]
+
                   aggregator = await ethers.getContractAt(
                       "AggregatorV3Interface",
                       aggregatorAddress
@@ -75,21 +84,73 @@ const { BigNumber } = require("ethers")
               // Connect the accounts
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
-
-              // Create five terms
-              for (let i = 0; i < 5; i++) {
-                  await takaturnDiamondParticipant_1.createTerm(
-                      totalParticipants,
-                      cycleTime,
-                      contributionAmount,
-                      contributionPeriod,
-                      collateralAmount,
-                      usdc.address
-                  )
-              }
           })
 
+          if (!isFork) {
+              describe("Should revert if the sequencer is not started or has not passed an hour since started", function () {
+                  it("Should revert if the sequencer requires does not met", async function () {
+                      // Revert if the sequencer is down
+                      await sequencer.setSequencerAnswer()
+
+                      await expect(
+                          takaturnDiamondParticipant_1.createTerm(
+                              totalParticipants,
+                              cycleTime,
+                              contributionAmount,
+                              contributionPeriod,
+                              collateralAmount,
+                              usdc.address
+                          )
+                      ).to.be.revertedWith("Sequencer down")
+
+                      // Revert if the has not passed an hour since started
+                      await sequencer.setSequencerAnswer()
+
+                      await expect(
+                          takaturnDiamondParticipant_1.createTerm(
+                              totalParticipants,
+                              cycleTime,
+                              contributionAmount,
+                              contributionPeriod,
+                              collateralAmount,
+                              usdc.address
+                          )
+                      ).to.be.revertedWith("Sequencer starting up")
+
+                      // Should not revert if the sequencer is up and has passed an hour since started
+                      await advanceTimeByDate(1, hour)
+
+                      await expect(
+                          takaturnDiamondParticipant_1.createTerm(
+                              totalParticipants,
+                              cycleTime,
+                              contributionAmount,
+                              contributionPeriod,
+                              collateralAmount,
+                              usdc.address
+                          )
+                      ).not.to.be.reverted
+                  })
+              })
+          }
+
           describe("Participant can join multiple terms", function () {
+              beforeEach(async () => {
+                  if (!isFork) {
+                      await advanceTimeByDate(1, hour)
+                  }
+                  // Create five terms
+                  for (let i = 0; i < 5; i++) {
+                      await takaturnDiamondParticipant_1.createTerm(
+                          totalParticipants,
+                          cycleTime,
+                          contributionAmount,
+                          contributionPeriod,
+                          collateralAmount,
+                          usdc.address
+                      )
+                  }
+              })
               describe("Join term", function () {
                   it("Should update the users mappings, emit an event and update the firstDepositTime", async function () {
                       // Participant 1 joins the the five terms
