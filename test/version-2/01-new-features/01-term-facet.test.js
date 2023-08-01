@@ -87,8 +87,8 @@ const { hour } = require("../../../utils/units")
           })
 
           if (!isFork) {
-              describe("Should revert if the sequencer is not started or has not passed an hour since started", function () {
-                  it("Should revert if the sequencer requires does not met", async function () {
+              describe("Sequencer and oracle unit tests", function () {
+                  it("Should revert if the sequencer does not met requires", async function () {
                       // Revert if the sequencer is down
                       await sequencer.setSequencerAnswer()
 
@@ -130,6 +130,23 @@ const { hour } = require("../../../utils/units")
                               usdc.address
                           )
                       ).not.to.be.reverted
+                  })
+
+                  it("Should revert if the oracle does not met requires", async function () {
+                      await advanceTimeByDate(1, hour)
+
+                      await aggregator.setPrice(0)
+
+                      await expect(
+                          takaturnDiamondParticipant_1.createTerm(
+                              totalParticipants,
+                              cycleTime,
+                              contributionAmount,
+                              contributionPeriod,
+                              collateralAmount,
+                              usdc.address
+                          )
+                      ).to.be.revertedWith("ChainlinkOracle: stale data")
                   })
               })
           }
