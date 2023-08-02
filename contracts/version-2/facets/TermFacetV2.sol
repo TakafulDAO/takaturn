@@ -73,7 +73,9 @@ contract TermFacetV2 is ITermV2 {
         //require(!termStorage.terms[termId].initialized, "Term already exists");
 
         uint fundAmount = _totalParticipants * _contributionAmount;
-        uint fundAmountInWei = IGettersV2(address(this)).getToEthConversionRate(fundAmount); // 18 decimals
+        uint fundAmountInWei = IGettersV2(address(this)).getToEthConversionRate(
+            fundAmount * 10 ** 18
+        );
 
         LibTermV2.Term memory newTerm;
 

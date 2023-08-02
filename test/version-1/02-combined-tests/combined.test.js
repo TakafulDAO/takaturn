@@ -1011,7 +1011,7 @@ async function executeCycle(
                               await takaturnDiamondParticipant_1.withdrawFund(termId)
                               canWithdrawAfterPayingNextCycle = true
                           } catch (e) {
-                              console.log(e)
+                              // console.log(e)
                           }
 
                           let collateral =

@@ -247,7 +247,7 @@ contract GettersFacetV2 is IGettersV2 {
     function getToEthConversionRate(uint USDAmount) external view returns (uint) {
         uint ethPrice = getLatestPrice();
         uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice;
-        return USDAmountInEth * 10 ** 18;
+        return USDAmountInEth;
     }
 
     /// @notice Gets the conversion rate of an amount in ETH to USD
