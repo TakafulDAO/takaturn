@@ -151,14 +151,6 @@ contract GettersFacetV2 is IGettersV2 {
         );
     }
 
-    /// @notice returns the beneficiaries order as an array
-    /// @param id the fund id
-    /// @return the beneficiaries order
-    function getBeneficiariesOrder(uint id) external view returns (address[] memory) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
-        return fund.beneficiariesOrder;
-    }
-
     /// @notice function to get cycle information of a specific participant
     /// @param participant the user to get the info from
     /// @param id the fund id
