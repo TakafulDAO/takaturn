@@ -270,9 +270,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
                     // Nothing to share, reimburse all the securities left
                     // share = 0;
                     uint amount = _collateral.collateralMembersBank[_defaulters[i]];
-
-                    (bool success, ) = payable(_defaulters[i]).call{value: amount}("");
-                    require(success);
+                    _collateral.collateralPaymentBank[_defaulters[i]] += amount;
                 } else {
                     share += currentDefaulterBank;
                 }
@@ -289,7 +287,6 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
                 );
             } else {
                 // Subtract contribution from defaulter and add to beneficiary.
-                // todo: check if this is correct
                 _collateral.collateralMembersBank[_defaulters[i]] -= contributionAmountWei;
                 _collateral.collateralPaymentBank[_beneficiary] += contributionAmountWei;
             }
