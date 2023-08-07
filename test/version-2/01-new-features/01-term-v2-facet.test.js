@@ -61,7 +61,6 @@ const { hour } = require("../../../utils/units")
               // Deploy contracts
               await deployments.fixture(["takaturn_upgrade"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
-              //   usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
                   sequencer = await ethers.getContract("MockSequencer")
@@ -88,6 +87,16 @@ const { hour } = require("../../../utils/units")
               if (!isFork) {
                   await advanceTimeByDate(1, hour)
               }
+
+              // Create the first term
+              await takaturnDiamondParticipant_1.createTerm(
+                  totalParticipants,
+                  cycleTime,
+                  contributionAmount,
+                  contributionPeriod,
+                  collateralAmount,
+                  usdc.address
+              )
           })
 
           if (!isFork) {
@@ -158,7 +167,7 @@ const { hour } = require("../../../utils/units")
           describe("Participant can join multiple terms", function () {
               it("Should update the users mappings", async function () {
                   // Create five terms
-                  for (let i = 0; i < 5; i++) {
+                  for (let i = 0; i < 4; i++) {
                       await takaturnDiamondParticipant_1.createTerm(
                           totalParticipants,
                           cycleTime,
@@ -207,15 +216,6 @@ const { hour } = require("../../../utils/units")
 
           describe("Participant can pay less as security deposit according their index order", function () {
               it("Last participant pays less than the first one", async function () {
-                  await takaturnDiamondParticipant_1.createTerm(
-                      totalParticipants,
-                      cycleTime,
-                      contributionAmount,
-                      contributionPeriod,
-                      collateralAmount,
-                      usdc.address
-                  )
-
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
 

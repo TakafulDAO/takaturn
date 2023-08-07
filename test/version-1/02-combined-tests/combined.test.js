@@ -21,19 +21,13 @@ const {
     balanceForUser,
     collateralFundingPeriod,
     getRandomInt,
-} = require("./combined-utils")
+} = require("../../test-utils")
 
 let takaturnDiamond, usdc
 
 async function everyonePaysAndCloseCycle(termId) {
     for (let i = 1; i <= totalParticipants; i++) {
         await takaturnDiamond.connect(accounts[i]).payContribution(termId)
-        // await expect(takaturnDiamond.connect(accounts[i]).withdrawFund(termId)).to.be.revertedWith(
-        //     "Nothing to withdraw"
-        // )
-        try {
-            await takaturnDiamond.connect(accounts[i]).withdrawFund(termId)
-        } catch (e) {}
     }
 
     // Artifically increase time to skip the wait
@@ -389,6 +383,20 @@ async function executeCycle(
                       }
                   })
 
+                  it("emergency close", async function () {
+                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                      const termId = lastTerm[0]
+
+                      await expect(takaturnDiamondDeployer.closeFund(termId)).to.be.revertedWith(
+                          "TermOwnable: caller is not the owner"
+                      )
+
+                      await takaturnDiamondParticipant_1.closeFund(termId)
+
+                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
+                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.FundClosed)
+                  })
+
                   it("can close the funding period after the given time", async function () {
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
@@ -422,6 +430,11 @@ async function executeCycle(
 
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
                       expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.CycleOngoing)
+
+                      const time = await takaturnDiamondDeployer.getRemainingContributionTime(
+                          termId
+                      )
+                      assert.equal(time, 0)
                   })
 
                   it("can have participants autopay at the end of the funding period", async function () {
@@ -493,10 +506,12 @@ async function executeCycle(
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
                       currentBalance = await ethers.provider.getBalance(participant_1.address)
+                      console.log("currentBalance old", currentBalance.toString())
 
                       await takaturnDiamondParticipant_1.withdrawFund(termId)
 
                       newBalance = await ethers.provider.getBalance(participant_1.address)
+                      console.log("newBalance old", newBalance.toString())
 
                       assert.ok(newBalance > currentBalance)
                   })
@@ -520,7 +535,6 @@ async function executeCycle(
                       let beneficiariesOrder = fund[4]
                       let firstBeneficiary = beneficiariesOrder[0]
                       await executeCycle(termId, 1, [1])
-                      //   let firstBeneficiaryAfterDefault = await fund.methods.beneficiariesOrder(0).call()
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
                       beneficiariesOrder = fund[4]
                       let firstBeneficiaryAfterDefault = beneficiariesOrder[0]
@@ -651,6 +665,35 @@ async function executeCycle(
 
                       const takaturnBalance = await usdc.balanceOf(takaturnDiamond.address)
                       assert.ok(takaturnBalance == 0)
+                  })
+
+                  it("simulates a whole fund cycle and empty the collateral", async function () {
+                      this.timeout(200000)
+
+                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                      const termId = lastTerm[0]
+
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          await everyonePaysAndCloseCycle(termId)
+                          await advanceTime(cycleTime + 1)
+                          if (i < totalParticipants) {
+                              await takaturnDiamondParticipant_1.startNewCycle(termId)
+                          }
+                          for (let j = 1; j <= totalParticipants; j++) {
+                              await usdc
+                                  .connect(accounts[j])
+                                  .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                          }
+                      }
+
+                      await advanceTimeByDate(180, day)
+
+                      await expect(
+                          takaturnDiamondDeployer.emptyCollateralAfterEnd(termId)
+                      ).to.be.revertedWith("TermOwnable: caller is not the owner")
+
+                      await expect(takaturnDiamondParticipant_1.emptyCollateralAfterEnd(termId)).not
+                          .to.be.reverted
                   })
 
                   it("makes sure the fund is closed correctly", async function () {
