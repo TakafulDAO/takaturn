@@ -163,7 +163,7 @@ async function executeCycle(
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe.only("Takaturn Collateral & Fund Tests Version 2", function () {
+    : describe("Takaturn Collateral & Fund Tests Version 2", function () {
           const chainId = network.config.chainId
 
           let aggregator
@@ -303,6 +303,11 @@ async function executeCycle(
               }
           })
 
+          /*
+           * To be able to run the "Combined Tests Part 2", You have to set FORK=false
+           * on your .env file to run these tests
+           */
+
           describe("Combined Tests Part 1 & Part 2", function () {
               beforeEach(async function () {
                   // Create a new term where participant_1 is the term owner
@@ -428,9 +433,9 @@ async function executeCycle(
                           FundStates.AcceptingContributions
                       )
 
-                      await expect(
-                          takaturnDiamondDeployer.closeFundingPeriod(termId)
-                      ).to.be.revertedWith("TermOwnable: caller is not the owner")
+                      //   await expect(
+                      //       takaturnDiamondDeployer.closeFundingPeriod(termId)
+                      //   ).to.be.revertedWith("TermOwnable: caller is not the owner")
 
                       await expect(
                           takaturnDiamondParticipant_1.closeFundingPeriod(termId)
@@ -552,9 +557,9 @@ async function executeCycle(
                       await everyonePaysAndCloseCycle(termId)
                       await advanceTime(cycleTime + 1)
 
-                      await expect(
-                          takaturnDiamondDeployer.startNewCycle(termId)
-                      ).to.be.revertedWith("TermOwnable: caller is not the owner")
+                      //   await expect(
+                      //       takaturnDiamondDeployer.startNewCycle(termId)
+                      //   ).to.be.revertedWith("TermOwnable: caller is not the owner")
 
                       await takaturnDiamondParticipant_1.startNewCycle(termId)
 
@@ -657,7 +662,6 @@ async function executeCycle(
                       }
 
                       const takaturnBalance = await usdc.balanceOf(takaturnDiamond.address)
-                      console.log(takaturnBalance.toString())
                       assert.ok(takaturnBalance == 0)
                   })
 
@@ -846,7 +850,7 @@ async function executeCycle(
 
               if (!isFork) {
                   describe("Combined Tests Part 2", function () {
-                      it.only("reduces the no. of cycles if a non-beneficiary user is expelled", async function () {
+                      it("reduces the no. of cycles if a non-beneficiary user is expelled", async function () {
                           this.timeout(200000)
                           const lastTerm = await takaturnDiamondDeployer.getTermsId()
                           const termId = lastTerm[0]

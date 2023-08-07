@@ -66,13 +66,13 @@ contract FundFacetV2 is IFund, TermOwnable {
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
     /// @param id the id of the term
-    function startNewCycle(uint id) external onlyTermOwner(id) {
+    function startNewCycle(uint id) external /*onlyTermOwner(id)*/ {
         _startNewCycle(id);
     }
 
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
     /// @param id the id of the term
-    function closeFundingPeriod(uint id) external onlyTermOwner(id) {
+    function closeFundingPeriod(uint id) external /*onlyTermOwner(id)*/ {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
         // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period

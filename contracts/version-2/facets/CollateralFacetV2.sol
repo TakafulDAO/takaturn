@@ -39,10 +39,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
 
     /// @param id term id
     /// @param newState collateral state
-    function setStateOwner(
-        uint id,
-        LibCollateral.CollateralStates newState
-    ) external /*onlyTermOwner(id)*/ {
+    function setStateOwner(uint id, LibCollateral.CollateralStates newState) external {
         _setState(id, newState);
     }
 

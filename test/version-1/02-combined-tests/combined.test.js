@@ -297,6 +297,11 @@ async function executeCycle(
               }
           })
 
+          /*
+           * To be able to run the "Combined Tests Part 2", You have to set FORK=false
+           * on your .env file to run these tests
+           */
+
           describe("Combined Tests Part 1 & Part 2", function () {
               beforeEach(async function () {
                   // Create a new term where participant_1 is the term owner
@@ -506,12 +511,10 @@ async function executeCycle(
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
                       currentBalance = await ethers.provider.getBalance(participant_1.address)
-                      console.log("currentBalance old", currentBalance.toString())
 
                       await takaturnDiamondParticipant_1.withdrawFund(termId)
 
                       newBalance = await ethers.provider.getBalance(participant_1.address)
-                      console.log("newBalance old", newBalance.toString())
 
                       assert.ok(newBalance > currentBalance)
                   })
