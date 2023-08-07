@@ -49,6 +49,8 @@ interface IGettersV2 {
             uint
         );
 
+    function getCurrentBeneficiary(uint id) external view returns (address);
+
     function getParticipantFundSummary(
         address participant,
         uint id

@@ -83,6 +83,8 @@ contract FundFacetV2 is IFund, TermOwnable {
         );
         require(fund.currentState == LibFund.FundStates.AcceptingContributions, "Wrong state");
 
+        address currentBeneficiary = IGettersV2(address(this)).getCurrentBeneficiary(id);
+
         // We attempt to make the autopayers pay their contribution right away
         _autoPay(id);
 
@@ -90,7 +92,6 @@ contract FundFacetV2 is IFund, TermOwnable {
         _setState(id, LibFund.FundStates.ChoosingBeneficiary);
 
         // We must check who hasn't paid and default them, check all participants based on beneficiariesOrder
-        // To maintain the order and to properly push defaulters to the back based on that same order
         // And we make sure that existing defaulters are ignored
         address[] memory currentParticipants = fund.beneficiariesOrder;
 
@@ -98,6 +99,15 @@ contract FundFacetV2 is IFund, TermOwnable {
 
         for (uint i; i < currentParticipantsLength; ) {
             address p = currentParticipants[i];
+
+            // We don't default the beneficiary
+            if (p == currentBeneficiary) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
+
             if (fund.paidThisCycle[p]) {
                 // check where to restore the defaulter to, participants or beneficiaries
                 if (fund.isBeneficiary[p]) {
@@ -200,10 +210,11 @@ contract FundFacetV2 is IFund, TermOwnable {
     function withdrawFund(uint id) external {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
-        // any of the past cycles. Note: This last requirement is to avoid unnecessary gas costs
+        // any of the past cycles.
+
         require(
             fund.currentState == LibFund.FundStates.FundClosed || fund.isBeneficiary[msg.sender],
-            "You must pay your cycle before withdrawing"
+            "You must be a beneficiary"
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
@@ -363,36 +374,14 @@ contract FundFacetV2 is IFund, TermOwnable {
     function _selectBeneficiary(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
-        // check if there are any participants left, else use the defaulters
-        address selectedBeneficiary; // By default initialization is address(0)
-        address[] memory arrayToCheck = fund.beneficiariesOrder;
-        uint arrayToCheckLength = arrayToCheck.length;
-        uint beneficiaryIndex; // By default uint initialization is 0;
 
-        for (uint i; i < arrayToCheckLength; ) {
-            address b = arrayToCheck[i];
-            if (!fund.isBeneficiary[b]) {
-                selectedBeneficiary = b;
-                beneficiaryIndex = i;
-                break;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-
-        // If the defaulter didn't pay this cycle, we move the first elligible beneficiary forward and everyone in between forward
-        if (!fund.paidThisCycle[selectedBeneficiary]) {
-            // The beneficiary is not required to paid this cycle, so we can set this to true.
-            // But don't remove from the defaulters set, because they're still a defaulter
-            fund.paidThisCycle[selectedBeneficiary] = true;
-        }
+        address beneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_id);
 
         // Request contribution from the collateral for those who haven't paid this cycle
         if (EnumerableSet.length(fund._defaulters) > 0) {
             address[] memory expellants = ICollateral(address(this)).requestContribution(
                 _id,
-                selectedBeneficiary,
+                beneficiary,
                 EnumerableSet.values(fund._defaulters)
             );
 
@@ -412,13 +401,13 @@ contract FundFacetV2 is IFund, TermOwnable {
         }
 
         // Remove participant from participants set..
-        if (EnumerableSet.remove(fund._participants, selectedBeneficiary)) {
+        if (EnumerableSet.remove(fund._participants, beneficiary)) {
             // ..Then add them to the benificiaries set
-            EnumerableSet.add(fund._beneficiaries, selectedBeneficiary);
+            EnumerableSet.add(fund._beneficiaries, beneficiary);
         } // If this if-statement fails, this means we're dealing with a graced defaulter
 
         // Update the mapping to track who's been beneficiary
-        fund.isBeneficiary[selectedBeneficiary] = true;
+        fund.isBeneficiary[beneficiary] = true;
 
         // Get the amount of participants that paid this cycle, and add that amount to the beneficiary's pool
         uint paidCount;
@@ -430,11 +419,10 @@ contract FundFacetV2 is IFund, TermOwnable {
         }
 
         // Award the beneficiary with the pool and update the lastBeneficiary
-        // todo: check if this is correct
-        fund.beneficiariesPool[selectedBeneficiary] = term.contributionAmount * paidCount * 10 ** 6;
-        fund.lastBeneficiary = selectedBeneficiary;
+        fund.beneficiariesPool[beneficiary] = term.contributionAmount * paidCount * 10 ** 6;
+        fund.lastBeneficiary = beneficiary;
 
-        emit OnBeneficiarySelected(_id, selectedBeneficiary);
+        emit OnBeneficiarySelected(_id, beneficiary);
         _setState(_id, LibFund.FundStates.CycleOngoing);
     }
 

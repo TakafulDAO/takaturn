@@ -151,6 +151,14 @@ contract GettersFacetV2 is IGettersV2 {
         );
     }
 
+    /// @notice function to get the current beneficiary
+    /// @param id the fund id
+    /// @return the current beneficiary
+    function getCurrentBeneficiary(uint id) external view returns (address) {
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        return fund.beneficiariesOrder[fund.currentCycle - 1];
+    }
+
     /// @notice function to get cycle information of a specific participant
     /// @param participant the user to get the info from
     /// @param id the fund id
