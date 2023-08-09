@@ -97,7 +97,9 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         require(fund.paidThisCycle[msg.sender], "You have not paid this cycle");
         require(fund.currentState == LibFund.FundStates.CycleOngoing, "Wrong state");
 
-        uint amount = IGettersV2(address(this)).getToEthConversionRate(term.contributionAmount);
+        uint amount = IGettersV2(address(this)).getToEthConversionRate(
+            term.contributionAmount * 10 ** 18
+        );
 
         if (amount <= collateral.collateralMembersBank[msg.sender]) {
             collateral.collateralMembersBank[msg.sender] -= amount;
@@ -244,7 +246,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         uint share;
         uint currentDefaulterBank;
         uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
-            _term.contributionAmount
+            _term.contributionAmount * 10 ** 18
         );
         // Determine who will be expelled and who will just pay the contribution from their collateral.
         for (uint i; i < _defaulters.length; ) {
