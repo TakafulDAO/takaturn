@@ -190,12 +190,14 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        require(fund.currentState == LibFund.FundStates.AcceptingContributions, "Wrong state");
-        require(fund.isParticipant[msg.sender], "Not a participant");
-        require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
 
         // Get the beneficiary for this cycle
         address currentBeneficiary = IGettersV2(address(this)).getCurrentBeneficiary(id);
+
+        require(fund.currentState == LibFund.FundStates.AcceptingContributions, "Wrong state");
+        require(fund.isParticipant[msg.sender], "Not a participant");
+        require(currentBeneficiary != msg.sender, "Beneficiary doesn't pay");
+        require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
 
         // If he is not participant neither a collateral member, means he is expelled
         if (
@@ -219,11 +221,13 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        require(fund.currentState == LibFund.FundStates.AcceptingContributions, "Wrong state");
-        require(fund.isParticipant[participant], "Not a participant");
-        require(!fund.paidThisCycle[participant], "Already paid for cycle");
 
         address currentBeneficiary = IGettersV2(address(this)).getCurrentBeneficiary(id);
+
+        require(fund.currentState == LibFund.FundStates.AcceptingContributions, "Wrong state");
+        require(fund.isParticipant[participant], "Not a participant");
+        require(currentBeneficiary != participant, "Beneficiary doesn't pay");
+        require(!fund.paidThisCycle[participant], "Already paid for cycle");
 
         if (
             !fund.isParticipant[currentBeneficiary] &&
@@ -337,27 +341,43 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         address currentBeneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_id);
 
         address[] memory autoPayers = fund.beneficiariesOrder; // use beneficiariesOrder because it is a single array with all participants
-        uint length = autoPayers.length;
+        uint autoPayersArray = autoPayers.length;
 
-        for (uint i; i < length; ) {
-            if (fund.autoPayEnabled[autoPayers[i]] && !fund.paidThisCycle[autoPayers[i]]) {
-                // If the beneficiary is not a participant neither a collateral member, means he is expelled
+        // If the beneficiary is not a participant neither a collateral member, means he is expelled
+        if (
+            !fund.isParticipant[currentBeneficiary] &&
+            !collateral.isCollateralMember[currentBeneficiary]
+        ) {
+            for (uint i; i < autoPayersArray; ) {
                 if (
-                    !fund.isParticipant[currentBeneficiary] &&
-                    !collateral.isCollateralMember[currentBeneficiary]
+                    fund.autoPayEnabled[autoPayers[i]] &&
+                    !fund.paidThisCycle[autoPayers[i]] &&
+                    fund.isBeneficiary[autoPayers[i]]
                 ) {
-                    // The only ones that pays are the ones that were beneficiaries
-                    require(
-                        fund.isBeneficiary[autoPayers[i]],
-                        "Only previous beneficiaries pays this cycle"
-                    );
-                    _payContributionSafe(_id, autoPayers[i], autoPayers[i]);
-                } else {
                     _payContributionSafe(_id, autoPayers[i], autoPayers[i]);
                 }
+
+                unchecked {
+                    ++i;
+                }
             }
-            unchecked {
-                ++i;
+        } else {
+            for (uint i; i < autoPayersArray; ) {
+                // The beneficiary doesn't pay
+                if (currentBeneficiary == autoPayers[i]) {
+                    unchecked {
+                        ++i;
+                    }
+                    continue;
+                }
+
+                if (fund.autoPayEnabled[autoPayers[i]] && !fund.paidThisCycle[autoPayers[i]]) {
+                    _payContributionSafe(_id, autoPayers[i], autoPayers[i]);
+                }
+
+                unchecked {
+                    ++i;
+                }
             }
         }
     }
