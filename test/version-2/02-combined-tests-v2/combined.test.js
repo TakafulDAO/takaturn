@@ -516,12 +516,12 @@ async function executeCycle(
                   })
 
                   // This happens in the 1st cycle
-                  xit("allows the beneficiary to claim the collateral from defaulters", async function () {
+                  it("allows the beneficiary to claim the collateral from defaulters", async function () {
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
                       // Everyone pays but last 2 participants
-                      for (let i = 1; i <= totalParticipants - 2; i++) {
+                      for (let i = 1; i <= totalParticipants - 1; i++) {
                           await expect(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
                           ).to.emit(takaturnDiamond, "OnPaidContribution")
@@ -532,7 +532,6 @@ async function executeCycle(
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
                       currentBalance = await ethers.provider.getBalance(participant_1.address)
-                      console.log("currentBalance", currentBalance.toString())
 
                       await expect(takaturnDiamondParticipant_1.withdrawFund(termId)).to.emit(
                           takaturnDiamond,
@@ -540,12 +539,8 @@ async function executeCycle(
                       )
 
                       newBalance = await ethers.provider.getBalance(participant_1.address)
-                      console.log("newBalance", newBalance.toString())
 
-                      // currentBalance 9999941922397
-                      // newBalance     9999941849652
-
-                      //assert.ok(newBalance > currentBalance)
+                      assert.ok(newBalance > currentBalance)
                   })
 
                   it("does not move the order of beneficiaries of previous cycles if they default in future cycles", async function () {
@@ -966,7 +961,7 @@ async function executeCycle(
                           assert.ok(finishingCycles.toNumber() == startingCycles)
                       })
 
-                      xit("Allow defaulted beneficiaries to withdraw their fund", async function () {
+                      it("Allow defaulted beneficiaries to withdraw their fund", async function () {
                           this.timeout(200000)
 
                           const lastTerm = await takaturnDiamondDeployer.getTermsId()
