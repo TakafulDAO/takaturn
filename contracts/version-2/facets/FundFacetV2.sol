@@ -477,11 +477,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         fund.isParticipant[_expellant] = false;
         emit OnDefaulterExpelled(_id, _expellant);
 
-        // If the participant is expelled before becoming beneficiary, we lose a cycle, the one which this expellant is becoming beneficiary
-        if (!fund.isBeneficiary[_expellant]) {
-            fund.totalAmountOfCycles--;
-        }
-
         // Lastly, lower the amount of participants with the amount expelled
         uint newLength = term.totalParticipants - 1;
         term.totalParticipants = newLength;
