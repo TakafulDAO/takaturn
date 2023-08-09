@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.18;
 
-import {IFund} from "../../version-1/interfaces/IFund.sol";
+import {IFundV2} from "../interfaces/IFundV2.sol";
 import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITermV2} from "../interfaces/ITermV2.sol";
@@ -206,6 +206,6 @@ contract TermFacetV2 is ITermV2 {
         newFund.initialized = true;
         newFund.totalAmountOfCycles = newFund.beneficiariesOrder.length;
 
-        IFund(address(this)).initFund(termId);
+        IFundV2(address(this)).initFund(termId);
     }
 }

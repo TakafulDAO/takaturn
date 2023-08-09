@@ -7,7 +7,7 @@ pragma solidity 0.8.18;
 /// @notice This is used to allow collateral to easily communicate with fund
 /// @dev v2.0 (post-deploy)
 
-import {LibFund} from "../libraries/LibFund.sol";
+import {LibFund} from "../../version-1/libraries/LibFund.sol";
 
 interface IFundV2 {
     function initFund(uint termId) external;

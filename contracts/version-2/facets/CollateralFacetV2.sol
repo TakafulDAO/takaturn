@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.18;
 
-import {IFund} from "../../version-1/interfaces/IFund.sol";
+import {IFundV2} from "../interfaces/IFundV2.sol";
 import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
@@ -250,7 +250,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         );
         // Determine who will be expelled and who will just pay the contribution from their collateral.
         for (uint i; i < _defaulters.length; ) {
-            wasBeneficiary = IFund(address(this)).isBeneficiary(_term.termId, _defaulters[i]);
+            wasBeneficiary = IFundV2(address(this)).isBeneficiary(_term.termId, _defaulters[i]);
             currentDefaulterBank = _collateral.collateralMembersBank[_defaulters[i]];
             if (_defaulters[i] == _beneficiary) {
                 unchecked {
@@ -316,7 +316,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         for (uint i; i < depositorsLength; ) {
             currentDepositor = _collateral.depositors[i];
             if (
-                !IFund(address(this)).isBeneficiary(_term.termId, currentDepositor) &&
+                !IFundV2(address(this)).isBeneficiary(_term.termId, currentDepositor) &&
                 _collateral.isCollateralMember[currentDepositor]
             ) {
                 nonBeneficiaries[nonBeneficiaryCounter] = currentDepositor;

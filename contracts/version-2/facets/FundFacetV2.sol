@@ -3,7 +3,7 @@
 pragma solidity 0.8.18;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IFund} from "../../version-1/interfaces/IFund.sol";
+import {IFundV2} from "../interfaces/IFundV2.sol";
 import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
@@ -18,7 +18,7 @@ import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 /// @author Mohammed Haddouti
 /// @notice This is used to operate the Takaturn fund
 /// @dev v3.0 (Diamond)
-contract FundFacetV2 is IFund, TermOwnable {
+contract FundFacetV2 is IFundV2, TermOwnable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint public constant FUND_VERSION = 2; // The version of the contract
