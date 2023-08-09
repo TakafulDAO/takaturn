@@ -129,7 +129,7 @@ contract FundFacetV2 is IFund, TermOwnable {
 
         // Once we decided who defaulted and who paid, we can select the beneficiary for this cycle
 
-        _selectBeneficiary(id);
+        _awardBeneficiary(id);
         if (!(fund.currentCycle < fund.totalAmountOfCycles)) {
             // If all cycles have passed, and the last cycle's time has passed, close the fund
             _closeFund(id);
@@ -140,10 +140,10 @@ contract FundFacetV2 is IFund, TermOwnable {
     /// @notice Fallback function, if the internal call fails somehow and the state gets stuck, allow owner to call the function again manually
     /// @dev This shouldn't happen, but is here in case there's an edge-case we didn't take into account, can possibly be removed in the future
     /// @param id the id of the term
-    function selectBeneficiary(uint id) external onlyTermOwner(id) {
+    function awardBeneficiary(uint id) external onlyTermOwner(id) {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
         require(fund.currentState == LibFund.FundStates.ChoosingBeneficiary, "Wrong state");
-        _selectBeneficiary(id);
+        _awardBeneficiary(id);
     }
 
     /// @notice called by the owner to close the fund for emergency reasons.
@@ -371,7 +371,7 @@ contract FundFacetV2 is IFund, TermOwnable {
     /// @notice The beneficiary will be selected here based on the beneficiariesOrder array.
     /// @notice It will loop through the array and choose the first in line to be eligible to be beneficiary.
     /// @param _id The id of the term
-    function _selectBeneficiary(uint _id) internal {
+    function _awardBeneficiary(uint _id) internal {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
 
