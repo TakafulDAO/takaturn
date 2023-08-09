@@ -426,31 +426,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         _setState(_id, LibFund.FundStates.CycleOngoing);
     }
 
-    /// @notice Called internally to move a defaulter in the beneficiariesOrder to the end, so that people who have paid get chosen first as beneficiary
-    /// @param _id The id of the term
-    /// @param _beneficiary The defaulter that could have been beneficiary
-    function _removeBeneficiaryFromOrder(uint _id, address _beneficiary) internal {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[_id];
-        address[] memory arrayToCheck = fund.beneficiariesOrder;
-        uint arrayToCheckLength = arrayToCheck.length;
-        address[] memory newArray = new address[](arrayToCheck.length - 1);
-        uint j;
-        for (uint i; i < arrayToCheckLength; ) {
-            address b = arrayToCheck[i];
-            if (b != _beneficiary) {
-                newArray[j] = b;
-                unchecked {
-                    ++j;
-                }
-            }
-            unchecked {
-                ++i;
-            }
-        }
-
-        fund.beneficiariesOrder = newArray;
-    }
-
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
     /// @param _id The id of the term
     /// @param _expellant The address of the defaulter that will be expelled
@@ -468,11 +443,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
 
         // Expellants should only be in the defauters set so no need to touch the other sets
         //require(EnumerableSet.remove(_defaulters, expellant), "Expellant not found");
-
-        // Remove expellant from beneficiaries order
-        // Remove expellants from participants tracker and emit that they've been expelled
-        // Update the defaulters array
-        _removeBeneficiaryFromOrder(_id, _expellant);
 
         fund.isParticipant[_expellant] = false;
         emit OnDefaulterExpelled(_id, _expellant);
