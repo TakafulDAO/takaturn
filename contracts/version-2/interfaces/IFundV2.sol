@@ -9,7 +9,7 @@ pragma solidity 0.8.18;
 
 import {LibFund} from "../libraries/LibFund.sol";
 
-interface IFund {
+interface IFundV2 {
     function initFund(uint termId) external;
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
@@ -20,7 +20,7 @@ interface IFund {
 
     /// @notice Fallback function, if the internal call fails somehow and the state gets stuck, allow owner to call the function again manually
     /// @dev This shouldn't happen, but is here in case there's an edge-case we didn't take into account, can possibly be removed in the future
-    function selectBeneficiary(uint termId) external;
+    function awardBeneficiary(uint termId) external;
 
     /// @notice called by the owner to close the fund for emergency reasons.
     function closeFund(uint termId) external;
