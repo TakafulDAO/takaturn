@@ -141,7 +141,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         }
 
         // Once we decided who defaulted and who paid, we can award the beneficiary for this cycle
-
         _awardBeneficiary(id);
         if (!(fund.currentCycle < fund.totalAmountOfCycles)) {
             // If all cycles have passed, and the last cycle's time has passed, close the fund
@@ -463,7 +462,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
 
         address beneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_id);
 
-        // Request contribution from the collateral for those who haven't paid this cycle
+        // Request contribution from the collateral for those who have to pay this cycle and haven't paid
         if (EnumerableSet.length(fund._defaulters) > 0) {
             address[] memory expellants = ICollateral(address(this)).requestContribution(
                 _id,

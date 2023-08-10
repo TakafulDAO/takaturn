@@ -8,7 +8,7 @@ import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {LibTermV2} from "../libraries/LibTermV2.sol";
 import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
-import {LibFund} from "../../version-1/libraries/LibFund.sol";
+import {LibFundV2} from "../libraries/LibFundV2.sol";
 
 contract GettersFacetV2 is IGettersV2 {
     // TERM GETTERS
@@ -38,7 +38,7 @@ contract GettersFacetV2 is IGettersV2 {
     /// @param id the term id
     /// @return remaining time in the current cycle
     function getRemainingCycleTime(uint id) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
         uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
         if (block.timestamp > cycleEndTimestamp) {
@@ -125,7 +125,7 @@ contract GettersFacetV2 is IGettersV2 {
         view
         returns (
             bool,
-            LibFund.FundStates,
+            LibFundV2.FundStates,
             IERC20,
             uint,
             address[] memory,
@@ -136,7 +136,7 @@ contract GettersFacetV2 is IGettersV2 {
             uint
         )
     {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         return (
             fund.initialized,
             fund.currentState,
@@ -155,7 +155,7 @@ contract GettersFacetV2 is IGettersV2 {
     /// @param id the fund id
     /// @return the current beneficiary
     function getCurrentBeneficiary(uint id) external view returns (address) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         return fund.beneficiariesOrder[fund.currentCycle - 1];
     }
 
@@ -167,7 +167,7 @@ contract GettersFacetV2 is IGettersV2 {
         address participant,
         uint id
     ) external view returns (bool, bool, bool, bool, uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         return (
             fund.isParticipant[participant],
             fund.isBeneficiary[participant],
@@ -181,9 +181,9 @@ contract GettersFacetV2 is IGettersV2 {
     /// @param id the fund id
     /// @return the time left to contribute
     function getRemainingContributionTime(uint id) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
-        if (fund.currentState != LibFund.FundStates.AcceptingContributions) {
+        if (fund.currentState != LibFundV2.FundStates.AcceptingContributions) {
             return 0;
         }
 

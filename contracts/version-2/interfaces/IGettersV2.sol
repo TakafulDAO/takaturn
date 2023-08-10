@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {LibTermV2} from "../libraries/LibTermV2.sol";
 import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
-import {LibFund} from "../../version-1/libraries/LibFund.sol";
+import {LibFundV2} from "../libraries/LibFundV2.sol";
 
 interface IGettersV2 {
     function getTermsId() external view returns (uint, uint);
@@ -38,7 +38,7 @@ interface IGettersV2 {
         view
         returns (
             bool,
-            LibFund.FundStates,
+            LibFundV2.FundStates,
             IERC20,
             uint,
             address[] memory,

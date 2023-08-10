@@ -6,7 +6,7 @@ import {IFundV2} from "../interfaces/IFundV2.sol";
 import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
-import {LibFund} from "../../version-1/libraries/LibFund.sol";
+import {LibFundV2} from "../libraries/LibFundV2.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
 import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
 
@@ -92,10 +92,10 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
         require(fund.paidThisCycle[msg.sender], "You have not paid this cycle");
-        require(fund.currentState == LibFund.FundStates.CycleOngoing, "Wrong state");
+        require(fund.currentState == LibFundV2.FundStates.CycleOngoing, "Wrong state");
 
         uint amount = IGettersV2(address(this)).getToEthConversionRate(
             term.contributionAmount * 10 ** 18
@@ -134,7 +134,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[id];
-        require(LibFund._fundExists(id), "Fund does not exists");
+        require(LibFundV2._fundExists(id), "Fund does not exists");
         uint amount = collateral.collateralPaymentBank[depositor];
         require(amount > 0, "Nothing to claim");
 
@@ -148,7 +148,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
 
     /// @param id term id
     function releaseCollateral(uint id) external {
-        require(LibFund._fundExists(id), "Fund does not exists");
+        require(LibFundV2._fundExists(id), "Fund does not exists");
         _setState(id, LibCollateral.CollateralStates.ReleasingCollateral);
     }
 
@@ -212,7 +212,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         uint collateralLimit;
         uint memberCollateralUSD;
         (, , , uint currentCycle, , , , , , ) = IGettersV2(address(this)).getFundSummary(_id);
-        if (!LibFund._fundExists(_id)) {
+        if (!LibFundV2._fundExists(_id)) {
             collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
         } else {
             uint remainingCycles = 1 + collateral.counterMembers - currentCycle;

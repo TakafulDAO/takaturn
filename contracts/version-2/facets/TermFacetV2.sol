@@ -8,7 +8,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITermV2} from "../interfaces/ITermV2.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
-import {LibFund} from "../../version-1/libraries/LibFund.sol";
+import {LibFundV2} from "../libraries/LibFundV2.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
 import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
 
@@ -194,8 +194,8 @@ contract TermFacetV2 is ITermV2 {
     }
 
     function _createFund(uint termId) internal {
-        require(!LibFund._fundExists(termId), "Fund already exists");
-        LibFund.Fund storage newFund = LibFund._fundStorage().funds[termId];
+        require(!LibFundV2._fundExists(termId), "Fund already exists");
+        LibFundV2.Fund storage newFund = LibFundV2._fundStorage().funds[termId];
         LibTermV2.Term memory term = LibTermV2._termStorage().terms[termId];
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
