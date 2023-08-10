@@ -75,7 +75,10 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     function closeFundingPeriod(uint id) external /*onlyTermOwner(id)*/ {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
-        // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
+        LibCollateral.Collateral storage collateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[id];
+        // Current cycle minus 1 because we use the previous cycle time as start point then  add contribution period
         require(
             block.timestamp >
                 term.cycleTime * (fund.currentCycle - 1) + fund.fundStart + term.contributionPeriod,
@@ -92,7 +95,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         _setState(id, LibFundV2.FundStates.AwardingBeneficiary);
 
         // We must check who hasn't paid and default them, check all participants based on beneficiariesOrder
-        // And we make sure that existing defaulters are ignored
         address[] memory currentParticipants = fund.beneficiariesOrder;
 
         uint currentParticipantsLength = currentParticipants.length;
@@ -100,7 +102,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         for (uint i; i < currentParticipantsLength; ) {
             address p = currentParticipants[i];
 
-            // We don't default the beneficiary
+            // The current beneficiary doesn't pay neither get defaulted
             if (p == currentBeneficiary) {
                 unchecked {
                     ++i;
@@ -120,14 +122,25 @@ contract FundFacetV2 is IFundV2, TermOwnable {
                     emit OnParticipantUndefaulted(id, p);
                 }
             } else if (!EnumerableSet.contains(fund._defaulters, p)) {
-                _defaultParticipant(id, p);
+                // And we make sure that existing defaulters are ignored
+                // If the current beneficiary is an expelled participant, only previous beneficiaries pays, other participants are ignored
+                if (
+                    !fund.isParticipant[currentBeneficiary] &&
+                    !collateral.isCollateralMember[currentBeneficiary]
+                ) {
+                    if (fund.isBeneficiary[p]) {
+                        _defaultParticipant(id, p);
+                    }
+                } else {
+                    _defaultParticipant(id, p);
+                }
             }
             unchecked {
                 ++i;
             }
         }
 
-        // Once we decided who defaulted and who paid, we can select the beneficiary for this cycle
+        // Once we decided who defaulted and who paid, we can award the beneficiary for this cycle
 
         _awardBeneficiary(id);
         if (!(fund.currentCycle < fund.totalAmountOfCycles)) {
