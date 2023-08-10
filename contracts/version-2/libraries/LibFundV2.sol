@@ -4,9 +4,9 @@ pragma solidity 0.8.18;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import {ICollateral} from "../interfaces/ICollateral.sol";
+import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
 
-library LibFund {
+library LibFundV2 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint public constant FUND_VERSION = 1;
