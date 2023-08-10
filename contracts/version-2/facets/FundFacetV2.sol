@@ -89,7 +89,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         _autoPay(id);
 
         // Only then start choosing beneficiary
-        _setState(id, LibFundV2.FundStates.ChoosingBeneficiary);
+        _setState(id, LibFundV2.FundStates.AwardingBeneficiary);
 
         // We must check who hasn't paid and default them, check all participants based on beneficiariesOrder
         // And we make sure that existing defaulters are ignored
@@ -142,7 +142,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     /// @param id the id of the term
     function awardBeneficiary(uint id) external onlyTermOwner(id) {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        require(fund.currentState == LibFundV2.FundStates.ChoosingBeneficiary, "Wrong state");
+        require(fund.currentState == LibFundV2.FundStates.AwardingBeneficiary, "Wrong state");
         _awardBeneficiary(id);
     }
 
