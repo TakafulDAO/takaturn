@@ -46,10 +46,9 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
     /// @param id term id
-    /// @param beneficiary Address that was randomly selected for the current cycle
+    /// @param beneficiary Address that will be receiving the cycle pot
     /// @param defaulters Address that was randomly selected for the current cycle
     /// @return expellants array of addresses that were expelled
-    // TODO: Recheck this function, it was refactorized on internal functions because the stack was too deep and the EVM can not access variables
     function requestContribution(
         uint id,
         address beneficiary,
@@ -59,12 +58,57 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
             ._collateralStorage()
             .collaterals[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+
+        address[] memory actualDefaulters;
+        // We check on the beneficiariesOrder array
+
+        // If the beneficiary is not a participant neither a collateral member he is expelled
+        if (!fund.isParticipant[beneficiary] && !collateral.isCollateralMember[beneficiary]) {
+            for (uint i; i < fund.beneficiariesOrder.length; ) {
+                // When we find the first non beneficiary we exit the loop. The first one must be the beneficiary
+                if (!fund.isBeneficiary[fund.beneficiariesOrder[i]]) {
+                    break;
+                }
+                for (uint j; j < defaulters.length; ) {
+                    // We check if the previous beneficiary is on the defaulter array
+                    if (fund.beneficiariesOrder[i] == defaulters[j]) {
+                        actualDefaulters[i] = fund.beneficiariesOrder[i];
+                    }
+
+                    unchecked {
+                        ++j;
+                    }
+                }
+
+                unchecked {
+                    ++i;
+                }
+            }
+        } else {
+            // We don't consider the beneficiary a defaulter
+            for (uint i; i < fund.beneficiariesOrder.length; ) {
+                if (fund.beneficiariesOrder[i] == beneficiary) {
+                    unchecked {
+                        ++i;
+                    }
+
+                    continue;
+                }
+
+                actualDefaulters[i] = fund.beneficiariesOrder[i];
+
+                unchecked {
+                    ++i;
+                }
+            }
+        }
 
         (uint share, address[] memory expellants) = _whoExpelled(
             collateral,
             term,
             beneficiary,
-            defaulters
+            actualDefaulters
         );
 
         (uint nonBeneficiaryCounter, address[] memory nonBeneficiaries) = _liquidateCollateral(
@@ -228,17 +272,17 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
 
     /// @param _collateral Collateral storage
     /// @param _term Term storage
-    /// @param _beneficiary Address that was randomly selected for the current cycle
-    /// @param _defaulters Address that was randomly selected for the current cycle
+    /// @param _beneficiary Address that will be receiving the cycle pot
+    /// @param _defaulters Defaulters array
     /// @return share The total amount of collateral to be divided among non-beneficiaries
     /// @return expellants array of addresses that were expelled
     function _whoExpelled(
         LibCollateral.Collateral storage _collateral,
         LibTermV2.Term storage _term,
         address _beneficiary,
-        address[] calldata _defaulters
+        address[] memory _defaulters
     ) internal returns (uint, address[] memory) {
-        require(_defaulters.length > 0, "No defaulters");
+        // require(_defaulters.length > 0, "No defaulters"); // todo: needed? only call this function when there are defaulters
 
         bool wasBeneficiary;
         uint8 totalExpellants;
@@ -252,12 +296,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         for (uint i; i < _defaulters.length; ) {
             wasBeneficiary = IFundV2(address(this)).isBeneficiary(_term.termId, _defaulters[i]);
             currentDefaulterBank = _collateral.collateralMembersBank[_defaulters[i]];
-            if (_defaulters[i] == _beneficiary) {
-                unchecked {
-                    ++i;
-                }
-                continue;
-            } // Avoid expelling graced defaulter
+            // Avoid expelling graced defaulter
 
             if (
                 (wasBeneficiary && _isUnderCollaterized(_term.termId, _defaulters[i])) ||
