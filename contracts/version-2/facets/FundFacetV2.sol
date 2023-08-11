@@ -478,7 +478,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
                     }
                     continue;
                 }
-                _expelDefaulter(_id, expellants[i]);
+                _expelDefaulter(fund, term, expellants[i]);
                 unchecked {
                     ++i;
                 }
@@ -512,33 +512,27 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     }
 
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
-    /// @param _id The id of the term
     /// @param _expellant The address of the defaulter that will be expelled
-    function _expelDefaulter(uint _id, address _expellant) internal {
-        LibCollateral.Collateral storage collateral = LibCollateral
-            ._collateralStorage()
-            .collaterals[_id];
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[_id];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
-        //require(msg.sender == address(collateral), "Caller is not collateral");
+    function _expelDefaulter(
+        LibFundV2.Fund storage _fund,
+        LibTermV2.Term storage _term,
+        address _expellant
+    ) internal {
+        // Expellants should only be in the defauters set so no need to touch the other sets
         require(
-            fund.isParticipant[_expellant] && EnumerableSet.remove(fund._defaulters, _expellant),
+            _fund.isParticipant[_expellant] && EnumerableSet.remove(_fund._defaulters, _expellant),
             "Expellant not found"
         );
 
-        // Expellants should only be in the defauters set so no need to touch the other sets
-        //require(EnumerableSet.remove(_defaulters, expellant), "Expellant not found");
+        _fund.isParticipant[_expellant] = false;
+        emit OnDefaulterExpelled(_term.termId, _expellant);
 
-        fund.isParticipant[_expellant] = false;
-        emit OnDefaulterExpelled(_id, _expellant);
+        // Lastly, lower the amount of participants
+        --_term.totalParticipants;
+        // collateral.isCollateralMember[_expellant] = false; // todo: needed? it is set also on whoExpelled
+        ++_fund.expelledParticipants;
 
-        // Lastly, lower the amount of participants with the amount expelled
-        uint newLength = term.totalParticipants - 1;
-        term.totalParticipants = newLength;
-        collateral.isCollateralMember[_expellant] = false;
-        ++fund.expelledParticipants;
-
-        emit OnTotalParticipantsUpdated(_id, newLength);
+        emit OnTotalParticipantsUpdated(_term.termId, _term.totalParticipants);
     }
 
     /// @notice Internal function for close fund which is used by _startNewCycle & _chooseBeneficiary to cover some edge-cases
