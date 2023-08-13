@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IFundV2} from "../interfaces/IFundV2.sol";
-import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
+import {ICollateralV2} from "../interfaces/ICollateralV2.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -288,7 +288,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         }
 
         if (hasCollateralPool) {
-            ICollateral(address(this)).withdrawReimbursement(id, msg.sender);
+            ICollateralV2(address(this)).withdrawReimbursement(id, msg.sender);
         }
     }
 
@@ -464,7 +464,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
 
         // Request contribution from the collateral for those who have to pay this cycle and haven't paid
         if (EnumerableSet.length(fund._defaulters) > 0) {
-            address[] memory expellants = ICollateral(address(this)).requestContribution(
+            address[] memory expellants = ICollateralV2(address(this)).requestContribution(
                 _id,
                 beneficiary,
                 EnumerableSet.values(fund._defaulters)
@@ -541,6 +541,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[_id];
         fund.fundEnd = block.timestamp;
         _setState(_id, LibFundV2.FundStates.FundClosed);
-        ICollateral(address(this)).releaseCollateral(_id);
+        ICollateralV2(address(this)).releaseCollateral(_id);
     }
 }

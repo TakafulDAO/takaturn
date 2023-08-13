@@ -3,7 +3,7 @@
 pragma solidity 0.8.18;
 
 import {IFundV2} from "../interfaces/IFundV2.sol";
-import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
+import {ICollateralV2} from "../interfaces/ICollateralV2.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {LibFundV2} from "../libraries/LibFundV2.sol";
@@ -16,7 +16,7 @@ import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 /// @author Aisha El Allam
 /// @notice This is used to operate the Takaturn collateral
 /// @dev v3.0 (Diamond)
-contract CollateralFacetV2 is ICollateral, TermOwnable {
+contract CollateralFacetV2 is ICollateralV2, TermOwnable {
     event OnCollateralStateChanged(
         uint indexed termId,
         LibCollateralV2.CollateralStates indexed oldState,

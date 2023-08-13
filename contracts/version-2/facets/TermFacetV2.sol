@@ -3,7 +3,7 @@
 pragma solidity 0.8.18;
 
 import {IFundV2} from "../interfaces/IFundV2.sol";
-import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
+import {ICollateralV2} from "../interfaces/ICollateralV2.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITermV2} from "../interfaces/ITermV2.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
@@ -164,7 +164,7 @@ contract TermFacetV2 is ITermV2 {
         // Need to check each user because they can have different collateral amounts
         for (uint i; i < depositorsArrayLength; ) {
             require(
-                !ICollateral(address(this)).isUnderCollaterized(termId, depositors[i]),
+                !ICollateralV2(address(this)).isUnderCollaterized(termId, depositors[i]),
                 "Eth prices dropped"
             );
             unchecked {
@@ -176,7 +176,7 @@ contract TermFacetV2 is ITermV2 {
         _createFund(term);
 
         // Tell the collateral that the term has started
-        ICollateral(address(this)).setStateOwner(
+        ICollateralV2(address(this)).setStateOwner(
             termId,
             LibCollateralV2.CollateralStates.CycleOngoing
         );
