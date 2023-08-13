@@ -99,20 +99,21 @@ contract TermFacetV2 is ITermV2 {
         return termId;
     }
 
-    function _joinTerm(uint termId) internal {
+    function _joinTerm(uint _termId) internal {
         LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
-        LibTermV2.Term memory term = termStorage.terms[termId];
+        LibTermV2.Term memory term = termStorage.terms[_termId];
 
-        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
-            ._collateralStorage();
-        LibCollateral.Collateral storage collateral = collateralStorage.collaterals[termId];
-        require(LibTermV2._termExists(termId) && LibCollateral._collateralExists(termId));
+        LibCollateral.Collateral storage collateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[_termId];
+
+        require(LibTermV2._termExists(_termId) && LibCollateral._collateralExists(_termId));
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
         require(!collateral.isCollateralMember[msg.sender], "Reentry");
 
-        uint amount = IGettersV2(address(this)).minCollateralToDeposit(termId);
+        uint amount = IGettersV2(address(this)).minCollateralToDeposit(term);
 
         require(msg.value >= amount, "Eth payment too low");
 
@@ -124,8 +125,8 @@ contract TermFacetV2 is ITermV2 {
             if (collateral.depositors[i] == address(0)) {
                 collateral.depositors[i] = msg.sender;
                 collateral.counterMembers++;
-                termStorage.participantToTermId[msg.sender].push(termId);
-                emit OnCollateralDeposited(termId, msg.sender);
+                termStorage.participantToTermId[msg.sender].push(_termId);
+                emit OnCollateralDeposited(_termId, msg.sender);
                 if (collateral.counterMembers == 1) {
                     collateral.firstDepositTime = block.timestamp;
                 }
@@ -143,12 +144,11 @@ contract TermFacetV2 is ITermV2 {
 
     function _startTerm(uint termId) internal {
         require(LibTermV2._termExists(termId) && LibCollateral._collateralExists(termId));
-        LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
-        LibTermV2.Term memory term = termStorage.terms[termId];
+        LibTermV2.Term memory term = LibTermV2._termStorage().terms[termId];
 
-        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
-            ._collateralStorage();
-        LibCollateral.Collateral storage collateral = collateralStorage.collaterals[termId];
+        LibCollateral.Collateral storage collateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[termId];
 
         address[] memory depositors = collateral.depositors;
 
@@ -168,7 +168,7 @@ contract TermFacetV2 is ITermV2 {
         }
 
         // Actually create and initialize the fund
-        _createFund(termId);
+        _createFund(term);
 
         // Tell the collateral that the term has started
         ICollateral(address(this)).setStateOwner(
@@ -178,34 +178,33 @@ contract TermFacetV2 is ITermV2 {
     }
 
     function _createCollateral(
-        uint termId,
+        uint _termId,
         uint _totalParticipants,
         uint _collateralAmount
     ) internal {
         //require(!LibCollateral._collateralExists(termId), "Collateral already exists");
         LibCollateral.Collateral storage newCollateral = LibCollateral
             ._collateralStorage()
-            .collaterals[termId];
+            .collaterals[_termId];
 
         newCollateral.initialized = true;
         newCollateral.state = LibCollateral.CollateralStates.AcceptingCollateral;
         newCollateral.depositors = new address[](_totalParticipants);
-        newCollateral.collateralDeposit = _collateralAmount * 10 ** 18; // Convert to Wei; // TODO: This is the correct value?
+        newCollateral.collateralDeposit = _collateralAmount * 10 ** 18; // Convert to Wei;
     }
 
-    function _createFund(uint termId) internal {
-        require(!LibFundV2._fundExists(termId), "Fund already exists");
-        LibFundV2.Fund storage newFund = LibFundV2._fundStorage().funds[termId];
-        LibTermV2.Term memory term = LibTermV2._termStorage().terms[termId];
+    function _createFund(LibTermV2.Term memory _term) internal {
+        require(!LibFundV2._fundExists(_term.termId), "Fund already exists");
+        LibFundV2.Fund storage newFund = LibFundV2._fundStorage().funds[_term.termId];
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
-            .collaterals[termId];
+            .collaterals[_term.termId];
 
-        newFund.stableToken = IERC20(term.stableTokenAddress);
+        newFund.stableToken = IERC20(_term.stableTokenAddress);
         newFund.beneficiariesOrder = collateral.depositors;
         newFund.initialized = true;
         newFund.totalAmountOfCycles = newFund.beneficiariesOrder.length;
 
-        IFundV2(address(this)).initFund(termId);
+        IFundV2(address(this)).initFund(_term.termId);
     }
 }

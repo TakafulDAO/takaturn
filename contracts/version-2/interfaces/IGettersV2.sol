@@ -17,7 +17,7 @@ interface IGettersV2 {
 
     function getRemainingCycleTime(uint id) external view returns (uint);
 
-    function minCollateralToDeposit(uint id) external view returns (uint);
+    function minCollateralToDeposit(LibTermV2.Term memory term) external view returns (uint);
 
     function getDepositorCollateralSummary(
         address depositor,

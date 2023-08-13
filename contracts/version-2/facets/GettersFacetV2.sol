@@ -49,18 +49,15 @@ contract GettersFacetV2 is IGettersV2 {
     }
 
     /// @notice Called to check the minimum collateral amount to deposit in wei
-    /// @return the minimum collateral amount to deposit in wei
+    /// @return amount the minimum collateral amount to deposit in wei
     /// @dev The minimum collateral amount is calculated based on the number of participants
-    /// @dev The return value should be the msg.value when calling joinTerm
-    function minCollateralToDeposit(uint id) external view returns (uint) {
-        LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
-        LibTermV2.Term memory term = termStorage.terms[id];
-
-        LibCollateral.CollateralStorage storage collateralStorage = LibCollateral
-            ._collateralStorage();
-        LibCollateral.Collateral storage collateral = collateralStorage.collaterals[id];
-
-        uint amount;
+    /// @dev The return value should be the minimum msg.value when calling joinTerm
+    function minCollateralToDeposit(
+        LibTermV2.Term memory term
+    ) external view returns (uint amount) {
+        LibCollateral.Collateral storage collateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[term.termId];
 
         if (collateral.counterMembers == 0) {
             amount = term.maxCollateralEth;
@@ -69,7 +66,6 @@ contract GettersFacetV2 is IGettersV2 {
         } else {
             amount = (term.maxCollateralEth + term.minCollateralEth) / 2;
         }
-        return amount;
     }
 
     // COLLATERAL GETTERS
