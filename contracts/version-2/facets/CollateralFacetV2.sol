@@ -8,7 +8,7 @@ import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {LibFundV2} from "../libraries/LibFundV2.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
-import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
+import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 
 import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 
@@ -19,8 +19,8 @@ import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 contract CollateralFacetV2 is ICollateral, TermOwnable {
     event OnCollateralStateChanged(
         uint indexed termId,
-        LibCollateral.CollateralStates indexed oldState,
-        LibCollateral.CollateralStates indexed newState
+        LibCollateralV2.CollateralStates indexed oldState,
+        LibCollateralV2.CollateralStates indexed newState
     );
     event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
@@ -28,8 +28,8 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
 
     /// @param id term id
     /// @param _state collateral state
-    modifier atState(uint id, LibCollateral.CollateralStates _state) {
-        LibCollateral.CollateralStates state = LibCollateral
+    modifier atState(uint id, LibCollateralV2.CollateralStates _state) {
+        LibCollateralV2.CollateralStates state = LibCollateralV2
             ._collateralStorage()
             .collaterals[id]
             .state;
@@ -39,7 +39,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
 
     /// @param id term id
     /// @param newState collateral state
-    function setStateOwner(uint id, LibCollateral.CollateralStates newState) external {
+    function setStateOwner(uint id, LibCollateralV2.CollateralStates newState) external {
         _setState(id, newState);
     }
 
@@ -53,8 +53,12 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
         uint id,
         address beneficiary,
         address[] calldata defaulters
-    ) external atState(id, LibCollateral.CollateralStates.CycleOngoing) returns (address[] memory) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+    )
+        external
+        atState(id, LibCollateralV2.CollateralStates.CycleOngoing)
+        returns (address[] memory)
+    {
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
@@ -95,8 +99,8 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @param id term id
     function withdrawCollateral(
         uint id
-    ) external atState(id, LibCollateral.CollateralStates.ReleasingCollateral) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+    ) external atState(id, LibCollateralV2.CollateralStates.ReleasingCollateral) {
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
@@ -131,14 +135,14 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
 
         // If last person withdraws, then change state to EOL
         if (collateral.counterMembers == 0) {
-            _setState(id, LibCollateral.CollateralStates.Closed);
+            _setState(id, LibCollateralV2.CollateralStates.Closed);
         }
     }
 
     /// @param id term id
     /// @param depositor Address of the depositor
     function withdrawReimbursement(uint id, address depositor) external {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
         require(LibFundV2._fundExists(id), "Fund does not exists");
@@ -156,7 +160,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @param id term id
     function releaseCollateral(uint id) external {
         require(LibFundV2._fundExists(id), "Fund does not exists");
-        _setState(id, LibCollateral.CollateralStates.ReleasingCollateral);
+        _setState(id, LibCollateralV2.CollateralStates.ReleasingCollateral);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
@@ -172,8 +176,8 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @param id The term id
     function emptyCollateralAfterEnd(
         uint id
-    ) external onlyTermOwner(id) atState(id, LibCollateral.CollateralStates.ReleasingCollateral) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+    ) external onlyTermOwner(id) atState(id, LibCollateralV2.CollateralStates.ReleasingCollateral) {
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
         (, , , , , , , , , uint fundEnd) = IGettersV2(address(this)).getFundSummary(id);
@@ -188,7 +192,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
                 ++i;
             }
         }
-        _setState(id, LibCollateral.CollateralStates.Closed);
+        _setState(id, LibCollateralV2.CollateralStates.Closed);
 
         (bool success, ) = payable(msg.sender).call{value: address(this).balance}("");
         require(success);
@@ -196,11 +200,11 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
 
     /// @param _id term id
     /// @param _newState collateral state
-    function _setState(uint _id, LibCollateral.CollateralStates _newState) internal {
-        LibCollateral.Collateral storage collateral = LibCollateral
+    function _setState(uint _id, LibCollateralV2.CollateralStates _newState) internal {
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[_id];
-        LibCollateral.CollateralStates oldState = collateral.state;
+        LibCollateralV2.CollateralStates oldState = collateral.state;
         collateral.state = _newState;
         emit OnCollateralStateChanged(_id, oldState, _newState);
     }
@@ -211,7 +215,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @param _member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
     function _isUnderCollaterized(uint _id, address _member) internal view returns (bool) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[_id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
@@ -243,7 +247,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @return actualDefaulters array of addresses that we will consider as defaulters for the current cycle
     function _actualDefaulters(
         LibFundV2.Fund storage _fund,
-        LibCollateral.Collateral storage _collateral,
+        LibCollateralV2.Collateral storage _collateral,
         address _beneficiary,
         address[] calldata _defaulters
     ) internal view returns (address[] memory) {
@@ -290,7 +294,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @return share The total amount of collateral to be divided among non-beneficiaries
     /// @return expellants array of addresses that were expelled
     function _whoExpelled(
-        LibCollateral.Collateral storage _collateral,
+        LibCollateralV2.Collateral storage _collateral,
         LibTermV2.Term storage _term,
         address _beneficiary,
         address[] memory _defaulters
@@ -355,7 +359,7 @@ contract CollateralFacetV2 is ICollateral, TermOwnable {
     /// @return nonBeneficiaryCounter The total amount of collateral to be divided among non-beneficiaries
     /// @return nonBeneficiaries array of addresses that were expelled
     function _liquidateCollateral(
-        LibCollateral.Collateral storage _collateral,
+        LibCollateralV2.Collateral storage _collateral,
         LibTermV2.Term storage _term
     ) internal view returns (uint, address[] memory) {
         address currentDepositor;

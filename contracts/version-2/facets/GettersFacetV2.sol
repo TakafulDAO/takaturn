@@ -7,7 +7,7 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {LibTermV2} from "../libraries/LibTermV2.sol";
-import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
+import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 import {LibFundV2} from "../libraries/LibFundV2.sol";
 
 contract GettersFacetV2 is IGettersV2 {
@@ -68,7 +68,7 @@ contract GettersFacetV2 is IGettersV2 {
         address depositor,
         uint id
     ) external view returns (bool, uint, uint) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
         return (
@@ -85,9 +85,9 @@ contract GettersFacetV2 is IGettersV2 {
     )
         external
         view
-        returns (bool, LibCollateral.CollateralStates, uint, uint, address[] memory, uint)
+        returns (bool, LibCollateralV2.CollateralStates, uint, uint, address[] memory, uint)
     {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
         return (

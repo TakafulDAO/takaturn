@@ -8,7 +8,7 @@ import {ICollateral} from "../../version-1/interfaces/ICollateral.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
+import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 import {LibFundV2} from "../libraries/LibFundV2.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
 
@@ -75,7 +75,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     function closeFundingPeriod(uint id) external /*onlyTermOwner(id)*/ {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
         // Current cycle minus 1 because we use the previous cycle time as start point then  add contribution period
@@ -199,7 +199,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     /// @param id the id of the term
     function payContribution(uint id) external {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
 
@@ -230,7 +230,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     /// @param participant the address the msg.sender is paying for, the address must be part of the fund
     function payContributionOnBehalfOf(uint id, address participant) external {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
 
@@ -345,7 +345,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     /// @param _id the id of the term
     function _autoPay(uint _id) internal {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[_id];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[_id];
 

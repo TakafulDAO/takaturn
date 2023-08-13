@@ -10,7 +10,7 @@ import {IGettersV2} from "../interfaces/IGettersV2.sol";
 
 import {LibFundV2} from "../libraries/LibFundV2.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
-import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
+import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 
 /// @title Takaturn Term
 /// @author Mohammed Haddouti
@@ -103,11 +103,11 @@ contract TermFacetV2 is ITermV2 {
         LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
         LibTermV2.Term memory term = termStorage.terms[_termId];
 
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[_termId];
 
-        require(LibTermV2._termExists(_termId) && LibCollateral._collateralExists(_termId));
+        require(LibTermV2._termExists(_termId) && LibCollateralV2._collateralExists(_termId));
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
@@ -143,15 +143,15 @@ contract TermFacetV2 is ITermV2 {
 
         // If all the spots are filled, change the collateral
         if (collateral.counterMembers == term.totalParticipants) {
-            collateral.state = LibCollateral.CollateralStates.CycleOngoing;
+            collateral.state = LibCollateralV2.CollateralStates.CycleOngoing;
         }
     }
 
     function _startTerm(uint termId) internal {
-        require(LibTermV2._termExists(termId) && LibCollateral._collateralExists(termId));
+        require(LibTermV2._termExists(termId) && LibCollateralV2._collateralExists(termId));
         LibTermV2.Term memory term = LibTermV2._termStorage().terms[termId];
 
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[termId];
 
@@ -178,7 +178,7 @@ contract TermFacetV2 is ITermV2 {
         // Tell the collateral that the term has started
         ICollateral(address(this)).setStateOwner(
             termId,
-            LibCollateral.CollateralStates.CycleOngoing
+            LibCollateralV2.CollateralStates.CycleOngoing
         );
     }
 
@@ -187,13 +187,13 @@ contract TermFacetV2 is ITermV2 {
         uint _totalParticipants,
         uint _collateralAmount
     ) internal {
-        //require(!LibCollateral._collateralExists(termId), "Collateral already exists");
-        LibCollateral.Collateral storage newCollateral = LibCollateral
+        //require(!LibCollateralV2._collateralExists(termId), "Collateral already exists");
+        LibCollateralV2.Collateral storage newCollateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[_termId];
 
         newCollateral.initialized = true;
-        newCollateral.state = LibCollateral.CollateralStates.AcceptingCollateral;
+        newCollateral.state = LibCollateralV2.CollateralStates.AcceptingCollateral;
         newCollateral.depositors = new address[](_totalParticipants);
         newCollateral.collateralDeposit = _collateralAmount * 10 ** 18; // Convert to Wei;
     }
@@ -201,7 +201,7 @@ contract TermFacetV2 is ITermV2 {
     function _createFund(LibTermV2.Term memory _term) internal {
         require(!LibFundV2._fundExists(_term.termId), "Fund already exists");
         LibFundV2.Fund storage newFund = LibFundV2._fundStorage().funds[_term.termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[_term.termId];
 

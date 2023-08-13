@@ -5,7 +5,7 @@ pragma solidity 0.8.18;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {LibTermV2} from "../libraries/LibTermV2.sol";
-import {LibCollateral} from "../../version-1/libraries/LibCollateral.sol";
+import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 import {LibFundV2} from "../libraries/LibFundV2.sol";
 
 interface IGettersV2 {
@@ -32,7 +32,7 @@ interface IGettersV2 {
     )
         external
         view
-        returns (bool, LibCollateral.CollateralStates, uint, uint, address[] memory, uint);
+        returns (bool, LibCollateralV2.CollateralStates, uint, uint, address[] memory, uint);
 
     function getFundSummary(
         uint id
