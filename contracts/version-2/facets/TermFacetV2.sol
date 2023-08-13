@@ -113,29 +113,34 @@ contract TermFacetV2 is ITermV2 {
 
         require(!collateral.isCollateralMember[msg.sender], "Reentry");
 
-        uint amount = IGettersV2(address(this)).minCollateralToDeposit(term);
-
-        require(msg.value >= amount, "Eth payment too low");
-
-        collateral.collateralMembersBank[msg.sender] += msg.value;
-        collateral.isCollateralMember[msg.sender] = true;
-
         uint depositorsLength = collateral.depositors.length;
         for (uint i; i < depositorsLength; ) {
             if (collateral.depositors[i] == address(0)) {
+                uint amount = IGettersV2(address(this)).minCollateralToDeposit(term, i);
+
+                require(msg.value >= amount, "Eth payment too low");
+
+                collateral.collateralMembersBank[msg.sender] += msg.value;
+                collateral.isCollateralMember[msg.sender] = true;
                 collateral.depositors[i] = msg.sender;
                 collateral.counterMembers++;
+
                 termStorage.participantToTermId[msg.sender].push(_termId);
+
                 emit OnCollateralDeposited(_termId, msg.sender);
-                if (collateral.counterMembers == 1) {
-                    collateral.firstDepositTime = block.timestamp;
-                }
+
                 break;
             }
+
             unchecked {
                 ++i;
             }
         }
+
+        if (collateral.counterMembers == 1) {
+            collateral.firstDepositTime = block.timestamp;
+        }
+
         // If all the spots are filled, change the collateral
         if (collateral.counterMembers == term.totalParticipants) {
             collateral.state = LibCollateral.CollateralStates.CycleOngoing;

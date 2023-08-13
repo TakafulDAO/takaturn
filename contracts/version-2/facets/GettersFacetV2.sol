@@ -53,19 +53,10 @@ contract GettersFacetV2 is IGettersV2 {
     /// @dev The minimum collateral amount is calculated based on the number of participants
     /// @dev The return value should be the minimum msg.value when calling joinTerm
     function minCollateralToDeposit(
-        LibTermV2.Term memory term
-    ) external view returns (uint amount) {
-        LibCollateral.Collateral storage collateral = LibCollateral
-            ._collateralStorage()
-            .collaterals[term.termId];
-
-        if (collateral.counterMembers == 0) {
-            amount = term.maxCollateralEth;
-        } else if (collateral.counterMembers == term.totalParticipants - 1) {
-            amount = term.minCollateralEth;
-        } else {
-            amount = (term.maxCollateralEth + term.minCollateralEth) / 2;
-        }
+        LibTermV2.Term memory term,
+        uint depositorIndex
+    ) external pure returns (uint amount) {
+        amount = (term.contributionAmount * (term.totalParticipants - depositorIndex) * 150) / 100;
     }
 
     // COLLATERAL GETTERS
