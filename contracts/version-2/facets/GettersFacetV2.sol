@@ -50,13 +50,17 @@ contract GettersFacetV2 is IGettersV2 {
 
     /// @notice Called to check the minimum collateral amount to deposit in wei
     /// @return amount the minimum collateral amount to deposit in wei
-    /// @dev The minimum collateral amount is calculated based on the number of participants
+    /// @dev The minimum collateral amount is calculated based on the index on the depositors array
     /// @dev The return value should be the minimum msg.value when calling joinTerm
+    /// @dev C = 1.5 Cp (Tp - I) where C = minimum collateral amount, Cp = contribution amount,
+    /// Tp = total participants, I = depositor index (starts at 0). 1.5
     function minCollateralToDeposit(
         LibTermV2.Term memory term,
         uint depositorIndex
-    ) external pure returns (uint amount) {
-        amount = (term.contributionAmount * (term.totalParticipants - depositorIndex) * 150) / 100;
+    ) external view returns (uint amount) {
+        uint contributionAmountInWei = getToEthConversionRate(term.contributionAmount * 10 ** 18);
+
+        amount = (contributionAmountInWei * (term.totalParticipants - depositorIndex) * 150) / 100;
     }
 
     // COLLATERAL GETTERS
@@ -67,14 +71,15 @@ contract GettersFacetV2 is IGettersV2 {
     function getDepositorCollateralSummary(
         address depositor,
         uint id
-    ) external view returns (bool, uint, uint) {
+    ) external view returns (bool, uint, uint, uint) {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
         return (
             collateral.isCollateralMember[depositor],
             collateral.collateralMembersBank[depositor],
-            collateral.collateralPaymentBank[depositor]
+            collateral.collateralPaymentBank[depositor],
+            collateral.collateralDepositByUser[depositor]
         );
     }
 
@@ -82,11 +87,7 @@ contract GettersFacetV2 is IGettersV2 {
     /// @return collateral: initialized, state, firstDepositTime, counterMembers, depositors, collateralDeposit
     function getCollateralSummary(
         uint id
-    )
-        external
-        view
-        returns (bool, LibCollateralV2.CollateralStates, uint, uint, address[] memory, uint)
-    {
+    ) external view returns (bool, LibCollateralV2.CollateralStates, uint, uint, address[] memory) {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
@@ -95,8 +96,7 @@ contract GettersFacetV2 is IGettersV2 {
             collateral.state, // Current state of Collateral
             collateral.firstDepositTime, // Time when the first deposit was made
             collateral.counterMembers, // Current member count
-            collateral.depositors, // List of depositors
-            collateral.collateralDeposit // Collateral
+            collateral.depositors // List of depositors
         );
     }
 
@@ -114,12 +114,11 @@ contract GettersFacetV2 is IGettersV2 {
             bool,
             LibFundV2.FundStates,
             IERC20,
-            uint,
             address[] memory,
             uint,
             uint,
-            address,
             uint,
+            address,
             uint
         )
     {
@@ -128,13 +127,12 @@ contract GettersFacetV2 is IGettersV2 {
             fund.initialized,
             fund.currentState,
             fund.stableToken,
-            fund.currentCycle,
             fund.beneficiariesOrder,
             fund.fundStart,
+            fund.fundEnd,
             fund.currentCycle,
             fund.lastBeneficiary,
-            fund.totalAmountOfCycles,
-            fund.fundEnd
+            fund.totalAmountOfCycles
         );
     }
 
@@ -231,7 +229,7 @@ contract GettersFacetV2 is IGettersV2 {
     /// @dev should we always deal with in Wei?
     /// @param USDAmount The amount in USD
     /// @return uint converted amount in wei
-    function getToEthConversionRate(uint USDAmount) external view returns (uint) {
+    function getToEthConversionRate(uint USDAmount) public view returns (uint) {
         uint ethPrice = getLatestPrice();
         uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice;
         return USDAmountInEth;
