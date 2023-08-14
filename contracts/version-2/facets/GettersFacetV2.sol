@@ -48,21 +48,6 @@ contract GettersFacetV2 is IGettersV2 {
         }
     }
 
-    /// @notice Called to check the minimum collateral amount to deposit in wei
-    /// @return amount the minimum collateral amount to deposit in wei
-    /// @dev The minimum collateral amount is calculated based on the index on the depositors array
-    /// @dev The return value should be the minimum msg.value when calling joinTerm
-    /// @dev C = 1.5 Cp (Tp - I) where C = minimum collateral amount, Cp = contribution amount,
-    /// Tp = total participants, I = depositor index (starts at 0). 1.5
-    function minCollateralToDeposit(
-        LibTermV2.Term memory term,
-        uint depositorIndex
-    ) external view returns (uint amount) {
-        uint contributionAmountInWei = getToEthConversionRate(term.contributionAmount * 10 ** 18);
-
-        amount = (contributionAmountInWei * (term.totalParticipants - depositorIndex) * 150) / 100;
-    }
-
     // COLLATERAL GETTERS
 
     /// @param depositor the depositor address
@@ -98,6 +83,21 @@ contract GettersFacetV2 is IGettersV2 {
             collateral.counterMembers, // Current member count
             collateral.depositors // List of depositors
         );
+    }
+
+    /// @notice Called to check the minimum collateral amount to deposit in wei
+    /// @return amount the minimum collateral amount to deposit in wei
+    /// @dev The minimum collateral amount is calculated based on the index on the depositors array
+    /// @dev The return value should be the minimum msg.value when calling joinTerm
+    /// @dev C = 1.5 Cp (Tp - I) where C = minimum collateral amount, Cp = contribution amount,
+    /// Tp = total participants, I = depositor index (starts at 0). 1.5
+    function minCollateralToDeposit(
+        LibTermV2.Term memory term,
+        uint depositorIndex
+    ) external view returns (uint amount) {
+        uint contributionAmountInWei = getToEthConversionRate(term.contributionAmount * 10 ** 18);
+
+        amount = (contributionAmountInWei * (term.totalParticipants - depositorIndex) * 150) / 100;
     }
 
     // FUND GETTERS
