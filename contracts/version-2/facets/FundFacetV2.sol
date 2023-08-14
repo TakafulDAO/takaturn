@@ -266,7 +266,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
-        (, , uint collateralPool) = IGettersV2(address(this)).getDepositorCollateralSummary(
+        (, , uint collateralPool, ) = IGettersV2(address(this)).getDepositorCollateralSummary(
             msg.sender,
             id
         );

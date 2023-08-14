@@ -180,7 +180,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
-        (, , , , , , , , , uint fundEnd) = IGettersV2(address(this)).getFundSummary(id);
+        (, , , , , uint fundEnd, , , ) = IGettersV2(address(this)).getFundSummary(id);
         require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
 
         uint depositorsLength = collateral.depositors.length;
@@ -222,11 +222,17 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
 
         uint collateralLimit;
         uint memberCollateralUSD;
-        (, , , uint currentCycle, , , , , , ) = IGettersV2(address(this)).getFundSummary(_id);
+        (, , , , , , uint currentCycle, , uint totalAmountOfCycles) = IGettersV2(address(this))
+            .getFundSummary(_id);
+
         if (!LibFundV2._fundExists(_id)) {
-            collateralLimit = term.totalParticipants * term.contributionAmount * 10 ** 18;
+            // Only check here when starting the term
+            (, , , collateralLimit) = IGettersV2(address(this)).getDepositorCollateralSummary(
+                _member,
+                _id
+            );
         } else {
-            uint remainingCycles = 1 + collateral.counterMembers - currentCycle;
+            uint remainingCycles = 1 + totalAmountOfCycles - currentCycle;
 
             collateralLimit = remainingCycles * term.contributionAmount * 10 ** 18; // 18 decimals
         }
