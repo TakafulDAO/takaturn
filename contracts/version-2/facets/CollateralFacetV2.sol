@@ -108,34 +108,38 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         require(fund.paidThisCycle[msg.sender], "You have not paid this cycle");
         require(fund.currentState == LibFundV2.FundStates.CycleOngoing, "Wrong state");
 
-        uint amount = IGettersV2(address(this)).getToEthConversionRate(
+        uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
+
+        uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
             term.contributionAmount * 10 ** 18
         );
+        uint remainingContribution = contributionAmountWei * remainingCycles;
 
-        if (amount <= collateral.collateralMembersBank[msg.sender]) {
-            collateral.collateralMembersBank[msg.sender] -= amount;
-            (bool success, ) = payable(msg.sender).call{value: amount}("");
-            require(success);
-        } else if (amount <= collateral.collateralPaymentBank[msg.sender]) {
-            collateral.collateralPaymentBank[msg.sender] -= amount;
-            (bool success, ) = payable(msg.sender).call{value: amount}("");
+        uint userSecurity = collateral.collateralDepositByUser[msg.sender]; // todo: or collateralMembersBank?
+
+        uint allowedWithdraw = ((userSecurity - remainingContribution) / remainingCycles) +
+            contributionAmountWei;
+
+        if (allowedWithdraw <= collateral.collateralPaymentBank[msg.sender]) {
+            collateral.collateralPaymentBank[msg.sender] -= allowedWithdraw;
+            (bool success, ) = payable(msg.sender).call{value: allowedWithdraw}("");
             require(success);
         } else {
-            amount =
-                collateral.collateralMembersBank[msg.sender] +
-                collateral.collateralPaymentBank[msg.sender];
-            collateral.collateralMembersBank[msg.sender] = 0;
-            collateral.collateralPaymentBank[msg.sender] = 0;
-            (bool success, ) = payable(msg.sender).call{value: amount}("");
-            require(success);
-            --collateral.counterMembers;
-        }
-
-        emit OnCollateralWithdrawn(id, msg.sender, amount);
-
-        // If last person withdraws, then change state to EOL
-        if (collateral.counterMembers == 0) {
-            _setState(id, LibCollateralV2.CollateralStates.Closed);
+            uint neededAmount = allowedWithdraw - collateral.collateralPaymentBank[msg.sender];
+            if (neededAmount <= collateral.collateralMembersBank[msg.sender]) {
+                collateral.collateralPaymentBank[msg.sender] -= 0;
+                collateral.collateralMembersBank[msg.sender] -= neededAmount;
+                (bool success, ) = payable(msg.sender).call{value: allowedWithdraw}("");
+                require(success);
+            } else {
+                uint amount = collateral.collateralMembersBank[msg.sender] +
+                    collateral.collateralPaymentBank[msg.sender];
+                collateral.collateralMembersBank[msg.sender] = 0;
+                collateral.collateralPaymentBank[msg.sender] = 0;
+                (bool success, ) = payable(msg.sender).call{value: amount}("");
+                require(success);
+                --collateral.counterMembers;
+            }
         }
     }
 
