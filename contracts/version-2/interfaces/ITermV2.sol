@@ -8,7 +8,6 @@ interface ITermV2 {
         uint cycleTime,
         uint contributionAmount,
         uint contributionPeriod,
-        uint collateralAmount,
         address stableTokenAddress
     ) external returns (uint);
 

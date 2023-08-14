@@ -25,14 +25,11 @@ interface IGettersV2 {
     function getDepositorCollateralSummary(
         address depositor,
         uint id
-    ) external view returns (bool, uint, uint);
+    ) external view returns (bool, uint, uint, uint);
 
     function getCollateralSummary(
         uint id
-    )
-        external
-        view
-        returns (bool, LibCollateralV2.CollateralStates, uint, uint, address[] memory, uint);
+    ) external view returns (bool, LibCollateralV2.CollateralStates, uint, uint, address[] memory);
 
     function getFundSummary(
         uint id
@@ -43,12 +40,11 @@ interface IGettersV2 {
             bool,
             LibFundV2.FundStates,
             IERC20,
-            uint,
             address[] memory,
             uint,
             uint,
-            address,
             uint,
+            address,
             uint
         );
 

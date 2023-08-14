@@ -26,7 +26,6 @@ contract TermFacetV2 is ITermV2 {
         uint cycleTime,
         uint contributionAmount,
         uint contributionPeriod,
-        uint collateralAmount,
         address stableTokenAddress
     ) external returns (uint) {
         return
@@ -35,7 +34,6 @@ contract TermFacetV2 is ITermV2 {
                 cycleTime,
                 contributionAmount,
                 contributionPeriod,
-                collateralAmount,
                 stableTokenAddress
             );
     }
@@ -53,7 +51,6 @@ contract TermFacetV2 is ITermV2 {
         uint _cycleTime,
         uint _contributionAmount,
         uint _contributionPeriod,
-        uint _collateralAmount,
         address _stableTokenAddress
     ) internal returns (uint) {
         require(
@@ -62,7 +59,6 @@ contract TermFacetV2 is ITermV2 {
                 _contributionPeriod != 0 &&
                 _totalParticipants != 0 &&
                 _contributionPeriod < _cycleTime &&
-                _collateralAmount != 0 &&
                 _stableTokenAddress != address(0),
             "Invalid inputs"
         );
@@ -72,11 +68,6 @@ contract TermFacetV2 is ITermV2 {
 
         //require(!termStorage.terms[termId].initialized, "Term already exists");
 
-        uint fundAmount = _totalParticipants * _contributionAmount;
-        uint fundAmountInWei = IGettersV2(address(this)).getToEthConversionRate(
-            fundAmount * 10 ** 18
-        );
-
         LibTermV2.Term memory newTerm;
 
         newTerm.termId = termId;
@@ -84,8 +75,6 @@ contract TermFacetV2 is ITermV2 {
         newTerm.cycleTime = _cycleTime;
         newTerm.contributionAmount = _contributionAmount;
         newTerm.contributionPeriod = _contributionPeriod;
-        newTerm.maxCollateralEth = (150 * fundAmountInWei) / 100; // 1.5x more than the fund amount
-        newTerm.minCollateralEth = (110 * fundAmountInWei) / 100; // 1.1x than the fund amount
         newTerm.stableTokenAddress = _stableTokenAddress;
         newTerm.termOwner = msg.sender;
         newTerm.creationTime = block.timestamp;
@@ -94,7 +83,7 @@ contract TermFacetV2 is ITermV2 {
         termStorage.terms[termId] = newTerm;
         termStorage.nextTermId++;
 
-        _createCollateral(termId, _totalParticipants, _collateralAmount);
+        _createCollateral(termId, _totalParticipants);
 
         return termId;
     }
@@ -124,6 +113,7 @@ contract TermFacetV2 is ITermV2 {
                 collateral.isCollateralMember[msg.sender] = true;
                 collateral.depositors[i] = msg.sender;
                 collateral.counterMembers++;
+                collateral.collateralDepositByUser[msg.sender] += msg.value;
 
                 termStorage.participantToTermId[msg.sender].push(_termId);
 
@@ -182,11 +172,7 @@ contract TermFacetV2 is ITermV2 {
         );
     }
 
-    function _createCollateral(
-        uint _termId,
-        uint _totalParticipants,
-        uint _collateralAmount
-    ) internal {
+    function _createCollateral(uint _termId, uint _totalParticipants) internal {
         //require(!LibCollateralV2._collateralExists(termId), "Collateral already exists");
         LibCollateralV2.Collateral storage newCollateral = LibCollateralV2
             ._collateralStorage()
@@ -195,7 +181,6 @@ contract TermFacetV2 is ITermV2 {
         newCollateral.initialized = true;
         newCollateral.state = LibCollateralV2.CollateralStates.AcceptingCollateral;
         newCollateral.depositors = new address[](_totalParticipants);
-        newCollateral.collateralDeposit = _collateralAmount * 10 ** 18; // Convert to Wei;
     }
 
     function _createFund(LibTermV2.Term memory _term) internal {
