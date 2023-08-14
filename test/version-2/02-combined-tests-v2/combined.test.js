@@ -50,7 +50,7 @@ async function executeCycle(
 
     let fund = await takaturnDiamond.getFundSummary(termId)
 
-    let currentCycle = parseInt(fund[3])
+    let currentCycle = parseInt(fund[6])
     // console.log(`Current cycle is: ${currentCycle}`)
 
     while (defaultersAmount != randomDefaulterIndices.length) {
@@ -145,7 +145,7 @@ async function executeCycle(
 
     fund = await takaturnDiamond.getFundSummary(termId)
 
-    let newCycle = parseInt(fund[3])
+    let newCycle = parseInt(fund[6])
 
     //console.log(`We enter to the new cycle. Cycle is: ${newCycle}`)
 
@@ -319,7 +319,6 @@ async function executeCycle(
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      collateralAmount,
                       usdc.address
                   )
 
@@ -327,10 +326,17 @@ async function executeCycle(
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
 
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+
                   for (let i = 1; i <= totalParticipants; i++) {
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          term,
+                          i - 1
+                      )
+
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, { value: fixedCollateralEth })
+                          .joinTerm(termId, { value: entrance })
                   }
 
                   await advanceTimeByDate(1, hour)
@@ -498,7 +504,7 @@ async function executeCycle(
                       await everyonePaysAndCloseCycle(termId)
 
                       const fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let beneficiariesOrder = fund[4]
+                      let beneficiariesOrder = fund[3]
                       let supposedBeneficiary = beneficiariesOrder[0]
                       let actualBeneficiary = fund[7]
 
@@ -566,11 +572,11 @@ async function executeCycle(
                       await takaturnDiamondParticipant_1.startNewCycle(termId)
 
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let beneficiariesOrder = fund[4]
+                      let beneficiariesOrder = fund[3]
                       let firstBeneficiary = beneficiariesOrder[0]
                       await executeCycle(termId, 1, [1])
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      beneficiariesOrder = fund[4]
+                      beneficiariesOrder = fund[3]
                       let firstBeneficiaryAfterDefault = beneficiariesOrder[0]
                       assert.ok(firstBeneficiary == firstBeneficiaryAfterDefault)
                   })
@@ -582,7 +588,7 @@ async function executeCycle(
                       const termId = lastTerm[0]
 
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let beneficiariesOrder = fund[4]
+                      let beneficiariesOrder = fund[3]
                       let supposedBeneficiary = beneficiariesOrder[0]
 
                       // Everyone pays but the first participant, which should be the first beneficiary
@@ -594,7 +600,7 @@ async function executeCycle(
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      beneficiariesOrder = fund[4]
+                      beneficiariesOrder = fund[3]
                       let supposedBeneficiaryAfterDefault = beneficiariesOrder[0]
                       let supposedBeneficiaryNewPosition = beneficiariesOrder[1]
 
@@ -609,7 +615,7 @@ async function executeCycle(
                       const termId = lastTerm[0]
 
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let beneficiariesOrder = fund[4]
+                      let beneficiariesOrder = fund[3]
                       let supposedBeneficiary = beneficiariesOrder[0]
                       // Everyone pays but the first participant, which should be the first beneficiary
                       for (let i = 2; i <= totalParticipants; i++) {
@@ -620,7 +626,7 @@ async function executeCycle(
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      beneficiariesOrder = fund[4]
+                      beneficiariesOrder = fund[3]
                       let supposedBeneficiaryAfterDefault = beneficiariesOrder[0]
 
                       assert.ok(supposedBeneficiary == supposedBeneficiaryAfterDefault)
@@ -773,7 +779,7 @@ async function executeCycle(
                       const termId = lastTerm[0]
 
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let fundStart = fund[5].toNumber()
+                      let fundStart = fund[4].toNumber()
                       let currentCycle = fund[6].toNumber()
 
                       let currentRemainingCycleTime =
@@ -817,7 +823,7 @@ async function executeCycle(
                       const termId = lastTerm[0]
 
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let fundStart = fund[5].toNumber()
+                      let fundStart = fund[4].toNumber()
                       let currentCycle = fund[6].toNumber()
 
                       let contributionEndTimestamp = parseInt(
@@ -906,7 +912,7 @@ async function executeCycle(
 
                           fund = await takaturnDiamondDeployer.getFundSummary(termId)
                           const finishingCycles = fund[8]
-                          currentCycle = fund[3]
+                          currentCycle = fund[6]
 
                           // assert.ok(!wasBeneficiary) // todo: check this
                           assert.ok(!member)
@@ -961,7 +967,7 @@ async function executeCycle(
 
                           fund = await takaturnDiamondDeployer.getFundSummary(termId)
                           const finishingCycles = fund[8]
-                          currentCycle = fund[3]
+                          currentCycle = fund[6]
 
                           assert.ok(wasBeneficiary)
                           assert.ok(!member)
@@ -1003,7 +1009,6 @@ async function executeCycle(
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      collateralAmount,
                       usdc.address
                   )
 
@@ -1011,10 +1016,17 @@ async function executeCycle(
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
 
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+
                   for (let i = 1; i <= totalParticipantsPart3; i++) {
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          term,
+                          i - 1
+                      )
+
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, { value: fixedCollateralEth })
+                          .joinTerm(termId, { value: entrance })
                   }
 
                   await advanceTimeByDate(1, hour)
@@ -1097,7 +1109,6 @@ async function executeCycle(
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      collateralAmount,
                       usdc.address
                   )
 
@@ -1105,10 +1116,17 @@ async function executeCycle(
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
 
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+
                   for (let i = 1; i <= totalParticipantsPart4; i++) {
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          term,
+                          i - 1
+                      )
+
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, { value: fixedCollateralEth })
+                          .joinTerm(termId, { value: entrance })
                   }
 
                   await advanceTimeByDate(1, hour)

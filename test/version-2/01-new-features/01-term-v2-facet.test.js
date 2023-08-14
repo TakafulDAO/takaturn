@@ -94,7 +94,6 @@ const { hour } = require("../../../utils/units")
                   cycleTime,
                   contributionAmount,
                   contributionPeriod,
-                  collateralAmount,
                   usdc.address
               )
           })
@@ -105,44 +104,23 @@ const { hour } = require("../../../utils/units")
                       // Revert if the sequencer is down
                       await sequencer.setSequencerAnswer()
 
+                      const term = await takaturnDiamondDeployer.getTermSummary(0)
                       await expect(
-                          takaturnDiamondParticipant_1.createTerm(
-                              totalParticipants,
-                              cycleTime,
-                              contributionAmount,
-                              contributionPeriod,
-                              collateralAmount,
-                              usdc.address
-                          )
+                          takaturnDiamondDeployer.minCollateralToDeposit(term, 0)
                       ).to.be.revertedWith("Sequencer down")
 
                       // Revert if the has not passed an hour since started
                       await sequencer.setSequencerAnswer()
 
                       await expect(
-                          takaturnDiamondParticipant_1.createTerm(
-                              totalParticipants,
-                              cycleTime,
-                              contributionAmount,
-                              contributionPeriod,
-                              collateralAmount,
-                              usdc.address
-                          )
+                          takaturnDiamondDeployer.minCollateralToDeposit(term, 0)
                       ).to.be.revertedWith("Sequencer starting up")
 
                       // Should not revert if the sequencer is up and has passed an hour since started
                       await advanceTimeByDate(1, hour)
 
-                      await expect(
-                          takaturnDiamondParticipant_1.createTerm(
-                              totalParticipants,
-                              cycleTime,
-                              contributionAmount,
-                              contributionPeriod,
-                              collateralAmount,
-                              usdc.address
-                          )
-                      ).not.to.be.reverted
+                      await expect(takaturnDiamondDeployer.minCollateralToDeposit(term, 0)).not.to
+                          .be.reverted
                   })
 
                   it("Should revert if the oracle does not met requires", async function () {
@@ -150,15 +128,9 @@ const { hour } = require("../../../utils/units")
 
                       await aggregator.setPrice(0)
 
+                      const term = await takaturnDiamondDeployer.getTermSummary(0)
                       await expect(
-                          takaturnDiamondParticipant_1.createTerm(
-                              totalParticipants,
-                              cycleTime,
-                              contributionAmount,
-                              contributionPeriod,
-                              collateralAmount,
-                              usdc.address
-                          )
+                          takaturnDiamondDeployer.minCollateralToDeposit(term, 0)
                       ).to.be.revertedWith("ChainlinkOracle: stale data")
                   })
               })
@@ -173,16 +145,18 @@ const { hour } = require("../../../utils/units")
                           cycleTime,
                           contributionAmount,
                           contributionPeriod,
-                          collateralAmount,
                           usdc.address
                       )
                   }
+
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(0)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(term, 0)
+
                   // Participant 1 joins the the five terms
                   for (let i = 0; i < 5; i++) {
                       const termId = i
-                      // Get the collateral payment deposit
-                      const term = await takaturnDiamondDeployer.getTermSummary(termId)
-                      const entrance = term.maxCollateralEth
+
                       // Join
                       await expect(
                           takaturnDiamond
@@ -218,64 +192,44 @@ const { hour } = require("../../../utils/units")
               it("Last participant pays less than the first one", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
-
                   // Get the collateral payment deposit
                   const term = await takaturnDiamondDeployer.getTermSummary(termId)
-                  const maxEntrance = term.maxCollateralEth
 
-                  const minEntrance = term.minCollateralEth
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          term,
+                          i - 1
+                      )
 
-                  // Participant 1 fail to join the term with less than the max collateral
-                  await expect(
-                      takaturnDiamond
-                          .connect(participant_1)
-                          .joinTerm(termId, { value: minEntrance })
-                  ).to.be.revertedWith("Eth payment too low")
+                      const failedEntrance = BigNumber.from(entrance).sub(1)
 
-                  // Participant 1 joins the term with the max collateral
-                  await expect(
-                      takaturnDiamond
-                          .connect(participant_1)
-                          .joinTerm(termId, { value: maxEntrance })
-                  ).not.to.be.reverted
+                      // Each participant fail to join the term with less than the min collateral
 
-                  for (let i = 2; i < totalParticipants; i++) {
-                      const depositor = accounts[i]
-
-                      // Each from participant 2 to participant 11 fail to join the term with less than the average set collateral
                       await expect(
                           takaturnDiamond
-                              .connect(depositor)
-                              .joinTerm(termId, { value: minEntrance })
+                              .connect(accounts[i])
+                              .joinTerm(termId, { value: failedEntrance })
                       ).to.be.revertedWith("Eth payment too low")
 
-                      const entrance = BigNumber.from(maxEntrance)
-                          .add(BigNumber.from(minEntrance))
-                          .div(2)
-
-                      // Each from participant 2 to participant 11 join the term with the average set collateral
                       await expect(
-                          takaturnDiamond.connect(depositor).joinTerm(termId, { value: entrance })
+                          takaturnDiamond.connect(accounts[i]).joinTerm(termId, { value: entrance })
                       ).not.to.be.reverted
                   }
 
-                  const failedMinEntrance = BigNumber.from(minEntrance).sub(1)
+                  const participant_1_Summary = await takaturnDiamond.getDepositorCollateralSummary(
+                      participant_1.address,
+                      termId
+                  )
+                  const participant_1_Collateral = participant_1_Summary[3]
 
-                  // Participant 12 fail to join the term with less than the min collateral
-                  await expect(
-                      takaturnDiamond
-                          .connect(participant_12)
-                          .joinTerm(termId, { value: failedMinEntrance })
-                  ).to.be.revertedWith("Eth payment too low")
+                  const participant_12_Summary =
+                      await takaturnDiamond.getDepositorCollateralSummary(
+                          participant_12.address,
+                          termId
+                      )
+                  const participant_12_Collateral = participant_12_Summary[3]
 
-                  // Participant 12 joins the term with the min collateral
-                  await expect(
-                      takaturnDiamond
-                          .connect(participant_12)
-                          .joinTerm(termId, { value: minEntrance })
-                  ).not.to.be.reverted
-
-                  assert(maxEntrance > minEntrance)
+                  assert(participant_1_Collateral > participant_12_Collateral)
               })
           })
       })
