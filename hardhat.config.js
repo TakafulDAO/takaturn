@@ -6,6 +6,7 @@ require("hardhat-deploy")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
 require("hardhat-contract-sizer")
+require("hardhat-ethernal")
 
 /******************************************** Private Keys *********************************************/
 const DEPLOYER_PK = process.env.DEPLOYER_PK
@@ -16,22 +17,30 @@ const TESTNET_DEPLOYER_PK = process.env.TESTNET_DEPLOYER_PK
 const DEPLOYER = process.env.DEPLOYER_ADDRESS
 const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 
+/******************************************** Mnemonic **************************************************/
+
+const MNEMONIC = "test test test test test test test test test test test junk" // https://hardhat.org/hardhat-network/docs/reference#accounts
+
 /******************************************* RPC providers **********************************************/
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
 const ARBITRUM_TESTNET_RPC_URL = process.env.ARBITRUM_TESTNET_RPC_URL
-const MUMBAI_TESTNET_RPC_URL = process.env.MUMBAI_TESTNET_RPC_URL
 
 /************************************** Networks Scans *************************************************/
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
-const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY
 
 /************************************** Coinmarketcap **************************************************/
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY
 
-/***************************************** Features*****************************************************/
+/***************************************** Features *****************************************************/
 const FORK = process.env.FORK
 const GAS_REPORT = process.env.GAS_REPORT
 const SIZE = process.env.SIZE
+
+/***************************************** Ethernal *****************************************************/
+const ZAYN = process.env.ZAYN
+const ETHERNAL_API_KEY = process.env.ETHERNAL_API_KEY
+const ETHERNAL_EMAIL = process.env.ETHERNAL_EMAIL
+const ETHERNAL_PASSWORD = process.env.ETHERNAL_PASSWORD
 
 /***************************************** Config ******************************************************/
 
@@ -91,19 +100,19 @@ module.exports = {
             blockConfirmations: 6,
             timeout: 900000,
         },
-        testnet_mumbai: {
-            chainId: 80001,
-            accounts: [DEPLOYER_PK || TESTNET_DEPLOYER_PK],
-            url: MUMBAI_TESTNET_RPC_URL,
-            blockConfirmations: 6,
-            timeout: 300000,
+        zayn: {
+            chainId: 42161,
+            url: "https://arbi.zayn.fi",
+            accounts: {
+                mnemonic: MNEMONIC,
+                count: 20,
+            },
         },
     },
     etherscan: {
         apiKey: {
             arbitrumOne: ETHERSCAN_API_KEY,
             arbitrumGoerli: ETHERSCAN_API_KEY,
-            polygonMumbai: POLYGONSCAN_API_KEY,
         },
     },
     gasReporter: {
@@ -119,10 +128,13 @@ module.exports = {
             mainnet_arbitrum: DEPLOYER,
 
             testnet_arbitrum: TESTNET_DEPLOYER,
-            testnet_mumbai: TESTNET_DEPLOYER,
 
             default: 0,
             localhost: 0,
+        },
+        participant_1: {
+            default: 1,
+            localhost: 1,
         },
         participant_2: {
             default: 2,
@@ -196,5 +208,17 @@ module.exports = {
     contractSizer: {
         alphaSort: true,
         runOnCompile: SIZE === "true",
+    },
+    ethernal: {
+        disabled: ZAYN === "true",
+        disableSync: false,
+        uploadAst: false,
+        email: ETHERNAL_EMAIL,
+        password: ETHERNAL_PASSWORD,
+        apiToken: ETHERNAL_API_KEY,
+        workspace: "Zayn Arbitrum",
+        skipFirstBlock: true,
+        verbose: false,
+        syncContractData: true,
     },
 }

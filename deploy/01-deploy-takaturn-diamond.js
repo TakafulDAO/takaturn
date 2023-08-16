@@ -1,10 +1,11 @@
-const { network } = require("hardhat")
+const { network, ethernal } = require("hardhat")
 const {
     networkConfig,
     developmentChains,
     VERIFICATION_BLOCK_CONFIRMATIONS,
     isDevnet,
     isFork,
+    isZayn,
     isMainnet,
     isTestnet,
 } = require("../utils/_networks")
@@ -22,12 +23,12 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("01. Deploying Takaturn Diamond...")
 
-    if (isMainnet || isTestnet || isFork) {
+    if (isMainnet || isTestnet || (isFork && !isZayn) || (isZayn && !isFork)) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
         sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
     }
 
-    if (isDevnet && !isFork) {
+    if (isDevnet && !isFork && !isZayn) {
         const ethUsdAggregator = await deployments.get("MockV3Aggregator")
         ethUsdPriceFeedAddress = ethUsdAggregator.address
 
@@ -51,6 +52,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         },
         waitConfirmations: waitBlockConfirmations,
     })
+
+    if (isZayn && !isFork) {
+        await ethernal.push({
+            name: "TakaturnDiamond_DiamondProxy",
+            address: takaturnDiamond.address,
+        })
+    }
 
     log("01. Diamond Deployed!")
     log("==========================================================================")

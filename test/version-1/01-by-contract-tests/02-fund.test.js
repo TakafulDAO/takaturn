@@ -1,6 +1,12 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
-const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
+const {
+    developmentChains,
+    isDevnet,
+    isFork,
+    networkConfig,
+    isZayn,
+} = require("../../../utils/_networks")
 
 const { advanceTimeByDate, toWei } = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
@@ -67,7 +73,7 @@ const { hour } = require("../../../utils/units")
               await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               usdc = await ethers.getContract("FiatTokenV2_1")
-              if (isDevnet && !isFork) {
+              if (isDevnet && !isFork && !isZayn) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
               } else {
                   const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]

@@ -7,6 +7,7 @@ const {
     isTestnet,
     isDevnet,
     isFork,
+    isZayn,
 } = require("../utils/_networks")
 const { verify } = require("../scripts/verify")
 
@@ -22,12 +23,12 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("02. Upgrading Takaturn Diamond...")
 
-    if (isMainnet || isTestnet || isFork) {
+    if (isMainnet || isTestnet || (isFork && !isZayn) || (isZayn && !isFork)) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
         sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
     }
 
-    if (isDevnet && !isFork) {
+    if (isDevnet && !isFork && !isZayn) {
         const ethUsdAggregator = await deployments.get("MockV3Aggregator")
         ethUsdPriceFeedAddress = ethUsdAggregator.address
 

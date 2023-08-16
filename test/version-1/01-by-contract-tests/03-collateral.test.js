@@ -1,6 +1,12 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
-const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
+const {
+    developmentChains,
+    isDevnet,
+    isFork,
+    networkConfig,
+    isZayn,
+} = require("../../../utils/_networks")
 const {
     CollateralStates,
     getCollateralStateFromIndex,
@@ -51,7 +57,7 @@ const withdrawCollateral = async (termId, address) => {
               await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               //   usdc = await ethers.getContract("FiatTokenV2_1")
-              if (isDevnet && !isFork) {
+              if (isDevnet && !isFork && !isZayn) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
@@ -113,7 +119,7 @@ const withdrawCollateral = async (termId, address) => {
               })
 
               it("checks if a user is under collaterized", async () => {
-                  if (!isFork) {
+                  if (!isFork && !isZayn) {
                       await advanceTimeByDate(1, hour)
                   }
                   const term = await takaturnDiamondDeployer.getTermsId()
@@ -192,7 +198,7 @@ const withdrawCollateral = async (termId, address) => {
 
           describe("Collaterals & Fund Integration", () => {
               beforeEach(async () => {
-                  if (!isFork) {
+                  if (!isFork && !isZayn) {
                       await advanceTimeByDate(1, hour)
                   }
                   const termId = await takaturnDiamondDeployer.getTermsId()
@@ -211,7 +217,7 @@ const withdrawCollateral = async (termId, address) => {
 
                   await takaturnDiamondParticipant_1.startTerm(lastTermId)
 
-                  if (isFork) {
+                  if (isFork || isZayn) {
                       const usdcWhale = networkConfig[chainId]["usdcWhale"]
                       await impersonateAccount(usdcWhale)
                       const whale = await ethers.getSigner(usdcWhale)

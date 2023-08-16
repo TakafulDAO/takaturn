@@ -1,6 +1,12 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
-const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
+const {
+    developmentChains,
+    isDevnet,
+    isFork,
+    isZayn,
+    networkConfig,
+} = require("../../../utils/_networks")
 const { constants } = require("@openzeppelin/test-helpers")
 const {
     CollateralStates,
@@ -66,7 +72,7 @@ const { hour, erc20Units } = require("../../../utils/units")
               await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               //   usdc = await ethers.getContract("FiatTokenV2_1")
-              if (isDevnet && !isFork) {
+              if (isDevnet && !isFork && !isZayn) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
@@ -445,8 +451,6 @@ const { hour, erc20Units } = require("../../../utils/units")
                   it("Start term", async function () {
                       const termId = await takaturnDiamondDeployer.getTermsId()
                       const lastTermId = termId[0]
-
-                      await advanceTimeByDate(1, hour)
 
                       await expect(takaturnDiamondParticipant_1.startTerm(lastTermId))
                           .to.emit(takaturnDiamond, "OnTermStart")

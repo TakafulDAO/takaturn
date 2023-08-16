@@ -1,5 +1,11 @@
 const { assert, expect } = require("chai")
-const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
+const {
+    developmentChains,
+    isDevnet,
+    isFork,
+    networkConfig,
+    isZayn,
+} = require("../../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const {
     FundStates,
@@ -218,7 +224,7 @@ async function executeCycle(
               await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
 
-              if (isDevnet && !isFork) {
+              if (isDevnet && !isFork && !isZayn) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
                   sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
@@ -241,7 +247,7 @@ async function executeCycle(
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
 
-              if (isFork) {
+              if (isFork && !isZayn) {
                   const usdcWhale = networkConfig[chainId]["usdcWhale"]
                   await impersonateAccount(usdcWhale)
                   const whale = await ethers.getSigner(usdcWhale)
@@ -853,7 +859,7 @@ async function executeCycle(
                   })
               })
 
-              if (!isFork) {
+              if (!isFork && !isZayn) {
                   describe("Combined Tests Part 2", function () {
                       it("reduces the no. of cycles if a non-beneficiary user is expelled", async function () {
                           this.timeout(200000)

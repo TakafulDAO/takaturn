@@ -1,6 +1,12 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
-const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
+const {
+    developmentChains,
+    isDevnet,
+    isFork,
+    networkConfig,
+    isZayn,
+} = require("../../../utils/_networks")
 const { toWei, advanceTimeByDate } = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
 const { hour } = require("../../../utils/units")
@@ -61,7 +67,7 @@ const { hour } = require("../../../utils/units")
               // Deploy contracts
               await deployments.fixture(["takaturn_upgrade"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
-              if (isDevnet && !isFork) {
+              if (isDevnet && !isFork && !isZayn) {
                   aggregator = await ethers.getContract("MockV3Aggregator")
                   sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
@@ -84,7 +90,7 @@ const { hour } = require("../../../utils/units")
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
 
-              if (!isFork) {
+              if (!isFork && !isZayn) {
                   await advanceTimeByDate(1, hour)
               }
 
@@ -98,7 +104,7 @@ const { hour } = require("../../../utils/units")
               )
           })
 
-          if (!isFork) {
+          if (!isFork && !isZayn) {
               describe("Sequencer and oracle unit tests", function () {
                   it("Should revert if the sequencer does not met requires", async function () {
                       // Revert if the sequencer is down
