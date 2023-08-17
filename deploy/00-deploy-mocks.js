@@ -53,24 +53,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             "00. You are deploying to a local network, you'll need a local network running to interact"
         )
         log("==========================================================================")
+        log("00. Mocks Deployed!")
+        log("==========================================================================")
     }
-
-    // if (isDevnet) {
-    //     log("==========================================================================")
-    //     log("00. Deploying USDC mock...")
-
-    //     const usdc = await deploy("FiatTokenV2_1", {
-    //         contract: "FiatTokenV2_1",
-    //         from: usdcOwner,
-    //         log: true,
-    //         args: [],
-    //     })
-
-    //     log("00. USDC mock Deployed!...")
-    //     log("==========================================================================")
-    // }
-    log("00. Mocks Deployed!")
-    log("==========================================================================")
 }
 
 module.exports.tags = ["all", "mocks", "takaturn_deploy", "takaturn_upgrade"]

@@ -219,6 +219,5 @@ module.exports = {
         workspace: "Zayn Arbitrum",
         skipFirstBlock: true,
         verbose: false,
-        syncContractData: true,
     },
 }
