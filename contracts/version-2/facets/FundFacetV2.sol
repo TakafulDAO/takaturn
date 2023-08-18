@@ -26,7 +26,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
     event OnFundStateChanged(uint indexed termId, LibFundV2.FundStates indexed newState); // Emits when state has updated
     event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
-    event OnBeneficiarySelected(uint indexed termId, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
+    event OnBeneficiaryAwarded(uint indexed termId, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
     event OnFundWithdrawn(uint indexed termId, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
     event OnParticipantDefaulted(uint indexed termId, address indexed defaulter); // Emits when a participant didn't pay this cycle's contribution
     event OnParticipantUndefaulted(uint indexed termId, address indexed undefaulter); // Emits when a participant was a defaulter before but started paying on time again for this cycle
@@ -507,7 +507,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         fund.beneficiariesPool[beneficiary] = term.contributionAmount * paidCount * 10 ** 6;
         fund.lastBeneficiary = beneficiary;
 
-        emit OnBeneficiarySelected(_id, beneficiary);
+        emit OnBeneficiaryAwarded(_id, beneficiary);
         _setState(_id, LibFundV2.FundStates.CycleOngoing);
     }
 
