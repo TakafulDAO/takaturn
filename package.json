@@ -38,7 +38,6 @@
     "n": "yarn hardhat node",
     "deploy": "yarn hardhat deploy",
     "deploy:local": "yarn hardhat deploy --tags takaturn_deploy",
-    "deploy:upgrade": "yarn hardhat deploy --tags takaturn_upgrade",
     "deploy:mainnet": "yarn hardhat deploy --network mainnet_arbitrum --tags takaturn_deploy",
     "deploy:goerli": "yarn hardhat deploy --network testnet_arbitrum --tags takaturn_deploy",
     "upgrade:local": "yarn hardhat deploy --tags takaturn_upgrade",
