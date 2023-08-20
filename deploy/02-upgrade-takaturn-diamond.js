@@ -49,7 +49,13 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         owner: diamondOwner,
         args: args,
         log: true,
-        facets: ["CollateralFacetV2", "FundFacetV2", "TermFacetV2", "GettersFacetV2"],
+        facets: [
+            "CollateralFacetV2",
+            "FundFacetV2",
+            "TermFacetV2",
+            "GettersFacetV2",
+            "YGFacetZaynFi",
+        ],
         execute: {
             contract: "DiamondInitV2",
             methodName: "init",
