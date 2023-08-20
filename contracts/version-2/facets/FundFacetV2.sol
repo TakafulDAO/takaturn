@@ -257,6 +257,10 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     /// @param id the id of the term
     function withdrawFund(uint id) external {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
+            ._collateralStorage()
+            .collaterals[id];
         // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
         // any of the past cycles.
 
@@ -266,29 +270,39 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
+        bool hasFrozenPool = fund.beneficiariesFrozenPool[msg.sender] > 0;
         (, , uint collateralPool, ) = IGettersV2(address(this)).getDepositorCollateralSummary(
             msg.sender,
             id
         );
         bool hasCollateralPool = collateralPool > 0;
-        require(hasFundPool || hasCollateralPool, "Nothing to withdraw");
+        require(hasFundPool || hasFrozenPool || hasCollateralPool, "Nothing to withdraw");
 
         if (hasFundPool) {
-            // Get the amount this beneficiary can withdraw
-            uint transferAmount = fund.beneficiariesPool[msg.sender];
-            uint contractBalance = fund.stableToken.balanceOf(address(this));
-            if (contractBalance < transferAmount) {
-                revert InsufficientBalance({available: contractBalance, required: transferAmount});
-            } else {
-                fund.beneficiariesPool[msg.sender] = 0;
-                bool success = fund.stableToken.transfer(msg.sender, transferAmount);
-                require(success, "Transfer failed");
-            }
-            emit OnFundWithdrawn(id, msg.sender, transferAmount);
+            _transferPoolToBeneficiary(id, msg.sender);
         }
 
         if (hasCollateralPool) {
             ICollateralV2(address(this)).withdrawReimbursement(id, msg.sender);
+        }
+
+        if (hasFrozenPool) {
+            uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
+            uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
+                term.contributionAmount * 10 ** 18
+            );
+
+            uint neededCollateral = (150 * contributionAmountWei * remainingCycles) / 100; // 1.5 x RCC
+
+            require(
+                collateral.collateralMembersBank[fund.lastBeneficiary] >= neededCollateral,
+                "Need at least 1.5RCC collateral to unfroze your fund"
+            );
+
+            fund.beneficiariesPool[msg.sender] += fund.beneficiariesFrozenPool[msg.sender];
+            fund.beneficiariesFrozenPool[msg.sender] = 0;
+
+            _transferPoolToBeneficiary(id, msg.sender);
         }
     }
 
@@ -549,5 +563,24 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         fund.fundEnd = block.timestamp;
         _setState(_id, LibFundV2.FundStates.FundClosed);
         ICollateralV2(address(this)).releaseCollateral(_id);
+    }
+
+    /// @notice Internal function to transfer the pool to the beneficiary
+    /// @param _id The id of the term
+    /// @param _beneficiary The address of the beneficiary
+    function _transferPoolToBeneficiary(uint _id, address _beneficiary) internal {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[_id];
+
+        // Get the amount this beneficiary can withdraw
+        uint transferAmount = fund.beneficiariesPool[msg.sender];
+        uint contractBalance = fund.stableToken.balanceOf(address(this));
+        if (contractBalance < transferAmount) {
+            revert InsufficientBalance({available: contractBalance, required: transferAmount});
+        } else {
+            fund.beneficiariesPool[msg.sender] = 0;
+            bool success = fund.stableToken.transfer(msg.sender, transferAmount);
+            require(success, "Transfer failed");
+        }
+        emit OnFundWithdrawn(_id, _beneficiary, transferAmount);
     }
 }

@@ -214,7 +214,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             term.contributionAmount * 10 ** 18
         );
 
-        uint neededCollateral = (120 * contributionAmountWei * remainingCycles) / 100; // 1.2RCC
+        uint neededCollateral = (120 * contributionAmountWei * remainingCycles) / 100; // 1.2 x RCC
 
         return (collateral.collateralMembersBank[fund.lastBeneficiary] < neededCollateral);
     }
