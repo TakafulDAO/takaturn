@@ -503,9 +503,16 @@ contract FundFacetV2 is IFundV2, TermOwnable {
             }
         }
 
-        // Award the beneficiary with the pool and update the lastBeneficiary
-        fund.beneficiariesPool[beneficiary] = term.contributionAmount * paidCount * 10 ** 6;
+        // update the lastBeneficiary and Award the beneficiary with the pool or freeze the pot
         fund.lastBeneficiary = beneficiary;
+        if (ICollateralV2(address(this)).freezePot(term)) {
+            fund.beneficiariesFrozenPool[beneficiary] =
+                term.contributionAmount *
+                paidCount *
+                10 ** 6;
+        } else {
+            fund.beneficiariesPool[beneficiary] = term.contributionAmount * paidCount * 10 ** 6;
+        }
 
         emit OnBeneficiaryAwarded(_id, beneficiary);
         _setState(_id, LibFundV2.FundStates.CycleOngoing);

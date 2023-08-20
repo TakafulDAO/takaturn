@@ -8,6 +8,7 @@ pragma solidity 0.8.18;
 /// @dev v2.0 (post-deploy)
 
 import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
+import {LibTermV2} from "../libraries/LibTermV2.sol";
 
 interface ICollateralV2 {
     // Function cannot be called at this time.
@@ -42,8 +43,5 @@ interface ICollateralV2 {
     /// @notice allow the owner to empty the Collateral after 180 days
     function emptyCollateralAfterEnd(uint id) external;
 
-    // function getDepositorSummary(
-    //     uint id,
-    //     address participant
-    // ) external view returns (uint, uint, bool);
+    function freezePot(LibTermV2.Term memory term) external returns (bool);
 }
