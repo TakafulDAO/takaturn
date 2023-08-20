@@ -9,7 +9,7 @@ library LibTermV2 {
     struct TermConsts {
         uint sequencerStartupTime;
         address sequencerUptimeFeedAddress;
-        address aggregatorAddress;
+        mapping(string => address) aggregatorsAddresses; // "ETH/USD" => address , "USD/USDC" => address
     }
 
     struct Term {

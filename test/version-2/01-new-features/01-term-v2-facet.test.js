@@ -68,7 +68,7 @@ const { hour } = require("../../../utils/units")
               await deployments.fixture(["takaturn_upgrade"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               if (isDevnet && !isFork && !isZayn) {
-                  aggregator = await ethers.getContract("MockV3Aggregator")
+                  aggregator = await ethers.getContract("MockEthUsdAggregator")
                   sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {

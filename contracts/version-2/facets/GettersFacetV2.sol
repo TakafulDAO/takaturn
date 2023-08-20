@@ -209,20 +209,37 @@ contract GettersFacetV2 is IGettersV2 {
         );
 
         (
-            uint80 roundID,
-            int256 price,
+            uint80 roundID_ethUSD,
+            int256 price_ethUSD,
             ,
-            /*uint startedAt*/ uint256 timeStamp,
-            uint80 answeredInRound
-        ) = AggregatorV3Interface(termConsts.aggregatorAddress).latestRoundData(); //8 decimals
+            /*uint startedAt*/ uint256 timeStamp_ethUSD,
+            uint80 answeredInRound_ethUSD
+        ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["ETH/USD"]).latestRoundData(); //8 decimals
 
         // Check if chainlink data is not stale or incorrect
         require(
-            timeStamp != 0 && answeredInRound >= roundID && price > 0,
+            timeStamp_ethUSD != 0 && answeredInRound_ethUSD >= roundID_ethUSD && price_ethUSD > 0,
             "ChainlinkOracle: stale data"
         );
 
-        return uint(price * 10 ** 10); //18 decimals
+        (
+            uint80 roundID_usdUSDC,
+            int256 price_usdUSDC,
+            ,
+            /*uint startedAt*/ uint256 timeStamp_usdUSDC,
+            uint80 answeredInRound_usdUSDC
+        ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["USD/USDC"]).latestRoundData(); //8 decimals
+
+        require(
+            timeStamp_usdUSDC != 0 &&
+                answeredInRound_usdUSDC >= roundID_usdUSDC &&
+                price_usdUSDC > 0,
+            "ChainlinkOracle: stale data"
+        );
+
+        int256 ethUSDC = price_ethUSD / price_usdUSDC;
+
+        return uint(ethUSDC * 10 ** 18); //18 decimals
     }
 
     /// @notice Gets the conversion rate of an amount in USD to ETH

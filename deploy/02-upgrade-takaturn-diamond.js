@@ -10,6 +10,7 @@ const {
     isZayn,
 } = require("../utils/_networks")
 const { verify } = require("../scripts/verify")
+const { usdc } = require("hardhat-helpers/dist/mainnet")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { diamond, log } = deployments
@@ -25,19 +26,23 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     if (isMainnet || isTestnet || (isFork && !isZayn) || (isZayn && !isFork)) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
+        usdcUsdPriceFeedAddress = networkConfig[chainId]["usdcUsdPriceFeed"]
         sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
     }
 
     if (isDevnet && !isFork && !isZayn) {
-        const ethUsdAggregator = await deployments.get("MockV3Aggregator")
+        const ethUsdAggregator = await deployments.get("MockEthUsdAggregator")
         ethUsdPriceFeedAddress = ethUsdAggregator.address
+
+        const usdcUsdAggregator = await deployments.get("MockUsdcUsdAggregator")
+        usdcUsdPriceFeedAddress = usdcUsdAggregator.address
 
         const sequencer = await deployments.get("MockSequencer")
         sequencerUptimeFeedAddress = sequencer.address
     }
 
     const args = []
-    const initArgs = [ethUsdPriceFeedAddress, sequencerUptimeFeedAddress]
+    const initArgs = [ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress, sequencerUptimeFeedAddress]
 
     const takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
         from: deployer,

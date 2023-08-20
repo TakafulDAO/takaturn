@@ -12,19 +12,32 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         log("==========================================================================")
         log("00. Local network detected! Deploying mocks...")
         log("==========================================================================")
-        log("00. Deploying MockV3Aggregator...")
+        log("00. Deploying MockEthUsdAggregator...")
 
         const decimals = networkConfig[chainId]["decimals"]
-        const initialPrice = networkConfig[chainId]["initialPrice"]
+        const initialPriceEthUsd = networkConfig[chainId]["initialPriceEthUsd"]
 
-        await deploy("MockV3Aggregator", {
+        await deploy("MockEthUsdAggregator", {
             contract: "MockV3Aggregator",
             from: deployer,
             log: true,
-            args: [decimals, initialPrice],
+            args: [decimals, initialPriceEthUsd],
         })
 
-        log("00. MockV3Aggregator Deployed!...")
+        log("00. MockEthUsdAggregator Deployed!...")
+        log("==========================================================================")
+        log("00. Deploying MockUsdcUsdAggregator...")
+
+        const initialPriceUsdcUsd = networkConfig[chainId]["initialPriceUsdcUsd"]
+
+        await deploy("MockUsdcUsdAggregator", {
+            contract: "MockV3Aggregator",
+            from: deployer,
+            log: true,
+            args: [decimals, initialPriceUsdcUsd],
+        })
+
+        log("00. MockUsdcUsdAggregator Deployed!...")
         log("==========================================================================")
         log("00. Deploying MockSequencer...")
 
@@ -32,14 +45,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             contract: "MockSequencer",
             from: deployer,
             log: true,
-            args: [decimals, initialPrice],
+            args: [decimals, initialPriceEthUsd],
         })
 
         log("00. MockSequencer Deployed!...")
         log("==========================================================================")
         log("00. Deploying USDC mock...")
 
-        const usdc = await deploy("FiatTokenV2_1", {
+        await deploy("FiatTokenV2_1", {
             contract: "FiatTokenV2_1",
             from: usdcOwner,
             log: true,

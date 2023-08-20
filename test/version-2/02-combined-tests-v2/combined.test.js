@@ -230,7 +230,7 @@ async function executeCycle(
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
 
               if (isDevnet && !isFork && !isZayn) {
-                  aggregator = await ethers.getContract("MockV3Aggregator")
+                  aggregator = await ethers.getContract("MockEthUsdAggregator")
                   sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
