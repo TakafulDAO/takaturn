@@ -478,10 +478,17 @@ contract FundFacetV2 is IFundV2, TermOwnable {
 
         // Request contribution from the collateral for those who have to pay this cycle and haven't paid
         if (EnumerableSet.length(fund._defaulters) > 0) {
-            address[] memory expellants = ICollateralV2(address(this)).requestContribution(
-                _id,
+            address[] memory actualDefaulters = _actualDefaulters(
+                fund,
+                LibCollateralV2._collateralStorage().collaterals[_id],
                 beneficiary,
                 EnumerableSet.values(fund._defaulters)
+            );
+
+            address[] memory expellants = ICollateralV2(address(this)).requestContribution(
+                term,
+                beneficiary,
+                actualDefaulters
             );
 
             uint expellantsLength = expellants.length;
@@ -507,6 +514,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
 
         // Update the mapping to track who's been beneficiary
         fund.isBeneficiary[beneficiary] = true;
+        fund.lastBeneficiary = beneficiary;
 
         // Get the amount of participants that paid this cycle, and add that amount to the beneficiary's pool
         uint paidCount;
@@ -517,8 +525,8 @@ contract FundFacetV2 is IFundV2, TermOwnable {
             }
         }
 
-        // update the lastBeneficiary and Award the beneficiary with the pool or freeze the pot
-        fund.lastBeneficiary = beneficiary;
+        // Award the beneficiary with the pool or freeze the pot
+
         if (ICollateralV2(address(this)).freezePot(term)) {
             fund.beneficiariesFrozenPool[beneficiary] =
                 term.contributionAmount *
@@ -530,6 +538,56 @@ contract FundFacetV2 is IFundV2, TermOwnable {
 
         emit OnBeneficiaryAwarded(_id, beneficiary);
         _setState(_id, LibFundV2.FundStates.CycleOngoing);
+    }
+
+    /// @notice Called to get the defaulters
+    /// @dev Beneficiary is never considered a defaulter
+    /// @dev If the beneficiary was previously expelled, then we only consider previous beneficiaries
+    /// @param _fund Fund storage
+    /// @param _collateral Collateral storage
+    /// @param _beneficiary Address that will be receiving the cycle pot
+    /// @param _defaulters Complete defaulters array that will be filtered
+    /// @return actualDefaulters array of addresses that we will consider as defaulters for the current cycle
+    function _actualDefaulters(
+        LibFundV2.Fund storage _fund,
+        LibCollateralV2.Collateral storage _collateral,
+        address _beneficiary,
+        address[] memory _defaulters
+    ) internal view returns (address[] memory) {
+        address[] memory actualDefaulters = new address[](_defaulters.length);
+        address[] memory beneficiariesOrder = _fund.beneficiariesOrder; // We check on the beneficiariesOrder array
+
+        uint256 beneficiariesLength = beneficiariesOrder.length;
+        uint256 defaultersLength = _defaulters.length;
+
+        // If the beneficiary is not a participant neither a collateral member he is expelled
+        bool expelledBeneficiary = !_fund.isParticipant[_beneficiary] &&
+            !_collateral.isCollateralMember[_beneficiary];
+
+        if (expelledBeneficiary) {
+            for (uint i; i < beneficiariesLength; ++i) {
+                // When we find the first non beneficiary we exit the loop. The first one must be the beneficiary
+                if (!_fund.isBeneficiary[beneficiariesOrder[i]]) {
+                    break;
+                }
+                for (uint j; j < defaultersLength; ++j) {
+                    // We check if the previous beneficiary is on the defaulter array
+                    if (beneficiariesOrder[i] == _defaulters[j]) {
+                        actualDefaulters[i] = _defaulters[j];
+                    }
+                }
+            }
+        } else {
+            // We don't consider the beneficiary a defaulter
+            for (uint i; i < defaultersLength; ++i) {
+                if (_defaulters[i] == _beneficiary) {
+                    continue;
+                }
+                actualDefaulters[i] = _defaulters[i];
+            }
+        }
+
+        return actualDefaulters;
     }
 
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.

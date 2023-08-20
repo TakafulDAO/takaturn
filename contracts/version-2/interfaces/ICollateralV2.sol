@@ -21,7 +21,7 @@ interface ICollateralV2 {
     /// @param beneficiary Address that was randomly selected for the current cycle
     /// @param defaulters Address that was randomly selected for the current cycle
     function requestContribution(
-        uint id,
+        LibTermV2.Term memory term,
         address beneficiary,
         address[] calldata defaulters
     ) external returns (address[] memory);

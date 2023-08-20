@@ -45,37 +45,30 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
 
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
-    /// @param id term id
     /// @param beneficiary Address that will be receiving the cycle pot
     /// @param defaulters Address that was randomly selected for the current cycle
     /// @return expellants array of addresses that were expelled
     function requestContribution(
-        uint id,
+        LibTermV2.Term memory term,
         address beneficiary,
         address[] calldata defaulters
     )
         external
-        atState(id, LibCollateralV2.CollateralStates.CycleOngoing)
+        atState(term.termId, LibCollateralV2.CollateralStates.CycleOngoing)
         returns (address[] memory)
     {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[id];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-
-        address[] memory actualDefaulters = _actualDefaulters(
-            fund,
-            collateral,
-            beneficiary,
-            defaulters
-        );
+            .collaterals[term.termId];
+        // LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[term.termId];
 
         (uint share, address[] memory expellants) = _whoExpelled(
             collateral,
             term,
+            fund,
             beneficiary,
-            actualDefaulters
+            defaulters
         );
 
         (uint nonBeneficiaryCounter, address[] memory nonBeneficiaries) = _liquidateCollateral(
@@ -83,7 +76,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             term
         );
 
-        // Finally, divide the share equally among non-beneficiaries
+        // Finally, divide the share equally among non-beneficiaries //todo: check if this is still needed
         if (nonBeneficiaryCounter > 0) {
             // This case can only happen when what?
             share = share / nonBeneficiaryCounter;
@@ -264,56 +257,6 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         return (memberCollateralUSD < collateralLimit);
     }
 
-    /// @notice Called to get the defaulters
-    /// @dev Beneficiary is never considered a defaulter
-    /// @dev If the beneficiary was previously expelled, then we only consider previous beneficiaries
-    /// @param _fund Fund storage
-    /// @param _collateral Collateral storage
-    /// @param _beneficiary Address that will be receiving the cycle pot
-    /// @param _defaulters Complete defaulters array that will be filtered
-    /// @return actualDefaulters array of addresses that we will consider as defaulters for the current cycle
-    function _actualDefaulters(
-        LibFundV2.Fund storage _fund,
-        LibCollateralV2.Collateral storage _collateral,
-        address _beneficiary,
-        address[] calldata _defaulters
-    ) internal view returns (address[] memory) {
-        address[] memory actualDefaulters = new address[](_defaulters.length);
-        address[] memory beneficiariesOrder = _fund.beneficiariesOrder; // We check on the beneficiariesOrder array
-
-        uint256 beneficiariesLength = beneficiariesOrder.length;
-        uint256 defaultersLength = _defaulters.length;
-
-        // If the beneficiary is not a participant neither a collateral member he is expelled
-        bool expelledBeneficiary = !_fund.isParticipant[_beneficiary] &&
-            !_collateral.isCollateralMember[_beneficiary];
-
-        if (expelledBeneficiary) {
-            for (uint i; i < beneficiariesLength; ++i) {
-                // When we find the first non beneficiary we exit the loop. The first one must be the beneficiary
-                if (!_fund.isBeneficiary[beneficiariesOrder[i]]) {
-                    break;
-                }
-                for (uint j; j < defaultersLength; ++j) {
-                    // We check if the previous beneficiary is on the defaulter array
-                    if (beneficiariesOrder[i] == _defaulters[j]) {
-                        actualDefaulters[i] = _defaulters[j];
-                    }
-                }
-            }
-        } else {
-            // We don't consider the beneficiary a defaulter
-            for (uint i; i < defaultersLength; ++i) {
-                if (_defaulters[i] == _beneficiary) {
-                    continue;
-                }
-                actualDefaulters[i] = _defaulters[i];
-            }
-        }
-
-        return actualDefaulters;
-    }
-
     /// @param _collateral Collateral storage
     /// @param _term Term storage
     /// @param _beneficiary Address that will be receiving the cycle pot
@@ -322,7 +265,8 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
     /// @return expellants array of addresses that were expelled
     function _whoExpelled(
         LibCollateralV2.Collateral storage _collateral,
-        LibTermV2.Term storage _term,
+        LibTermV2.Term memory _term,
+        LibFundV2.Fund storage _fund,
         address _beneficiary,
         address[] memory _defaulters
     ) internal returns (uint, address[] memory) {
@@ -346,27 +290,31 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 (wasBeneficiary && _isUnderCollaterized(_term.termId, _defaulters[i])) ||
                 (currentDefaulterBank < contributionAmountWei)
             ) {
-                // If enter this statement through the second condition, then the defaulter may not be a beneficiary
-                // In that case
-                if (!wasBeneficiary) {
-                    // Nothing to share, reimburse all the securities left
-                    // share = 0;
-                    uint amount = _collateral.collateralMembersBank[_defaulters[i]];
-                    _collateral.collateralPaymentBank[_defaulters[i]] += amount;
+                if (_fund.beneficiariesFrozenPool[_defaulters[i]] >= _term.contributionAmount) {
+                    _fund.beneficiariesFrozenPool[_defaulters[i]] -= _term.contributionAmount;
+                    _fund.beneficiariesPool[_beneficiary] += _term.contributionAmount;
                 } else {
-                    share += currentDefaulterBank;
+                    // If enter this statement through the second condition, then the defaulter may not be a beneficiary
+                    // In that case
+                    if (!wasBeneficiary) {
+                        // Nothing to share, reimburse all the securities left
+                        // share = 0;
+                        _collateral.collateralPaymentBank[_defaulters[i]] += currentDefaulterBank;
+                    } else {
+                        share += currentDefaulterBank;
+                    }
+
+                    _collateral.isCollateralMember[_defaulters[i]] = false; // Expelled!
+                    expellants[i] = _defaulters[i];
+                    _collateral.collateralMembersBank[_defaulters[i]] = 0;
+                    ++totalExpellants;
+
+                    emit OnCollateralLiquidated(
+                        _term.termId,
+                        address(_defaulters[i]),
+                        currentDefaulterBank
+                    );
                 }
-
-                _collateral.isCollateralMember[_defaulters[i]] = false; // Expelled!
-                expellants[i] = _defaulters[i];
-                _collateral.collateralMembersBank[_defaulters[i]] = 0;
-                ++totalExpellants;
-
-                emit OnCollateralLiquidated(
-                    _term.termId,
-                    address(_defaulters[i]),
-                    currentDefaulterBank
-                );
             } else {
                 // Subtract contribution from defaulter and add to beneficiary.
                 _collateral.collateralMembersBank[_defaulters[i]] -= contributionAmountWei;
@@ -387,7 +335,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
     /// @return nonBeneficiaries array of addresses that were expelled
     function _liquidateCollateral(
         LibCollateralV2.Collateral storage _collateral,
-        LibTermV2.Term storage _term
+        LibTermV2.Term memory _term
     ) internal view returns (uint, address[] memory) {
         address currentDepositor;
         address[] memory nonBeneficiaries = new address[](_collateral.depositors.length);
