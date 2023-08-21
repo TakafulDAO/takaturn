@@ -318,6 +318,12 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 // Subtract contribution from defaulter and add to beneficiary.
                 _collateral.collateralMembersBank[_defaulters[i]] -= contributionAmountWei;
                 _collateral.collateralPaymentBank[_beneficiary] += contributionAmountWei;
+
+                emit OnCollateralLiquidated(
+                    _term.termId,
+                    address(_defaulters[i]),
+                    contributionAmountWei
+                );
             }
             unchecked {
                 ++i;
