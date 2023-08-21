@@ -24,6 +24,11 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
     );
     event onCollateralWithdrawal(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
+    event OnFrozenMoneyPotLiquidated(
+        uint indexed termId,
+        address indexed user,
+        uint indexed amount
+    );
 
     /// @param id term id
     /// @param _state collateral state
@@ -292,6 +297,12 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 if (_fund.beneficiariesFrozenPool[_defaulters[i]] >= _term.contributionAmount) {
                     _fund.beneficiariesFrozenPool[_defaulters[i]] -= _term.contributionAmount;
                     _fund.beneficiariesPool[_beneficiary] += _term.contributionAmount;
+
+                    emit OnFrozenMoneyPotLiquidated(
+                        _term.termId,
+                        address(_defaulters[i]),
+                        _term.contributionAmount
+                    );
                 } else {
                     // If enter this statement through the second condition, then the defaulter may not be a beneficiary
                     // In that case
