@@ -93,12 +93,12 @@ contract TermFacetV2 is ITermV2 {
     function _joinTerm(uint _termId, bool _optedYG) internal {
         LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
         LibTermV2.Term memory term = termStorage.terms[_termId];
-        LibYieldGeneration.YieldGeneration storage yieldGeneration = LibYieldGeneration
-            ._yieldGeneration();
-
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[_termId];
+        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+            ._yieldStorage()
+            .yields[_termId];
 
         require(LibTermV2._termExists(_termId) && LibCollateralV2._collateralExists(_termId));
 
@@ -121,7 +121,7 @@ contract TermFacetV2 is ITermV2 {
 
                 termStorage.participantToTermId[msg.sender].push(_termId);
 
-                yieldGeneration.hasOptedIn[msg.sender] = _optedYG;
+                yield.hasOptedIn[msg.sender] = _optedYG;
 
                 emit OnCollateralDeposited(_termId, msg.sender);
 
@@ -210,8 +210,9 @@ contract TermFacetV2 is ITermV2 {
         LibTermV2.Term memory _term,
         LibCollateralV2.Collateral storage _collateral
     ) internal {
-        LibYieldGeneration.YieldGeneration storage yieldGeneration = LibYieldGeneration
-            ._yieldGeneration();
+        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+            ._yieldStorage()
+            .yields[_term.termId];
 
         uint amountDeposited;
 
@@ -219,7 +220,8 @@ contract TermFacetV2 is ITermV2 {
         uint depositorsArrayLength = depositors.length;
 
         for (uint i; i < depositorsArrayLength; ) {
-            if (yieldGeneration.hasOptedIn[depositors[i]]) {
+            if (yield.hasOptedIn[depositors[i]]) {
+                yield.providersAddresses.push(depositors[i]);
                 amountDeposited += _collateral.collateralMembersBank[depositors[i]];
             }
 
@@ -228,9 +230,9 @@ contract TermFacetV2 is ITermV2 {
             }
         }
 
-        IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
+        yield.startTimeStamp = block.timestamp;
+        yield.initialized = true;
 
-        yieldGeneration.startTimeStamp = block.timestamp;
-        yieldGeneration.initialized = true;
+        IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
     }
 }
