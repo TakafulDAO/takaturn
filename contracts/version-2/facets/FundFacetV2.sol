@@ -28,9 +28,17 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
     event OnBeneficiaryAwarded(uint indexed termId, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
     event OnFundWithdrawn(uint indexed termId, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
-    event OnParticipantDefaulted(uint indexed termId, address indexed defaulter); // Emits when a participant didn't pay this cycle's contribution
+    event OnParticipantDefaulted(
+        uint indexed termId,
+        uint indexed currentCycle,
+        address indexed defaulter
+    ); // Emits when a participant didn't pay this cycle's contribution
     event OnParticipantUndefaulted(uint indexed termId, address indexed undefaulter); // Emits when a participant was a defaulter before but started paying on time again for this cycle
-    event OnDefaulterExpelled(uint indexed termId, address indexed expellant); // Emits when a defaulter can't compensate with the collateral
+    event OnDefaulterExpelled(
+        uint indexed termId,
+        uint indexed currentCycle,
+        address indexed expellant
+    ); // Emits when a defaulter can't compensate with the collateral
     event OnTotalParticipantsUpdated(uint indexed termId, uint indexed newLength); // Emits when the total participants lengths has changed from its initial value
     event OnAutoPayToggled(uint indexed termId, address indexed participant, bool indexed enabled); // Emits when a participant succesfully toggles autopay
 
@@ -464,7 +472,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         require(success, "Can't remove defaulter");
         EnumerableSet.add(fund._defaulters, _defaulter);
 
-        emit OnParticipantDefaulted(_id, _defaulter);
+        emit OnParticipantDefaulted(_id, fund.currentCycle, _defaulter);
     }
 
     /// @notice The beneficiary will be selected here based on the beneficiariesOrder array.
@@ -604,7 +612,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         );
 
         _fund.isParticipant[_expellant] = false;
-        emit OnDefaulterExpelled(_term.termId, _expellant);
+        emit OnDefaulterExpelled(_term.termId, _fund.currentCycle, _expellant);
 
         // Lastly, lower the amount of participants
         --_term.totalParticipants;
