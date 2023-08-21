@@ -7,6 +7,11 @@ library LibYieldGeneration {
         keccak256("diamond.standard.yield.generation.consts");
     bytes32 constant YIELD_STORAGE_POSITION = keccak256("diamond.standard.yield.storage");
 
+    enum YGProviders {
+        InHouse,
+        ZaynFi
+    }
+
     struct YieldGenerationConsts {
         address zapAddress;
         address vaultAddress;
@@ -14,12 +19,14 @@ library LibYieldGeneration {
 
     struct YieldGeneration {
         bool initialized;
+        YGProviders provider;
         address[] providersAddresses;
         uint startTimeStamp;
         mapping(address => bool) hasOptedIn;
         uint totalDeposit;
         uint currentTotalDeposit;
         mapping(address => uint256) withdrawnYield;
+        mapping(address => uint256) withdrawnCollateral;
     }
 
     struct YieldStorage {
