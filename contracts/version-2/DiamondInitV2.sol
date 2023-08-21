@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 
 import {LibTermV2} from "./libraries/LibTermV2.sol";
 
+// todo: set zapAddress and vaultAddress
 contract DiamondInitV2 {
     function init(
         address _aggregatorAddressEthUsd,

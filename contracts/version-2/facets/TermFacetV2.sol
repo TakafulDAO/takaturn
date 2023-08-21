@@ -7,10 +7,12 @@ import {ICollateralV2} from "../interfaces/ICollateralV2.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITermV2} from "../interfaces/ITermV2.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
+import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
 import {LibFundV2} from "../libraries/LibFundV2.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
 import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
+import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
 /// @title Takaturn Term
 /// @author Mohammed Haddouti
@@ -38,8 +40,8 @@ contract TermFacetV2 is ITermV2 {
             );
     }
 
-    function joinTerm(uint termId) external payable {
-        _joinTerm(termId);
+    function joinTerm(uint termId, bool optedYG) external payable {
+        _joinTerm(termId, optedYG);
     }
 
     function startTerm(uint termId) external {
@@ -88,9 +90,11 @@ contract TermFacetV2 is ITermV2 {
         return termId;
     }
 
-    function _joinTerm(uint _termId) internal {
+    function _joinTerm(uint _termId, bool _optedYG) internal {
         LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
         LibTermV2.Term memory term = termStorage.terms[_termId];
+        LibYieldGeneration.YieldGeneration storage yieldGeneration = LibYieldGeneration
+            ._yieldGeneration();
 
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
@@ -117,6 +121,8 @@ contract TermFacetV2 is ITermV2 {
 
                 termStorage.participantToTermId[msg.sender].push(_termId);
 
+                yieldGeneration.hasOptedIn[msg.sender] = _optedYG;
+
                 emit OnCollateralDeposited(_termId, msg.sender);
 
                 break;
@@ -137,13 +143,12 @@ contract TermFacetV2 is ITermV2 {
         }
     }
 
-    function _startTerm(uint termId) internal {
-        require(LibTermV2._termExists(termId) && LibCollateralV2._collateralExists(termId));
-        LibTermV2.Term memory term = LibTermV2._termStorage().terms[termId];
-
+    function _startTerm(uint _termId) internal {
+        require(LibTermV2._termExists(_termId) && LibCollateralV2._collateralExists(_termId));
+        LibTermV2.Term memory term = LibTermV2._termStorage().terms[_termId];
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[termId];
+            .collaterals[_termId];
 
         address[] memory depositors = collateral.depositors;
 
@@ -154,20 +159,23 @@ contract TermFacetV2 is ITermV2 {
         // Need to check each user because they can have different collateral amounts
         for (uint i; i < depositorsArrayLength; ) {
             require(
-                !ICollateralV2(address(this)).isUnderCollaterized(termId, depositors[i]),
+                !ICollateralV2(address(this)).isUnderCollaterized(_termId, depositors[i]),
                 "Eth prices dropped"
             );
+
             unchecked {
                 ++i;
             }
         }
 
         // Actually create and initialize the fund
-        _createFund(term);
+        _createFund(term, collateral);
+
+        _createYieldGenerator(term, collateral);
 
         // Tell the collateral that the term has started
         ICollateralV2(address(this)).setStateOwner(
-            termId,
+            _termId,
             LibCollateralV2.CollateralStates.CycleOngoing
         );
     }
@@ -183,18 +191,46 @@ contract TermFacetV2 is ITermV2 {
         newCollateral.depositors = new address[](_totalParticipants);
     }
 
-    function _createFund(LibTermV2.Term memory _term) internal {
+    function _createFund(
+        LibTermV2.Term memory _term,
+        LibCollateralV2.Collateral storage _collateral
+    ) internal {
         require(!LibFundV2._fundExists(_term.termId), "Fund already exists");
         LibFundV2.Fund storage newFund = LibFundV2._fundStorage().funds[_term.termId];
-        LibCollateralV2.Collateral storage collateral = LibCollateralV2
-            ._collateralStorage()
-            .collaterals[_term.termId];
 
         newFund.stableToken = IERC20(_term.stableTokenAddress);
-        newFund.beneficiariesOrder = collateral.depositors;
+        newFund.beneficiariesOrder = _collateral.depositors;
         newFund.initialized = true;
         newFund.totalAmountOfCycles = newFund.beneficiariesOrder.length;
 
         IFundV2(address(this)).initFund(_term.termId);
+    }
+
+    function _createYieldGenerator(
+        LibTermV2.Term memory _term,
+        LibCollateralV2.Collateral storage _collateral
+    ) internal {
+        LibYieldGeneration.YieldGeneration storage yieldGeneration = LibYieldGeneration
+            ._yieldGeneration();
+
+        address[] memory depositors = _collateral.depositors;
+
+        uint depositorsArrayLength = depositors.length;
+
+        for (uint i; i < depositorsArrayLength; ) {
+            if (yieldGeneration.hasOptedIn[depositors[i]]) {
+                IYGFacetZaynFi(address(this)).depositYG(
+                    _term.termId,
+                    _collateral.collateralMembersBank[depositors[i]]
+                );
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        yieldGeneration.startTimeStamp = block.timestamp;
+        yieldGeneration.initialized = true;
     }
 }
