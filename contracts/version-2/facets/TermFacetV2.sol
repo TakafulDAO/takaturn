@@ -213,22 +213,22 @@ contract TermFacetV2 is ITermV2 {
         LibYieldGeneration.YieldGeneration storage yieldGeneration = LibYieldGeneration
             ._yieldGeneration();
 
-        address[] memory depositors = _collateral.depositors;
+        uint amountDeposited;
 
+        address[] memory depositors = _collateral.depositors;
         uint depositorsArrayLength = depositors.length;
 
         for (uint i; i < depositorsArrayLength; ) {
             if (yieldGeneration.hasOptedIn[depositors[i]]) {
-                IYGFacetZaynFi(address(this)).depositYG(
-                    _term.termId,
-                    _collateral.collateralMembersBank[depositors[i]]
-                );
+                amountDeposited += _collateral.collateralMembersBank[depositors[i]];
             }
 
             unchecked {
                 ++i;
             }
         }
+
+        IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
 
         yieldGeneration.startTimeStamp = block.timestamp;
         yieldGeneration.initialized = true;

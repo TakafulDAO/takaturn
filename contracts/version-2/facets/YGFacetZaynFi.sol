@@ -15,7 +15,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             ._yieldGeneration();
 
         yieldGeneration.totalDeposit = amount;
-        yieldGeneration.currentTotalDeposit += amount;
+        yieldGeneration.currentTotalDeposit = amount;
 
         IZaynZapV2TakaDAO(yieldGenerationConsts.zapAddress).zapInEth{value: amount}(
             yieldGenerationConsts.vaultAddress,
