@@ -22,8 +22,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         LibCollateralV2.CollateralStates indexed oldState,
         LibCollateralV2.CollateralStates indexed newState
     );
-    event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
-    event OnCollateralWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
+    event onCollateralWithdrawal(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
 
     /// @param id term id
@@ -151,7 +150,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         (bool success, ) = payable(depositor).call{value: amount}("");
         require(success);
 
-        emit OnReimbursementWithdrawn(id, depositor, amount);
+        emit onCollateralWithdrawal(id, depositor, amount);
     }
 
     /// @param id term id
