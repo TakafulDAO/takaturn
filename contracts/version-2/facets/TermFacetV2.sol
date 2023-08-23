@@ -46,10 +46,6 @@ contract TermFacetV2 is ITermV2 {
         _joinTerm(termId, optedYG);
     }
 
-    function startTerm(uint termId) external {
-        _startTerm(termId);
-    }
-
     function _createTerm(
         uint _totalParticipants,
         uint _registrationPeriod,
@@ -149,27 +145,24 @@ contract TermFacetV2 is ITermV2 {
 
         // If all the spots are filled, change the collateral
         if (collateral.counterMembers == term.totalParticipants) {
-            _startTerm(_termId);
+            _startTerm(term, collateral);
         }
     }
 
-    function _startTerm(uint _termId) internal {
-        require(LibTermV2._termExists(_termId) && LibCollateralV2._collateralExists(_termId));
-        LibTermV2.Term memory term = LibTermV2._termStorage().terms[_termId];
-        LibCollateralV2.Collateral storage collateral = LibCollateralV2
-            ._collateralStorage()
-            .collaterals[_termId];
-
-        address[] memory depositors = collateral.depositors;
+    function _startTerm(
+        LibTermV2.Term memory _term,
+        LibCollateralV2.Collateral storage _collateral
+    ) internal {
+        address[] memory depositors = _collateral.depositors;
 
         uint depositorsArrayLength = depositors.length;
 
-        require(collateral.counterMembers == term.totalParticipants);
+        require(_collateral.counterMembers == _term.totalParticipants);
 
         // Need to check each user because they can have different collateral amounts
         for (uint i; i < depositorsArrayLength; ) {
             require(
-                !ICollateralV2(address(this)).isUnderCollaterized(_termId, depositors[i]),
+                !ICollateralV2(address(this)).isUnderCollaterized(_term.termId, depositors[i]),
                 "Eth prices dropped"
             );
 
@@ -179,13 +172,13 @@ contract TermFacetV2 is ITermV2 {
         }
 
         // Actually create and initialize the fund
-        _createFund(term, collateral);
+        _createFund(_term, _collateral);
 
-        _createYieldGenerator(term, collateral);
+        _createYieldGenerator(_term, _collateral);
 
         // Tell the collateral that the term has started
         ICollateralV2(address(this)).setStateOwner(
-            _termId,
+            _term.termId,
             LibCollateralV2.CollateralStates.CycleOngoing
         );
     }
