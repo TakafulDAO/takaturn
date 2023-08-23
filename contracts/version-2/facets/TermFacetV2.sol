@@ -25,6 +25,7 @@ contract TermFacetV2 is ITermV2 {
 
     function createTerm(
         uint totalParticipants,
+        uint registrationPeriod,
         uint cycleTime,
         uint contributionAmount,
         uint contributionPeriod,
@@ -33,6 +34,7 @@ contract TermFacetV2 is ITermV2 {
         return
             _createTerm(
                 totalParticipants,
+                registrationPeriod,
                 cycleTime,
                 contributionAmount,
                 contributionPeriod,
@@ -50,6 +52,7 @@ contract TermFacetV2 is ITermV2 {
 
     function _createTerm(
         uint _totalParticipants,
+        uint _registrationPeriod,
         uint _cycleTime,
         uint _contributionAmount,
         uint _contributionPeriod,
@@ -60,6 +63,7 @@ contract TermFacetV2 is ITermV2 {
                 _contributionAmount != 0 &&
                 _contributionPeriod != 0 &&
                 _totalParticipants != 0 &&
+                _registrationPeriod != 0 &&
                 _contributionPeriod < _cycleTime &&
                 _stableTokenAddress != address(0),
             "Invalid inputs"
@@ -74,6 +78,7 @@ contract TermFacetV2 is ITermV2 {
 
         newTerm.termId = termId;
         newTerm.totalParticipants = _totalParticipants;
+        newTerm.registrationPeriod = _registrationPeriod;
         newTerm.cycleTime = _cycleTime;
         newTerm.contributionAmount = _contributionAmount;
         newTerm.contributionPeriod = _contributionPeriod;
@@ -103,6 +108,11 @@ contract TermFacetV2 is ITermV2 {
         require(LibTermV2._termExists(_termId) && LibCollateralV2._collateralExists(_termId));
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
+
+        require(
+            block.timestamp < term.creationTime + term.registrationPeriod,
+            "Registration period ended"
+        );
 
         require(!collateral.isCollateralMember[msg.sender], "Reentry");
 
@@ -139,7 +149,7 @@ contract TermFacetV2 is ITermV2 {
 
         // If all the spots are filled, change the collateral
         if (collateral.counterMembers == term.totalParticipants) {
-            collateral.state = LibCollateralV2.CollateralStates.CycleOngoing;
+            _startTerm(_termId);
         }
     }
 

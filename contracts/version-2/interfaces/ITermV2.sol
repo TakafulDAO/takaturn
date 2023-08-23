@@ -5,6 +5,7 @@ pragma solidity 0.8.18;
 interface ITermV2 {
     function createTerm(
         uint totalParticipants,
+        uint registrationPeriod,
         uint cycleTime,
         uint contributionAmount,
         uint contributionPeriod,

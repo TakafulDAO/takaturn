@@ -17,6 +17,7 @@ library LibTermV2 {
         address termOwner;
         uint creationTime;
         uint termId;
+        uint registrationPeriod; // Time for registration (seconds)
         uint totalParticipants; // Max number of participants
         uint cycleTime; // Time for single cycle (seconds)
         uint contributionAmount; // Amount user must pay per cycle (USD)
