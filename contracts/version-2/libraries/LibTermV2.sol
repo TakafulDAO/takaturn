@@ -14,6 +14,7 @@ library LibTermV2 {
 
     struct Term {
         bool initialized;
+        bool expired;
         address termOwner;
         uint creationTime;
         uint termId;

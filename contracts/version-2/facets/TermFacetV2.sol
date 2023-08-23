@@ -46,6 +46,10 @@ contract TermFacetV2 is ITermV2 {
         _joinTerm(termId, optedYG);
     }
 
+    function expireTerm(uint termId) external {
+        _expireTerm(termId);
+    }
+
     function _createTerm(
         uint _totalParticipants,
         uint _registrationPeriod,
@@ -207,6 +211,50 @@ contract TermFacetV2 is ITermV2 {
         newFund.totalAmountOfCycles = newFund.beneficiariesOrder.length;
 
         IFundV2(address(this)).initFund(_term.termId);
+    }
+
+    function _expireTerm(uint _termId) internal {
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_termId];
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
+            ._collateralStorage()
+            .collaterals[_termId];
+
+        require(LibTermV2._termExists(_termId) && LibCollateralV2._collateralExists(_termId));
+
+        require(
+            block.timestamp > term.creationTime + term.registrationPeriod,
+            "Registration period not ended"
+        );
+
+        require(
+            collateral.counterMembers < term.totalParticipants,
+            "All spots are filled, can't expire"
+        );
+
+        require(!term.expired, "Term already expired");
+
+        uint depositorsArrayLength = collateral.depositors.length;
+
+        for (uint i; i < depositorsArrayLength; ) {
+            if (collateral.depositors[i] != address(0)) {
+                (bool succes, ) = payable(collateral.depositors[i]).call{
+                    value: collateral.collateralDepositByUser[collateral.depositors[i]]
+                }("");
+                require(succes, "Transfer failed");
+
+                collateral.collateralMembersBank[msg.sender] = 0;
+                collateral.isCollateralMember[msg.sender] = false;
+                collateral.depositors[i] = address(0);
+                --collateral.counterMembers;
+                collateral.collateralDepositByUser[msg.sender] = 0;
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        term.expired = true;
     }
 
     function _createYieldGenerator(
