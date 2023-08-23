@@ -160,7 +160,8 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
 
     /// @param id term id
     function releaseCollateral(uint id) external {
-        require(LibFundV2._fundExists(id), "Fund does not exists");
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+        require(fund.currentState == LibFundV2.FundStates.FundClosed, "Wrong state");
         _setState(id, LibCollateralV2.CollateralStates.ReleasingCollateral);
     }
 
