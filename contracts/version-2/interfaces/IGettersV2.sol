@@ -11,6 +11,8 @@ import {LibFundV2} from "../libraries/LibFundV2.sol";
 interface IGettersV2 {
     function getTermsId() external view returns (uint, uint);
 
+    function getRemainingContributionPeriod(uint termId) external view returns (uint);
+
     function getTermSummary(uint id) external view returns (LibTermV2.Term memory);
 
     function getParticipantTerms(address participant) external view returns (uint[] memory);

@@ -21,6 +21,18 @@ contract GettersFacetV2 is IGettersV2 {
         return (lastTermId, nextTermId);
     }
 
+    ///  @notice Gets the remaining contribution period of a term
+    ///  @param termId the term id
+    ///  @return the remaining contribution period
+    function getRemainingContributionPeriod(uint termId) external view returns (uint) {
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[termId];
+        if (block.timestamp > term.creationTime + term.registrationPeriod) {
+            return 0;
+        } else {
+            return term.creationTime + term.registrationPeriod - block.timestamp;
+        }
+    }
+
     /// @param id the term id
     /// @return the term struct
     function getTermSummary(uint id) external view returns (LibTermV2.Term memory) {
