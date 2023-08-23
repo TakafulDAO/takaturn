@@ -9,6 +9,8 @@ import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 import {LibFundV2} from "../libraries/LibFundV2.sol";
 
 interface IGettersV2 {
+    // TERM GETTERS
+
     function getTermsId() external view returns (uint, uint);
 
     function getRemainingContributionPeriod(uint termId) external view returns (uint);
@@ -19,10 +21,7 @@ interface IGettersV2 {
 
     function getRemainingCycleTime(uint id) external view returns (uint);
 
-    function minCollateralToDeposit(
-        LibTermV2.Term memory term,
-        uint depositorIndex
-    ) external view returns (uint);
+    // COLLATERAL GETTERS
 
     function getDepositorCollateralSummary(
         address depositor,
@@ -32,6 +31,13 @@ interface IGettersV2 {
     function getCollateralSummary(
         uint id
     ) external view returns (bool, LibCollateralV2.CollateralStates, uint, uint, address[] memory);
+
+    function minCollateralToDeposit(
+        LibTermV2.Term memory term,
+        uint depositorIndex
+    ) external view returns (uint);
+
+    // FUND GETTERS
 
     function getFundSummary(
         uint id
@@ -59,7 +65,21 @@ interface IGettersV2 {
 
     function getRemainingContributionTime(uint id) external view returns (uint);
 
+    // CONVERSION GETTERS
+
     function getToEthConversionRate(uint USDAmount) external view returns (uint);
 
     function getToUSDConversionRate(uint ethAmount) external view returns (uint);
+
+    // YIELD GENERATION GETTERS
+
+    function userAPR(uint termId, address user) external view returns (uint256);
+
+    function termAPR(uint termId) external view returns (uint256);
+
+    function yieldDistributionRatio(uint termId, address user) external view returns (uint256);
+
+    function totalYieldGenerated(uint termId) external view returns (uint);
+
+    function userYieldGenerated(uint termId, address user) external view returns (uint);
 }

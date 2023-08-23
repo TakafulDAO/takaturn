@@ -8,14 +8,4 @@ interface IYGFacetZaynFi {
     function depositYG(uint termId, uint amount) external;
 
     function withdrawYG(uint termId, address user, uint256 ethAmount) external;
-
-    function userAPR(uint termId, address user) external view returns (uint256);
-
-    function termAPR(uint termId) external view returns (uint256);
-
-    function yieldDistributionRatio(uint termId, address user) external view returns (uint256);
-
-    function totalYieldGenerated(uint termId) external view returns (uint);
-
-    function userYieldGenerated(uint termId, address user) external view returns (uint);
 }
