@@ -48,7 +48,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             termId
         );
 
-        (bool success, ) = payable(user).call{value: ethAmount}("");
-        require(success);
+        // (bool success, ) = payable(user).call{value: ethAmount}("");
+        // require(success);
     }
 }

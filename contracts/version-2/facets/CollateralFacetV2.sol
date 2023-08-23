@@ -5,10 +5,12 @@ pragma solidity 0.8.18;
 import {IFundV2} from "../interfaces/IFundV2.sol";
 import {ICollateralV2} from "../interfaces/ICollateralV2.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
+import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
 import {LibFundV2} from "../libraries/LibFundV2.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
 import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
+import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
 import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 
@@ -102,6 +104,10 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             .collaterals[id];
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+            ._yieldStorage()
+            .yields[id];
+
         require(fund.paidThisCycle[msg.sender], "You have not paid this cycle");
         require(fund.currentState == LibFundV2.FundStates.CycleOngoing, "Wrong state");
 
@@ -118,19 +124,32 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             contributionAmountWei;
 
         if (allowedWithdraw <= collateral.collateralPaymentBank[msg.sender]) {
+            if (yield.hasOptedIn[msg.sender]) {
+                IYGFacetZaynFi(address(this)).withdrawYG(id, msg.sender, allowedWithdraw);
+            }
+
             collateral.collateralPaymentBank[msg.sender] -= allowedWithdraw;
             (bool success, ) = payable(msg.sender).call{value: allowedWithdraw}("");
             require(success);
         } else {
             uint neededAmount = allowedWithdraw - collateral.collateralPaymentBank[msg.sender];
             if (neededAmount <= collateral.collateralMembersBank[msg.sender]) {
+                if (yield.hasOptedIn[msg.sender]) {
+                    IYGFacetZaynFi(address(this)).withdrawYG(id, msg.sender, allowedWithdraw);
+                }
+
                 collateral.collateralPaymentBank[msg.sender] -= 0;
                 collateral.collateralMembersBank[msg.sender] -= neededAmount;
                 (bool success, ) = payable(msg.sender).call{value: allowedWithdraw}("");
                 require(success);
             } else {
+                // todo: check if this is still needed. Think now with partial withdraws this else can be removed
                 uint amount = collateral.collateralMembersBank[msg.sender] +
                     collateral.collateralPaymentBank[msg.sender];
+                if (yield.hasOptedIn[msg.sender]) {
+                    IYGFacetZaynFi(address(this)).withdrawYG(id, msg.sender, amount);
+                }
+
                 collateral.collateralMembersBank[msg.sender] = 0;
                 collateral.collateralPaymentBank[msg.sender] = 0;
                 (bool success, ) = payable(msg.sender).call{value: amount}("");
