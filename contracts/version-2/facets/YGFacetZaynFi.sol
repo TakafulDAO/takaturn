@@ -9,6 +9,9 @@ import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 
 contract YGFacetZaynFi is IYGFacetZaynFi {
+    /// @notice This function is used to deposit collateral for yield generation
+    /// @param termId The term id for which the collateral is being deposited
+    /// @param ethAmount The amount of collateral being deposited
     function depositYG(uint termId, uint ethAmount) external {
         LibYieldGeneration.YieldGenerationConsts storage yieldGenerationConsts = LibYieldGeneration
             ._yieldGenerationConsts();
@@ -25,6 +28,10 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         );
     }
 
+    /// @notice This function is used to withdraw collateral from yield generation
+    /// @param termId The term id for which the collateral is being withdrawn
+    /// @param user The user who is withdrawing the collateral
+    /// @param ethAmount The amount of collateral being withdrawn
     function withdrawYG(uint termId, address user, uint256 ethAmount) external {
         LibYieldGeneration.YieldGenerationConsts storage yieldGenerationConsts = LibYieldGeneration
             ._yieldGenerationConsts();
@@ -45,6 +52,10 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         require(success);
     }
 
+    /// @notice This function is used to get a user APR
+    /// @param termId The term id for which the APR is being calculated
+    /// @param user The user for which the APR is being calculated
+    /// @return The APR for the user
     function userAPR(uint termId, address user) external view returns (uint256) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
@@ -57,6 +68,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             (elaspedTime * 365 days);
     }
 
+    /// @notice This function is used to get a term APR
+    /// @param termId The term id for which the APR is being calculated
+    /// @return The APR for the term
     function termAPR(uint termId) external view returns (uint256) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
@@ -67,6 +81,10 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         return (totalYieldGenerated(termId) / yield.currentTotalDeposit) / (elaspedTime * 365 days);
     }
 
+    /// @notice This function is used to get the yield distribution ratio for a user
+    /// @param termId The term id for which the ratio is being calculated
+    /// @param user The user for which the ratio is being calculated
+    /// @return The yield distribution ratio for the user
     function yieldDistributionRatio(uint termId, address user) external view returns (uint256) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
@@ -78,6 +96,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         return collateral.collateralMembersBank[user] / yield.currentTotalDeposit;
     }
 
+    /// @notice This function is used to get the total yield generated for a term
+    /// @param termId The term id for which the yield is being calculated
+    /// @return The total yield generated for the term
     function totalYieldGenerated(uint termId) public view returns (uint) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
@@ -99,6 +120,10 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         return totalWithdrawnYield + (yield.totalDeposit - yield.currentTotalDeposit);
     }
 
+    /// @notice This function is used to get the total yield generated for a user
+    /// @param termId The term id for which the yield is being calculated
+    /// @param user The user for which the yield is being calculated
+    /// @return The total yield generated for the user
     function userYieldGenerated(uint termId, address user) public view returns (uint) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
