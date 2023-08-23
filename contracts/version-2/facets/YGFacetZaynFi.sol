@@ -85,7 +85,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
         uint totalWithdrawnYield;
 
-        address[] memory arrayToCheck = yield.providersAddresses;
+        address[] memory arrayToCheck = yield.yieldUsers;
         uint arrayLength = arrayToCheck.length;
 
         for (uint i; i < arrayLength; ) {

@@ -221,7 +221,7 @@ contract TermFacetV2 is ITermV2 {
 
         for (uint i; i < depositorsArrayLength; ) {
             if (yield.hasOptedIn[depositors[i]]) {
-                yield.providersAddresses.push(depositors[i]);
+                yield.yieldUsers.push(depositors[i]);
                 amountDeposited += _collateral.collateralMembersBank[depositors[i]];
             }
 

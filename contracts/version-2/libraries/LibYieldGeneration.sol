@@ -20,7 +20,7 @@ library LibYieldGeneration {
     struct YieldGeneration {
         bool initialized;
         YGProviders provider;
-        address[] providersAddresses;
+        address[] yieldUsers;
         uint startTimeStamp;
         mapping(address => bool) hasOptedIn;
         uint totalDeposit;
@@ -30,7 +30,7 @@ library LibYieldGeneration {
     }
 
     struct YieldStorage {
-        mapping(uint => YieldGeneration) yields; // termId => Fund struct
+        mapping(uint => YieldGeneration) yields; // termId => YieldGeneration struct
     }
 
     function _yieldExists(uint termId) internal view returns (bool) {
