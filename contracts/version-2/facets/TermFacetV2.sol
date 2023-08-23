@@ -21,7 +21,14 @@ import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 contract TermFacetV2 is ITermV2 {
     uint public constant TERM_VERSION = 2;
 
-    event OnCollateralDeposited(uint indexed termId, address indexed user);
+    event OnTermCreated(uint indexed termId, address indexed termOwner);
+    event OnCollateralDeposited(
+        uint indexed termId,
+        address indexed user,
+        uint amount,
+        bool optedYG
+    );
+    event OnTermExpired(uint indexed termId);
 
     function createTerm(
         uint totalParticipants,
@@ -92,6 +99,8 @@ contract TermFacetV2 is ITermV2 {
 
         _createCollateral(termId, _totalParticipants);
 
+        emit OnTermCreated(termId, msg.sender);
+
         return termId;
     }
 
@@ -133,7 +142,7 @@ contract TermFacetV2 is ITermV2 {
 
                 yield.hasOptedIn[msg.sender] = _optedYG;
 
-                emit OnCollateralDeposited(_termId, msg.sender);
+                emit OnCollateralDeposited(_termId, msg.sender, msg.value, _optedYG);
 
                 break;
             }
@@ -255,6 +264,8 @@ contract TermFacetV2 is ITermV2 {
         }
 
         term.expired = true;
+
+        emit OnTermExpired(_termId);
     }
 
     function _createYieldGenerator(
