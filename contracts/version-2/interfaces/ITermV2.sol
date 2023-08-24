@@ -13,4 +13,8 @@ interface ITermV2 {
     ) external returns (uint);
 
     function joinTerm(uint termId, bool optedYG) external payable;
+
+    function startTerm(uint termId) external;
+
+    function expireTerm(uint termId) external;
 }

@@ -27,7 +27,7 @@ contract GettersFacetV2 is IGettersV2 {
     ///  @return the remaining contribution period
     function getRemainingContributionPeriod(uint termId) external view returns (uint) {
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[termId];
-        if (block.timestamp > term.creationTime + term.registrationPeriod) {
+        if (block.timestamp >= term.creationTime + term.registrationPeriod) {
             return 0;
         } else {
             return term.creationTime + term.registrationPeriod - block.timestamp;

@@ -28,6 +28,7 @@ contract TermFacetV2 is ITermV2 {
         uint amount,
         bool optedYG
     );
+    event OnTermFilled(uint indexed termId);
     event OnTermExpired(uint indexed termId);
 
     function createTerm(
@@ -51,6 +52,10 @@ contract TermFacetV2 is ITermV2 {
 
     function joinTerm(uint termId, bool optedYG) external payable {
         _joinTerm(termId, optedYG);
+    }
+
+    function startTerm(uint termId) external {
+        _startTerm(termId);
     }
 
     function expireTerm(uint termId) external {
@@ -119,7 +124,7 @@ contract TermFacetV2 is ITermV2 {
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
         require(
-            block.timestamp < term.creationTime + term.registrationPeriod,
+            block.timestamp <= term.creationTime + term.registrationPeriod,
             "Registration period ended"
         );
 
@@ -158,24 +163,30 @@ contract TermFacetV2 is ITermV2 {
 
         // If all the spots are filled, change the collateral
         if (collateral.counterMembers == term.totalParticipants) {
-            _startTerm(term, collateral);
+            emit OnTermFilled(_termId);
         }
     }
 
-    function _startTerm(
-        LibTermV2.Term memory _term,
-        LibCollateralV2.Collateral storage _collateral
-    ) internal {
-        address[] memory depositors = _collateral.depositors;
+    function _startTerm(uint _termId) internal {
+        LibTermV2.Term memory term = LibTermV2._termStorage().terms[_termId];
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
+            ._collateralStorage()
+            .collaterals[_termId];
+        address[] memory depositors = collateral.depositors;
 
         uint depositorsArrayLength = depositors.length;
 
-        require(_collateral.counterMembers == _term.totalParticipants);
+        require(
+            block.timestamp > term.creationTime + term.registrationPeriod,
+            "Term not ready to start"
+        );
+
+        require(collateral.counterMembers == term.totalParticipants, "All spots are not filled");
 
         // Need to check each user because they can have different collateral amounts
         for (uint i; i < depositorsArrayLength; ) {
             require(
-                !ICollateralV2(address(this)).isUnderCollaterized(_term.termId, depositors[i]),
+                !ICollateralV2(address(this)).isUnderCollaterized(term.termId, depositors[i]),
                 "Eth prices dropped"
             );
 
@@ -185,13 +196,13 @@ contract TermFacetV2 is ITermV2 {
         }
 
         // Actually create and initialize the fund
-        _createFund(_term, _collateral);
+        _createFund(term, collateral);
 
-        _createYieldGenerator(_term, _collateral);
+        _createYieldGenerator(term, collateral);
 
         // Tell the collateral that the term has started
         ICollateralV2(address(this)).setStateOwner(
-            _term.termId,
+            term.termId,
             LibCollateralV2.CollateralStates.CycleOngoing
         );
     }
@@ -245,17 +256,16 @@ contract TermFacetV2 is ITermV2 {
         uint depositorsArrayLength = collateral.depositors.length;
 
         for (uint i; i < depositorsArrayLength; ) {
-            if (collateral.depositors[i] != address(0)) {
-                (bool succes, ) = payable(collateral.depositors[i]).call{
-                    value: collateral.collateralDepositByUser[collateral.depositors[i]]
-                }("");
-                require(succes, "Transfer failed");
+            address depositor = collateral.depositors[i];
 
-                collateral.collateralMembersBank[msg.sender] = 0;
-                collateral.isCollateralMember[msg.sender] = false;
+            if (depositor != address(0)) {
+                uint amount = collateral.collateralMembersBank[depositor];
+
+                collateral.collateralPaymentBank[depositor] += amount;
+                collateral.collateralMembersBank[depositor] = 0;
+                collateral.isCollateralMember[depositor] = false;
                 collateral.depositors[i] = address(0);
                 --collateral.counterMembers;
-                collateral.collateralDepositByUser[msg.sender] = 0;
             }
 
             unchecked {
@@ -264,6 +274,8 @@ contract TermFacetV2 is ITermV2 {
         }
 
         term.expired = true;
+        collateral.initialized = false;
+        collateral.state = LibCollateralV2.CollateralStates.Closed;
 
         emit OnTermExpired(_termId);
     }
