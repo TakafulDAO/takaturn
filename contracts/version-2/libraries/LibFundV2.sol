@@ -34,7 +34,8 @@ library LibFundV2 {
         mapping(address => bool) paidThisCycle; // Mapping to keep track of who paid for this cycle
         mapping(address => bool) autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
         mapping(address => uint) beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
-        mapping(address => uint) beneficiariesFrozenPool; // Frozen pool by beneficiaries, it can claim when his collateral is at least 1.5RCC
+        // todo: add another one to freeze collateral?
+        mapping(address => bool) beneficiariesFrozenPool; // Frozen pool by beneficiaries, it can claim when his collateral is at least 1.5RCC
         EnumerableSet.AddressSet _participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
         EnumerableSet.AddressSet _beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
         EnumerableSet.AddressSet _defaulters; // Both participants and beneficiaries who have defaulted this cycle

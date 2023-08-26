@@ -21,6 +21,8 @@ interface IGettersV2 {
 
     function getRemainingCycleTime(uint id) external view returns (uint);
 
+    function getRemainingCyclesContribution(uint id) external view returns (uint);
+
     // COLLATERAL GETTERS
 
     function getDepositorCollateralSummary(
@@ -57,6 +59,8 @@ interface IGettersV2 {
         );
 
     function getCurrentBeneficiary(uint id) external view returns (address);
+
+    function wasExpelled(uint id, address user) external view returns (bool);
 
     function getParticipantFundSummary(
         address participant,

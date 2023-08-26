@@ -66,7 +66,6 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[term.termId];
-        // LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[term.termId];
 
         (uint share, address[] memory expellants) = _whoExpelled(
@@ -86,8 +85,12 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         if (nonBeneficiaryCounter > 0) {
             // This case can only happen when what?
             share = share / nonBeneficiaryCounter;
-            for (uint i = 0; i < nonBeneficiaryCounter; i++) {
+            for (uint i; i < nonBeneficiaryCounter; ) {
                 collateral.collateralPaymentBank[nonBeneficiaries[i]] += share;
+
+                unchecked {
+                    ++i;
+                }
             }
         }
         return (expellants);
@@ -104,9 +107,9 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             .collaterals[id];
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
-            ._yieldStorage()
-            .yields[id];
+        // LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        //     ._yieldStorage()
+        //     .yields[id];
 
         require(fund.paidThisCycle[msg.sender], "You have not paid this cycle");
         require(fund.currentState == LibFundV2.FundStates.CycleOngoing, "Wrong state");
@@ -124,9 +127,9 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             contributionAmountWei;
 
         if (allowedWithdraw <= collateral.collateralPaymentBank[msg.sender]) {
-            if (yield.hasOptedIn[msg.sender]) {
-                IYGFacetZaynFi(address(this)).withdrawYG(id, msg.sender, allowedWithdraw);
-            }
+            // if (yield.hasOptedIn[msg.sender]) {
+            //     IYGFacetZaynFi(address(this)).withdrawYG(id, msg.sender, allowedWithdraw);
+            // }
 
             collateral.collateralPaymentBank[msg.sender] -= allowedWithdraw;
             (bool success, ) = payable(msg.sender).call{value: allowedWithdraw}("");
@@ -134,9 +137,9 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         } else {
             uint neededAmount = allowedWithdraw - collateral.collateralPaymentBank[msg.sender];
             if (neededAmount <= collateral.collateralMembersBank[msg.sender]) {
-                if (yield.hasOptedIn[msg.sender]) {
-                    IYGFacetZaynFi(address(this)).withdrawYG(id, msg.sender, allowedWithdraw);
-                }
+                // if (yield.hasOptedIn[msg.sender]) {
+                //     IYGFacetZaynFi(address(this)).withdrawYG(id, msg.sender, allowedWithdraw);
+                // }
 
                 collateral.collateralPaymentBank[msg.sender] -= 0;
                 collateral.collateralMembersBank[msg.sender] -= neededAmount;
@@ -146,9 +149,9 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 // todo: check if this is still needed. Think now with partial withdraws this else can be removed
                 uint amount = collateral.collateralMembersBank[msg.sender] +
                     collateral.collateralPaymentBank[msg.sender];
-                if (yield.hasOptedIn[msg.sender]) {
-                    IYGFacetZaynFi(address(this)).withdrawYG(id, msg.sender, amount);
-                }
+                // if (yield.hasOptedIn[msg.sender]) {
+                //     IYGFacetZaynFi(address(this)).withdrawYG(id, msg.sender, amount);
+                // }
 
                 collateral.collateralMembersBank[msg.sender] = 0;
                 collateral.collateralPaymentBank[msg.sender] = 0;
@@ -205,7 +208,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
 
         uint depositorsLength = collateral.depositors.length;
-        for (uint i; i < depositorsLength; i++) {
+        for (uint i; i < depositorsLength; ) {
             address depositor = collateral.depositors[i];
             collateral.collateralMembersBank[depositor] = 0;
             collateral.collateralPaymentBank[depositor] = 0;
@@ -220,20 +223,21 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
     }
 
     /// @notice Internal function to freeze the pot for the beneficiary
-    function freezePot(LibTermV2.Term memory term) external view returns (bool freeze) {
+    function freezePot(LibTermV2.Term memory term) external {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[term.termId];
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[term.termId];
-        uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
 
-        uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
-            term.contributionAmount * 10 ** 18
+        uint remainingCyclesContribution = IGettersV2(address(this)).getRemainingCyclesContribution(
+            term.termId
         );
 
-        uint neededCollateral = (110 * contributionAmountWei * remainingCycles) / 100; // 1.1 x RCC
+        uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
 
-        return (collateral.collateralMembersBank[fund.lastBeneficiary] < neededCollateral);
+        if (collateral.collateralMembersBank[fund.lastBeneficiary] < neededCollateral) {
+            fund.beneficiariesFrozenPool[fund.lastBeneficiary] = true;
+        }
     }
 
     /// @param _id term id
@@ -256,12 +260,9 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[_id];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
 
         uint collateralLimit;
-        uint memberCollateralUSD;
-        (, , , , , , uint currentCycle, , uint totalAmountOfCycles) = IGettersV2(address(this))
-            .getFundSummary(_id);
+        uint memberCollateral = collateral.collateralMembersBank[_member];
 
         if (!LibFundV2._fundExists(_id)) {
             // Only check here when starting the term
@@ -270,15 +271,10 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 _id
             );
         } else {
-            uint remainingCycles = 1 + totalAmountOfCycles - currentCycle;
-
-            collateralLimit = remainingCycles * term.contributionAmount * 10 ** 18; // 18 decimals
+            collateralLimit = IGettersV2(address(this)).getRemainingCyclesContribution(_id);
         }
 
-        memberCollateralUSD = IGettersV2(address(this)).getToUSDConversionRate(
-            collateral.collateralMembersBank[_member]
-        );
-        return (memberCollateralUSD < collateralLimit);
+        return (memberCollateral < collateralLimit);
     }
 
     /// @param _collateral Collateral storage
@@ -297,55 +293,27 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         // require(_defaulters.length > 0, "No defaulters"); // todo: needed? only call this function when there are defaulters
 
         bool wasBeneficiary;
-        uint8 totalExpellants;
         address[] memory expellants = new address[](_defaulters.length);
         uint share;
         uint currentDefaulterBank;
         uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
             _term.contributionAmount * 10 ** 18
         );
+        uint defaultersLength = _defaulters.length;
         // Determine who will be expelled and who will just pay the contribution from their collateral.
-        for (uint i; i < _defaulters.length; ) {
-            wasBeneficiary = IFundV2(address(this)).isBeneficiary(_term.termId, _defaulters[i]);
+        for (uint i; i < defaultersLength; ) {
+            wasBeneficiary = _fund.isBeneficiary[_defaulters[i]];
             currentDefaulterBank = _collateral.collateralMembersBank[_defaulters[i]];
             // Avoid expelling graced defaulter
 
             if (
-                (wasBeneficiary && _isUnderCollaterized(_term.termId, _defaulters[i])) ||
-                (currentDefaulterBank < contributionAmountWei)
+                (!wasBeneficiary && (currentDefaulterBank >= contributionAmountWei)) ||
+                (wasBeneficiary && !_isUnderCollaterized(_term.termId, _defaulters[i])) ||
+                (wasBeneficiary &&
+                    _isUnderCollaterized(_term.termId, _defaulters[i]) &&
+                    _fund.beneficiariesFrozenPool[_defaulters[i]] &&
+                    (currentDefaulterBank >= contributionAmountWei))
             ) {
-                if (_fund.beneficiariesFrozenPool[_defaulters[i]] >= _term.contributionAmount) {
-                    _fund.beneficiariesFrozenPool[_defaulters[i]] -= _term.contributionAmount;
-                    _fund.beneficiariesPool[_beneficiary] += _term.contributionAmount;
-
-                    emit OnFrozenMoneyPotLiquidated(
-                        _term.termId,
-                        address(_defaulters[i]),
-                        _term.contributionAmount
-                    );
-                } else {
-                    // If enter this statement through the second condition, then the defaulter may not be a beneficiary
-                    // In that case
-                    if (!wasBeneficiary) {
-                        // Nothing to share, reimburse all the securities left
-                        // share = 0;
-                        _collateral.collateralPaymentBank[_defaulters[i]] += currentDefaulterBank;
-                    } else {
-                        share += currentDefaulterBank;
-                    }
-
-                    _collateral.isCollateralMember[_defaulters[i]] = false; // Expelled!
-                    expellants[i] = _defaulters[i];
-                    _collateral.collateralMembersBank[_defaulters[i]] = 0;
-                    ++totalExpellants;
-
-                    emit OnCollateralLiquidated(
-                        _term.termId,
-                        address(_defaulters[i]),
-                        currentDefaulterBank
-                    );
-                }
-            } else {
                 // Subtract contribution from defaulter and add to beneficiary.
                 _collateral.collateralMembersBank[_defaulters[i]] -= contributionAmountWei;
                 _collateral.collateralPaymentBank[_beneficiary] += contributionAmountWei;
@@ -356,12 +324,58 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                     contributionAmountWei
                 );
             }
+
+            if (!wasBeneficiary && (currentDefaulterBank < contributionAmountWei)) {
+                // Expelled
+                _collateral.isCollateralMember[_defaulters[i]] = false;
+                _collateral.collateralMembersBank[_defaulters[i]] = 0;
+                _collateral.collateralPaymentBank[_beneficiary] += currentDefaulterBank;
+                expellants[i] = _defaulters[i];
+            }
+
+            if (
+                wasBeneficiary &&
+                _isUnderCollaterized(_term.termId, _defaulters[i]) &&
+                !_fund.beneficiariesFrozenPool[_defaulters[i]]
+            ) {
+                // Expelled
+                _collateral.isCollateralMember[_defaulters[i]] = false;
+                _collateral.collateralMembersBank[_defaulters[i]] = 0;
+                share += currentDefaulterBank;
+                expellants[i] = _defaulters[i];
+            }
+
+            if (
+                wasBeneficiary &&
+                _isUnderCollaterized(_term.termId, _defaulters[i]) &&
+                _fund.beneficiariesFrozenPool[_defaulters[i]] &&
+                (currentDefaulterBank < contributionAmountWei)
+            ) {
+                // Pay with frozen pool
+                if (_fund.beneficiariesPool[_defaulters[i]] >= _term.contributionAmount) {
+                    _fund.beneficiariesPool[_defaulters[i]] -= _term.contributionAmount;
+                    _fund.beneficiariesPool[_beneficiary] += _term.contributionAmount;
+
+                    emit OnFrozenMoneyPotLiquidated(
+                        _term.termId,
+                        address(_defaulters[i]),
+                        _term.contributionAmount
+                    );
+                } else {
+                    // Expelled
+                    // todo: distribute usdc
+                    _collateral.isCollateralMember[_defaulters[i]] = false;
+                    _collateral.collateralMembersBank[_defaulters[i]] = 0;
+                    share += currentDefaulterBank;
+                    expellants[i] = _defaulters[i];
+                }
+            }
+
             unchecked {
                 ++i;
             }
         }
 
-        _term.totalParticipants = _term.totalParticipants - totalExpellants;
         return (share, expellants);
     }
 

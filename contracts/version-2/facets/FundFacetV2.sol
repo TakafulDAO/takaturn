@@ -83,9 +83,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     function closeFundingPeriod(uint id) external /*onlyTermOwner(id)*/ {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
-        LibCollateralV2.Collateral storage collateral = LibCollateralV2
-            ._collateralStorage()
-            .collaterals[id];
         // Current cycle minus 1 because we use the previous cycle time as start point then  add contribution period
         require(
             block.timestamp >
@@ -99,16 +96,16 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         // We attempt to make the autopayers pay their contribution right away
         _autoPay(id);
 
-        // Only then start choosing beneficiary
+        // Only then award the beneficiary
         _setState(id, LibFundV2.FundStates.AwardingBeneficiary);
 
         // We must check who hasn't paid and default them, check all participants based on beneficiariesOrder
-        address[] memory currentParticipants = fund.beneficiariesOrder;
+        address[] memory participants = fund.beneficiariesOrder;
 
-        uint currentParticipantsLength = currentParticipants.length;
+        uint participantsLength = participants.length;
 
-        for (uint i; i < currentParticipantsLength; ) {
-            address p = currentParticipants[i];
+        for (uint i; i < participantsLength; ) {
+            address p = participants[i];
 
             // The current beneficiary doesn't pay neither get defaulted
             if (p == currentBeneficiary) {
@@ -131,11 +128,8 @@ contract FundFacetV2 is IFundV2, TermOwnable {
                 }
             } else if (!EnumerableSet.contains(fund._defaulters, p)) {
                 // And we make sure that existing defaulters are ignored
-                // If the current beneficiary is an expelled participant, only previous beneficiaries pays, other participants are ignored
-                if (
-                    !fund.isParticipant[currentBeneficiary] &&
-                    !collateral.isCollateralMember[currentBeneficiary]
-                ) {
+                // If the current beneficiary is an expelled participant, only check previous beneficiaries
+                if (IGettersV2(address(this)).wasExpelled(id, currentBeneficiary)) {
                     if (fund.isBeneficiary[p]) {
                         _defaultParticipant(id, p);
                     }
@@ -149,7 +143,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         }
 
         // Once we decided who defaulted and who paid, we can award the beneficiary for this cycle
-        _awardBeneficiary(id);
+        _awardBeneficiary(fund, term);
         if (!(fund.currentCycle < fund.totalAmountOfCycles)) {
             // If all cycles have passed, and the last cycle's time has passed, close the fund
             _closeFund(id);
@@ -163,7 +157,9 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     function awardBeneficiary(uint id) external onlyTermOwner(id) {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         require(fund.currentState == LibFundV2.FundStates.AwardingBeneficiary, "Wrong state");
-        _awardBeneficiary(id);
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+
+        _awardBeneficiary(fund, term);
     }
 
     /// @notice called by the owner to close the fund for emergency reasons.
@@ -207,9 +203,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     /// @param id the id of the term
     function payContribution(uint id) external {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        LibCollateralV2.Collateral storage collateral = LibCollateralV2
-            ._collateralStorage()
-            .collaterals[id];
 
         // Get the beneficiary for this cycle
         address currentBeneficiary = IGettersV2(address(this)).getCurrentBeneficiary(id);
@@ -220,10 +213,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
 
         // If he is not participant neither a collateral member, means he is expelled
-        if (
-            !fund.isParticipant[currentBeneficiary] &&
-            !collateral.isCollateralMember[currentBeneficiary]
-        ) {
+        if (IGettersV2(address(this)).wasExpelled(id, currentBeneficiary)) {
             // The only ones that pays are the ones that were beneficiaries
             require(fund.isBeneficiary[msg.sender], "Only previous beneficiaries pays this cycle");
             _payContribution(id, msg.sender, msg.sender);
@@ -238,9 +228,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     /// @param participant the address the msg.sender is paying for, the address must be part of the fund
     function payContributionOnBehalfOf(uint id, address participant) external {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        LibCollateralV2.Collateral storage collateral = LibCollateralV2
-            ._collateralStorage()
-            .collaterals[id];
 
         address currentBeneficiary = IGettersV2(address(this)).getCurrentBeneficiary(id);
 
@@ -249,11 +236,8 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         require(currentBeneficiary != participant, "Beneficiary doesn't pay");
         require(!fund.paidThisCycle[participant], "Already paid for cycle");
 
-        if (
-            !fund.isParticipant[currentBeneficiary] &&
-            !collateral.isCollateralMember[currentBeneficiary]
-        ) {
-            require(fund.isBeneficiary[msg.sender], "Only previous beneficiaries pays this cycle");
+        if (IGettersV2(address(this)).wasExpelled(id, currentBeneficiary)) {
+            require(fund.isBeneficiary[participant], "Only previous beneficiaries pays this cycle");
             _payContribution(id, msg.sender, participant);
         } else {
             _payContribution(id, msg.sender, participant);
@@ -265,7 +249,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     /// @param id the id of the term
     function withdrawFund(uint id) external {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[id];
@@ -278,12 +261,9 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
-        bool hasFrozenPool = fund.beneficiariesFrozenPool[msg.sender] > 0;
-        (, , uint collateralPool, ) = IGettersV2(address(this)).getDepositorCollateralSummary(
-            msg.sender,
-            id
-        );
-        bool hasCollateralPool = collateralPool > 0;
+        bool hasFrozenPool = fund.beneficiariesFrozenPool[msg.sender];
+        bool hasCollateralPool = collateral.collateralPaymentBank[msg.sender] > 0;
+
         require(hasFundPool || hasFrozenPool || hasCollateralPool, "Nothing to withdraw");
 
         if (hasFundPool) {
@@ -295,20 +275,16 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         }
 
         if (hasFrozenPool) {
-            uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
-            uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
-                term.contributionAmount * 10 ** 18
-            );
+            uint remainingCyclesContribution = IGettersV2(address(this))
+                .getRemainingCyclesContribution(id);
 
-            uint neededCollateral = (150 * contributionAmountWei * remainingCycles) / 100; // 1.5 x RCC
+            uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
 
             require(
                 collateral.collateralMembersBank[fund.lastBeneficiary] >= neededCollateral,
-                "Need at least 1.5RCC collateral to unfroze your fund"
+                "Need at least 1.1RCC collateral to unfroze your fund"
             );
-
-            fund.beneficiariesPool[msg.sender] += fund.beneficiariesFrozenPool[msg.sender];
-            fund.beneficiariesFrozenPool[msg.sender] = 0;
+            fund.beneficiariesFrozenPool[msg.sender] = false;
 
             _transferPoolToBeneficiary(id, msg.sender);
         }
@@ -475,26 +451,25 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         emit OnParticipantDefaulted(_id, fund.currentCycle, _defaulter);
     }
 
-    /// @notice The beneficiary will be selected here based on the beneficiariesOrder array.
+    /// @notice The beneficiary will be awarded here based on the beneficiariesOrder array.
     /// @notice It will loop through the array and choose the first in line to be eligible to be beneficiary.
-    /// @param _id The id of the term
-    function _awardBeneficiary(uint _id) internal {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[_id];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_id];
-
-        address beneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_id);
+    function _awardBeneficiary(
+        LibFundV2.Fund storage _fund,
+        LibTermV2.Term storage _term
+    ) internal {
+        address beneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_term.termId);
 
         // Request contribution from the collateral for those who have to pay this cycle and haven't paid
-        if (EnumerableSet.length(fund._defaulters) > 0) {
+        if (EnumerableSet.length(_fund._defaulters) > 0) {
             address[] memory actualDefaulters = _actualDefaulters(
-                fund,
-                LibCollateralV2._collateralStorage().collaterals[_id],
+                _fund,
+                _term,
                 beneficiary,
-                EnumerableSet.values(fund._defaulters)
+                EnumerableSet.values(_fund._defaulters)
             );
 
             address[] memory expellants = ICollateralV2(address(this)).requestContribution(
-                term,
+                _term,
                 beneficiary,
                 actualDefaulters
             );
@@ -507,7 +482,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
                     }
                     continue;
                 }
-                _expelDefaulter(fund, term, expellants[i]);
+                _expelDefaulter(_fund, _term, expellants[i]);
                 unchecked {
                     ++i;
                 }
@@ -515,83 +490,92 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         }
 
         // Remove participant from participants set..
-        if (EnumerableSet.remove(fund._participants, beneficiary)) {
+        if (EnumerableSet.remove(_fund._participants, beneficiary)) {
             // ..Then add them to the benificiaries set
-            EnumerableSet.add(fund._beneficiaries, beneficiary);
+            EnumerableSet.add(_fund._beneficiaries, beneficiary);
         } // If this if-statement fails, this means we're dealing with a graced defaulter
 
         // Update the mapping to track who's been beneficiary
-        fund.isBeneficiary[beneficiary] = true;
-        fund.lastBeneficiary = beneficiary;
+        _fund.isBeneficiary[beneficiary] = true;
+        _fund.lastBeneficiary = beneficiary;
 
         // Get the amount of participants that paid this cycle, and add that amount to the beneficiary's pool
         uint paidCount;
-        address[] memory allParticipants = fund.beneficiariesOrder; // Use beneficiariesOrder here because it contains all active participants in a single array
-        for (uint i = 0; i < allParticipants.length; i++) {
-            if (fund.paidThisCycle[allParticipants[i]]) {
+        address[] memory participants = _fund.beneficiariesOrder; // Use beneficiariesOrder here because it contains all active participants in a single array
+        uint participantsLength = participants.length;
+        for (uint i; i < participantsLength; ) {
+            if (_fund.paidThisCycle[participants[i]]) {
                 paidCount++;
+            }
+            unchecked {
+                ++i;
             }
         }
 
         // Award the beneficiary with the pool or freeze the pot
 
-        if (ICollateralV2(address(this)).freezePot(term)) {
-            fund.beneficiariesFrozenPool[beneficiary] =
-                term.contributionAmount *
-                paidCount *
-                10 ** 6;
-        } else {
-            fund.beneficiariesPool[beneficiary] = term.contributionAmount * paidCount * 10 ** 6;
-        }
+        ICollateralV2(address(this)).freezePot(_term);
 
-        emit OnBeneficiaryAwarded(_id, beneficiary);
-        _setState(_id, LibFundV2.FundStates.CycleOngoing);
+        _fund.beneficiariesPool[beneficiary] = _term.contributionAmount * paidCount * 10 ** 6;
+
+        emit OnBeneficiaryAwarded(_term.termId, beneficiary);
+        _setState(_term.termId, LibFundV2.FundStates.CycleOngoing);
     }
 
     /// @notice Called to get the defaulters
     /// @dev Beneficiary is never considered a defaulter
     /// @dev If the beneficiary was previously expelled, then we only consider previous beneficiaries
     /// @param _fund Fund storage
-    /// @param _collateral Collateral storage
     /// @param _beneficiary Address that will be receiving the cycle pot
     /// @param _defaulters Complete defaulters array that will be filtered
     /// @return actualDefaulters array of addresses that we will consider as defaulters for the current cycle
     function _actualDefaulters(
         LibFundV2.Fund storage _fund,
-        LibCollateralV2.Collateral storage _collateral,
+        LibTermV2.Term storage _term,
         address _beneficiary,
         address[] memory _defaulters
     ) internal view returns (address[] memory) {
-        address[] memory actualDefaulters = new address[](_defaulters.length);
+        address[] memory actualDefaulters;
         address[] memory beneficiariesOrder = _fund.beneficiariesOrder; // We check on the beneficiariesOrder array
 
-        uint256 beneficiariesLength = beneficiariesOrder.length;
-        uint256 defaultersLength = _defaulters.length;
+        uint beneficiariesLength = beneficiariesOrder.length;
+        uint defaultersLength = _defaulters.length;
+        uint defaultersCounter;
 
-        // If the beneficiary is not a participant neither a collateral member he is expelled
-        bool expelledBeneficiary = !_fund.isParticipant[_beneficiary] &&
-            !_collateral.isCollateralMember[_beneficiary];
-
-        if (expelledBeneficiary) {
-            for (uint i; i < beneficiariesLength; ++i) {
+        if (IGettersV2(address(this)).wasExpelled(_term.termId, _beneficiary)) {
+            for (uint i; i < beneficiariesLength; ) {
                 // When we find the first non beneficiary we exit the loop. The first one must be the beneficiary
                 if (!_fund.isBeneficiary[beneficiariesOrder[i]]) {
                     break;
                 }
-                for (uint j; j < defaultersLength; ++j) {
+                for (uint j; j < defaultersLength; ) {
                     // We check if the previous beneficiary is on the defaulter array
                     if (beneficiariesOrder[i] == _defaulters[j]) {
-                        actualDefaulters[i] = _defaulters[j];
+                        actualDefaulters[defaultersCounter] = _defaulters[j];
+                        ++defaultersCounter;
                     }
+                    unchecked {
+                        ++j;
+                    }
+                }
+                unchecked {
+                    ++i;
                 }
             }
         } else {
             // We don't consider the beneficiary a defaulter
-            for (uint i; i < defaultersLength; ++i) {
+            for (uint i; i < defaultersLength; ) {
                 if (_defaulters[i] == _beneficiary) {
+                    unchecked {
+                        ++i;
+                    }
                     continue;
                 }
-                actualDefaulters[i] = _defaulters[i];
+                actualDefaulters[defaultersCounter] = _defaulters[i];
+                unchecked {
+                    ++defaultersCounter;
+                    ++i;
+                }
             }
         }
 

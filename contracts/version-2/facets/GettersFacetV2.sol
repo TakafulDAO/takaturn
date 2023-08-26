@@ -61,6 +61,20 @@ contract GettersFacetV2 is IGettersV2 {
         }
     }
 
+    /// @param id the term id
+    /// @return remaining cycles contribution
+    function getRemainingCyclesContribution(uint id) external view returns (uint) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+
+        uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
+        uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
+            term.contributionAmount * 10 ** 18
+        );
+
+        return remainingCycles * contributionAmountWei;
+    }
+
     // COLLATERAL GETTERS
 
     /// @param depositor the depositor address
@@ -155,6 +169,23 @@ contract GettersFacetV2 is IGettersV2 {
     function getCurrentBeneficiary(uint id) external view returns (address) {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         return fund.beneficiariesOrder[fund.currentCycle - 1];
+    }
+
+    /// @notice function to know if a user was expelled before
+    /// @param id the fund id
+    /// @param user the user to check
+    /// @return true if the user was expelled before
+    function wasExpelled(uint id, address user) external view returns (bool) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
+            ._collateralStorage()
+            .collaterals[id];
+
+        if (!fund.isParticipant[user] && !collateral.isCollateralMember[user]) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /// @notice function to get cycle information of a specific participant
