@@ -299,9 +299,8 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
             _term.contributionAmount * 10 ** 18
         );
-        uint defaultersLength = _defaulters.length;
         // Determine who will be expelled and who will just pay the contribution from their collateral.
-        for (uint i; i < defaultersLength; ) {
+        for (uint i; i < _defaulters.length; ) {
             wasBeneficiary = _fund.isBeneficiary[_defaulters[i]];
             currentDefaulterBank = _collateral.collateralMembersBank[_defaulters[i]];
             // Avoid expelling graced defaulter
@@ -314,21 +313,33 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                     _fund.beneficiariesFrozenPool[_defaulters[i]] &&
                     (currentDefaulterBank >= contributionAmountWei))
             ) {
-                // Subtract contribution from defaulter and add to beneficiary.
-                _collateral.collateralMembersBank[_defaulters[i]] -= contributionAmountWei;
-                _collateral.collateralPaymentBank[_beneficiary] += contributionAmountWei;
-
-                emit OnCollateralLiquidated(
-                    _term.termId,
-                    address(_defaulters[i]),
-                    contributionAmountWei
+                // Pay with collateral
+                _payDefaulterContribution(
+                    _collateral,
+                    _fund,
+                    _term,
+                    _defaulters[i],
+                    _beneficiary,
+                    contributionAmountWei,
+                    true, // Pay with collateral
+                    false, // Does not pay with frozen pool
+                    false // Not expelled
                 );
             }
 
             if (!wasBeneficiary && (currentDefaulterBank < contributionAmountWei)) {
-                // Expelled
-                _collateral.isCollateralMember[_defaulters[i]] = false;
-                _collateral.collateralMembersBank[_defaulters[i]] = 0;
+                // Expelled, but keep remaining collateral
+                _payDefaulterContribution(
+                    _collateral,
+                    _fund,
+                    _term,
+                    _defaulters[i],
+                    _beneficiary,
+                    contributionAmountWei,
+                    true,
+                    false, // Does not pay with frozen pool
+                    true // Expelled
+                );
                 _collateral.collateralPaymentBank[_beneficiary] += currentDefaulterBank;
                 expellants[i] = _defaulters[i];
             }
@@ -338,9 +349,18 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 _isUnderCollaterized(_term.termId, _defaulters[i]) &&
                 !_fund.beneficiariesFrozenPool[_defaulters[i]]
             ) {
-                // Expelled
-                _collateral.isCollateralMember[_defaulters[i]] = false;
-                _collateral.collateralMembersBank[_defaulters[i]] = 0;
+                // Expelled, remaining collateral distributed
+                _payDefaulterContribution(
+                    _collateral,
+                    _fund,
+                    _term,
+                    _defaulters[i],
+                    _beneficiary,
+                    contributionAmountWei,
+                    true, // Pay with collateral
+                    false, // Does not pay with frozen pool
+                    true // Expelled
+                );
                 share += currentDefaulterBank;
                 expellants[i] = _defaulters[i];
             }
@@ -351,23 +371,56 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 _fund.beneficiariesFrozenPool[_defaulters[i]] &&
                 (currentDefaulterBank < contributionAmountWei)
             ) {
-                // Pay with frozen pool
                 if (_fund.beneficiariesPool[_defaulters[i]] >= _term.contributionAmount) {
-                    _fund.beneficiariesPool[_defaulters[i]] -= _term.contributionAmount;
-                    _fund.beneficiariesPool[_beneficiary] += _term.contributionAmount;
-
-                    emit OnFrozenMoneyPotLiquidated(
-                        _term.termId,
-                        address(_defaulters[i]),
-                        _term.contributionAmount
+                    // Pay with frozen pool
+                    _payDefaulterContribution(
+                        _collateral,
+                        _fund,
+                        _term,
+                        _defaulters[i],
+                        _beneficiary,
+                        contributionAmountWei,
+                        false, // Does not pay with collateral
+                        true, // Pay with frozen pool
+                        false // Not expelled
                     );
                 } else {
-                    // Expelled
-                    // todo: distribute usdc
-                    _collateral.isCollateralMember[_defaulters[i]] = false;
-                    _collateral.collateralMembersBank[_defaulters[i]] = 0;
-                    share += currentDefaulterBank;
-                    expellants[i] = _defaulters[i];
+                    uint totalAmountWei = currentDefaulterBank +
+                        IGettersV2(address(this)).getToEthConversionRate(
+                            _fund.beneficiariesPool[_defaulters[i]] * 10 ** 18
+                        );
+                    if (
+                        totalAmountWei >=
+                        IGettersV2(address(this)).getRemainingCyclesContribution(_term.termId)
+                    ) {
+                        _payDefaulterContribution(
+                            _collateral,
+                            _fund,
+                            _term,
+                            _defaulters[i],
+                            _beneficiary,
+                            contributionAmountWei,
+                            true, // Pay with collateral
+                            true, // Pay with frozen pool
+                            false // Not expelled
+                        );
+                    } else {
+                        // Expelled, distribute collateral and frozen money pot
+                        // todo: distribute usdc
+                        _payDefaulterContribution(
+                            _collateral,
+                            _fund,
+                            _term,
+                            _defaulters[i],
+                            _beneficiary,
+                            contributionAmountWei,
+                            true,
+                            false,
+                            true
+                        );
+                        share += currentDefaulterBank;
+                        expellants[i] = _defaulters[i];
+                    }
                 }
             }
 
@@ -377,6 +430,60 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         }
 
         return (share, expellants);
+    }
+
+    /// @notice called internally to pay defaulter contribution
+    function _payDefaulterContribution(
+        LibCollateralV2.Collateral storage _collateral,
+        LibFundV2.Fund storage _fund,
+        LibTermV2.Term memory _term,
+        address _defaulter,
+        address _beneficiary,
+        uint _contributionAmountWei,
+        bool _payWithCollateral,
+        bool _payWithFrozenPool,
+        bool _isExpelled
+    ) internal {
+        if (_payWithCollateral && !_payWithFrozenPool) {
+            if (!_isExpelled) {
+                // Subtract contribution from defaulter and add to beneficiary.
+                _collateral.collateralMembersBank[_defaulter] -= _contributionAmountWei;
+                _collateral.collateralPaymentBank[_beneficiary] += _contributionAmountWei;
+            } else {
+                // Expelled
+                _collateral.isCollateralMember[_defaulter] = false;
+                _collateral.collateralMembersBank[_defaulter] = 0;
+            }
+            emit OnCollateralLiquidated(_term.termId, _defaulter, _contributionAmountWei);
+        }
+        if (_payWithFrozenPool && !_payWithCollateral) {
+            _fund.beneficiariesPool[_defaulter] -= _term.contributionAmount;
+            _fund.beneficiariesPool[_beneficiary] += _term.contributionAmount;
+
+            emit OnFrozenMoneyPotLiquidated(_term.termId, _defaulter, _term.contributionAmount);
+        }
+        if (_payWithCollateral && _payWithFrozenPool) {
+            uint leftover = IGettersV2(address(this)).getToEthConversionRate(
+                _term.contributionAmount * 10 ** 18
+            ) - _collateral.collateralMembersBank[_defaulter];
+
+            uint leftoverUSDC = IGettersV2(address(this)).getToUSDConversionRate(leftover);
+
+            _collateral.collateralPaymentBank[_beneficiary] += _collateral.collateralMembersBank[
+                _defaulter
+            ];
+            _collateral.collateralMembersBank[_defaulter] = 0;
+            _fund.beneficiariesPool[_beneficiary] += leftoverUSDC;
+            _fund.beneficiariesPool[_defaulter] -= leftoverUSDC;
+
+            emit OnCollateralLiquidated(
+                _term.termId,
+                _defaulter,
+                _collateral.collateralMembersBank[_defaulter]
+            );
+
+            emit OnFrozenMoneyPotLiquidated(_term.termId, _defaulter, leftoverUSDC);
+        }
     }
 
     /// @param _collateral Collateral storage
