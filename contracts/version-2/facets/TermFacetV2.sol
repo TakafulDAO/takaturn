@@ -22,12 +22,7 @@ contract TermFacetV2 is ITermV2 {
     uint public constant TERM_VERSION = 2;
 
     event OnTermCreated(uint indexed termId, address indexed termOwner);
-    event OnCollateralDeposited(
-        uint indexed termId,
-        address indexed user,
-        uint amount,
-        bool optedYG
-    );
+    event OnCollateralDeposited(uint indexed termId, address indexed user, uint amount);
     event OnTermFilled(uint indexed termId);
     event OnTermExpired(uint indexed termId);
 
@@ -50,8 +45,8 @@ contract TermFacetV2 is ITermV2 {
             );
     }
 
-    function joinTerm(uint termId, bool optedYG) external payable {
-        _joinTerm(termId, optedYG);
+    function joinTerm(uint termId) external payable {
+        _joinTerm(termId);
     }
 
     function startTerm(uint termId) external {
@@ -109,15 +104,12 @@ contract TermFacetV2 is ITermV2 {
         return termId;
     }
 
-    function _joinTerm(uint _termId, bool _optedYG) internal {
+    function _joinTerm(uint _termId) internal {
         LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
         LibTermV2.Term memory term = termStorage.terms[_termId];
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[_termId];
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
-            ._yieldStorage()
-            .yields[_termId];
 
         require(LibTermV2._termExists(_termId) && LibCollateralV2._collateralExists(_termId));
 
@@ -147,9 +139,7 @@ contract TermFacetV2 is ITermV2 {
 
                 termStorage.participantToTermId[msg.sender].push(_termId);
 
-                yield.hasOptedIn[msg.sender] = _optedYG;
-
-                emit OnCollateralDeposited(_termId, msg.sender, ethSended, _optedYG);
+                emit OnCollateralDeposited(_termId, msg.sender, ethSended);
 
                 break;
             }

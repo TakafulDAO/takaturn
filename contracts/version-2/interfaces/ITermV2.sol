@@ -12,7 +12,7 @@ interface ITermV2 {
         address stableTokenAddress
     ) external returns (uint);
 
-    function joinTerm(uint termId, bool optedYG) external payable;
+    function joinTerm(uint termId) external payable;
 
     function startTerm(uint termId) external;
 
