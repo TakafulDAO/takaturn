@@ -18,11 +18,9 @@ interface ICollateralV2 {
 
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
-    /// @param beneficiary Address that was randomly selected for the current cycle
     /// @param defaulters Address that was randomly selected for the current cycle
     function requestContribution(
         LibTermV2.Term memory term,
-        address beneficiary,
         address[] calldata defaulters
     ) external returns (address[] memory);
 
