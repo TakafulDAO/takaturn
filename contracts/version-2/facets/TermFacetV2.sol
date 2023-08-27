@@ -130,24 +130,26 @@ contract TermFacetV2 is ITermV2 {
 
         require(!collateral.isCollateralMember[msg.sender], "Reentry");
 
+        uint ethSended = msg.value;
+
         uint depositorsLength = collateral.depositors.length;
         for (uint i; i < depositorsLength; ) {
             if (collateral.depositors[i] == address(0)) {
                 uint amount = IGettersV2(address(this)).minCollateralToDeposit(term, i);
 
-                require(msg.value >= amount, "Eth payment too low");
+                require(ethSended >= amount, "Eth payment too low");
 
-                collateral.collateralMembersBank[msg.sender] += msg.value;
+                collateral.collateralMembersBank[msg.sender] += ethSended;
                 collateral.isCollateralMember[msg.sender] = true;
                 collateral.depositors[i] = msg.sender;
                 collateral.counterMembers++;
-                collateral.collateralDepositByUser[msg.sender] += msg.value;
+                collateral.collateralDepositByUser[msg.sender] += ethSended;
 
                 termStorage.participantToTermId[msg.sender].push(_termId);
 
                 yield.hasOptedIn[msg.sender] = _optedYG;
 
-                emit OnCollateralDeposited(_termId, msg.sender, msg.value, _optedYG);
+                emit OnCollateralDeposited(_termId, msg.sender, ethSended, _optedYG);
 
                 break;
             }
