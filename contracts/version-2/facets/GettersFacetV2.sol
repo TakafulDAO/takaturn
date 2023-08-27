@@ -5,6 +5,7 @@ pragma solidity 0.8.18;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
+import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
 import {LibTermV2} from "../libraries/LibTermV2.sol";
 import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
@@ -360,6 +361,8 @@ contract GettersFacetV2 is IGettersV2 {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
+        LibYieldGeneration.YieldGenerationConsts memory yieldGenerationConsts = LibYieldGeneration
+            ._yieldGenerationConsts();
 
         uint totalWithdrawnYield;
 
@@ -374,7 +377,10 @@ contract GettersFacetV2 is IGettersV2 {
             }
         }
 
-        return totalWithdrawnYield + (yield.totalDeposit - yield.currentTotalDeposit);
+        return
+            totalWithdrawnYield +
+            (yield.totalDeposit -
+                IZaynVaultV2TakaDao(yieldGenerationConsts.vaultAddress).balance());
     }
 
     /// @notice This function is used to get the total yield generated for a user
