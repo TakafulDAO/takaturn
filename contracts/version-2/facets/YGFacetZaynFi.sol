@@ -12,6 +12,8 @@ import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 
 contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
 
+    event OnYGOptInToggled(uint indexed termId, address indexed participant, bool indexed optedIn); // Emits when a participant succesfully toggles yield generation
+
     /// @notice This function is used to deposit collateral for yield generation
     /// @param termId The term id for which the collateral is being deposited
     /// @param ethAmount The amount of collateral being deposited
@@ -55,4 +57,21 @@ contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
         // require(success);
     }
 
+    function toggleOptInYG(uint termId) external {
+        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+            ._yieldStorage()
+            .yields[termId];
+
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
+            ._collateralStorage()
+            .collaterals[termId];
+
+        require(collateral.state == LibCollateralV2.CollateralStates.AcceptingCollateral, "Too late to change YG opt in");
+        require(collateral.isCollateralMember[msg.sender], "Not part of term");
+
+        bool newDecision = !yield.hasOptedIn[msg.sender];
+
+        yield.hasOptedIn[msg.sender] = newDecision;
+        emit OnYGOptInToggled(termId, msg.sender, newDecision);
+    }
 }

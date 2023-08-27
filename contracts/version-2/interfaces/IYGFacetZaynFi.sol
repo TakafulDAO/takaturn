@@ -8,4 +8,6 @@ interface IYGFacetZaynFi {
     function depositYG(uint termId, uint amount) external;
 
     function withdrawYG(uint termId, address user, uint256 ethAmount) external;
+
+    function toggleOptInYG(uint termId) external;
 }
