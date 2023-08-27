@@ -343,7 +343,7 @@ contract GettersFacetV2 is IGettersV2 {
     /// @param termId The term id for which the ratio is being calculated
     /// @param user The user for which the ratio is being calculated
     /// @return The yield distribution ratio for the user
-    function yieldDistributionRatio(uint termId, address user) external view returns (uint256) {
+    function yieldDistributionRatio(uint termId, address user) public view returns (uint256) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
@@ -392,6 +392,8 @@ contract GettersFacetV2 is IGettersV2 {
             ._yieldStorage()
             .yields[termId];
 
-        return yield.withdrawnYield[user] + (yield.totalDeposit - yield.currentTotalDeposit);
+        return
+            yield.withdrawnYield[user] +
+            (totalYieldGenerated(termId) - yieldDistributionRatio(termId, user));
     }
 }
