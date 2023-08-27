@@ -33,7 +33,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         uint indexed currentCycle,
         address indexed defaulter
     ); // Emits when a participant didn't pay this cycle's contribution
-    event OnParticipantUndefaulted(uint indexed termId, address indexed undefaulter); // Emits when a participant was a defaulter before but started paying on time again for this cycle
     event OnDefaulterExpelled(
         uint indexed termId,
         uint indexed currentCycle,
@@ -123,9 +122,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
                     EnumerableSet.add(fund._participants, p);
                 }
 
-                if (EnumerableSet.remove(fund._defaulters, p)) {
-                    emit OnParticipantUndefaulted(id, p);
-                }
+                EnumerableSet.remove(fund._defaulters, p);
             } else if (!EnumerableSet.contains(fund._defaulters, p)) {
                 // And we make sure that existing defaulters are ignored
                 // If the current beneficiary is an expelled participant, only check previous beneficiaries
