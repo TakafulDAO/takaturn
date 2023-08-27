@@ -394,6 +394,7 @@ contract GettersFacetV2 is IGettersV2 {
 
         return
             yield.withdrawnYield[user] +
-            (totalYieldGenerated(termId) - yieldDistributionRatio(termId, user));
+            totalYieldGenerated(termId) -
+            yieldDistributionRatio(termId, user);
     }
 }
