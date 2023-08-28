@@ -51,6 +51,14 @@ contract GettersFacetV2 is IGettersV2 {
 
     /// @param id the term id
     /// @return remaining time in the current cycle
+    function getRemainingCycles(uint id) external view returns (uint) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+
+        return (1 + fund.totalAmountOfCycles - fund.currentCycle);
+    }
+
+    /// @param id the term id
+    /// @return remaining time in the current cycle
     function getRemainingCycleTime(uint id) external view returns (uint) {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];

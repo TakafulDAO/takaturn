@@ -19,6 +19,8 @@ interface IGettersV2 {
 
     function getParticipantTerms(address participant) external view returns (uint[] memory);
 
+    function getRemainingCycles(uint id) external view returns (uint);
+
     function getRemainingCycleTime(uint id) external view returns (uint);
 
     function getRemainingCyclesContribution(uint id) external view returns (uint);
