@@ -1,0 +1,183 @@
+{
+  "address": "0xFca3e71f9A5706ACea6F75CFadD904407746ab2D",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "termId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "participant",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bool",
+          "name": "optedIn",
+          "type": "bool"
+        }
+      ],
+      "name": "OnYGOptInToggled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousTermOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newTermOwner",
+          "type": "address"
+        }
+      ],
+      "name": "TermOwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "termId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "yieldProvider",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "vault",
+          "type": "address"
+        }
+      ],
+      "name": "addYieldProviders",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "termId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ethAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "depositYG",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "termId",
+          "type": "uint256"
+        }
+      ],
+      "name": "toggleOptInYG",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "termId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "ethAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdrawYG",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x2c15f0a0fc3b053ff2e39ad61d4f6d4b4da967620de96742e54a3572ed2debf9",
+  "receipt": {
+    "to": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+    "from": "0x3904F59DF9199e0d6dC3800af9f6794c9D037eb1",
+    "contractAddress": null,
+    "transactionIndex": 1,
+    "gasUsed": "430925",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xf0dd5860af1f6a176180eeee50567b97be56aed832dfbffeb5286a288b20d32b",
+    "transactionHash": "0x2c15f0a0fc3b053ff2e39ad61d4f6d4b4da967620de96742e54a3572ed2debf9",
+    "logs": [],
+    "blockNumber": 37281320,
+    "cumulativeGasUsed": "430925",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "numDeployments": 1,
+  "solcInputHash": "170280041a9111201cdb7b99d57489f8",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.18+commit.87f61d96\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"termId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"participant\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bool\",\"name\":\"optedIn\",\"type\":\"bool\"}],\"name\":\"OnYGOptInToggled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousTermOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newTermOwner\",\"type\":\"address\"}],\"name\":\"TermOwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"termId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"yieldProvider\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"vault\",\"type\":\"address\"}],\"name\":\"addYieldProviders\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"termId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"ethAmount\",\"type\":\"uint256\"}],\"name\":\"depositYG\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"termId\",\"type\":\"uint256\"}],\"name\":\"toggleOptInYG\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"termId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"ethAmount\",\"type\":\"uint256\"}],\"name\":\"withdrawYG\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"depositYG(uint256,uint256)\":{\"params\":{\"ethAmount\":\"The amount of collateral being deposited\",\"termId\":\"The term id for which the collateral is being deposited\"}},\"withdrawYG(uint256,address,uint256)\":{\"params\":{\"ethAmount\":\"The amount of collateral being withdrawn\",\"termId\":\"The term id for which the collateral is being withdrawn\",\"user\":\"The user who is withdrawing the collateral\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"depositYG(uint256,uint256)\":{\"notice\":\"This function is used to deposit collateral for yield generation\"},\"withdrawYG(uint256,address,uint256)\":{\"notice\":\"This function is used to withdraw collateral from yield generation\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/version-2/facets/YGFacetZaynFi.sol\":\"YGFacetZaynFi\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts v4.4.1 (utils/Context.sol)\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n}\\n\",\"keccak256\":\"0xe2e337e6dde9ef6b680e07338c493ebea1b5fd09b43424112868e9cc1706bca7\",\"license\":\"MIT\"},\"contracts/version-1/access/TermOwnable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\r\\n// Copied from OpenZeppelin Contracts (last updated v4.9.0) (access/Ownable.sol)\\r\\n\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nimport \\\"@openzeppelin/contracts/utils/Context.sol\\\";\\r\\n\\r\\nimport {LibTerm} from \\\"../libraries/LibTerm.sol\\\";\\r\\n\\r\\n/**\\r\\n * @dev Contract module which provides a basic access control mechanism, where\\r\\n * there is an account (an owner) that can be granted exclusive access to\\r\\n * specific functions.\\r\\n *\\r\\n * By default, the owner account will be the one that starts a new term. This\\r\\n * can later be changed with {transferOwnership}.\\r\\n *\\r\\n * This module is used through inheritance. It will make available the modifier\\r\\n * `onlyTermOwner`, which can be applied to your functions to restrict their use to\\r\\n * the owner.\\r\\n */\\r\\ncontract TermOwnable is Context {\\r\\n    event TermOwnershipTransferred(address indexed previousTermOwner, address indexed newTermOwner);\\r\\n\\r\\n    /**\\r\\n     * @dev Throws if called by any account other than the owner.\\r\\n     */\\r\\n    modifier onlyTermOwner(uint termId) {\\r\\n        _checkTermOwner(termId);\\r\\n        _;\\r\\n    }\\r\\n\\r\\n    /**\\r\\n     * @dev Returns the address of the current owner.\\r\\n     */\\r\\n    function _termOwner(uint termId) internal view virtual returns (address) {\\r\\n        return LibTerm._termStorage().terms[termId].termOwner;\\r\\n    }\\r\\n\\r\\n    /**\\r\\n     * @dev Throws if the sender is not the owner.\\r\\n     */\\r\\n    function _checkTermOwner(uint termId) internal view virtual {\\r\\n        require(_termOwner(termId) == _msgSender(), \\\"TermOwnable: caller is not the owner\\\");\\r\\n    }\\r\\n\\r\\n    /**\\r\\n     * @dev Leaves the contract without owner. It will not be possible to call\\r\\n     * `onlyTermOwner` functions. Can only be called by the current owner.\\r\\n     *\\r\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\r\\n     * thereby disabling any functionality that is only available to the owner.\\r\\n     */\\r\\n    function _renounceTermOwnership(uint termId) internal virtual onlyTermOwner(termId) {\\r\\n        _transferTermOwnership(termId, address(0));\\r\\n    }\\r\\n\\r\\n    /**\\r\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\r\\n     * Can only be called by the current owner.\\r\\n     */\\r\\n    // function transferTermOwnership(\\r\\n    //     uint termId,\\r\\n    //     address newTermOwner\\r\\n    // ) internal virtual onlyTermOwner(termId) {\\r\\n    //     require(newTermOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\r\\n    //     _transferTermOwnership(termId, newTermOwner);\\r\\n    // }\\r\\n\\r\\n    /**\\r\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\r\\n     * Internal function without access restriction.\\r\\n     */\\r\\n    function _transferTermOwnership(\\r\\n        uint termId,\\r\\n        address newTermOwner\\r\\n    ) internal virtual onlyTermOwner(termId) {\\r\\n        require(newTermOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\r\\n        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];\\r\\n        address oldOwner = term.termOwner;\\r\\n        term.termOwner = newTermOwner;\\r\\n        emit TermOwnershipTransferred(oldOwner, newTermOwner);\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0x0c6005fcd387d8c93c9f6fe1d0d2e3593895a5a97221259c771a7c59deb796e6\",\"license\":\"MIT\"},\"contracts/version-1/libraries/LibTerm.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nlibrary LibTerm {\\r\\n    uint public constant TERM_VERSION = 1;\\r\\n    bytes32 constant TERM_CONSTS_POSITION = keccak256(\\\"diamond.standard.term.consts\\\");\\r\\n    bytes32 constant TERM_STORAGE_POSITION = keccak256(\\\"diamond.standard.term.storage\\\");\\r\\n\\r\\n    struct TermConsts {\\r\\n        uint sequencerStartupTime;\\r\\n        address sequencerUptimeFeedAddress;\\r\\n    }\\r\\n\\r\\n    struct Term {\\r\\n        bool initialized;\\r\\n        address termOwner;\\r\\n        uint creationTime;\\r\\n        uint termId;\\r\\n        uint totalParticipants; // Max number of participants\\r\\n        uint cycleTime; // Time for single cycle (seconds)\\r\\n        uint contributionAmount; // Amount user must pay per cycle (USD)\\r\\n        uint contributionPeriod; // The portion of cycle user must make payment\\r\\n        uint fixedCollateralEth;\\r\\n        address stableTokenAddress;\\r\\n        address aggregatorAddress;\\r\\n    }\\r\\n\\r\\n    struct TermStorage {\\r\\n        uint nextTermId;\\r\\n        mapping(uint => Term) terms; // termId => Term struct\\r\\n    }\\r\\n\\r\\n    function _termExists(uint termId) internal view returns (bool) {\\r\\n        return _termStorage().terms[termId].initialized;\\r\\n    }\\r\\n\\r\\n    function _termConsts() internal pure returns (TermConsts storage termConsts) {\\r\\n        bytes32 position = TERM_CONSTS_POSITION;\\r\\n        assembly {\\r\\n            termConsts.slot := position\\r\\n        }\\r\\n    }\\r\\n\\r\\n    function _termStorage() internal pure returns (TermStorage storage termStorage) {\\r\\n        bytes32 position = TERM_STORAGE_POSITION;\\r\\n        assembly {\\r\\n            termStorage.slot := position\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0xbdb69fa8312f1d875ba838a9f1cc3af717cc5f5d4a229ccebe71ccfe41349146\",\"license\":\"MIT\"},\"contracts/version-2/facets/YGFacetZaynFi.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0\\r\\n\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nimport {IYGFacetZaynFi} from \\\"../interfaces/IYGFacetZaynFi.sol\\\";\\r\\nimport {IZaynZapV2TakaDAO} from \\\"../interfaces/IZaynZapV2TakaDAO.sol\\\";\\r\\n\\r\\nimport {LibYieldGeneration} from \\\"../libraries/LibYieldGeneration.sol\\\";\\r\\nimport {LibCollateralV2} from \\\"../libraries/LibCollateralV2.sol\\\";\\r\\n\\r\\nimport {TermOwnable} from \\\"../../version-1/access/TermOwnable.sol\\\";\\r\\n\\r\\ncontract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {\\r\\n    event OnYGOptInToggled(uint indexed termId, address indexed participant, bool indexed optedIn); // Emits when a participant succesfully toggles yield generation\\r\\n\\r\\n    /// @notice This function is used to deposit collateral for yield generation\\r\\n    /// @param termId The term id for which the collateral is being deposited\\r\\n    /// @param ethAmount The amount of collateral being deposited\\r\\n    function depositYG(uint termId, uint ethAmount) external onlyTermOwner(termId) {\\r\\n        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration\\r\\n            ._yieldStorage()\\r\\n            .yields[termId];\\r\\n\\r\\n        yield.totalDeposit = ethAmount;\\r\\n        yield.currentTotalDeposit = ethAmount;\\r\\n\\r\\n        IZaynZapV2TakaDAO(yield.yieldProviders[0]).zapInEth{value: ethAmount}(\\r\\n            yield.yieldProviders[1],\\r\\n            termId\\r\\n        );\\r\\n    }\\r\\n\\r\\n    /// @notice This function is used to withdraw collateral from yield generation\\r\\n    /// @param termId The term id for which the collateral is being withdrawn\\r\\n    /// @param user The user who is withdrawing the collateral\\r\\n    /// @param ethAmount The amount of collateral being withdrawn\\r\\n    function withdrawYG(\\r\\n        uint termId,\\r\\n        address user,\\r\\n        uint256 ethAmount\\r\\n    ) external onlyTermOwner(termId) {\\r\\n        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration\\r\\n            ._yieldStorage()\\r\\n            .yields[termId];\\r\\n\\r\\n        yield.currentTotalDeposit -= ethAmount;\\r\\n        yield.withdrawnYield[user] += ethAmount;\\r\\n\\r\\n        IZaynZapV2TakaDAO(yield.yieldProviders[0]).zapOutETH(\\r\\n            yield.yieldProviders[1],\\r\\n            ethAmount,\\r\\n            termId\\r\\n        );\\r\\n\\r\\n        // (bool success, ) = payable(user).call{value: ethAmount}(\\\"\\\");\\r\\n        // require(success);\\r\\n    }\\r\\n\\r\\n    function toggleOptInYG(uint termId) external {\\r\\n        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration\\r\\n            ._yieldStorage()\\r\\n            .yields[termId];\\r\\n\\r\\n        LibCollateralV2.Collateral storage collateral = LibCollateralV2\\r\\n            ._collateralStorage()\\r\\n            .collaterals[termId];\\r\\n\\r\\n        require(\\r\\n            collateral.state == LibCollateralV2.CollateralStates.AcceptingCollateral,\\r\\n            \\\"Too late to change YG opt in\\\"\\r\\n        );\\r\\n        require(collateral.isCollateralMember[msg.sender], \\\"Not part of term\\\");\\r\\n\\r\\n        bool newDecision = !yield.hasOptedIn[msg.sender];\\r\\n\\r\\n        yield.hasOptedIn[msg.sender] = newDecision;\\r\\n        emit OnYGOptInToggled(termId, msg.sender, newDecision);\\r\\n    }\\r\\n\\r\\n    function addYieldProviders(uint termId, address yieldProvider, address vault) external {\\r\\n        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration\\r\\n            ._yieldStorage()\\r\\n            .yields[termId];\\r\\n\\r\\n        yield.yieldProviders[0] = yieldProvider;\\r\\n        yield.yieldProviders[1] = vault;\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0xc5a1f422b9eb0a3a3d456a07f7e05df8cce23aaa2a29671156ce5fbc214c9ad8\",\"license\":\"GPL-3.0\"},\"contracts/version-2/interfaces/IYGFacetZaynFi.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0\\r\\n\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nimport {LibTermV2} from \\\"../libraries/LibTermV2.sol\\\";\\r\\n\\r\\ninterface IYGFacetZaynFi {\\r\\n    function depositYG(uint termId, uint amount) external;\\r\\n\\r\\n    function withdrawYG(uint termId, address user, uint256 ethAmount) external;\\r\\n\\r\\n    function toggleOptInYG(uint termId) external;\\r\\n}\\r\\n\",\"keccak256\":\"0x916cd38cb81f706628cb91ee4c262d2ee01fbb5132c1933c68e064adf0e1f72d\",\"license\":\"GPL-3.0\"},\"contracts/version-2/interfaces/IZaynZapV2TakaDAO.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0\\r\\npragma solidity ^0.8.5;\\r\\n\\r\\ninterface IZaynZapV2TakaDAO {\\r\\n    function zapInEth(address vault, uint256 termID) external payable;\\r\\n\\r\\n    function zapOutETH(address vault, uint256 _shares, uint256 termID) external;\\r\\n}\\r\\n\",\"keccak256\":\"0xd3b3292fe56914118d35a404e6247d1d9395d5ed4d664693e72db6ec0ff721f3\",\"license\":\"GPL-3.0\"},\"contracts/version-2/libraries/LibCollateralV2.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nlibrary LibCollateralV2 {\\r\\n    uint public constant COLLATERAL_VERSION = 1;\\r\\n    bytes32 constant COLLATERAL_STORAGE_POSITION = keccak256(\\\"diamond.standard.collateral.storage\\\");\\r\\n\\r\\n    enum CollateralStates {\\r\\n        AcceptingCollateral, // Initial state where collateral are deposited\\r\\n        CycleOngoing, // Triggered when a fund instance is created, no collateral can be accepted\\r\\n        ReleasingCollateral, // Triggered when the fund closes\\r\\n        Closed // Triggered when all depositors withdraw their collaterals\\r\\n    }\\r\\n\\r\\n    struct Collateral {\\r\\n        bool initialized;\\r\\n        CollateralStates state;\\r\\n        uint firstDepositTime;\\r\\n        uint counterMembers;\\r\\n        address[] depositors;\\r\\n        mapping(address => bool) isCollateralMember; // Determines if a depositor is a valid user\\r\\n        mapping(address => uint) collateralMembersBank; // Users main balance\\r\\n        mapping(address => uint) collateralPaymentBank; // Users reimbursement balance after someone defaults\\r\\n        mapping(address => uint) collateralDepositByUser; // Depends on the depositors index\\r\\n    }\\r\\n\\r\\n    struct CollateralStorage {\\r\\n        mapping(uint => Collateral) collaterals; // termId => Collateral struct\\r\\n    }\\r\\n\\r\\n    function _collateralExists(uint termId) internal view returns (bool) {\\r\\n        return _collateralStorage().collaterals[termId].initialized;\\r\\n    }\\r\\n\\r\\n    function _collateralStorage()\\r\\n        internal\\r\\n        pure\\r\\n        returns (CollateralStorage storage collateralStorage)\\r\\n    {\\r\\n        bytes32 position = COLLATERAL_STORAGE_POSITION;\\r\\n        assembly {\\r\\n            collateralStorage.slot := position\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0xe5af5ea8b1351d64443776f7712a84b49fd36ac80c7c6c438756896a25d0c724\",\"license\":\"MIT\"},\"contracts/version-2/libraries/LibTermV2.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nlibrary LibTermV2 {\\r\\n    uint public constant TERM_VERSION = 2;\\r\\n    bytes32 constant TERM_CONSTS_POSITION = keccak256(\\\"diamond.standard.term.consts\\\");\\r\\n    bytes32 constant TERM_STORAGE_POSITION = keccak256(\\\"diamond.standard.term.storage\\\");\\r\\n\\r\\n    struct TermConsts {\\r\\n        uint sequencerStartupTime;\\r\\n        address sequencerUptimeFeedAddress;\\r\\n        mapping(string => address) aggregatorsAddresses; // \\\"ETH/USD\\\" => address , \\\"USD/USDC\\\" => address\\r\\n    }\\r\\n\\r\\n    struct Term {\\r\\n        bool initialized;\\r\\n        bool expired;\\r\\n        address termOwner;\\r\\n        uint creationTime;\\r\\n        uint termId;\\r\\n        uint registrationPeriod; // Time for registration (seconds)\\r\\n        uint totalParticipants; // Max number of participants\\r\\n        uint cycleTime; // Time for single cycle (seconds)\\r\\n        uint contributionAmount; // Amount user must pay per cycle (USD)\\r\\n        uint contributionPeriod; // The portion of cycle user must make payment\\r\\n        address stableTokenAddress;\\r\\n    }\\r\\n\\r\\n    struct TermStorage {\\r\\n        uint nextTermId;\\r\\n        mapping(uint => Term) terms; // termId => Term struct\\r\\n        mapping(address => uint[]) participantToTermId; // userAddress => [termId1, termId2, ...]\\r\\n    }\\r\\n\\r\\n    function _termExists(uint termId) internal view returns (bool) {\\r\\n        return _termStorage().terms[termId].initialized;\\r\\n    }\\r\\n\\r\\n    function _termConsts() internal pure returns (TermConsts storage termConsts) {\\r\\n        bytes32 position = TERM_CONSTS_POSITION;\\r\\n        assembly {\\r\\n            termConsts.slot := position\\r\\n        }\\r\\n    }\\r\\n\\r\\n    function _termStorage() internal pure returns (TermStorage storage termStorage) {\\r\\n        bytes32 position = TERM_STORAGE_POSITION;\\r\\n        assembly {\\r\\n            termStorage.slot := position\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0xa68e43ef3c17635d2e7cf4473b3ae4fc1541d5325b67508a3834a85fc000ef3a\",\"license\":\"MIT\"},\"contracts/version-2/libraries/LibYieldGeneration.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nlibrary LibYieldGeneration {\\r\\n    uint public constant YIELD_GENERATION_VERSION = 1;\\r\\n    bytes32 constant YIELD_STORAGE_POSITION = keccak256(\\\"diamond.standard.yield.storage\\\");\\r\\n\\r\\n    enum YGProviders {\\r\\n        InHouse,\\r\\n        ZaynFi\\r\\n    }\\r\\n\\r\\n    struct YieldGeneration {\\r\\n        bool initialized;\\r\\n        YGProviders provider;\\r\\n        address[] yieldProviders; // index 0 zap, index 1 vault\\r\\n        address[] yieldUsers;\\r\\n        uint startTimeStamp;\\r\\n        mapping(address => bool) hasOptedIn;\\r\\n        uint totalDeposit;\\r\\n        uint currentTotalDeposit;\\r\\n        mapping(address => uint256) withdrawnYield;\\r\\n        mapping(address => uint256) withdrawnCollateral;\\r\\n    }\\r\\n\\r\\n    struct YieldStorage {\\r\\n        mapping(uint => YieldGeneration) yields; // termId => YieldGeneration struct\\r\\n    }\\r\\n\\r\\n    function _yieldExists(uint termId) internal view returns (bool) {\\r\\n        return _yieldStorage().yields[termId].initialized;\\r\\n    }\\r\\n\\r\\n    function _yieldStorage() internal pure returns (YieldStorage storage yieldStorage) {\\r\\n        bytes32 position = YIELD_STORAGE_POSITION;\\r\\n        assembly {\\r\\n            yieldStorage.slot := position\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0x14847b1a96e3a1502408682c7da3c2f10e999bf3062fda08b4cfe2cb81c5be6c\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b506106d2806100206000396000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c8063064a02a61461005157806327ff9f3514610066578063625b29311461007957806374635bf41461008c575b600080fd5b61006461005f366004610562565b61009f565b005b61006461007436600461059e565b610149565b6100646100873660046105b7565b6102a9565b61006461009a3660046105d9565b61039a565b600083815260008051602061067d83398151915260205260408120600181018054919285926100d0576100d061060e565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b0316021790555081816001016001815481106101155761011561060e565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b0316021790555050505050565b600081815260008051602061067d833981519152602090815260408083207f35fa70a6f9ae8a4d427ebe0c1be62ffd2870fecc1df41c6fda0bf5803e5628889092528220805491929091610100900460ff1660038111156101ac576101ac610624565b146101fe5760405162461bcd60e51b815260206004820152601c60248201527f546f6f206c61746520746f206368616e6765205947206f707420696e0000000060448201526064015b60405180910390fd5b33600090815260048201602052604090205460ff166102525760405162461bcd60e51b815260206004820152601060248201526f4e6f742070617274206f66207465726d60801b60448201526064016101f5565b336000818152600484016020526040808220805460ff81161560ff199091168117909155905190928392909187917f9c0d71d8ccd3ac3b8b8463f9dff1237a9e545a61f6e803ee0948ff02c7cef56691a450505050565b816102b3816104ac565b600083815260008051602061067d833981519152602052604081206005810184905560068101849055600181018054919290916102f2576102f261060e565b600091825260209091200154600182810180546001600160a01b03909316926355e697c69287929181106103285761032861060e565b60009182526020909120015460405160e084901b6001600160e01b03191681526001600160a01b039091166004820152602481018890526044016000604051808303818588803b15801561037b57600080fd5b505af115801561038f573d6000803e3d6000fd5b505050505050505050565b826103a4816104ac565b600084815260008051602061067d83398151915260205260408120600681018054919285926103d4908490610650565b90915550506001600160a01b038416600090815260078201602052604081208054859290610403908490610669565b909155505060018101805460009061041d5761041d61060e565b600091825260209091200154600182810180546001600160a01b0390931692632dabc536929081106104515761045161060e565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b0390911660048201526024810186905260448101889052606401600060405180830381600087803b15801561037b57600080fd5b60008181527f87101b21d556417ad2b8e8f2700dbad90721d5d50a1f435f2dee0b9dc981ac8a60205260409020546001600160a01b036101009091041633146105435760405162461bcd60e51b8152602060048201526024808201527f5465726d4f776e61626c653a2063616c6c6572206973206e6f7420746865206f6044820152633bb732b960e11b60648201526084016101f5565b50565b80356001600160a01b038116811461055d57600080fd5b919050565b60008060006060848603121561057757600080fd5b8335925061058760208501610546565b915061059560408501610546565b90509250925092565b6000602082840312156105b057600080fd5b5035919050565b600080604083850312156105ca57600080fd5b50508035926020909101359150565b6000806000606084860312156105ee57600080fd5b833592506105fe60208501610546565b9150604084013590509250925092565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052602160045260246000fd5b634e487b7160e01b600052601160045260246000fd5b818103818111156106635761066361063a565b92915050565b808201808211156106635761066361063a56fe29d9cba46c358ba7c1b8945751229339792c7c62e3197c240fa98916e75ffbf9a26469706673582212209b15a7e3ca37693a29fbddb2a23ba9c9e28421dd42106997dde471e7f3fe3a0864736f6c63430008120033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061004c5760003560e01c8063064a02a61461005157806327ff9f3514610066578063625b29311461007957806374635bf41461008c575b600080fd5b61006461005f366004610562565b61009f565b005b61006461007436600461059e565b610149565b6100646100873660046105b7565b6102a9565b61006461009a3660046105d9565b61039a565b600083815260008051602061067d83398151915260205260408120600181018054919285926100d0576100d061060e565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b0316021790555081816001016001815481106101155761011561060e565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b0316021790555050505050565b600081815260008051602061067d833981519152602090815260408083207f35fa70a6f9ae8a4d427ebe0c1be62ffd2870fecc1df41c6fda0bf5803e5628889092528220805491929091610100900460ff1660038111156101ac576101ac610624565b146101fe5760405162461bcd60e51b815260206004820152601c60248201527f546f6f206c61746520746f206368616e6765205947206f707420696e0000000060448201526064015b60405180910390fd5b33600090815260048201602052604090205460ff166102525760405162461bcd60e51b815260206004820152601060248201526f4e6f742070617274206f66207465726d60801b60448201526064016101f5565b336000818152600484016020526040808220805460ff81161560ff199091168117909155905190928392909187917f9c0d71d8ccd3ac3b8b8463f9dff1237a9e545a61f6e803ee0948ff02c7cef56691a450505050565b816102b3816104ac565b600083815260008051602061067d833981519152602052604081206005810184905560068101849055600181018054919290916102f2576102f261060e565b600091825260209091200154600182810180546001600160a01b03909316926355e697c69287929181106103285761032861060e565b60009182526020909120015460405160e084901b6001600160e01b03191681526001600160a01b039091166004820152602481018890526044016000604051808303818588803b15801561037b57600080fd5b505af115801561038f573d6000803e3d6000fd5b505050505050505050565b826103a4816104ac565b600084815260008051602061067d83398151915260205260408120600681018054919285926103d4908490610650565b90915550506001600160a01b038416600090815260078201602052604081208054859290610403908490610669565b909155505060018101805460009061041d5761041d61060e565b600091825260209091200154600182810180546001600160a01b0390931692632dabc536929081106104515761045161060e565b60009182526020909120015460405160e083901b6001600160e01b03191681526001600160a01b0390911660048201526024810186905260448101889052606401600060405180830381600087803b15801561037b57600080fd5b60008181527f87101b21d556417ad2b8e8f2700dbad90721d5d50a1f435f2dee0b9dc981ac8a60205260409020546001600160a01b036101009091041633146105435760405162461bcd60e51b8152602060048201526024808201527f5465726d4f776e61626c653a2063616c6c6572206973206e6f7420746865206f6044820152633bb732b960e11b60648201526084016101f5565b50565b80356001600160a01b038116811461055d57600080fd5b919050565b60008060006060848603121561057757600080fd5b8335925061058760208501610546565b915061059560408501610546565b90509250925092565b6000602082840312156105b057600080fd5b5035919050565b600080604083850312156105ca57600080fd5b50508035926020909101359150565b6000806000606084860312156105ee57600080fd5b833592506105fe60208501610546565b9150604084013590509250925092565b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052602160045260246000fd5b634e487b7160e01b600052601160045260246000fd5b818103818111156106635761066361063a565b92915050565b808201808211156106635761066361063a56fe29d9cba46c358ba7c1b8945751229339792c7c62e3197c240fa98916e75ffbf9a26469706673582212209b15a7e3ca37693a29fbddb2a23ba9c9e28421dd42106997dde471e7f3fe3a0864736f6c63430008120033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "depositYG(uint256,uint256)": {
+        "params": {
+          "ethAmount": "The amount of collateral being deposited",
+          "termId": "The term id for which the collateral is being deposited"
+        }
+      },
+      "withdrawYG(uint256,address,uint256)": {
+        "params": {
+          "ethAmount": "The amount of collateral being withdrawn",
+          "termId": "The term id for which the collateral is being withdrawn",
+          "user": "The user who is withdrawing the collateral"
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "depositYG(uint256,uint256)": {
+        "notice": "This function is used to deposit collateral for yield generation"
+      },
+      "withdrawYG(uint256,address,uint256)": {
+        "notice": "This function is used to withdraw collateral from yield generation"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}
