@@ -116,9 +116,8 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         uint userSecurity = collateral.collateralDepositByUser[msg.sender]; // todo: or collateralMembersBank?
 
         uint remainingCycles = IGettersV2(address(this)).getRemainingCycles(id);
-        uint remainingCyclesContribution = IGettersV2(address(this)).getRemainingCyclesContribution(
-            id
-        );
+        uint remainingCyclesContribution = IGettersV2(address(this))
+            .getRemainingCyclesContributionWei(id);
         uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
             term.contributionAmount * 10 ** 18
         );
@@ -262,7 +261,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 _id
             );
         } else {
-            collateralLimit = IGettersV2(address(this)).getRemainingCyclesContribution(_id);
+            collateralLimit = IGettersV2(address(this)).getRemainingCyclesContributionWei(_id);
         }
 
         return (memberCollateral < collateralLimit);
@@ -378,7 +377,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                         );
                     if (
                         totalAmountWei >=
-                        IGettersV2(address(this)).getRemainingCyclesContribution(_term.termId)
+                        IGettersV2(address(this)).getRemainingCyclesContributionWei(_term.termId)
                     ) {
                         // Pay with collateral and frozen pool
                         // First with collateral, leftover with frozen pool

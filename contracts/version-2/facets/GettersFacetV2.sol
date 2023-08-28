@@ -72,7 +72,7 @@ contract GettersFacetV2 is IGettersV2 {
 
     /// @param id the term id
     /// @return remaining cycles contribution
-    function getRemainingCyclesContribution(uint id) external view returns (uint) {
+    function getRemainingCyclesContributionWei(uint id) external view returns (uint) {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
 

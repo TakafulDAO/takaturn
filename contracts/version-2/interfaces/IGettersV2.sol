@@ -23,7 +23,7 @@ interface IGettersV2 {
 
     function getRemainingCycleTime(uint id) external view returns (uint);
 
-    function getRemainingCyclesContribution(uint id) external view returns (uint);
+    function getRemainingCyclesContributionWei(uint id) external view returns (uint);
 
     // COLLATERAL GETTERS
 

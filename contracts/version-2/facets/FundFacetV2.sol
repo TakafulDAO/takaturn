@@ -273,7 +273,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
 
         if (hasFrozenPool) {
             uint remainingCyclesContribution = IGettersV2(address(this))
-                .getRemainingCyclesContribution(id);
+                .getRemainingCyclesContributionWei(id);
 
             uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
 
@@ -302,14 +302,15 @@ contract FundFacetV2 is IFundV2, TermOwnable {
             ._collateralStorage()
             .collaterals[term.termId];
 
-        uint remainingCyclesContribution = IGettersV2(address(this)).getRemainingCyclesContribution(
-            term.termId
-        );
+        uint remainingCyclesContribution = IGettersV2(address(this))
+            .getRemainingCyclesContributionWei(term.termId);
 
         uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
 
         if (collateral.collateralMembersBank[fund.lastBeneficiary] < neededCollateral) {
             fund.beneficiariesFrozenPool[fund.lastBeneficiary] = true;
+        } else {
+            fund.beneficiariesFrozenPool[fund.lastBeneficiary] = false;
         }
     }
 
