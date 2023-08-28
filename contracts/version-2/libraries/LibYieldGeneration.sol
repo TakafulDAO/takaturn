@@ -3,8 +3,6 @@ pragma solidity 0.8.18;
 
 library LibYieldGeneration {
     uint public constant YIELD_GENERATION_VERSION = 1;
-    bytes32 constant YIELD_GENERATION_CONSTS_POSITION =
-        keccak256("diamond.standard.yield.generation.consts");
     bytes32 constant YIELD_STORAGE_POSITION = keccak256("diamond.standard.yield.storage");
 
     enum YGProviders {
@@ -12,14 +10,10 @@ library LibYieldGeneration {
         ZaynFi
     }
 
-    struct YieldGenerationConsts {
-        mapping(string => address) yieldProviders;
-        mapping(string => address) yieldVaults;
-    }
-
     struct YieldGeneration {
         bool initialized;
         YGProviders provider;
+        address[] yieldProviders; // index 0 zap, index 1 vault
         address[] yieldUsers;
         uint startTimeStamp;
         mapping(address => bool) hasOptedIn;
@@ -35,17 +29,6 @@ library LibYieldGeneration {
 
     function _yieldExists(uint termId) internal view returns (bool) {
         return _yieldStorage().yields[termId].initialized;
-    }
-
-    function _yieldGenerationConsts()
-        internal
-        pure
-        returns (YieldGenerationConsts storage yieldGenerationConsts)
-    {
-        bytes32 position = YIELD_GENERATION_CONSTS_POSITION;
-        assembly {
-            yieldGenerationConsts.slot := position
-        }
     }
 
     function _yieldStorage() internal pure returns (YieldStorage storage yieldStorage) {

@@ -16,13 +16,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
     /// @notice This function is used to deposit collateral for yield generation
     /// @param termId The term id for which the collateral is being deposited
     /// @param ethAmount The amount of collateral being deposited
-    function depositYG(
-        uint termId,
-        uint ethAmount,
-        string memory providerName
-    ) external onlyTermOwner(termId) {
-        LibYieldGeneration.YieldGenerationConsts storage yieldGenerationConsts = LibYieldGeneration
-            ._yieldGenerationConsts();
+    function depositYG(uint termId, uint ethAmount) external onlyTermOwner(termId) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
@@ -30,9 +24,10 @@ contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
         yield.totalDeposit = ethAmount;
         yield.currentTotalDeposit = ethAmount;
 
-        IZaynZapV2TakaDAO(yieldGenerationConsts.yieldProviders[providerName]).zapInEth{
-            value: ethAmount
-        }(yieldGenerationConsts.yieldVaults[providerName], termId);
+        IZaynZapV2TakaDAO(yield.yieldProviders[0]).zapInEth{value: ethAmount}(
+            yield.yieldProviders[1],
+            termId
+        );
     }
 
     /// @notice This function is used to withdraw collateral from yield generation
@@ -42,11 +37,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
     function withdrawYG(
         uint termId,
         address user,
-        uint256 ethAmount,
-        string memory providerName
+        uint256 ethAmount
     ) external onlyTermOwner(termId) {
-        LibYieldGeneration.YieldGenerationConsts storage yieldGenerationConsts = LibYieldGeneration
-            ._yieldGenerationConsts();
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
@@ -54,8 +46,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
         yield.currentTotalDeposit -= ethAmount;
         yield.withdrawnYield[user] += ethAmount;
 
-        IZaynZapV2TakaDAO(yieldGenerationConsts.yieldProviders[providerName]).zapOutETH(
-            yieldGenerationConsts.yieldVaults[providerName],
+        IZaynZapV2TakaDAO(yield.yieldProviders[0]).zapOutETH(
+            yield.yieldProviders[1],
             ethAmount,
             termId
         );
@@ -85,11 +77,12 @@ contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
         emit OnYGOptInToggled(termId, msg.sender, newDecision);
     }
 
-    function addYieldProviders(string memory providerName, address vault, address yield) external {
-        LibYieldGeneration.YieldGenerationConsts storage yieldGenerationConsts = LibYieldGeneration
-            ._yieldGenerationConsts();
+    function addYieldProviders(uint termId, address yieldProvider, address vault) external {
+        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+            ._yieldStorage()
+            .yields[termId];
 
-        yieldGenerationConsts.yieldProviders[providerName] = yield;
-        yieldGenerationConsts.yieldVaults[providerName] = vault;
+        yield.yieldProviders[0] = yieldProvider;
+        yield.yieldProviders[1] = vault;
     }
 }
