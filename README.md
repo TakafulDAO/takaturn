@@ -26,8 +26,8 @@
     + ARBITRUM_MAINNET_RPC_URL
 4. Testnet RPC_URL. For the development process it was tooked from [here](https://www.alchemy.com/)
  + ARBITRUM_TESTNET_RPC_URL=
-5. Scans api keys. [here](https://docs.etherscan.io/getting-started/viewing-api-usage-statistics) is the process for etherscan. For Polygon is the same process
-    + ETHERSCAN_API_KEY
+5. Scans api keys. [here](https://docs.arbiscan.io/getting-started/viewing-api-usage-statistics) is the process for etherscan.
+    + ARBISCAN_API_KEY
 6. Price feeds api keys. You can get it [here](https://coinmarketcap.com/api/)
     + COINMARKETCAP_API_KEY=
 7. Ethernal

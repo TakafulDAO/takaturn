@@ -26,7 +26,7 @@ const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
 const ARBITRUM_TESTNET_RPC_URL = process.env.ARBITRUM_TESTNET_RPC_URL
 
 /************************************** Networks Scans *************************************************/
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
+const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY
 
 /************************************** Coinmarketcap **************************************************/
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY
@@ -111,8 +111,8 @@ module.exports = {
     },
     etherscan: {
         apiKey: {
-            arbitrumOne: ETHERSCAN_API_KEY,
-            arbitrumGoerli: ETHERSCAN_API_KEY,
+            arbitrumOne: ARBISCAN_API_KEY,
+            arbitrumGoerli: ARBISCAN_API_KEY,
         },
     },
     gasReporter: {
