@@ -231,24 +231,6 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         require(success);
     }
 
-    /// @notice Internal function to freeze the pot for the beneficiary
-    function freezePot(LibTermV2.Term memory term) external {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[term.termId];
-        LibCollateralV2.Collateral storage collateral = LibCollateralV2
-            ._collateralStorage()
-            .collaterals[term.termId];
-
-        uint remainingCyclesContribution = IGettersV2(address(this)).getRemainingCyclesContribution(
-            term.termId
-        );
-
-        uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
-
-        if (collateral.collateralMembersBank[fund.lastBeneficiary] < neededCollateral) {
-            fund.beneficiariesFrozenPool[fund.lastBeneficiary] = true;
-        }
-    }
-
     /// @param _id term id
     /// @param _newState collateral state
     function _setState(uint _id, LibCollateralV2.CollateralStates _newState) internal {

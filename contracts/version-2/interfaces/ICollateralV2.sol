@@ -40,6 +40,4 @@ interface ICollateralV2 {
 
     /// @notice allow the owner to empty the Collateral after 180 days
     function emptyCollateralAfterEnd(uint id) external;
-
-    function freezePot(LibTermV2.Term memory term) external;
 }

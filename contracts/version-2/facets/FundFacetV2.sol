@@ -295,6 +295,24 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         return fund.isBeneficiary[beneficiary];
     }
 
+    /// @notice Internal function to freeze the pot for the beneficiary
+    function _freezePot(LibTermV2.Term memory term) internal {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[term.termId];
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
+            ._collateralStorage()
+            .collaterals[term.termId];
+
+        uint remainingCyclesContribution = IGettersV2(address(this)).getRemainingCyclesContribution(
+            term.termId
+        );
+
+        uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
+
+        if (collateral.collateralMembersBank[fund.lastBeneficiary] < neededCollateral) {
+            fund.beneficiariesFrozenPool[fund.lastBeneficiary] = true;
+        }
+    }
+
     /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
     /// @param _id The id of the term
     /// @param _newState The new state of the fund
@@ -509,7 +527,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
 
         // Award the beneficiary with the pool or freeze the pot
 
-        ICollateralV2(address(this)).freezePot(_term);
+        _freezePot(_term);
 
         _fund.beneficiariesPool[beneficiary] = _term.contributionAmount * paidCount * 10 ** 6;
 
