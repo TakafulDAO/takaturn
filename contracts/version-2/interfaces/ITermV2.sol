@@ -14,7 +14,7 @@ interface ITermV2 {
 
     function joinTerm(uint termId) external payable;
 
-    function startTerm(uint termId) external;
+    function startTerm(uint termId, string memory providerName) external;
 
     function expireTerm(uint termId) external;
 }

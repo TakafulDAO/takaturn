@@ -77,13 +77,24 @@ interface IGettersV2 {
 
     // YIELD GENERATION GETTERS
 
-    function userAPR(uint termId, address user) external view returns (uint256);
+    function userAPR(
+        uint termId,
+        address user,
+        string memory providerName
+    ) external view returns (uint256);
 
-    function termAPR(uint termId) external view returns (uint256);
+    function termAPR(uint termId, string memory providerName) external view returns (uint256);
 
     function yieldDistributionRatio(uint termId, address user) external view returns (uint256);
 
-    function totalYieldGenerated(uint termId) external view returns (uint);
+    function totalYieldGenerated(
+        uint termId,
+        string memory providerName
+    ) external view returns (uint);
 
-    function userYieldGenerated(uint termId, address user) external view returns (uint);
+    function userYieldGenerated(
+        uint termId,
+        address user,
+        string memory providerName
+    ) external view returns (uint);
 }

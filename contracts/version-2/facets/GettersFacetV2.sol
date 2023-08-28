@@ -314,7 +314,11 @@ contract GettersFacetV2 is IGettersV2 {
     /// @param termId The term id for which the APR is being calculated
     /// @param user The user for which the APR is being calculated
     /// @return The APR for the user
-    function userAPR(uint termId, address user) external view returns (uint256) {
+    function userAPR(
+        uint termId,
+        address user,
+        string memory providerName
+    ) external view returns (uint256) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
@@ -322,21 +326,23 @@ contract GettersFacetV2 is IGettersV2 {
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
         return
-            (userYieldGenerated(termId, user) / yield.currentTotalDeposit) /
+            (userYieldGenerated(termId, user, providerName) / yield.currentTotalDeposit) /
             (elaspedTime * 365 days);
     }
 
     /// @notice This function is used to get a term APR
     /// @param termId The term id for which the APR is being calculated
     /// @return The APR for the term
-    function termAPR(uint termId) external view returns (uint256) {
+    function termAPR(uint termId, string memory providerName) external view returns (uint256) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
 
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
-        return (totalYieldGenerated(termId) / yield.currentTotalDeposit) / (elaspedTime * 365 days);
+        return
+            (totalYieldGenerated(termId, providerName) / yield.currentTotalDeposit) /
+            (elaspedTime * 365 days);
     }
 
     /// @notice This function is used to get the yield distribution ratio for a user
@@ -357,11 +363,14 @@ contract GettersFacetV2 is IGettersV2 {
     /// @notice This function is used to get the total yield generated for a term
     /// @param termId The term id for which the yield is being calculated
     /// @return The total yield generated for the term
-    function totalYieldGenerated(uint termId) public view returns (uint) {
+    function totalYieldGenerated(
+        uint termId,
+        string memory providerName
+    ) public view returns (uint) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
-        LibYieldGeneration.YieldGenerationConsts memory yieldGenerationConsts = LibYieldGeneration
+        LibYieldGeneration.YieldGenerationConsts storage yieldGenerationConsts = LibYieldGeneration
             ._yieldGenerationConsts();
 
         uint totalWithdrawnYield;
@@ -380,21 +389,25 @@ contract GettersFacetV2 is IGettersV2 {
         return
             totalWithdrawnYield +
             (yield.totalDeposit -
-                IZaynVaultV2TakaDao(yieldGenerationConsts.vaultAddress).balance());
+                IZaynVaultV2TakaDao(yieldGenerationConsts.yieldVaults[providerName]).balance());
     }
 
     /// @notice This function is used to get the total yield generated for a user
     /// @param termId The term id for which the yield is being calculated
     /// @param user The user for which the yield is being calculated
     /// @return The total yield generated for the user
-    function userYieldGenerated(uint termId, address user) public view returns (uint) {
+    function userYieldGenerated(
+        uint termId,
+        address user,
+        string memory providerName
+    ) public view returns (uint) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
 
         return
             yield.withdrawnYield[user] +
-            totalYieldGenerated(termId) -
+            totalYieldGenerated(termId, providerName) -
             yieldDistributionRatio(termId, user);
     }
 }

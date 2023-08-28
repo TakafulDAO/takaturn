@@ -49,8 +49,8 @@ contract TermFacetV2 is ITermV2 {
         _joinTerm(termId);
     }
 
-    function startTerm(uint termId) external {
-        _startTerm(termId);
+    function startTerm(uint termId, string memory providerName) external {
+        _startTerm(termId, providerName);
     }
 
     function expireTerm(uint termId) external {
@@ -159,7 +159,7 @@ contract TermFacetV2 is ITermV2 {
         }
     }
 
-    function _startTerm(uint _termId) internal {
+    function _startTerm(uint _termId, string memory _providerName) internal {
         LibTermV2.Term memory term = LibTermV2._termStorage().terms[_termId];
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
@@ -190,7 +190,7 @@ contract TermFacetV2 is ITermV2 {
         // Actually create and initialize the fund
         _createFund(term, collateral);
 
-        _createYieldGenerator(term, collateral);
+        _createYieldGenerator(term, collateral, _providerName);
 
         // Tell the collateral that the term has started
         ICollateralV2(address(this)).setStateOwner(
@@ -274,7 +274,8 @@ contract TermFacetV2 is ITermV2 {
 
     function _createYieldGenerator(
         LibTermV2.Term memory _term,
-        LibCollateralV2.Collateral storage _collateral
+        LibCollateralV2.Collateral storage _collateral,
+        string memory _providerName
     ) internal {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
@@ -299,6 +300,6 @@ contract TermFacetV2 is ITermV2 {
         yield.startTimeStamp = block.timestamp;
         yield.initialized = true;
 
-        IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
+        IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited, _providerName);
     }
 }

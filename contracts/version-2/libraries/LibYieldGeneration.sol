@@ -13,8 +13,8 @@ library LibYieldGeneration {
     }
 
     struct YieldGenerationConsts {
-        address zapAddress;
-        address vaultAddress;
+        mapping(string => address) yieldProviders;
+        mapping(string => address) yieldVaults;
     }
 
     struct YieldGeneration {
