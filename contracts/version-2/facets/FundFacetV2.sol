@@ -272,16 +272,9 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         }
 
         if (hasFrozenPool) {
-            uint remainingCyclesContribution = IGettersV2(address(this))
-                .getRemainingCyclesContributionWei(id);
+            bool freeze = _freezePot(LibTermV2._termStorage().terms[id], fund, msg.sender);
 
-            uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
-
-            require(
-                collateral.collateralMembersBank[fund.lastBeneficiary] >= neededCollateral,
-                "Need at least 1.1RCC collateral to unfroze your fund"
-            );
-            fund.beneficiariesFrozenPool[msg.sender] = false;
+            require(!freeze, "Need at least 1.1RCC collateral to unfroze your fund");
 
             _transferPoolToBeneficiary(id, msg.sender);
         }
@@ -293,25 +286,6 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     function isBeneficiary(uint id, address beneficiary) external view returns (bool) {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
         return fund.isBeneficiary[beneficiary];
-    }
-
-    /// @notice Internal function to freeze the pot for the beneficiary
-    function _freezePot(LibTermV2.Term memory term) internal {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[term.termId];
-        LibCollateralV2.Collateral storage collateral = LibCollateralV2
-            ._collateralStorage()
-            .collaterals[term.termId];
-
-        uint remainingCyclesContribution = IGettersV2(address(this))
-            .getRemainingCyclesContributionWei(term.termId);
-
-        uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
-
-        if (collateral.collateralMembersBank[fund.lastBeneficiary] < neededCollateral) {
-            fund.beneficiariesFrozenPool[fund.lastBeneficiary] = true;
-        } else {
-            fund.beneficiariesFrozenPool[fund.lastBeneficiary] = false;
-        }
     }
 
     /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
@@ -528,7 +502,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
 
         // Award the beneficiary with the pool or freeze the pot
 
-        _freezePot(_term);
+        _freezePot(_term, _fund, beneficiary);
 
         _fund.beneficiariesPool[beneficiary] = _term.contributionAmount * paidCount * 10 ** 6;
 
@@ -645,5 +619,29 @@ contract FundFacetV2 is IFundV2, TermOwnable {
             require(success, "Transfer failed");
         }
         emit OnFundWithdrawn(_id, _beneficiary, transferAmount);
+    }
+
+    /// @notice Internal function to freeze the pot for the beneficiary
+    function _freezePot(
+        LibTermV2.Term memory _term,
+        LibFundV2.Fund storage _fund,
+        address _user
+    ) internal returns (bool) {
+        LibCollateralV2.Collateral storage collateral = LibCollateralV2
+            ._collateralStorage()
+            .collaterals[_term.termId];
+
+        uint remainingCyclesContribution = IGettersV2(address(this))
+            .getRemainingCyclesContributionWei(_term.termId);
+
+        uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
+
+        if (collateral.collateralMembersBank[_user] < neededCollateral) {
+            _fund.beneficiariesFrozenPool[_user] = true;
+        } else {
+            _fund.beneficiariesFrozenPool[_user] = false;
+        }
+
+        return _fund.beneficiariesFrozenPool[_user];
     }
 }
