@@ -105,7 +105,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log("01. Diamond Deployed!")
     log("==========================================================================")
 
-    if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY && !isZayn) {
+    if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY && !isZayn) {
         log("01. Verifying Diamond...")
         for (let i = 0; i < contractAddresses.length; i++) {
             log(`01. Verifying "${contractNames[i]}"...`)

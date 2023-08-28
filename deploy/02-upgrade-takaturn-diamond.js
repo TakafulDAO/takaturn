@@ -68,6 +68,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const fundFacet = await deployments.get("FundFacetV2")
     const termFacet = await deployments.get("TermFacetV2")
     const gettersFacet = await deployments.get("GettersFacetV2")
+    const yieldFacet = await deployments.get("YGFacetZaynFi")
     const diamondInit = await deployments.get("DiamondInitV2")
     const diamondCutFacet = await deployments.get("_DefaultDiamondCutFacet")
     const diamondOwnershipFacet = await deployments.get("_DefaultDiamondOwnershipFacet")
@@ -79,6 +80,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         "FundFacet",
         "TermFacet",
         "GettersFacet",
+        "YGFacetZaynFi",
         "DiamondInit",
         "_DefaultDiamondCutFacet",
         "_DefaultDiamondOwnershipFacet",
@@ -92,6 +94,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         fundFacet.address,
         termFacet.address,
         gettersFacet.address,
+        yieldFacet.address,
         diamondInit.address,
         diamondCutFacet.address,
         diamondOwnershipFacet.address,
@@ -121,7 +124,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log("02. Diamond Upgraded!")
     log("==========================================================================")
 
-    if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
+    if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
         log("02. Verifying Diamond...")
         for (let i = 0; i < contractAddresses.length; i++) {
             log(`01. Verifying "${contractNames[i]}"...`)
