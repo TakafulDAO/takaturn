@@ -32,21 +32,21 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         uint indexed amount
     );
 
-    /// @param id term id
+    /// @param termId term id
     /// @param _state collateral state
-    modifier atState(uint id, LibCollateralV2.CollateralStates _state) {
+    modifier atState(uint termId, LibCollateralV2.CollateralStates _state) {
         LibCollateralV2.CollateralStates state = LibCollateralV2
             ._collateralStorage()
-            .collaterals[id]
+            .collaterals[termId]
             .state;
         if (state != _state) revert FunctionInvalidAtThisState();
         _;
     }
 
-    /// @param id term id
+    /// @param termId term id
     /// @param newState collateral state
-    function setStateOwner(uint id, LibCollateralV2.CollateralStates newState) external {
-        _setState(id, newState);
+    function setStateOwner(uint termId, LibCollateralV2.CollateralStates newState) external {
+        _setState(termId, newState);
     }
 
     /// @notice Called from Fund contract when someone defaults
@@ -97,27 +97,27 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
 
     /// @notice Called by each member after the end of the cycle to withraw collateral
     /// @dev This follows the pull-over-push pattern.
-    /// @param id term id
+    /// @param termId term id
     function withdrawCollateral(
-        uint id
-    ) external atState(id, LibCollateralV2.CollateralStates.ReleasingCollateral) {
+        uint termId
+    ) external atState(termId, LibCollateralV2.CollateralStates.ReleasingCollateral) {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[id];
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+            .collaterals[termId];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[termId];
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
-            .yields[id];
+            .yields[termId];
 
         require(fund.paidThisCycle[msg.sender], "You have not paid this cycle");
         require(fund.currentState == LibFundV2.FundStates.CycleOngoing, "Wrong state");
 
         uint userSecurity = collateral.collateralDepositByUser[msg.sender]; // todo: or collateralMembersBank?
 
-        uint remainingCycles = IGettersV2(address(this)).getRemainingCycles(id);
+        uint remainingCycles = IGettersV2(address(this)).getRemainingCycles(termId);
         uint remainingCyclesContribution = IGettersV2(address(this))
-            .getRemainingCyclesContributionWei(id);
+            .getRemainingCyclesContributionWei(termId);
         uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
             term.contributionAmount * 10 ** 18
         );
@@ -126,7 +126,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             contributionAmountWei;
 
         if (allowedWithdraw <= collateral.collateralPaymentBank[msg.sender]) {
-            _withdrawFromYield(id, msg.sender, allowedWithdraw, yield);
+            _withdrawFromYield(termId, msg.sender, allowedWithdraw, yield);
 
             collateral.collateralPaymentBank[msg.sender] -= allowedWithdraw;
             (bool success, ) = payable(msg.sender).call{value: allowedWithdraw}("");
@@ -134,7 +134,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         } else {
             uint neededAmount = allowedWithdraw - collateral.collateralPaymentBank[msg.sender];
             if (neededAmount <= collateral.collateralMembersBank[msg.sender]) {
-                _withdrawFromYield(id, msg.sender, allowedWithdraw, yield);
+                _withdrawFromYield(termId, msg.sender, allowedWithdraw, yield);
 
                 collateral.collateralPaymentBank[msg.sender] -= 0;
                 collateral.collateralMembersBank[msg.sender] -= neededAmount;
@@ -144,7 +144,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 // todo: check if this is still needed. Think now with partial withdraws this else can be removed
                 uint amount = collateral.collateralMembersBank[msg.sender] +
                     collateral.collateralPaymentBank[msg.sender];
-                _withdrawFromYield(id, msg.sender, amount, yield);
+                _withdrawFromYield(termId, msg.sender, amount, yield);
 
                 collateral.collateralMembersBank[msg.sender] = 0;
                 collateral.collateralPaymentBank[msg.sender] = 0;
@@ -155,59 +155,63 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         }
     }
 
-    /// @param id term id
+    /// @param termId term id
     /// @param depositor Address of the depositor
-    function withdrawReimbursement(uint id, address depositor) external {
-        require(LibFundV2._fundExists(id), "Fund does not exists");
+    function withdrawReimbursement(uint termId, address depositor) external {
+        require(LibFundV2._fundExists(termId), "Fund does not exists");
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[id];
+            .collaterals[termId];
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
-            .yields[id];
+            .yields[termId];
 
         uint amount = collateral.collateralPaymentBank[depositor];
         require(amount > 0, "Nothing to claim");
 
-        _withdrawFromYield(id, msg.sender, amount, yield);
+        _withdrawFromYield(termId, msg.sender, amount, yield);
 
         collateral.collateralPaymentBank[depositor] = 0;
 
         (bool success, ) = payable(depositor).call{value: amount}("");
         require(success);
 
-        emit OnCollateralWithdrawal(id, depositor, amount);
+        emit OnCollateralWithdrawal(termId, depositor, amount);
     }
 
-    /// @param id term id
-    function releaseCollateral(uint id) external {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+    /// @param termId term id
+    function releaseCollateral(uint termId) external {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
         require(fund.currentState == LibFundV2.FundStates.FundClosed, "Wrong state");
-        _setState(id, LibCollateralV2.CollateralStates.ReleasingCollateral);
+        _setState(termId, LibCollateralV2.CollateralStates.ReleasingCollateral);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
     /// @dev This will revert if called during ReleasingCollateral or after
-    /// @param id The term id
+    /// @param termId The term id
     /// @param member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
-    function isUnderCollaterized(uint id, address member) external view returns (bool) {
-        return _isUnderCollaterized(id, member);
+    function isUnderCollaterized(uint termId, address member) external view returns (bool) {
+        return _isUnderCollaterized(termId, member);
     }
 
     /// @notice allow the owner to empty the Collateral after 180 days
-    /// @param id The term id
+    /// @param termId The term id
     function emptyCollateralAfterEnd(
-        uint id
-    ) external onlyTermOwner(id) atState(id, LibCollateralV2.CollateralStates.ReleasingCollateral) {
+        uint termId
+    )
+        external
+        onlyTermOwner(termId)
+        atState(termId, LibCollateralV2.CollateralStates.ReleasingCollateral)
+    {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[id];
+            .collaterals[termId];
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
-            .yields[id];
+            .yields[termId];
 
-        (, , , , , uint fundEnd, , , ) = IGettersV2(address(this)).getFundSummary(id);
+        (, , , , , uint fundEnd, , , ) = IGettersV2(address(this)).getFundSummary(termId);
         require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
 
         uint depositorsLength = collateral.depositors.length;
@@ -216,7 +220,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             uint amount = collateral.collateralMembersBank[depositor] +
                 collateral.collateralPaymentBank[depositor];
 
-            _withdrawFromYield(id, depositor, amount, yield);
+            _withdrawFromYield(termId, depositor, amount, yield);
 
             collateral.collateralMembersBank[depositor] = 0;
             collateral.collateralPaymentBank[depositor] = 0;
@@ -224,44 +228,44 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 ++i;
             }
         }
-        _setState(id, LibCollateralV2.CollateralStates.Closed);
+        _setState(termId, LibCollateralV2.CollateralStates.Closed);
 
         (bool success, ) = payable(msg.sender).call{value: address(this).balance}("");
         require(success);
     }
 
-    /// @param _id term id
+    /// @param _termId term id
     /// @param _newState collateral state
-    function _setState(uint _id, LibCollateralV2.CollateralStates _newState) internal {
+    function _setState(uint _termId, LibCollateralV2.CollateralStates _newState) internal {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[_id];
+            .collaterals[_termId];
         LibCollateralV2.CollateralStates oldState = collateral.state;
         collateral.state = _newState;
-        emit OnCollateralStateChanged(_id, oldState, _newState);
+        emit OnCollateralStateChanged(_termId, oldState, _newState);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
     /// @dev This will revert if called during ReleasingCollateral or after
-    /// @param _id The fund id
+    /// @param _termId The fund id
     /// @param _member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
-    function _isUnderCollaterized(uint _id, address _member) internal view returns (bool) {
+    function _isUnderCollaterized(uint _termId, address _member) internal view returns (bool) {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[_id];
+            .collaterals[_termId];
 
         uint collateralLimit;
         uint memberCollateral = collateral.collateralMembersBank[_member];
 
-        if (!LibFundV2._fundExists(_id)) {
+        if (!LibFundV2._fundExists(_termId)) {
             // Only check here when starting the term
             (, , , collateralLimit) = IGettersV2(address(this)).getDepositorCollateralSummary(
                 _member,
-                _id
+                _termId
             );
         } else {
-            collateralLimit = IGettersV2(address(this)).getRemainingCyclesContributionWei(_id);
+            collateralLimit = IGettersV2(address(this)).getRemainingCyclesContributionWei(_termId);
         }
 
         return (memberCollateral < collateralLimit);
@@ -533,13 +537,13 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
     }
 
     function _withdrawFromYield(
-        uint _id,
+        uint _termId,
         address _user,
         uint _amount,
         LibYieldGeneration.YieldGeneration storage _yield
     ) internal {
         if (_yield.hasOptedIn[_user]) {
-            IYGFacetZaynFi(address(this)).withdrawYG(_id, _user, _amount);
+            IYGFacetZaynFi(address(this)).withdrawYG(_termId, _user, _amount);
         }
     }
 }

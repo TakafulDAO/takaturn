@@ -16,7 +16,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
     /// @notice This function is used to deposit collateral for yield generation
     /// @param termId The term id for which the collateral is being deposited
     /// @param ethAmount The amount of collateral being deposited
-    function depositYG(uint termId, uint ethAmount) external onlyTermOwner(termId) {
+    function depositYG(uint termId, uint ethAmount) external /*onlyTermOwner(termId)*/ {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];

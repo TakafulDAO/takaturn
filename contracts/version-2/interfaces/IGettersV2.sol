@@ -15,25 +15,25 @@ interface IGettersV2 {
 
     function getRemainingContributionPeriod(uint termId) external view returns (uint);
 
-    function getTermSummary(uint id) external view returns (LibTermV2.Term memory);
+    function getTermSummary(uint termId) external view returns (LibTermV2.Term memory);
 
     function getParticipantTerms(address participant) external view returns (uint[] memory);
 
-    function getRemainingCycles(uint id) external view returns (uint);
+    function getRemainingCycles(uint termId) external view returns (uint);
 
-    function getRemainingCycleTime(uint id) external view returns (uint);
+    function getRemainingCycleTime(uint termId) external view returns (uint);
 
-    function getRemainingCyclesContributionWei(uint id) external view returns (uint);
+    function getRemainingCyclesContributionWei(uint termId) external view returns (uint);
 
     // COLLATERAL GETTERS
 
     function getDepositorCollateralSummary(
         address depositor,
-        uint id
+        uint termId
     ) external view returns (bool, uint, uint, uint);
 
     function getCollateralSummary(
-        uint id
+        uint termId
     ) external view returns (bool, LibCollateralV2.CollateralStates, uint, uint, address[] memory);
 
     function minCollateralToDeposit(
@@ -44,7 +44,7 @@ interface IGettersV2 {
     // FUND GETTERS
 
     function getFundSummary(
-        uint id
+        uint termId
     )
         external
         view
@@ -60,16 +60,16 @@ interface IGettersV2 {
             uint
         );
 
-    function getCurrentBeneficiary(uint id) external view returns (address);
+    function getCurrentBeneficiary(uint termId) external view returns (address);
 
-    function wasExpelled(uint id, address user) external view returns (bool);
+    function wasExpelled(uint termId, address user) external view returns (bool);
 
     function getParticipantFundSummary(
         address participant,
-        uint id
+        uint termId
     ) external view returns (bool, bool, bool, bool, uint);
 
-    function getRemainingContributionTime(uint id) external view returns (uint);
+    function getRemainingContributionTime(uint termId) external view returns (uint);
 
     // CONVERSION GETTERS
 

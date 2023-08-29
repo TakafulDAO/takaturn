@@ -35,10 +35,10 @@ contract GettersFacetV2 is IGettersV2 {
         }
     }
 
-    /// @param id the term id
+    /// @param termId the term id
     /// @return the term struct
-    function getTermSummary(uint id) external view returns (LibTermV2.Term memory) {
-        return (LibTermV2._termStorage().terms[id]);
+    function getTermSummary(uint termId) external view returns (LibTermV2.Term memory) {
+        return (LibTermV2._termStorage().terms[termId]);
     }
 
     /// @param participant the participant address
@@ -49,19 +49,19 @@ contract GettersFacetV2 is IGettersV2 {
         return participantTermIds;
     }
 
-    /// @param id the term id
+    /// @param termId the term id
     /// @return remaining time in the current cycle
-    function getRemainingCycles(uint id) external view returns (uint) {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+    function getRemainingCycles(uint termId) external view returns (uint) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
 
         return (1 + fund.totalAmountOfCycles - fund.currentCycle);
     }
 
-    /// @param id the term id
+    /// @param termId the term id
     /// @return remaining time in the current cycle
-    function getRemainingCycleTime(uint id) external view returns (uint) {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+    function getRemainingCycleTime(uint termId) external view returns (uint) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[termId];
         uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
         if (block.timestamp > cycleEndTimestamp) {
             return 0;
@@ -70,11 +70,11 @@ contract GettersFacetV2 is IGettersV2 {
         }
     }
 
-    /// @param id the term id
+    /// @param termId the term id
     /// @return remaining cycles contribution
-    function getRemainingCyclesContributionWei(uint id) external view returns (uint) {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+    function getRemainingCyclesContributionWei(uint termId) external view returns (uint) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[termId];
 
         uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
         uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
@@ -87,15 +87,15 @@ contract GettersFacetV2 is IGettersV2 {
     // COLLATERAL GETTERS
 
     /// @param depositor the depositor address
-    /// @param id the collateral id
+    /// @param termId the collateral id
     /// @return isCollateralMember, collateralMembersBank, collateralPaymentBank
     function getDepositorCollateralSummary(
         address depositor,
-        uint id
+        uint termId
     ) external view returns (bool, uint, uint, uint) {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[id];
+            .collaterals[termId];
         return (
             collateral.isCollateralMember[depositor],
             collateral.collateralMembersBank[depositor],
@@ -104,14 +104,14 @@ contract GettersFacetV2 is IGettersV2 {
         );
     }
 
-    /// @param id the collateral id
+    /// @param termId the collateral id
     /// @return collateral: initialized, state, firstDepositTime, counterMembers, depositors, collateralDeposit
     function getCollateralSummary(
-        uint id
+        uint termId
     ) external view returns (bool, LibCollateralV2.CollateralStates, uint, uint, address[] memory) {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[id];
+            .collaterals[termId];
         return (
             collateral.initialized,
             collateral.state, // Current state of Collateral
@@ -139,10 +139,10 @@ contract GettersFacetV2 is IGettersV2 {
     // FUND GETTERS
 
     /// @notice function to get the cycle information in one go
-    /// @param id the fund id
+    /// @param termId the fund id
     /// @return initialized, currentState, stableToken, currentCycle, beneficiariesOrder, fundStart, currentCycle, lastBeneficiary, totalAmountOfCycles, fundEnd
     function getFundSummary(
-        uint id
+        uint termId
     )
         external
         view
@@ -158,7 +158,7 @@ contract GettersFacetV2 is IGettersV2 {
             uint
         )
     {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
         return (
             fund.initialized,
             fund.currentState,
@@ -173,22 +173,22 @@ contract GettersFacetV2 is IGettersV2 {
     }
 
     /// @notice function to get the current beneficiary
-    /// @param id the fund id
+    /// @param termId the fund id
     /// @return the current beneficiary
-    function getCurrentBeneficiary(uint id) external view returns (address) {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+    function getCurrentBeneficiary(uint termId) external view returns (address) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
         return fund.beneficiariesOrder[fund.currentCycle - 1];
     }
 
     /// @notice function to know if a user was expelled before
-    /// @param id the fund id
+    /// @param termId the fund id
     /// @param user the user to check
     /// @return true if the user was expelled before
-    function wasExpelled(uint id, address user) external view returns (bool) {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+    function wasExpelled(uint termId, address user) external view returns (bool) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
-            .collaterals[id];
+            .collaterals[termId];
 
         if (!fund.isParticipant[user] && !collateral.isCollateralMember[user]) {
             return true;
@@ -199,13 +199,13 @@ contract GettersFacetV2 is IGettersV2 {
 
     /// @notice function to get cycle information of a specific participant
     /// @param participant the user to get the info from
-    /// @param id the fund id
+    /// @param termId the fund id
     /// @return isParticipant, isBeneficiary, paidThisCycle, autoPayEnabled, beneficiariesPool
     function getParticipantFundSummary(
         address participant,
-        uint id
+        uint termId
     ) external view returns (bool, bool, bool, bool, uint) {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
         return (
             fund.isParticipant[participant],
             fund.isBeneficiary[participant],
@@ -216,11 +216,11 @@ contract GettersFacetV2 is IGettersV2 {
     }
 
     /// @notice returns the time left to contribute for this cycle
-    /// @param id the fund id
+    /// @param termId the fund id
     /// @return the time left to contribute
-    function getRemainingContributionTime(uint id) external view returns (uint) {
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[id];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[id];
+    function getRemainingContributionTime(uint termId) external view returns (uint) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[termId];
         if (fund.currentState != LibFundV2.FundStates.AcceptingContributions) {
             return 0;
         }

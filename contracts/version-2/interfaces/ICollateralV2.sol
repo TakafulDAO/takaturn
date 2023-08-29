@@ -14,7 +14,7 @@ interface ICollateralV2 {
     // Function cannot be called at this time.
     error FunctionInvalidAtThisState();
 
-    function setStateOwner(uint id, LibCollateralV2.CollateralStates newState) external;
+    function setStateOwner(uint termId, LibCollateralV2.CollateralStates newState) external;
 
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
@@ -26,18 +26,18 @@ interface ICollateralV2 {
 
     /// @notice Called by each member after the end of the cycle to withraw collateral
     /// @dev This follows the pull-over-push pattern.
-    function withdrawCollateral(uint id) external;
+    function withdrawCollateral(uint termId) external;
 
-    function withdrawReimbursement(uint id, address participant) external;
+    function withdrawReimbursement(uint termId, address participant) external;
 
-    function releaseCollateral(uint id) external;
+    function releaseCollateral(uint termId) external;
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
     /// @dev This will revert if called during ReleasingCollateral or after
     /// @param member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
-    function isUnderCollaterized(uint id, address member) external view returns (bool);
+    function isUnderCollaterized(uint termId, address member) external view returns (bool);
 
     /// @notice allow the owner to empty the Collateral after 180 days
-    function emptyCollateralAfterEnd(uint id) external;
+    function emptyCollateralAfterEnd(uint termId) external;
 }
