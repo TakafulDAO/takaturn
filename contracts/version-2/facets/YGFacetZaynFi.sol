@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 import {IZaynZapV2TakaDAO} from "../interfaces/IZaynZapV2TakaDAO.sol";
+import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
@@ -29,21 +30,29 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         yield.currentTotalDeposit = ethAmount;
 
         IZaynZapV2TakaDAO(yield.zap).zapInEth{value: ethAmount}(yield.vault, termId);
+
+        yield.totalShares = IZaynVaultV2TakaDao(yield.vault).balanceOf(termId);
     }
 
     /// @notice This function is used to withdraw collateral from yield generation
     /// @param termId The term id for which the collateral is being withdrawn
-    /// @param user The user who is withdrawing the collateral
-    /// @param ethAmount The amount of collateral being withdrawn
-    function withdrawYG(uint termId, address user, uint256 ethAmount) external {
+    /// @param withdrawAmount The amount of collateral being withdrawn
+    function withdrawYG(
+        uint termId,
+        uint256 withdrawAmount,
+        address user
+    ) external returns (uint neededShares) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
 
-        yield.currentTotalDeposit -= ethAmount;
-        yield.withdrawnYield[user] += ethAmount;
+        neededShares = (withdrawAmount * yield.totalShares) / yield.totalDeposit;
 
-        IZaynZapV2TakaDAO(yield.zap).zapOutETH(yield.vault, ethAmount, termId);
+        yield.withdrawnCollateral[user] += withdrawAmount;
+        yield.withdrawnYield[user] += neededShares;
+        yield.currentTotalDeposit -= withdrawAmount;
+
+        IZaynZapV2TakaDAO(yield.zap).zapOutETH(yield.vault, neededShares, termId);
     }
 
     function toggleOptInYG(uint termId) external {

@@ -23,6 +23,7 @@ library LibYieldGeneration {
         uint startTimeStamp;
         uint totalDeposit;
         uint currentTotalDeposit;
+        uint totalShares;
         address zap;
         address vault;
         address[] yieldUsers;

@@ -285,6 +285,8 @@ contract TermFacetV2 is ITermV2 {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[_term.termId];
+        LibYieldGeneration.YieldProviders storage yieldProviders = LibYieldGeneration
+            ._yieldProviders();
 
         uint amountDeposited;
 
@@ -304,6 +306,8 @@ contract TermFacetV2 is ITermV2 {
 
         yield.startTimeStamp = block.timestamp;
         yield.initialized = true;
+        yield.zap = yieldProviders.zaps[0];
+        yield.vault = yieldProviders.vaults[0];
 
         IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
     }

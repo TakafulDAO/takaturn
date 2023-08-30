@@ -7,7 +7,13 @@ import {LibTermV2} from "../libraries/LibTermV2.sol";
 interface IYGFacetZaynFi {
     function depositYG(uint termId, uint amount) external;
 
-    function withdrawYG(uint termId, address user, uint256 ethAmount) external;
+    function withdrawYG(
+        uint termId,
+        uint256 ethAmount,
+        address user
+    ) external returns (uint neededShares);
 
     function toggleOptInYG(uint termId) external;
+
+    function addYieldProviders(address zap, address vault) external;
 }
