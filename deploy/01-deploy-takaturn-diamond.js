@@ -22,11 +22,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("01. Deploying Takaturn Diamond...")
 
-    if (isMainnet || isTestnet || (isFork && !isZayn) || (isZayn && !isFork)) {
+    if (isMainnet || isTestnet || isFork) {
         sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
     }
 
-    if (isDevnet && !isFork && !isZayn) {
+    if (isDevnet && !isFork) {
         const sequencer = await deployments.get("MockSequencer")
         sequencerUptimeFeedAddress = sequencer.address
     }
@@ -84,7 +84,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         takaturnDiamond.address,
     ]
 
-    if (isZayn && !isFork) {
+    if (isZayn) {
         log("==========================================================================")
         log("01. Pushing elements to Ethernal...")
         log("==========================================================================")

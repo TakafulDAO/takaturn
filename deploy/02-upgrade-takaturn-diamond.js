@@ -27,7 +27,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("02. Upgrading Takaturn Diamond...")
 
-    if (isMainnet || isTestnet || (isFork && !isZayn) || (isZayn && !isFork)) {
+    if (isMainnet || isTestnet || isFork) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
         usdcUsdPriceFeedAddress = networkConfig[chainId]["usdcUsdPriceFeed"]
         sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
@@ -35,7 +35,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
 
-    if (isDevnet && !isFork && !isZayn) {
+    if (isDevnet && !isFork) {
         const ethUsdAggregator = await deployments.get("MockEthUsdAggregator")
         ethUsdPriceFeedAddress = ethUsdAggregator.address
 
@@ -60,7 +60,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     const takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
         from: deployer,
-        owner: diamondOwner,
+        owner: deployer,
         args: args,
         log: true,
         facets: [
@@ -117,7 +117,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         diamondERC165Init.address,
     ]
 
-    if (isZayn && !isFork) {
+    if (isZayn) {
         log("==========================================================================")
         log("02. Pushing elements to Ethernal...")
         log("==========================================================================")
