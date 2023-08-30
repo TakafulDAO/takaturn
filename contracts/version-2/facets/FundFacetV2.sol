@@ -11,6 +11,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 import {LibFundV2} from "../libraries/LibFundV2.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
+import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 
 import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 
@@ -18,7 +19,7 @@ import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 /// @author Mohammed Haddouti
 /// @notice This is used to operate the Takaturn fund
 /// @dev v3.0 (Diamond)
-contract FundFacetV2 is IFundV2, TermOwnable {
+contract FundFacetV2 is IFundV2 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint public constant FUND_VERSION = 2; // The version of the contract
@@ -40,6 +41,11 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     ); // Emits when a defaulter can't compensate with the collateral
     event OnTotalParticipantsUpdated(uint indexed termId, uint indexed newLength); // Emits when the total participants lengths has changed from its initial value
     event OnAutoPayToggled(uint indexed termId, address indexed participant, bool indexed enabled); // Emits when a participant succesfully toggles autopay
+
+    modifier onlyTermOwner(uint termId) {
+        LibTermOwnership._ensureTermOwner(termId);
+        _;
+    }
 
     /// Insufficient balance for transfer. Needed `required` but only
     /// `available` available.

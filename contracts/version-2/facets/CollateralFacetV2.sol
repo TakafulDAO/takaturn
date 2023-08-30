@@ -11,14 +11,13 @@ import {LibFundV2} from "../libraries/LibFundV2.sol";
 import {LibTermV2} from "../libraries/LibTermV2.sol";
 import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
-
-import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
+import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 
 /// @title Takaturn Collateral
 /// @author Aisha El Allam
 /// @notice This is used to operate the Takaturn collateral
 /// @dev v3.0 (Diamond)
-contract CollateralFacetV2 is ICollateralV2, TermOwnable {
+contract CollateralFacetV2 is ICollateralV2 {
     event OnCollateralStateChanged(
         uint indexed termId,
         LibCollateralV2.CollateralStates indexed oldState,
@@ -36,6 +35,11 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
     /// @param _state collateral state
     modifier atState(uint termId, LibCollateralV2.CollateralStates _state) {
         _atState(termId, _state);
+        _;
+    }
+
+    modifier onlyTermOwner(uint termId) {
+        LibTermOwnership._ensureTermOwner(termId);
         _;
     }
 
