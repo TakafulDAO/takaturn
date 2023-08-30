@@ -20,7 +20,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         ? 1
         : VERIFICATION_BLOCK_CONFIRMATIONS
     let ethUsdPriceFeedAddress
+    let usdcUsdPriceFeedAddress
     let sequencerUptimeFeedAddress
+    let zaynfiZapAddress
+    let zaynfiVaultAddress
 
     log("02. Upgrading Takaturn Diamond...")
 
@@ -28,6 +31,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
         usdcUsdPriceFeedAddress = networkConfig[chainId]["usdcUsdPriceFeed"]
         sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
+        zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
+        zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
 
     if (isDevnet && !isFork && !isZayn) {
@@ -39,10 +44,19 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
         const sequencer = await deployments.get("MockSequencer")
         sequencerUptimeFeedAddress = sequencer.address
+
+        zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
+        zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
 
     const args = []
-    const initArgs = [ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress, sequencerUptimeFeedAddress]
+    const initArgs = [
+        ethUsdPriceFeedAddress,
+        usdcUsdPriceFeedAddress,
+        sequencerUptimeFeedAddress,
+        zaynfiZapAddress,
+        zaynfiVaultAddress,
+    ]
 
     const takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
         from: deployer,
@@ -76,20 +90,21 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const diamondERC165Init = await deployments.get("_DefaultDiamondERC165Init")
 
     let contractNames = [
-        "CollateralFacet",
-        "FundFacet",
-        "TermFacet",
-        "GettersFacet",
+        "TakaturnDiamond",
+        "CollateralFacetV2",
+        "FundFacetV2",
+        "TermFacetV2",
+        "GettersFacetV2",
         "YGFacetZaynFi",
-        "DiamondInit",
+        "DiamondInitV2",
         "_DefaultDiamondCutFacet",
         "_DefaultDiamondOwnershipFacet",
         "_DefaultDiamondLoupeFacet",
         "_DefaultDiamondERC165Init",
-        "TakaturnDiamond",
     ]
 
     let contractAddresses = [
+        takaturnDiamondUpgrade.address,
         collateralFacet.address,
         fundFacet.address,
         termFacet.address,
@@ -100,24 +115,24 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         diamondOwnershipFacet.address,
         diamondLoupeFacet.address,
         diamondERC165Init.address,
-        takaturnDiamondUpgrade.address,
     ]
 
     if (isZayn && !isFork) {
         log("==========================================================================")
-        log("01. Pushing elements to Ethernal...")
+        log("02. Pushing elements to Ethernal...")
         log("==========================================================================")
-        for (let i = 0; i <= 4; i++) {
-            log(`01. Pushing "${contractNames[i]}" to Ethernal...`)
+        // Pushing only the facets, the proxy will be upload through postman
+        for (let i = 1; i <= 5; i++) {
+            log(`02. Pushing "${contractNames[i]}" to Ethernal...`)
             await ethernal.push({
                 name: contractNames[i],
                 address: contractAddresses[i],
             })
-            log(`01. Pushed "${contractNames[i]}" to Ethernal...`)
+            log(`02. Pushed "${contractNames[i]}" to Ethernal...`)
             log("==========================================================================")
         }
 
-        log("01. Elements pushed to Ethernal...")
+        log("02. Elements pushed to Ethernal...")
         log("==========================================================================")
     }
 
@@ -127,9 +142,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
         log("02. Verifying Diamond...")
         for (let i = 0; i < contractAddresses.length; i++) {
-            log(`01. Verifying "${contractNames[i]}"...`)
+            log(`02. Verifying "${contractNames[i]}"...`)
             await verify(contractAddresses[i], args)
-            log(`01. Verified "${contractNames[i]}"...`)
+            log(`02. Verified "${contractNames[i]}"...`)
             log("==========================================================================")
         }
         log("02. Diamond Verified!")

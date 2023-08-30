@@ -207,6 +207,10 @@ module.exports = {
             localhost: 16,
         },
         diamondOwner: {
+            mainnet_arbitrum: DEPLOYER,
+
+            testnet_arbitrum: TESTNET_DEPLOYER,
+
             default: 17,
             localhost: 17,
         },
@@ -228,5 +232,12 @@ module.exports = {
         workspace: "Zayn Arbitrum",
         skipFirstBlock: true,
         verbose: false,
+    },
+    external: {
+        contracts: [
+            {
+                artifacts: "./zayn_artifacts",
+            },
+        ],
     },
 }
