@@ -138,81 +138,90 @@ module.exports = {
 
             testnet_arbitrum: TESTNET_DEPLOYER,
 
+            zayn: 0,
             default: 0,
             localhost: 0,
         },
         participant_1: {
+            zayn: 1,
             default: 1,
             localhost: 1,
         },
         participant_2: {
+            zayn: 2,
             default: 2,
             localhost: 2,
         },
         participant_3: {
+            zayn: 3,
             default: 3,
             localhost: 3,
         },
         participant_4: {
+            zayn: 4,
             default: 4,
             localhost: 4,
         },
         participant_5: {
+            zayn: 5,
             default: 5,
             localhost: 5,
         },
         participant_6: {
+            zayn: 6,
             default: 6,
             localhost: 6,
         },
         participant_7: {
+            zayn: 7,
             default: 7,
             localhost: 7,
         },
         participant_8: {
+            zayn: 8,
             default: 8,
             localhost: 8,
         },
         participant_9: {
+            zayn: 9,
             default: 9,
             localhost: 9,
         },
         participant_10: {
+            zayn: 10,
             default: 10,
             localhost: 10,
         },
         participant_11: {
+            zayn: 11,
             default: 11,
             localhost: 11,
         },
         participant_12: {
+            zayn: 12,
             default: 12,
             localhost: 12,
         },
         usdcOwner: {
+            zayn: 13,
             default: 13,
             localhost: 13,
             // owner, blacklister,pauser
         },
         usdcMasterMinter: {
+            zayn: 14,
             default: 14,
             localhost: 14,
         },
         usdcRegularMinter: {
+            zayn: 15,
             default: 15,
             localhost: 15,
         },
         usdcLostAndFound: {
+            zayn: 16,
             default: 16,
             localhost: 16,
-        },
-        diamondOwner: {
-            mainnet_arbitrum: DEPLOYER,
-
-            testnet_arbitrum: TESTNET_DEPLOYER,
-
-            default: 17,
-            localhost: 17,
         },
     },
     mocha: {
