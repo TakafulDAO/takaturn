@@ -7,11 +7,17 @@ import {IZaynZapV2TakaDAO} from "../interfaces/IZaynZapV2TakaDAO.sol";
 
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
+import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
 
 import {TermOwnable} from "../../version-1/access/TermOwnable.sol";
 
 contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
     event OnYGOptInToggled(uint indexed termId, address indexed participant, bool indexed optedIn); // Emits when a participant succesfully toggles yield generation
+
+    modifier onlyOwner() {
+        LibDiamond.enforceIsContractOwner();
+        _;
+    }
 
     /// @notice This function is used to deposit collateral for yield generation
     /// @param termId The term id for which the collateral is being deposited
@@ -35,7 +41,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
         uint termId,
         address user,
         uint256 ethAmount
-    ) external onlyTermOwner(termId) {
+    ) external /*onlyTermOwner(termId)*/ {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
@@ -70,8 +76,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi, TermOwnable {
         emit OnYGOptInToggled(termId, msg.sender, newDecision);
     }
 
-    // todo: Add access control
-    function addYieldProviders(address zap, address vault) external {
+    function addYieldProviders(address zap, address vault) external onlyOwner {
         LibYieldGeneration.YieldProviders storage yieldProvider = LibYieldGeneration
             ._yieldProviders();
 
