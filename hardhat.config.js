@@ -221,6 +221,7 @@ module.exports = {
     contractSizer: {
         alphaSort: true,
         runOnCompile: SIZE === "true",
+        outputFile: "contracts-size-report.txt",
     },
     ethernal: {
         disabled: ZAYN === "true",
