@@ -93,6 +93,7 @@ contract TermFacetV2 is ITermV2 {
         newTerm.termOwner = msg.sender;
         newTerm.creationTime = block.timestamp;
         newTerm.initialized = true;
+        newTerm.state = LibTermV2.TermStates.InitializingTerm;
 
         termStorage.terms[termId] = newTerm;
         termStorage.nextTermId++;
@@ -199,6 +200,8 @@ contract TermFacetV2 is ITermV2 {
             term.termId,
             LibCollateralV2.CollateralStates.CycleOngoing
         );
+
+        term.state = LibTermV2.TermStates.ActiveTerm;
     }
 
     function _createCollateral(uint _termId, uint _totalParticipants) internal {
@@ -246,7 +249,7 @@ contract TermFacetV2 is ITermV2 {
             "All spots are filled, can't expire"
         );
 
-        require(!term.expired, "Term already expired");
+        require(term.state != LibTermV2.TermStates.ExpiredTerm, "Term already expired");
 
         uint depositorsArrayLength = collateral.depositors.length;
 
@@ -268,7 +271,7 @@ contract TermFacetV2 is ITermV2 {
             }
         }
 
-        term.expired = true;
+        term.state = LibTermV2.TermStates.ExpiredTerm;
         collateral.initialized = false;
         collateral.state = LibCollateralV2.CollateralStates.Closed;
 

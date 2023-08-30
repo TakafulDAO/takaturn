@@ -597,7 +597,9 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     /// @param _termId The id of the term
     function _closeFund(uint _termId) internal {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[_termId];
+        LibTermV2.Term storage term = LibTermV2._termStorage().terms[_termId];
         fund.fundEnd = block.timestamp;
+        term.state = LibTermV2.TermStates.ClosedTerm;
         _setState(_termId, LibFundV2.FundStates.FundClosed);
         ICollateralV2(address(this)).releaseCollateral(_termId);
     }

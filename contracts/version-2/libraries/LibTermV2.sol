@@ -6,6 +6,13 @@ library LibTermV2 {
     bytes32 constant TERM_CONSTS_POSITION = keccak256("diamond.standard.term.consts");
     bytes32 constant TERM_STORAGE_POSITION = keccak256("diamond.standard.term.storage");
 
+    enum TermStates {
+        InitializingTerm,
+        ActiveTerm,
+        ExpiredTerm,
+        ClosedTerm
+    }
+
     struct TermConsts {
         uint sequencerStartupTime;
         address sequencerUptimeFeedAddress;
@@ -14,7 +21,7 @@ library LibTermV2 {
 
     struct Term {
         bool initialized;
-        bool expired;
+        TermStates state;
         address termOwner;
         uint creationTime;
         uint termId;

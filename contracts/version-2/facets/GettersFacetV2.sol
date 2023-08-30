@@ -43,10 +43,56 @@ contract GettersFacetV2 is IGettersV2 {
 
     /// @param participant the participant address
     /// @return the term ids the participant is part of
-    function getParticipantTerms(address participant) external view returns (uint[] memory) {
+    function getAllJoinedTerms(address participant) public view returns (uint[] memory) {
         LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
         uint[] memory participantTermIds = termStorage.participantToTermId[participant];
         return participantTermIds;
+    }
+
+    /// @param participant the participant address
+    /// @param state the term state
+    /// @return the term ids the participant is part of, giving the state of the term
+    function getJoinedTermsByState(
+        address participant,
+        LibTermV2.TermStates state
+    ) external view returns (uint[] memory) {
+        uint[] memory joinedTerms = getAllJoinedTerms(participant);
+        uint[] memory userTermsByState;
+        uint termscounter;
+        uint joinedTermsLength = joinedTerms.length;
+        for (uint i; i < joinedTermsLength; ) {
+            if (LibTermV2._termStorage().terms[joinedTerms[i]].state == state) {
+                userTermsByState[termscounter] = i;
+                unchecked {
+                    ++termscounter;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return userTermsByState;
+    }
+
+    /// @param participant the participant address
+    /// @return the term ids the participant is part of, giving the state of the term
+    function getExpelledTerms(address participant) external view returns (uint[] memory) {
+        uint[] memory joinedTerms = getAllJoinedTerms(participant);
+        uint[] memory termsExpelled;
+        uint termscounter;
+        uint joinedTermsLength = joinedTerms.length;
+        for (uint i; i < joinedTermsLength; ) {
+            if (wasExpelled(joinedTerms[i], participant)) {
+                termsExpelled[termscounter] = i;
+                unchecked {
+                    ++termscounter;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return termsExpelled;
     }
 
     /// @param termId the term id
@@ -173,7 +219,7 @@ contract GettersFacetV2 is IGettersV2 {
     /// @param termId the fund id
     /// @param user the user to check
     /// @return true if the user was expelled before
-    function wasExpelled(uint termId, address user) external view returns (bool) {
+    function wasExpelled(uint termId, address user) public view returns (bool) {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()

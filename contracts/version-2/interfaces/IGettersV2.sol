@@ -17,7 +17,14 @@ interface IGettersV2 {
 
     function getTermSummary(uint termId) external view returns (LibTermV2.Term memory);
 
-    function getParticipantTerms(address participant) external view returns (uint[] memory);
+    function getAllJoinedTerms(address participant) external view returns (uint[] memory);
+
+    function getJoinedTermsByState(
+        address participant,
+        LibTermV2.TermStates state
+    ) external view returns (uint[] memory);
+
+    function getExpelledTerms(address participant) external view returns (uint[] memory);
 
     function getRemainingCycles(uint termId) external view returns (uint);
 
