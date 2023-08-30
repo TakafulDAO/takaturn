@@ -113,6 +113,8 @@ contract TermFacetV2 is ITermV2 {
 
         require(LibTermV2._termExists(_termId) && LibCollateralV2._collateralExists(_termId));
 
+        require(collateral.state == LibCollateralV2.CollateralStates.AcceptingCollateral, "Closed");
+
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
         require(
@@ -221,6 +223,7 @@ contract TermFacetV2 is ITermV2 {
         newFund.beneficiariesOrder = _collateral.depositors;
         newFund.initialized = true;
         newFund.totalAmountOfCycles = newFund.beneficiariesOrder.length;
+        newFund.currentState = LibFundV2.FundStates.InitializingFund;
 
         IFundV2(address(this)).initFund(_term.termId);
     }
