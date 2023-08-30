@@ -48,17 +48,7 @@ interface IGettersV2 {
     )
         external
         view
-        returns (
-            bool,
-            LibFundV2.FundStates,
-            IERC20,
-            address[] memory,
-            uint,
-            uint,
-            uint,
-            address,
-            uint
-        );
+        returns (bool, LibFundV2.FundStates, IERC20, address[] memory, uint, uint, uint, uint);
 
     function getCurrentBeneficiary(uint termId) external view returns (address);
 

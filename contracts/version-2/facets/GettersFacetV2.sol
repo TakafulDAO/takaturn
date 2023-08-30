@@ -140,23 +140,13 @@ contract GettersFacetV2 is IGettersV2 {
 
     /// @notice function to get the cycle information in one go
     /// @param termId the fund id
-    /// @return initialized, currentState, stableToken, currentCycle, beneficiariesOrder, fundStart, currentCycle, lastBeneficiary, totalAmountOfCycles, fundEnd
+    /// @return initialized, currentState, stableToken, currentCycle, beneficiariesOrder, fundStart, currentCycle, totalAmountOfCycles, fundEnd
     function getFundSummary(
         uint termId
     )
         external
         view
-        returns (
-            bool,
-            LibFundV2.FundStates,
-            IERC20,
-            address[] memory,
-            uint,
-            uint,
-            uint,
-            address,
-            uint
-        )
+        returns (bool, LibFundV2.FundStates, IERC20, address[] memory, uint, uint, uint, uint)
     {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
         return (
@@ -167,7 +157,6 @@ contract GettersFacetV2 is IGettersV2 {
             fund.fundStart,
             fund.fundEnd,
             fund.currentCycle,
-            fund.lastBeneficiary,
             fund.totalAmountOfCycles
         );
     }
@@ -384,8 +373,7 @@ contract GettersFacetV2 is IGettersV2 {
         }
 
         return
-            totalWithdrawnYield +
-            (yield.totalDeposit - IZaynVaultV2TakaDao(yield.yieldProviders[1]).balance());
+            totalWithdrawnYield + (yield.totalDeposit - IZaynVaultV2TakaDao(yield.vault).balance());
     }
 
     /// @notice This function is used to get the total yield generated for a user

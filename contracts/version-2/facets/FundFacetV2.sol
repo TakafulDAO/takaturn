@@ -448,13 +448,13 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         LibTermV2.Term storage _term
     ) internal {
         address beneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_term.termId);
-        _fund.lastBeneficiary = beneficiary;
 
         // Request contribution from the collateral for those who have to pay this cycle and haven't paid
         if (EnumerableSet.length(_fund._defaulters) > 0) {
             address[] memory actualDefaulters = _actualDefaulters(
                 _fund,
                 _term,
+                beneficiary,
                 EnumerableSet.values(_fund._defaulters)
             );
 
@@ -519,17 +519,17 @@ contract FundFacetV2 is IFundV2, TermOwnable {
     function _actualDefaulters(
         LibFundV2.Fund storage _fund,
         LibTermV2.Term storage _term,
+        address _beneficiary,
         address[] memory _defaulters
     ) internal view returns (address[] memory) {
         address[] memory actualDefaulters;
         address[] memory beneficiariesOrder = _fund.beneficiariesOrder; // We check on the beneficiariesOrder array
 
-        address beneficiary = _fund.lastBeneficiary;
         uint beneficiariesLength = beneficiariesOrder.length;
         uint defaultersLength = _defaulters.length;
         uint defaultersCounter;
 
-        if (IGettersV2(address(this)).wasExpelled(_term.termId, beneficiary)) {
+        if (IGettersV2(address(this)).wasExpelled(_term.termId, _beneficiary)) {
             for (uint i; i < beneficiariesLength; ) {
                 // When we find the first non beneficiary we exit the loop. The first one must be the beneficiary
                 if (!_fund.isBeneficiary[beneficiariesOrder[i]]) {
@@ -552,7 +552,7 @@ contract FundFacetV2 is IFundV2, TermOwnable {
         } else {
             // We don't consider the beneficiary a defaulter
             for (uint i; i < defaultersLength; ) {
-                if (_defaulters[i] == beneficiary) {
+                if (_defaulters[i] == _beneficiary) {
                     unchecked {
                         ++i;
                     }

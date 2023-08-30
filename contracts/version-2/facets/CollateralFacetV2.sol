@@ -211,7 +211,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             ._yieldStorage()
             .yields[termId];
 
-        (, , , , , uint fundEnd, , , ) = IGettersV2(address(this)).getFundSummary(termId);
+        (, , , , , uint fundEnd, , ) = IGettersV2(address(this)).getFundSummary(termId);
         require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
 
         uint depositorsLength = collateral.depositors.length;
@@ -444,7 +444,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
             ._yieldStorage()
             .yields[_term.termId];
 
-        address beneficiary = _fund.lastBeneficiary;
+        address beneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_term.termId);
 
         if (_payWithCollateral && !_payWithFrozenPool) {
             if (!_isExpelled) {
@@ -491,7 +491,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
                 _defaulter
             ];
             _collateral.collateralMembersBank[_defaulter] = 0;
-            _fund.beneficiariesPool[_fund.lastBeneficiary] += leftoverUSDC;
+            _fund.beneficiariesPool[beneficiary] += leftoverUSDC;
             _fund.beneficiariesPool[_defaulter] -= leftoverUSDC;
 
             emit OnCollateralLiquidated(

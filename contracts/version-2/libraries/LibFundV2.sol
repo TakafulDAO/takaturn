@@ -40,7 +40,6 @@ library LibFundV2 {
         EnumerableSet.AddressSet _beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
         EnumerableSet.AddressSet _defaulters; // Both participants and beneficiaries who have defaulted this cycle
         uint expelledParticipants; // Total amount of participants that have been expelled so far
-        address lastBeneficiary; // The last selected beneficiary, updates with every cycle
         uint totalAmountOfCycles;
     }
 
