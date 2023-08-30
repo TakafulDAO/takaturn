@@ -13,4 +13,6 @@ interface IZaynVaultV2TakaDao {
     function balance() external pure returns (uint256);
 
     function strategy() external pure returns (address);
+
+    function balanceOf(uint256 term) external returns (uint256);
 }
