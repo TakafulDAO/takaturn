@@ -35,11 +35,7 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
     /// @param termId term id
     /// @param _state collateral state
     modifier atState(uint termId, LibCollateralV2.CollateralStates _state) {
-        LibCollateralV2.CollateralStates state = LibCollateralV2
-            ._collateralStorage()
-            .collaterals[termId]
-            .state;
-        if (state != _state) revert FunctionInvalidAtThisState();
+        _atState(termId, _state);
         _;
     }
 
@@ -545,5 +541,13 @@ contract CollateralFacetV2 is ICollateralV2, TermOwnable {
         if (_yield.hasOptedIn[_user]) {
             IYGFacetZaynFi(address(this)).withdrawYG(_termId, _user, _amount);
         }
+    }
+
+    function _atState(uint _termId, LibCollateralV2.CollateralStates _state) internal view {
+        LibCollateralV2.CollateralStates state = LibCollateralV2
+            ._collateralStorage()
+            .collaterals[_termId]
+            .state;
+        if (state != _state) revert FunctionInvalidAtThisState();
     }
 }
