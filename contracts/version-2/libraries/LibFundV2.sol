@@ -21,6 +21,10 @@ library LibFundV2 {
         FundClosed // Triggers at the end of the last contribution period, no state changes after this
     }
 
+    struct PayExemption {
+        mapping(address => bool) exempted; // Mapping to keep track of if someone is exempted from paying
+    }
+
     struct Fund {
         bool initialized;
         FundStates currentState; // Variable to keep track of the different FundStates
@@ -35,7 +39,8 @@ library LibFundV2 {
         mapping(address => bool) autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
         mapping(address => uint) beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
         // todo: add another one to freeze collateral?
-        mapping(address => bool) beneficiariesFrozenPool; // Frozen pool by beneficiaries, it can claim when his collateral is at least 1.5RCC
+        mapping(address => bool) beneficiariesFrozenPool; // Frozen pool by beneficiaries, it can claim when his collateral is at least 1.1 X RCC
+        mapping(uint => PayExemption) isExemptedOnCycle; // Mapping to keep track of if someone is exempted from paying this cycle
         EnumerableSet.AddressSet _participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
         EnumerableSet.AddressSet _beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle
         EnumerableSet.AddressSet _defaulters; // Both participants and beneficiaries who have defaulted this cycle

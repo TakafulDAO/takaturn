@@ -234,6 +234,17 @@ contract GettersFacetV2 is IGettersV2 {
         }
     }
 
+    /// @notice function to see if a user is exempted from paying a cycle
+    function isExempted(
+        uint termId, 
+        uint cycle, 
+        address user
+    ) external view returns (bool) {
+        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
+        return fund.isExemptedOnCycle[cycle].exempted[user];
+    }
+
+
     /// @notice function to get cycle information of a specific participant
     /// @param participant the user to get the info from
     /// @param termId the fund id

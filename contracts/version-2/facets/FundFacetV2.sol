@@ -107,12 +107,12 @@ contract FundFacetV2 is IFundV2 {
         address[] memory participants = fund.beneficiariesOrder;
 
         uint participantsLength = participants.length;
-
+        uint currentCycle = fund.currentCycle;
         for (uint i; i < participantsLength; ) {
             address p = participants[i];
 
-            // The current beneficiary doesn't pay neither get defaulted
-            if (p == currentBeneficiary) {
+            // The current beneficiary or someone who is exempt doesn't pay neither gets defaulted
+            if (p == currentBeneficiary || fund.isExemptedOnCycle[currentCycle].exempted[p]) {
                 unchecked {
                     ++i;
                 }
@@ -213,16 +213,9 @@ contract FundFacetV2 is IFundV2 {
         require(fund.isParticipant[msg.sender], "Not a participant");
         require(currentBeneficiary != msg.sender, "Beneficiary doesn't pay");
         require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
+        require(!fund.isExemptedOnCycle[fund.currentCycle].exempted[msg.sender], "Participant is exempted this cycle");
 
-        // If he is not participant neither a collateral member, means he is expelled
-        if (IGettersV2(address(this)).wasExpelled(termId, currentBeneficiary)) {
-            // The only ones that pays are the ones that were beneficiaries
-            require(fund.isBeneficiary[msg.sender], "Only previous beneficiaries pays this cycle");
-            _payContribution(termId, msg.sender, msg.sender);
-        } else {
-            // Otherwise, everyone pays
-            _payContribution(termId, msg.sender, msg.sender);
-        }
+        _payContribution(termId, msg.sender, msg.sender);
     }
 
     /// @notice This function is here to give the possibility to pay using a different wallet
@@ -237,13 +230,9 @@ contract FundFacetV2 is IFundV2 {
         require(fund.isParticipant[participant], "Not a participant");
         require(currentBeneficiary != participant, "Beneficiary doesn't pay");
         require(!fund.paidThisCycle[participant], "Already paid for cycle");
+        require(!fund.isExemptedOnCycle[fund.currentCycle].exempted[participant], "Participant is exempted this cycle");
 
-        if (IGettersV2(address(this)).wasExpelled(termId, currentBeneficiary)) {
-            require(fund.isBeneficiary[participant], "Only previous beneficiaries pays this cycle");
-            _payContribution(termId, msg.sender, participant);
-        } else {
-            _payContribution(termId, msg.sender, participant);
-        }
+        _payContribution(termId, msg.sender, participant);
     }
 
     /// @notice Called by the beneficiary to withdraw the fund
@@ -279,7 +268,7 @@ contract FundFacetV2 is IFundV2 {
         if (hasFrozenPool) {
             bool freeze = _freezePot(LibTermV2._termStorage().terms[termId], fund, msg.sender);
 
-            require(!freeze, "Need at least 1.1RCC collateral to unfroze your fund");
+            require(!freeze, "Need at least 1.1RCC collateral to unfreeze your fund");
 
             _transferPoolToBeneficiary(termId, msg.sender);
         }
@@ -338,51 +327,32 @@ contract FundFacetV2 is IFundV2 {
     /// @param _termId the id of the term
     function _autoPay(uint _termId) internal {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[_termId];
-        LibCollateralV2.Collateral storage collateral = LibCollateralV2
-            ._collateralStorage()
-            .collaterals[_termId];
-
+        
         // Get the beneficiary for this cycle
         address currentBeneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_termId);
 
         address[] memory autoPayers = fund.beneficiariesOrder; // use beneficiariesOrder because it is a single array with all participants
         uint autoPayersArray = autoPayers.length;
 
-        // If the beneficiary is not a participant neither a collateral member, means he is expelled
-        if (
-            !fund.isParticipant[currentBeneficiary] &&
-            !collateral.isCollateralMember[currentBeneficiary]
-        ) {
-            for (uint i; i < autoPayersArray; ) {
-                if (
-                    fund.autoPayEnabled[autoPayers[i]] &&
-                    !fund.paidThisCycle[autoPayers[i]] &&
-                    fund.isBeneficiary[autoPayers[i]]
-                ) {
-                    _payContributionSafe(_termId, autoPayers[i], autoPayers[i]);
-                }
-
+        for (uint i; i < autoPayersArray; ) {
+            address autoPayer = autoPayers[i];
+            // The beneficiary doesn't pay
+            if (currentBeneficiary == autoPayer) {
                 unchecked {
                     ++i;
                 }
+                continue;
             }
-        } else {
-            for (uint i; i < autoPayersArray; ) {
-                // The beneficiary doesn't pay
-                if (currentBeneficiary == autoPayers[i]) {
-                    unchecked {
-                        ++i;
-                    }
-                    continue;
-                }
 
-                if (fund.autoPayEnabled[autoPayers[i]] && !fund.paidThisCycle[autoPayers[i]]) {
-                    _payContributionSafe(_termId, autoPayers[i], autoPayers[i]);
-                }
+            if (fund.autoPayEnabled[autoPayer] && 
+                !fund.paidThisCycle[autoPayer] &&
+                !fund.isExemptedOnCycle[fund.currentCycle].exempted[autoPayer]
+                ) {
+                    _payContributionSafe(_termId, autoPayer, autoPayer);
+            }
 
-                unchecked {
-                    ++i;
-                }
+            unchecked {
+                ++i;
             }
         }
     }
@@ -506,7 +476,6 @@ contract FundFacetV2 is IFundV2 {
         }
 
         // Award the beneficiary with the pool or freeze the pot
-
         _freezePot(_term, _fund, beneficiary);
 
         _fund.beneficiariesPool[beneficiary] = _term.contributionAmount * paidCount * 10 ** 6;
