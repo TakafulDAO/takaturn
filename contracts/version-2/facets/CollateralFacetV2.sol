@@ -23,7 +23,11 @@ contract CollateralFacetV2 is ICollateralV2 {
         LibCollateralV2.CollateralStates indexed oldState,
         LibCollateralV2.CollateralStates indexed newState
     );
-    event OnCollateralWithdrawal(uint indexed termId, address indexed user, uint indexed collateralAmount);
+    event OnCollateralWithdrawal(
+        uint indexed termId,
+        address indexed user,
+        uint indexed collateralAmount
+    );
     event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
     event OnFrozenMoneyPotLiquidated(
@@ -74,7 +78,7 @@ contract CollateralFacetV2 is ICollateralV2 {
             defaulters
         );
 
-        (uint nonBeneficiaryCounter, address[] memory nonBeneficiaries) = _liquidateCollateral(
+        (uint nonBeneficiaryCounter, address[] memory nonBeneficiaries) = _spendCollateral(
             collateral,
             term
         );
@@ -99,9 +103,7 @@ contract CollateralFacetV2 is ICollateralV2 {
     /// @notice Called by each member after during or at the end of the term to withraw collateral
     /// @dev This follows the pull-over-push pattern.
     /// @param termId term id
-    function withdrawCollateral(
-        uint termId
-    ) external {
+    function withdrawCollateral(uint termId) external {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[termId];
@@ -120,7 +122,7 @@ contract CollateralFacetV2 is ICollateralV2 {
 
             uint amount = _withdrawFromYield(termId, msg.sender, userCollateral, yield);
             (success, ) = payable(msg.sender).call{value: amount}("");
-            
+
             --collateral.counterMembers; // todo: Is this needed?
 
             emit OnCollateralWithdrawal(termId, msg.sender, amount);
@@ -128,7 +130,8 @@ contract CollateralFacetV2 is ICollateralV2 {
         // Or withdraw partially
         else if (collateral.state == LibCollateralV2.CollateralStates.CycleOngoing) {
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
-            uint minRequiredCollateral = IGettersV2(address(this)).getRemainingCyclesContributionWei(termId) * 15 / 10; // 1.5 X RCC in wei
+            uint minRequiredCollateral = (IGettersV2(address(this))
+                .getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
@@ -140,7 +143,6 @@ contract CollateralFacetV2 is ICollateralV2 {
 
                 emit OnCollateralWithdrawal(termId, msg.sender, amount);
             }
-
         }
 
         require(success, "Withdraw failed");
@@ -212,7 +214,6 @@ contract CollateralFacetV2 is ICollateralV2 {
             uint withdrawnAmount = _withdrawFromYield(termId, depositor, amount, yield);
 
             totalToWithdraw += (withdrawnAmount + paymentAmount);
-
 
             unchecked {
                 ++i;
@@ -520,7 +521,7 @@ contract CollateralFacetV2 is ICollateralV2 {
     /// @param _term Term storage
     /// @return nonBeneficiaryCounter The total amount of collateral to be divided among non-beneficiaries
     /// @return nonBeneficiaries array of addresses that were expelled
-    function _liquidateCollateral(
+    function _spendCollateral(
         LibCollateralV2.Collateral storage _collateral,
         LibTermV2.Term memory _term
     ) internal view returns (uint, address[] memory) {
@@ -556,8 +557,6 @@ contract CollateralFacetV2 is ICollateralV2 {
     ) internal returns (uint shares) {
         if (_yieldStorage.hasOptedIn[_user]) {
             shares = IYGFacetZaynFi(address(this)).withdrawYG(_termId, _amount, _user);
-
-
         } else {
             shares = _amount;
         }

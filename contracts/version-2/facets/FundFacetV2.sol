@@ -39,7 +39,6 @@ contract FundFacetV2 is IFundV2 {
         uint indexed currentCycle,
         address indexed expellant
     ); // Emits when a defaulter can't compensate with the collateral
-    event OnTotalParticipantsUpdated(uint indexed termId, uint indexed newLength); // Emits when the total participants lengths has changed from its initial value
     event OnAutoPayToggled(uint indexed termId, address indexed participant, bool indexed enabled); // Emits when a participant succesfully toggles autopay
 
     modifier onlyTermOwner(uint termId) {
@@ -589,14 +588,13 @@ contract FundFacetV2 is IFundV2 {
         );
 
         _fund.isParticipant[_expellant] = false;
-        emit OnDefaulterExpelled(_term.termId, _fund.currentCycle, _expellant);
 
         // Lastly, lower the amount of participants
         --_term.totalParticipants;
         // collateral.isCollateralMember[_expellant] = false; // todo: needed? it is set also on whoExpelled
         ++_fund.expelledParticipants;
 
-        emit OnTotalParticipantsUpdated(_term.termId, _term.totalParticipants);
+        emit OnDefaulterExpelled(_term.termId, _fund.currentCycle, _expellant);
     }
 
     /// @notice Internal function for close fund which is used by _startNewCycle & _chooseBeneficiary to cover some edge-cases
