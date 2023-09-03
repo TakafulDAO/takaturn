@@ -71,7 +71,7 @@ contract CollateralFacetV2 is ICollateralV2 {
             .collaterals[term.termId];
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[term.termId];
 
-        (uint collateralToDistribute, address[] memory expellants) = _whoExpelled(
+        (uint collateralToDistribute, address[] memory expellants) = _solveDefaulters(
             collateral,
             term,
             fund,
@@ -266,7 +266,7 @@ contract CollateralFacetV2 is ICollateralV2 {
     /// @param _defaulters Defaulters array
     /// @return share The total amount of collateral to be divided among non-beneficiaries
     /// @return expellants array of addresses that were expelled
-    function _whoExpelled(
+    function _solveDefaulters(
         LibCollateralV2.Collateral storage _collateral,
         LibTermV2.Term memory _term,
         LibFundV2.Fund storage _fund,
