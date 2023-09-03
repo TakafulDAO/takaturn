@@ -56,7 +56,7 @@ contract CollateralFacetV2 is ICollateralV2 {
 
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
-    /// @param defaulters Address that was randomly selected for the current cycle
+    /// @param defaulters Addressess of all defaulters of the current cycle
     /// @return expellants array of addresses that were expelled
     function requestContribution(
         LibTermV2.Term memory term,
