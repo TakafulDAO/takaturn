@@ -11,7 +11,8 @@ import {LibCollateralV2} from "../libraries/LibCollateralV2.sol";
 import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
 
 contract YGFacetZaynFi is IYGFacetZaynFi {
-    event OnYGOptInToggled(uint indexed termId, address indexed participant, bool indexed optedIn); // Emits when a participant succesfully toggles yield generation
+    event OnYGOptInToggled(uint indexed termId, address indexed user, bool indexed optedIn); // Emits when a user succesfully toggles yield generation
+    event OnYieldClaimed(uint indexed termId, address indexed user, uint indexed amount); // Emits when a user claims their yield
 
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
@@ -36,25 +37,47 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         yield.totalShares = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
     }
 
-    /// @notice This function is used to withdraw collateral from yield generation
+    /// @notice This function is used to withdraw collateral from the yield generation protocol
     /// @param termId The term id for which the collateral is being withdrawn
-    /// @param withdrawAmount The amount of collateral being withdrawn
+    /// @param collateralAmount The amount of collateral being withdrawn
     function withdrawYG(
         uint termId,
-        uint256 withdrawAmount,
+        uint256 collateralAmount,
         address user
-    ) external returns (uint neededShares) {
+    ) external returns (uint) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
 
-        neededShares = (withdrawAmount * yield.totalShares) / yield.totalDeposit;
+        uint neededShares = (collateralAmount * yield.totalShares) / yield.totalDeposit;
 
-        yield.withdrawnCollateral[user] += withdrawAmount;
-        yield.withdrawnYield[user] += neededShares;
-        yield.currentTotalDeposit -= withdrawAmount;
+        yield.withdrawnCollateral[user] += collateralAmount;
+        yield.currentTotalDeposit -= collateralAmount;
 
-        IZaynZapV2TakaDAO(yield.providerAddresses["ZaynZap"]).zapOutETH(yield.providerAddresses["ZaynVault"], neededShares, termId);
+        address zapAddress = yield.providerAddresses["ZaynZap"];
+        address vaultAddress = yield.providerAddresses["ZaynVault"];
+        
+        uint withdrawnAmount = IZaynZapV2TakaDAO(zapAddress)
+            .zapOutETH(vaultAddress, neededShares, termId);
+
+        uint withdrawnYield = withdrawnAmount - collateralAmount;
+        yield.withdrawnYield[user] += withdrawnYield;
+        yield.availableYield[user] += withdrawnYield;
+
+        return withdrawnYield;
+    }
+
+    /// @notice This function allows a user to claim the current available yield
+    /// @param termId The term id for which the yield is being claimed
+    function claimAvailableYield(uint termId) external {
+        _claimAvailableYield(termId, msg.sender);
+    }
+
+    /// @notice This function allows a user to claim the current available yield
+    /// @param termId The term id for which the yield is being claimed
+    /// @param user The user address that is claiming the yield
+    function claimAvailableYield(uint termId, address user) external {
+        _claimAvailableYield(termId, user);
     }
 
     function toggleOptInYG(uint termId) external {
@@ -83,5 +106,18 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             ._yieldProviders();
 
         yieldProvider.providerAddresses[providerString] = providerAddress;
+    }
+
+    function _claimAvailableYield(uint termId, address user) internal {
+        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+            ._yieldStorage()
+            .yields[termId];
+
+        uint availableYield = yield.availableYield[user];
+        require(availableYield > 0, "No yield to withdraw");
+        (bool success, ) = payable(user).call{value: availableYield}("");
+        require(success);
+
+        emit OnYieldClaimed(termId, user, availableYield);
     }
 }

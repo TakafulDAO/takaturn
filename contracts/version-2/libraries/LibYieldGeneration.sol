@@ -28,6 +28,7 @@ library LibYieldGeneration {
         mapping(address => bool) hasOptedIn;
         mapping(address => uint256) withdrawnYield;
         mapping(address => uint256) withdrawnCollateral;
+        mapping(address => uint256) availableYield;
     }
 
     struct YieldStorage {

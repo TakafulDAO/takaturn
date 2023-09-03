@@ -103,7 +103,9 @@ contract CollateralFacetV2 is ICollateralV2 {
     /// @notice Called by each member after during or at the end of the term to withraw collateral
     /// @dev This follows the pull-over-push pattern.
     /// @param termId term id
-    function withdrawCollateral(uint termId) external {
+    function withdrawCollateral(
+        uint termId
+    ) external {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[termId];
@@ -120,29 +122,29 @@ contract CollateralFacetV2 is ICollateralV2 {
         if (collateral.state == LibCollateralV2.CollateralStates.ReleasingCollateral) {
             collateral.collateralMembersBank[msg.sender] = 0;
 
-            uint amount = _withdrawFromYield(termId, msg.sender, userCollateral, yield);
-            (success, ) = payable(msg.sender).call{value: amount}("");
-
+            _withdrawFromYield(termId, msg.sender, userCollateral, yield);
+            (success, ) = payable(msg.sender).call{value: userCollateral}("");
+            
             --collateral.counterMembers; // todo: Is this needed?
 
-            emit OnCollateralWithdrawal(termId, msg.sender, amount);
+            emit OnCollateralWithdrawal(termId, msg.sender, userCollateral);
         }
         // Or withdraw partially
         else if (collateral.state == LibCollateralV2.CollateralStates.CycleOngoing) {
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
-            uint minRequiredCollateral = (IGettersV2(address(this))
-                .getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
+            uint minRequiredCollateral = IGettersV2(address(this)).getRemainingCyclesContributionWei(termId) * 15 / 10; // 1.5 X RCC in wei
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
                 uint allowedWithdrawal = minRequiredCollateral - userCollateral; // We allow to withdraw the positive difference
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
-                uint amount = _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
-                (success, ) = payable(msg.sender).call{value: amount}("");
+                _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
+                (success, ) = payable(msg.sender).call{value: allowedWithdrawal}("");
 
-                emit OnCollateralWithdrawal(termId, msg.sender, amount);
+                emit OnCollateralWithdrawal(termId, msg.sender, allowedWithdrawal);
             }
+
         }
 
         require(success, "Withdraw failed");
@@ -202,7 +204,7 @@ contract CollateralFacetV2 is ICollateralV2 {
         require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
 
         uint totalToWithdraw;
-
+        // todo: event for withdrawal
         uint depositorsLength = collateral.depositors.length;
         for (uint i; i < depositorsLength; ) {
             address depositor = collateral.depositors[i];
@@ -211,9 +213,9 @@ contract CollateralFacetV2 is ICollateralV2 {
 
             collateral.collateralMembersBank[depositor] = 0;
             collateral.collateralPaymentBank[depositor] = 0;
-            uint withdrawnAmount = _withdrawFromYield(termId, depositor, amount, yield);
+            uint withdrawnYield = _withdrawFromYield(termId, depositor, amount, yield);
 
-            totalToWithdraw += (withdrawnAmount + paymentAmount);
+            totalToWithdraw += (amount + paymentAmount + withdrawnYield); 
 
             unchecked {
                 ++i;
@@ -445,7 +447,7 @@ contract CollateralFacetV2 is ICollateralV2 {
         bool _payWithCollateral,
         bool _payWithFrozenPool,
         bool _isExpelled
-    ) internal returns (uint shares) {
+    ) internal returns (uint shares) { // todo: return values properly with this function
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[_term.termId];
@@ -454,20 +456,18 @@ contract CollateralFacetV2 is ICollateralV2 {
 
         if (_payWithCollateral && !_payWithFrozenPool) {
             if (!_isExpelled) {
-                shares = _withdrawFromYield(
+                _withdrawFromYield(
                     _term.termId,
                     _defaulter,
                     _contributionAmountWei,
                     yield
                 );
 
-                shares -= _contributionAmountWei;
-
                 // Subtract contribution from defaulter and add to beneficiary.
                 _collateral.collateralMembersBank[_defaulter] -= _contributionAmountWei;
-                _collateral.collateralPaymentBank[beneficiary] += _contributionAmountWei + shares;
+                _collateral.collateralPaymentBank[beneficiary] += _contributionAmountWei;
             } else {
-                shares = _withdrawFromYield(
+                _withdrawFromYield(
                     _term.termId,
                     _defaulter,
                     _collateral.collateralMembersBank[_defaulter],
@@ -487,7 +487,7 @@ contract CollateralFacetV2 is ICollateralV2 {
             emit OnFrozenMoneyPotLiquidated(_term.termId, _defaulter, _term.contributionAmount);
         }
         if (_payWithCollateral && _payWithFrozenPool) {
-            shares = _withdrawFromYield(
+            _withdrawFromYield(
                 _term.termId,
                 _defaulter,
                 _collateral.collateralMembersBank[_defaulter],
@@ -500,9 +500,7 @@ contract CollateralFacetV2 is ICollateralV2 {
 
             uint leftoverUSDC = IGettersV2(address(this)).getToUSDConversionRate(leftover);
 
-            _collateral.collateralPaymentBank[beneficiary] +=
-                shares +
-                _collateral.collateralMembersBank[_defaulter];
+            _collateral.collateralPaymentBank[beneficiary] += _collateral.collateralMembersBank[_defaulter];
             _collateral.collateralMembersBank[_defaulter] = 0;
             _fund.beneficiariesPool[beneficiary] += leftoverUSDC;
             _fund.beneficiariesPool[_defaulter] -= leftoverUSDC;
@@ -554,11 +552,11 @@ contract CollateralFacetV2 is ICollateralV2 {
         address _user,
         uint _amount,
         LibYieldGeneration.YieldGeneration storage _yieldStorage
-    ) internal returns (uint shares) {
+    ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
-            shares = IYGFacetZaynFi(address(this)).withdrawYG(_termId, _amount, _user);
+            withdrawnYield = IYGFacetZaynFi(address(this)).withdrawYG(_termId, _amount, _user);
         } else {
-            shares = _amount;
+            withdrawnYield = 0;
         }
     }
 
