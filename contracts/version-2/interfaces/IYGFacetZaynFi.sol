@@ -17,7 +17,7 @@ interface IYGFacetZaynFi {
 
     function claimAvailableYield(uint termId, address user) external;
 
-    function toggleOptInYG(uint termId) external;
+    function toggleOptInYG(uint termId, bool optIn) external;
 
     function updateYieldProvider(string memory providerString, address providerAddress) external;
 }

@@ -45,8 +45,8 @@ contract TermFacetV2 is ITermV2 {
             );
     }
 
-    function joinTerm(uint termId) external payable {
-        _joinTerm(termId);
+    function joinTerm(uint termId, bool optYield) external payable {
+        _joinTerm(termId, optYield);
     }
 
     function startTerm(uint termId) external {
@@ -105,7 +105,7 @@ contract TermFacetV2 is ITermV2 {
         return termId;
     }
 
-    function _joinTerm(uint _termId) internal {
+    function _joinTerm(uint _termId, bool _optYield) internal {
         LibTermV2.TermStorage storage termStorage = LibTermV2._termStorage();
         LibTermV2.Term memory term = termStorage.terms[_termId];
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
@@ -148,6 +148,8 @@ contract TermFacetV2 is ITermV2 {
         if (collateral.counterMembers == term.totalParticipants) {
             emit OnTermFilled(_termId);
         }
+
+        IYGFacetZaynFi(address(this)).toggleOptInYG(_termId, _optYield);
     }
 
     function _startTerm(uint _termId) internal {

@@ -32,7 +32,10 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
         address vaultAddress = yield.providerAddresses["ZaynVault"];
 
-        IZaynZapV2TakaDAO(yield.providerAddresses["ZaynZap"]).zapInEth{value: ethAmount}(vaultAddress, termId);
+        IZaynZapV2TakaDAO(yield.providerAddresses["ZaynZap"]).zapInEth{value: ethAmount}(
+            vaultAddress,
+            termId
+        );
 
         yield.totalShares = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
     }
@@ -56,9 +59,12 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
         address zapAddress = yield.providerAddresses["ZaynZap"];
         address vaultAddress = yield.providerAddresses["ZaynVault"];
-        
-        uint withdrawnAmount = IZaynZapV2TakaDAO(zapAddress)
-            .zapOutETH(vaultAddress, neededShares, termId);
+
+        uint withdrawnAmount = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+            vaultAddress,
+            neededShares,
+            termId
+        );
 
         uint withdrawnYield = withdrawnAmount - collateralAmount;
         yield.withdrawnYield[user] += withdrawnYield;
@@ -80,7 +86,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         _claimAvailableYield(termId, user);
     }
 
-    function toggleOptInYG(uint termId) external {
+    function toggleOptInYG(uint termId, bool optIn) external {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
@@ -93,15 +99,15 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             collateral.state == LibCollateralV2.CollateralStates.AcceptingCollateral,
             "Too late to change YG opt in"
         );
-        require(collateral.isCollateralMember[msg.sender], "Not part of term");
 
-        bool newDecision = !yield.hasOptedIn[msg.sender];
-
-        yield.hasOptedIn[msg.sender] = newDecision;
-        emit OnYGOptInToggled(termId, msg.sender, newDecision);
+        yield.hasOptedIn[msg.sender] = optIn;
+        emit OnYGOptInToggled(termId, msg.sender, optIn);
     }
 
-    function updateYieldProvider(string memory providerString, address providerAddress) external onlyOwner {
+    function updateYieldProvider(
+        string memory providerString,
+        address providerAddress
+    ) external onlyOwner {
         LibYieldGeneration.YieldProviders storage yieldProvider = LibYieldGeneration
             ._yieldProviders();
 
