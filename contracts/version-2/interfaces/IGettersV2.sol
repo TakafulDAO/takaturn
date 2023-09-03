@@ -61,6 +61,8 @@ interface IGettersV2 {
 
     function wasExpelled(uint termId, address user) external view returns (bool);
 
+    function isExempted(uint termId, uint cycle, address user) external view returns (bool);
+
     function getParticipantFundSummary(
         address participant,
         uint termId

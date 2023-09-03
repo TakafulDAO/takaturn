@@ -83,8 +83,22 @@ contract CollateralFacetV2 is ICollateralV2 {
             fund
         );
 
-        // Finally, divide the share equally among non-beneficiaries //todo: check if this is still needed
+        
+
+        
         if (nonBeneficiaryCounter > 0) { // This case can only happen when what?
+
+            // Exempt non beneficiaries from paying an early expellant's cycle
+            uint expellantsLength = expellants.length;
+            for (uint i; i < expellantsLength; ) {
+                _exemptNonBeneficiariesFromPaying(fund, expellants[i], nonBeneficiaryCounter, nonBeneficiaries);
+
+                unchecked {
+                    ++i;
+                }
+            }
+
+            // Finally, divide the share equally among non-beneficiaries //todo: check if this is still needed
             collateralToDistribute = collateralToDistribute / nonBeneficiaryCounter;
             for (uint i; i < nonBeneficiaryCounter; ) {
                 collateral.collateralPaymentBank[nonBeneficiaries[i]] += collateralToDistribute;
@@ -95,6 +109,32 @@ contract CollateralFacetV2 is ICollateralV2 {
             }
         }
         return (expellants);
+    }
+
+    // TODO: Move to fund facet? This function may not be called by anyone, only the term owner. But must be called from here
+    /// @notice Called to exempt users from needing to pay
+    /// @param _fund Fund storage
+    /// @param _expellant The expellant in question
+    /// @param _nonBeneficiaries All non-beneficiaries at this time
+    function _exemptNonBeneficiariesFromPaying(
+        LibFundV2.Fund storage _fund,
+        address _expellant,
+        uint _nonBeneficiaryCounter,
+        address[] memory _nonBeneficiaries
+    ) internal {
+        if (!_fund.isBeneficiary[_expellant]) {
+
+            uint expellantBeneficiaryCycle; // TODO: Get the cycle of the expellant
+
+            for (uint i; i < _nonBeneficiaryCounter; ) {
+                _fund.isExemptedOnCycle[expellantBeneficiaryCycle].exempted[_nonBeneficiaries[i]] = true;
+                // TODO: need to test this
+                unchecked {
+                    ++i;
+                }
+            }
+            
+        }
     }
 
     /// @notice Called by each member after during or at the end of the term to withraw collateral
@@ -387,7 +427,7 @@ contract CollateralFacetV2 is ICollateralV2 {
                         remainingCollateral,
                         yield
                     );
-                    
+
                     distributedCollateral += remainingCollateral; // This will be distributed later
                     _collateral.collateralMembersBank[_defaulter] = 0;
                     emit OnCollateralLiquidated(_term.termId, _defaulter, remainingCollateral);
