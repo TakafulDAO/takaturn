@@ -23,7 +23,7 @@ contract CollateralFacetV2 is ICollateralV2 {
         LibCollateralV2.CollateralStates indexed oldState,
         LibCollateralV2.CollateralStates indexed newState
     );
-    event OnCollateralWithdrawal(uint indexed termId, address indexed user, uint indexed amount);
+    event OnCollateralWithdrawal(uint indexed termId, address indexed user, uint indexed collateralAmount);
     event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
     event OnFrozenMoneyPotLiquidated(
@@ -105,8 +105,7 @@ contract CollateralFacetV2 is ICollateralV2 {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[termId];
-        LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
-        LibTermV2.Term storage term = LibTermV2._termStorage().terms[termId];
+
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
@@ -208,15 +207,16 @@ contract CollateralFacetV2 is ICollateralV2 {
         uint depositorsLength = collateral.depositors.length;
         for (uint i; i < depositorsLength; ) {
             address depositor = collateral.depositors[i];
-            uint amount = collateral.collateralMembersBank[depositor] +
-                collateral.collateralPaymentBank[depositor];
-
-            uint withdrawnAmount = _withdrawFromYield(termId, depositor, amount, yield);
-
-            totalToWithdraw += withdrawnAmount;
+            uint amount = collateral.collateralMembersBank[depositor];
+            uint paymentAmount = collateral.collateralPaymentBank[depositor];
 
             collateral.collateralMembersBank[depositor] = 0;
             collateral.collateralPaymentBank[depositor] = 0;
+            uint withdrawnAmount = _withdrawFromYield(termId, depositor, amount, yield);
+
+            totalToWithdraw += (withdrawnAmount + paymentAmount);
+
+
             unchecked {
                 ++i;
             }
