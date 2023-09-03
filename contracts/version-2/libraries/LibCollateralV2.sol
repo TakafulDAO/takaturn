@@ -16,6 +16,7 @@ library LibCollateralV2 {
         bool payWithCollateral;
         bool payWithFrozenPool;
         bool gettingExpelled;
+        bool isBeneficiary;
     }
 
     struct Collateral {

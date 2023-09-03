@@ -287,9 +287,9 @@ contract CollateralFacetV2 is ICollateralV2 {
         for (uint i; i < _defaulters.length; ) {
 
             LibCollateralV2.DefaulterState memory defaulterState;
-            
+            defaulterState.isBeneficiary = _fund.isBeneficiary[_defaulters[i]];
             uint collateralAmount = _collateral.collateralMembersBank[_defaulters[i]];
-            if (_fund.isBeneficiary[_defaulters[i]]) { // Has the user been beneficiary?
+            if (defaulterState.isBeneficiary) { // Has the user been beneficiary?
                 if (_isUnderCollaterized(_term.termId, _defaulters[i])) { // Is the collateral below 1.0 X RCC?
                     if (_fund.beneficiariesFrozenPool[_defaulters[i]]) { // Is the pool currently frozen?
                         if (collateralAmount >= contributionAmountWei) { // Does the user's collateral cover a cycle?
@@ -377,25 +377,25 @@ contract CollateralFacetV2 is ICollateralV2 {
             .yields[_term.termId];
 
         address beneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_term.termId);
-
-        
         if (_defaulterState.payWithCollateral && !_defaulterState.payWithFrozenPool) {
             if (_defaulterState.gettingExpelled) {
-                uint remainingCollateral = _collateral.collateralMembersBank[_defaulter];
-                _withdrawFromYield(
-                    _term.termId,
-                    _defaulter,
-                    remainingCollateral,
-                    yield
-                );
-                
-                distributedCollateral += remainingCollateral; // This will be distributed later
+                if (_defaulterState.isBeneficiary) {
+                    uint remainingCollateral = _collateral.collateralMembersBank[_defaulter];
+                    _withdrawFromYield(
+                        _term.termId,
+                        _defaulter,
+                        remainingCollateral,
+                        yield
+                    );
+                    
+                    distributedCollateral += remainingCollateral; // This will be distributed later
+                    _collateral.collateralMembersBank[_defaulter] = 0;
+                    emit OnCollateralLiquidated(_term.termId, _defaulter, remainingCollateral);
+                }
 
                 // Expelled
                 _collateral.isCollateralMember[_defaulter] = false;
-                _collateral.collateralMembersBank[_defaulter] = 0;
-
-                emit OnCollateralLiquidated(_term.termId, _defaulter, remainingCollateral);
+                
             } else {
                 _withdrawFromYield(
                     _term.termId,
