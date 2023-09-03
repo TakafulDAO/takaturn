@@ -38,8 +38,8 @@ library LibFundV2 {
         mapping(address => bool) paidThisCycle; // Mapping to keep track of who paid for this cycle
         mapping(address => bool) autoPayEnabled; // Wheter to attempt to automate payments at the end of the contribution period
         mapping(address => uint) beneficiariesPool; // Mapping to keep track on how much each beneficiary can claim
-        // todo: add another one to freeze collateral?
         mapping(address => bool) beneficiariesFrozenPool; // Frozen pool by beneficiaries, it can claim when his collateral is at least 1.1 X RCC
+        mapping(address => uint) cycleOfExpulsion; // Mapping to keep track on which cycle a user was expelled
         mapping(uint => PayExemption) isExemptedOnCycle; // Mapping to keep track of if someone is exempted from paying this cycle
         EnumerableSet.AddressSet _participants; // Those who have not been beneficiaries yet and have not defaulted this cycle
         EnumerableSet.AddressSet _beneficiaries; // Those who have been beneficiaries and have not defaulted this cycle

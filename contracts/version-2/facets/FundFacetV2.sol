@@ -510,21 +510,19 @@ contract FundFacetV2 is IFundV2 {
         address[] memory actualDefaulters;
         address[] memory beneficiariesOrder = _fund.beneficiariesOrder; // We check on the beneficiariesOrder array
 
-        uint beneficiariesLength = beneficiariesOrder.length;
         uint defaultersLength = _defaulters.length;
         uint defaultersCounter;
 
         if (IGettersV2(address(this)).wasExpelled(_term.termId, _beneficiary)) {
-            for (uint i; i < beneficiariesLength; ) {
-                // When we find the first non beneficiary we exit the loop. The first one must be the beneficiary
-                if (!_fund.isBeneficiary[beneficiariesOrder[i]]) {
-                    break;
-                }
+            uint cycleOfExpulsion = _fund.cycleOfExpulsion[_beneficiary];
+            for (uint i; i < cycleOfExpulsion; ) {
                 for (uint j; j < defaultersLength; ) {
                     // We check if the previous beneficiary is on the defaulter array
                     if (beneficiariesOrder[i] == _defaulters[j]) {
                         actualDefaulters[defaultersCounter] = _defaulters[j];
-                        ++defaultersCounter;
+                        unchecked {
+                            ++defaultersCounter;
+                        }
                     }
                     unchecked {
                         ++j;
