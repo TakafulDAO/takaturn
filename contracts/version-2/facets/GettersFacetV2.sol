@@ -419,7 +419,7 @@ contract GettersFacetV2 is IGettersV2 {
         }
 
         return
-            totalWithdrawnYield + (yield.totalDeposit - IZaynVaultV2TakaDao(yield.vault).balance());
+            totalWithdrawnYield + (yield.totalDeposit - IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balance());
     }
 
     /// @notice This function is used to get the total yield generated for a user

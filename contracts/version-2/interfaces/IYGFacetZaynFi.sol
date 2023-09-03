@@ -15,5 +15,5 @@ interface IYGFacetZaynFi {
 
     function toggleOptInYG(uint termId) external;
 
-    function addYieldProviders(address zap, address vault) external;
+    function updateYieldProvider(string memory providerString, address providerAddress) external;
 }

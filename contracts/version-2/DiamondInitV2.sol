@@ -22,7 +22,7 @@ contract DiamondInitV2 {
         termConsts.aggregatorsAddresses["USD/USDC"] = _aggregatorAddressUsdUsdc;
         termConsts.sequencerUptimeFeedAddress = _sequencerUptimeFeedAddress;
 
-        yieldProvider.zaps.push(_zapAddress);
-        yieldProvider.vaults.push(_vaultAddress);
+        yieldProvider.providerAddresses["ZaynZap"] = _zapAddress;
+        yieldProvider.providerAddresses["ZaynVault"] = _vaultAddress;
     }
 }

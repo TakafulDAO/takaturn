@@ -13,19 +13,17 @@ library LibYieldGeneration {
 
     // Both index 0 are reserved for ZaynFi
     struct YieldProviders {
-        address[] zaps;
-        address[] vaults;
+        mapping(string => address) providerAddresses;
     }
 
     struct YieldGeneration {
         bool initialized;
         YGProviders provider;
+        mapping(string => address) providerAddresses;
         uint startTimeStamp;
         uint totalDeposit;
         uint currentTotalDeposit;
         uint totalShares;
-        address zap;
-        address vault;
         address[] yieldUsers;
         mapping(address => bool) hasOptedIn;
         mapping(address => uint256) withdrawnYield;

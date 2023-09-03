@@ -29,9 +29,11 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         yield.totalDeposit = ethAmount;
         yield.currentTotalDeposit = ethAmount;
 
-        IZaynZapV2TakaDAO(yield.zap).zapInEth{value: ethAmount}(yield.vault, termId);
+        address vaultAddress = yield.providerAddresses["ZaynVault"];
 
-        yield.totalShares = IZaynVaultV2TakaDao(yield.vault).balanceOf(termId);
+        IZaynZapV2TakaDAO(yield.providerAddresses["ZaynZap"]).zapInEth{value: ethAmount}(vaultAddress, termId);
+
+        yield.totalShares = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
     }
 
     /// @notice This function is used to withdraw collateral from yield generation
@@ -52,7 +54,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         yield.withdrawnYield[user] += neededShares;
         yield.currentTotalDeposit -= withdrawAmount;
 
-        IZaynZapV2TakaDAO(yield.zap).zapOutETH(yield.vault, neededShares, termId);
+        IZaynZapV2TakaDAO(yield.providerAddresses["ZaynZap"]).zapOutETH(yield.providerAddresses["ZaynVault"], neededShares, termId);
     }
 
     function toggleOptInYG(uint termId) external {
@@ -76,11 +78,10 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         emit OnYGOptInToggled(termId, msg.sender, newDecision);
     }
 
-    function addYieldProviders(address zap, address vault) external onlyOwner {
+    function updateYieldProvider(string memory providerString, address providerAddress) external onlyOwner {
         LibYieldGeneration.YieldProviders storage yieldProvider = LibYieldGeneration
             ._yieldProviders();
 
-        yieldProvider.zaps.push(zap);
-        yieldProvider.vaults.push(vault);
+        yieldProvider.providerAddresses[providerString] = providerAddress;
     }
 }

@@ -306,8 +306,8 @@ contract TermFacetV2 is ITermV2 {
 
         yield.startTimeStamp = block.timestamp;
         yield.initialized = true;
-        yield.zap = yieldProviders.zaps[0];
-        yield.vault = yieldProviders.vaults[0];
+        yield.providerAddresses["ZaynZap"] = yieldProviders.providerAddresses["ZaynZap"];
+        yield.providerAddresses["ZaynVault"] = yieldProviders.providerAddresses["ZaynVault"];
 
         IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
     }
