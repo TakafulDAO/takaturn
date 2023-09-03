@@ -123,7 +123,7 @@ contract GettersFacetV2 is IGettersV2 {
         LibTermV2.Term storage term = LibTermV2._termStorage().terms[termId];
 
         uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
-        uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
+        uint contributionAmountWei = IGettersV2(address(this)).getToCollateralConversionRate(
             term.contributionAmount * 10 ** 18
         );
 
@@ -177,7 +177,9 @@ contract GettersFacetV2 is IGettersV2 {
         LibTermV2.Term memory term,
         uint depositorIndex
     ) external view returns (uint amount) {
-        uint contributionAmountInWei = getToEthConversionRate(term.contributionAmount * 10 ** 18);
+        uint contributionAmountInWei = getToCollateralConversionRate(
+            term.contributionAmount * 10 ** 18
+        );
 
         amount = (contributionAmountInWei * (term.totalParticipants - depositorIndex) * 150) / 100;
     }
@@ -345,7 +347,7 @@ contract GettersFacetV2 is IGettersV2 {
     /// @dev should we always deal with in Wei?
     /// @param USDAmount The amount in USD
     /// @return uint converted amount in wei
-    function getToEthConversionRate(uint USDAmount) public view returns (uint) {
+    function getToCollateralConversionRate(uint USDAmount) public view returns (uint) {
         uint ethPrice = getLatestPrice();
         uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice;
         return USDAmountInEth;
@@ -355,7 +357,7 @@ contract GettersFacetV2 is IGettersV2 {
     /// @dev should we always deal with in Wei?
     /// @param ethAmount The amount in ETH
     /// @return uint converted amount in USD correct to 18 decimals
-    function getToUSDConversionRate(uint ethAmount) external view returns (uint) {
+    function getToStableConversionRate(uint ethAmount) external view returns (uint) {
         // NOTE: This will be made internal
         uint ethPrice = getLatestPrice();
         uint ethAmountInUSD = (ethPrice * ethAmount) / 10 ** 18;

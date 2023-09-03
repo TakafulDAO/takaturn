@@ -72,9 +72,9 @@ interface IGettersV2 {
 
     // CONVERSION GETTERS
 
-    function getToEthConversionRate(uint USDAmount) external view returns (uint);
+    function getToCollateralConversionRate(uint USDAmount) external view returns (uint);
 
-    function getToUSDConversionRate(uint ethAmount) external view returns (uint);
+    function getToStableConversionRate(uint ethAmount) external view returns (uint);
 
     // YIELD GENERATION GETTERS
 

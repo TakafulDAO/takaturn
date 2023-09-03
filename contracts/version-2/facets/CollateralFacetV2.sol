@@ -82,12 +82,8 @@ contract CollateralFacetV2 is ICollateralV2 {
             collateral,
             fund
         );
-
-        
-
         
         if (nonBeneficiaryCounter > 0) { // This case can only happen when what?
-
             // Exempt non beneficiaries from paying an early expellant's cycle
             uint expellantsLength = expellants.length;
             for (uint i; i < expellantsLength; ) {
@@ -123,8 +119,7 @@ contract CollateralFacetV2 is ICollateralV2 {
         address[] memory _nonBeneficiaries
     ) internal {
         if (!_fund.isBeneficiary[_expellant]) {
-
-            uint expellantBeneficiaryCycle; // TODO: Get the cycle of the expellant
+            uint expellantBeneficiaryCycle = 99; // TODO: Get the cycle of the expellant
 
             for (uint i; i < _nonBeneficiaryCounter; ) {
                 _fund.isExemptedOnCycle[expellantBeneficiaryCycle].exempted[_nonBeneficiaries[i]] = true;
@@ -318,7 +313,7 @@ contract CollateralFacetV2 is ICollateralV2 {
         uint expellantsCounter;
         uint distributedCollateral;
 
-        uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
+        uint contributionAmountWei = IGettersV2(address(this)).getToCollateralConversionRate(
             _term.contributionAmount * 10 ** 18
         );
 
@@ -461,7 +456,7 @@ contract CollateralFacetV2 is ICollateralV2 {
         if (_defaulterState.payWithCollateral && _defaulterState.payWithFrozenPool) {
             uint remainingCollateral = _collateral.collateralMembersBank[_defaulter];
             uint remainingCollateralFromPayments = _collateral.collateralPaymentBank[_defaulter];
-            uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
+            uint contributionAmountWei = IGettersV2(address(this)).getToCollateralConversionRate(
                 _term.contributionAmount * 10 ** 18
             );
 
