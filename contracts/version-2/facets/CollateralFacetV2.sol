@@ -153,9 +153,6 @@ contract CollateralFacetV2 is ICollateralV2 {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[termId];
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
-            ._yieldStorage()
-            .yields[termId];
 
         uint amount = collateral.collateralPaymentBank[depositor];
         require(amount > 0, "Nothing to claim");
