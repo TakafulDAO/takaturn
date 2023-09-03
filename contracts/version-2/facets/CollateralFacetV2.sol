@@ -119,8 +119,7 @@ contract CollateralFacetV2 is ICollateralV2 {
         if (collateral.state == LibCollateralV2.CollateralStates.ReleasingCollateral) {
             collateral.collateralMembersBank[msg.sender] = 0;
 
-            uint generatedYield = _withdrawFromYield(termId, depositor, userCollateral, yield);
-            uint amount = userCollateral + generatedYield;
+            uint amount = _withdrawFromYield(termId, msg.sender, userCollateral, yield);
             (success, ) = payable(msg.sender).call{value: amount}("");
             
             --collateral.counterMembers; // todo: Is this needed?
@@ -129,17 +128,15 @@ contract CollateralFacetV2 is ICollateralV2 {
         }
         // Or withdraw partially
         else if (collateral.state == LibCollateralV2.CollateralStates.CycleOngoing) {
-
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
             uint minRequiredCollateral = IGettersV2(address(this)).getRemainingCyclesContributionWei(termId) * 15 / 10; // 1.5 X RCC in wei
 
             // Collateral must be higher than 1.5 X RCC
-            if (userCollateral => minRequiredCollateral) {
+            if (userCollateral > minRequiredCollateral) {
                 uint allowedWithdrawal = minRequiredCollateral - userCollateral; // We allow to withdraw the positive difference
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
-                uint generatedYield = _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
-                uint amount = allowedWithdrawal + generatedYield;
+                uint amount = _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
                 (success, ) = payable(msg.sender).call{value: amount}("");
 
                 emit OnCollateralWithdrawal(termId, msg.sender, amount);
@@ -214,9 +211,9 @@ contract CollateralFacetV2 is ICollateralV2 {
             uint amount = collateral.collateralMembersBank[depositor] +
                 collateral.collateralPaymentBank[depositor];
 
-            uint shares = _withdrawFromYield(termId, depositor, amount, yield);
+            uint withdrawnAmount = _withdrawFromYield(termId, depositor, amount, yield);
 
-            totalToWithdraw += (amount + shares);
+            totalToWithdraw += withdrawnAmount;
 
             collateral.collateralMembersBank[depositor] = 0;
             collateral.collateralPaymentBank[depositor] = 0;
@@ -466,6 +463,8 @@ contract CollateralFacetV2 is ICollateralV2 {
                     yield
                 );
 
+                shares -= _contributionAmountWei;
+
                 // Subtract contribution from defaulter and add to beneficiary.
                 _collateral.collateralMembersBank[_defaulter] -= _contributionAmountWei;
                 _collateral.collateralPaymentBank[beneficiary] += _contributionAmountWei + shares;
@@ -560,8 +559,10 @@ contract CollateralFacetV2 is ICollateralV2 {
     ) internal returns (uint shares) {
         if (_yieldStorage.hasOptedIn[_user]) {
             shares = IYGFacetZaynFi(address(this)).withdrawYG(_termId, _amount, _user);
+
+
         } else {
-            shares = 0;
+            shares = _amount;
         }
     }
 
