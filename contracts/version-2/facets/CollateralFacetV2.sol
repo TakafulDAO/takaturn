@@ -24,6 +24,7 @@ contract CollateralFacetV2 is ICollateralV2 {
         LibCollateralV2.CollateralStates indexed newState
     );
     event OnCollateralWithdrawal(uint indexed termId, address indexed user, uint indexed amount);
+    event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
     event OnFrozenMoneyPotLiquidated(
         uint indexed termId,
@@ -95,12 +96,12 @@ contract CollateralFacetV2 is ICollateralV2 {
         return (expellants);
     }
 
-    /// @notice Called by each member after the end of the cycle to withraw collateral
+    /// @notice Called by each member after during or at the end of the term to withraw collateral
     /// @dev This follows the pull-over-push pattern.
     /// @param termId term id
     function withdrawCollateral(
         uint termId
-    ) external atState(termId, LibCollateralV2.CollateralStates.ReleasingCollateral) {
+    ) external {
         LibCollateralV2.Collateral storage collateral = LibCollateralV2
             ._collateralStorage()
             .collaterals[termId];
@@ -110,50 +111,43 @@ contract CollateralFacetV2 is ICollateralV2 {
             ._yieldStorage()
             .yields[termId];
 
-        require(fund.paidThisCycle[msg.sender], "You have not paid this cycle");
-        require(fund.currentState == LibFundV2.FundStates.CycleOngoing, "Wrong state");
+        uint userCollateral = collateral.collateralMembersBank[msg.sender];
+        require(userCollateral > 0, "Collateral empty");
 
-        uint userSecurity = collateral.collateralDepositByUser[msg.sender]; // todo: or collateralMembersBank?
-        uint shares;
+        bool success;
+        // Withdraw all the user has
+        if (collateral.state == LibCollateralV2.CollateralStates.ReleasingCollateral) {
+            collateral.collateralMembersBank[msg.sender] = 0;
 
-        uint remainingCycles = IGettersV2(address(this)).getRemainingCycles(termId);
-        uint remainingCyclesContribution = IGettersV2(address(this))
-            .getRemainingCyclesContributionWei(termId);
-        uint contributionAmountWei = IGettersV2(address(this)).getToEthConversionRate(
-            term.contributionAmount * 10 ** 18
-        );
+            uint generatedYield = _withdrawFromYield(termId, depositor, userCollateral, yield);
+            uint amount = userCollateral + generatedYield;
+            (success, ) = payable(msg.sender).call{value: amount}("");
+            
+            --collateral.counterMembers; // todo: Is this needed?
 
-        uint allowedWithdraw = ((userSecurity - remainingCyclesContribution) / remainingCycles) +
-            contributionAmountWei;
-
-        if (allowedWithdraw <= collateral.collateralPaymentBank[msg.sender]) {
-            shares = _withdrawFromYield(termId, msg.sender, allowedWithdraw, yield);
-
-            collateral.collateralPaymentBank[msg.sender] -= allowedWithdraw;
-            (bool success, ) = payable(msg.sender).call{value: allowedWithdraw + shares}("");
-            require(success);
-        } else {
-            uint neededAmount = allowedWithdraw - collateral.collateralPaymentBank[msg.sender];
-            if (neededAmount <= collateral.collateralMembersBank[msg.sender]) {
-                shares = _withdrawFromYield(termId, msg.sender, allowedWithdraw, yield);
-
-                collateral.collateralPaymentBank[msg.sender] -= 0;
-                collateral.collateralMembersBank[msg.sender] -= neededAmount;
-                (bool success, ) = payable(msg.sender).call{value: allowedWithdraw + shares}("");
-                require(success);
-            } else {
-                // todo: check if this is still needed. Think now with partial withdraws this else can be removed
-                uint amount = collateral.collateralMembersBank[msg.sender] +
-                    collateral.collateralPaymentBank[msg.sender];
-                shares = _withdrawFromYield(termId, msg.sender, amount, yield);
-
-                collateral.collateralMembersBank[msg.sender] = 0;
-                collateral.collateralPaymentBank[msg.sender] = 0;
-                (bool success, ) = payable(msg.sender).call{value: amount + shares}("");
-                require(success);
-                --collateral.counterMembers;
-            }
+            emit OnCollateralWithdrawal(termId, msg.sender, amount);
         }
+        // Or withdraw partially
+        else if (collateral.state == LibCollateralV2.CollateralStates.CycleOngoing) {
+
+            // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
+            uint minRequiredCollateral = IGettersV2(address(this)).getRemainingCyclesContributionWei(termId) * 15 / 10; // 1.5 X RCC in wei
+
+            // Collateral must be higher than 1.5 X RCC
+            if (userCollateral => minRequiredCollateral) {
+                uint allowedWithdrawal = minRequiredCollateral - userCollateral; // We allow to withdraw the positive difference
+                collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
+
+                uint generatedYield = _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
+                uint amount = allowedWithdrawal + generatedYield;
+                (success, ) = payable(msg.sender).call{value: amount}("");
+
+                emit OnCollateralWithdrawal(termId, msg.sender, amount);
+            }
+
+        }
+
+        require(success, "Withdraw failed");
     }
 
     /// @param termId term id
@@ -169,15 +163,12 @@ contract CollateralFacetV2 is ICollateralV2 {
 
         uint amount = collateral.collateralPaymentBank[depositor];
         require(amount > 0, "Nothing to claim");
-
-        uint shares = _withdrawFromYield(termId, msg.sender, amount, yield);
-
         collateral.collateralPaymentBank[depositor] = 0;
 
-        (bool success, ) = payable(depositor).call{value: amount + shares}("");
+        (bool success, ) = payable(depositor).call{value: amount}("");
         require(success);
 
-        emit OnCollateralWithdrawal(termId, depositor, amount);
+        emit OnReimbursementWithdrawn(termId, depositor, amount);
     }
 
     /// @param termId term id
@@ -225,7 +216,7 @@ contract CollateralFacetV2 is ICollateralV2 {
 
             uint shares = _withdrawFromYield(termId, depositor, amount, yield);
 
-            totalToWithdraw += amount + shares;
+            totalToWithdraw += (amount + shares);
 
             collateral.collateralMembersBank[depositor] = 0;
             collateral.collateralPaymentBank[depositor] = 0;
@@ -565,9 +556,9 @@ contract CollateralFacetV2 is ICollateralV2 {
         uint _termId,
         address _user,
         uint _amount,
-        LibYieldGeneration.YieldGeneration storage _yield
+        LibYieldGeneration.YieldGeneration storage _yieldStorage
     ) internal returns (uint shares) {
-        if (_yield.hasOptedIn[_user]) {
+        if (_yieldStorage.hasOptedIn[_user]) {
             shares = IYGFacetZaynFi(address(this)).withdrawYG(_termId, _amount, _user);
         } else {
             shares = 0;
