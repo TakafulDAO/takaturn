@@ -25,7 +25,11 @@ contract FundFacetV2 is IFundV2 {
     uint public constant FUND_VERSION = 2; // The version of the contract
 
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
-    event OnFundStateChanged(uint indexed termId, LibFundV2.FundStates indexed newState); // Emits when state has updated
+    event OnFundStateChanged(
+        uint indexed termId,
+        uint indexed currentCycle,
+        LibFundV2.FundStates indexed newState
+    ); // Emits when state has updated
     event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
     event OnBeneficiaryAwarded(uint indexed termId, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
     event OnFundWithdrawn(uint indexed termId, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
@@ -213,7 +217,10 @@ contract FundFacetV2 is IFundV2 {
         require(fund.isParticipant[msg.sender], "Not a participant");
         require(currentBeneficiary != msg.sender, "Beneficiary doesn't pay");
         require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
-        require(!fund.isExemptedOnCycle[fund.currentCycle].exempted[msg.sender], "Participant is exempted this cycle");
+        require(
+            !fund.isExemptedOnCycle[fund.currentCycle].exempted[msg.sender],
+            "Participant is exempted this cycle"
+        );
 
         _payContribution(termId, msg.sender, msg.sender);
     }
@@ -230,7 +237,10 @@ contract FundFacetV2 is IFundV2 {
         require(fund.isParticipant[participant], "Not a participant");
         require(currentBeneficiary != participant, "Beneficiary doesn't pay");
         require(!fund.paidThisCycle[participant], "Already paid for cycle");
-        require(!fund.isExemptedOnCycle[fund.currentCycle].exempted[participant], "Participant is exempted this cycle");
+        require(
+            !fund.isExemptedOnCycle[fund.currentCycle].exempted[participant],
+            "Participant is exempted this cycle"
+        );
 
         _payContribution(termId, msg.sender, participant);
     }
@@ -289,7 +299,7 @@ contract FundFacetV2 is IFundV2 {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[_termId];
         require(fund.currentState != LibFundV2.FundStates.FundClosed, "Fund closed");
         fund.currentState = _newState;
-        emit OnFundStateChanged(_termId, _newState);
+        emit OnFundStateChanged(_termId, fund.currentCycle, _newState);
     }
 
     /// @notice This starts the new cycle and can only be called internally. Used upon deploy
@@ -327,7 +337,7 @@ contract FundFacetV2 is IFundV2 {
     /// @param _termId the id of the term
     function _autoPay(uint _termId) internal {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[_termId];
-        
+
         // Get the beneficiary for this cycle
         address currentBeneficiary = IGettersV2(address(this)).getCurrentBeneficiary(_termId);
 
@@ -344,11 +354,12 @@ contract FundFacetV2 is IFundV2 {
                 continue;
             }
 
-            if (fund.autoPayEnabled[autoPayer] && 
+            if (
+                fund.autoPayEnabled[autoPayer] &&
                 !fund.paidThisCycle[autoPayer] &&
                 !fund.isExemptedOnCycle[fund.currentCycle].exempted[autoPayer]
-                ) {
-                    _payContributionSafe(_termId, autoPayer, autoPayer);
+            ) {
+                _payContributionSafe(_termId, autoPayer, autoPayer);
             }
 
             unchecked {
