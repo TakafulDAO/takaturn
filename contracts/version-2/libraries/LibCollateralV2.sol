@@ -12,6 +12,12 @@ library LibCollateralV2 {
         Closed // Triggered when all depositors withdraw their collaterals
     }
 
+    struct DefaulterState {
+        bool payWithCollateral;
+        bool payWithFrozenPool;
+        bool gettingExpelled;
+    }
+
     struct Collateral {
         bool initialized;
         CollateralStates state;
