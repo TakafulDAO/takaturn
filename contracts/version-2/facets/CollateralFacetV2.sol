@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.18;
 
-import {IFundV2} from "../interfaces/IFundV2.sol";
 import {ICollateralV2} from "../interfaces/ICollateralV2.sol";
 import {IGettersV2} from "../interfaces/IGettersV2.sol";
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";

@@ -30,7 +30,7 @@ contract TermFacetV2 is ITermV2 {
         uint totalParticipants,
         uint registrationPeriod,
         uint cycleTime,
-        uint contributionAmount,
+        uint contributionAmount, // in stable token, without decimals
         uint contributionPeriod,
         address stableTokenAddress
     ) external returns (uint) {
@@ -87,7 +87,7 @@ contract TermFacetV2 is ITermV2 {
         newTerm.totalParticipants = _totalParticipants;
         newTerm.registrationPeriod = _registrationPeriod;
         newTerm.cycleTime = _cycleTime;
-        newTerm.contributionAmount = _contributionAmount;
+        newTerm.contributionAmount = _contributionAmount; // stored without decimals
         newTerm.contributionPeriod = _contributionPeriod;
         newTerm.stableTokenAddress = _stableTokenAddress;
         newTerm.termOwner = msg.sender;

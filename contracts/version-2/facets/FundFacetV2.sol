@@ -378,7 +378,7 @@ contract FundFacetV2 is IFundV2 {
 
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
-        uint amount = term.contributionAmount * 10 ** 6;
+        uint amount = term.contributionAmount * 10 ** 6; // Deducted from user's wallet, six decimals
         try fund.stableToken.transferFrom(_payer, address(this), amount) returns (bool success) {
             if (success) {
                 // Finish up, set that the participant paid for this cycle and emit an event that it's been done
@@ -398,7 +398,7 @@ contract FundFacetV2 is IFundV2 {
 
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
-        uint amount = term.contributionAmount * 10 ** 6;
+        uint amount = term.contributionAmount * 10 ** 6; // Deducted from user's wallet, six decimals
 
         bool success = fund.stableToken.transferFrom(_payer, address(this), amount);
         require(success, "Contribution failed, did you approve stable token?");
@@ -489,7 +489,7 @@ contract FundFacetV2 is IFundV2 {
         // Award the beneficiary with the pool or freeze the pot
         _freezePot(_term, _fund, beneficiary);
 
-        _fund.beneficiariesPool[beneficiary] += _term.contributionAmount * paidCount * 10 ** 6;
+        _fund.beneficiariesPool[beneficiary] += _term.contributionAmount * paidCount * 10 ** 6; // Six decimals
 
         emit OnBeneficiaryAwarded(_term.termId, beneficiary);
         _setState(_term.termId, LibFundV2.FundStates.CycleOngoing);

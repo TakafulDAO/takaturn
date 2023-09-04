@@ -18,6 +18,7 @@ interface ICollateralV2 {
 
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
+    /// @param term the term object
     /// @param defaulters Address that was randomly selected for the current cycle
     function requestContribution(
         LibTermV2.Term memory term,
@@ -26,14 +27,19 @@ interface ICollateralV2 {
 
     /// @notice Called by each member after the end of the cycle to withraw collateral
     /// @dev This follows the pull-over-push pattern.
+    /// @param termId The term id
     function withdrawCollateral(uint termId) external;
 
+    /// @param termId The term id
+    /// @param participant The participant address
     function withdrawReimbursement(uint termId, address participant) external;
 
+    /// @param termId The term id
     function releaseCollateral(uint termId) external;
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
     /// @dev This will revert if called during ReleasingCollateral or after
+    /// @param termId The term id
     /// @param member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
     function isUnderCollaterized(uint termId, address member) external view returns (bool);
