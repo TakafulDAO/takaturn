@@ -489,7 +489,7 @@ contract FundFacetV2 is IFundV2 {
         // Award the beneficiary with the pool or freeze the pot
         _freezePot(_term, _fund, beneficiary);
 
-        _fund.beneficiariesPool[beneficiary] = _term.contributionAmount * paidCount * 10 ** 6;
+        _fund.beneficiariesPool[beneficiary] += _term.contributionAmount * paidCount * 10 ** 6;
 
         emit OnBeneficiaryAwarded(_term.termId, beneficiary);
         _setState(_term.termId, LibFundV2.FundStates.CycleOngoing);
