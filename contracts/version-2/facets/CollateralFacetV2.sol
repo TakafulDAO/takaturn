@@ -125,7 +125,17 @@ contract CollateralFacetV2 is ICollateralV2 {
         address[] memory _nonBeneficiaries
     ) internal {
         if (!_fund.isBeneficiary[_expellant]) {
-            uint expellantBeneficiaryCycle = 99; // TODO: Get the cycle of the expellant
+            uint expellantBeneficiaryCycle;
+
+            uint beneficiariesLength = _fund.beneficiariesOrder.length;
+            for (uint i; i < beneficiariesLength; ) {
+                if (_expellant == _fund.beneficiariesOrder[i]) {
+                    expellantBeneficiaryCycle = i + 1;
+                }
+                unchecked {
+                    ++i;
+                }
+            }
 
             for (uint i; i < _nonBeneficiaryCounter; ) {
                 _fund.isExemptedOnCycle[expellantBeneficiaryCycle].exempted[
