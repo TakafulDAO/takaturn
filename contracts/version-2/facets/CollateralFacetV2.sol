@@ -459,8 +459,8 @@ contract CollateralFacetV2 is ICollateralV2 {
             }
         }
         if (_defaulterState.payWithFrozenPool && !_defaulterState.payWithCollateral) {
-            _fund.beneficiariesPool[_defaulter] -= _term.contributionAmount;
-            _fund.beneficiariesPool[beneficiary] += _term.contributionAmount;
+            _fund.beneficiariesPool[_defaulter] -= _term.contributionAmount * 10 ** 6;
+            _fund.beneficiariesPool[beneficiary] += _term.contributionAmount * 10 ** 6;
 
             emit OnFrozenMoneyPotLiquidated(_term.termId, _defaulter, _term.contributionAmount);
         }

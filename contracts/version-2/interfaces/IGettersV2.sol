@@ -141,7 +141,7 @@ interface IGettersV2 {
     function getParticipantFundSummary(
         address participant,
         uint termId
-    ) external view returns (bool, bool, bool, bool, uint);
+    ) external view returns (bool, bool, bool, bool, uint, bool);
 
     /// @notice Must return 0 before closing a contribution period
     /// @param termId the id of the term

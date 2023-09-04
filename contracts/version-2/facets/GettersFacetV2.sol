@@ -235,31 +235,32 @@ contract GettersFacetV2 is IGettersV2 {
     }
 
     /// @notice function to see if a user is exempted from paying a cycle
-    function isExempted(
-        uint termId, 
-        uint cycle, 
-        address user
-    ) external view returns (bool) {
+    function isExempted(uint termId, uint cycle, address user) external view returns (bool) {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
         return fund.isExemptedOnCycle[cycle].exempted[user];
     }
 
-
     /// @notice function to get cycle information of a specific participant
     /// @param participant the user to get the info from
     /// @param termId the fund id
-    /// @return isParticipant, isBeneficiary, paidThisCycle, autoPayEnabled, beneficiariesPool
+    /// @return isParticipant, true if is participant
+    /// @return isBeneficiary, true if has been beneficiary
+    /// @return paidThisCycle, true if has paid the current cycle
+    /// @return autoPayEnabled, true if auto pay is enabled
+    /// @return beneficiariesPool, the beneficiary pool, 6 decimals
+    /// @return beneficiariesFrozenPool, true if the beneficiary pool is frozen
     function getParticipantFundSummary(
         address participant,
         uint termId
-    ) external view returns (bool, bool, bool, bool, uint) {
+    ) external view returns (bool, bool, bool, bool, uint, bool) {
         LibFundV2.Fund storage fund = LibFundV2._fundStorage().funds[termId];
         return (
             fund.isParticipant[participant],
             fund.isBeneficiary[participant],
             fund.paidThisCycle[participant],
             fund.autoPayEnabled[participant],
-            fund.beneficiariesPool[participant]
+            fund.beneficiariesPool[participant],
+            fund.beneficiariesFrozenPool[participant]
         );
     }
 
