@@ -17,7 +17,6 @@ const { hour } = require("../../../utils/units")
           const contributionPeriod = BigNumber.from("20") // Create term param
           const collateralEth = toWei(3)
           const fixedCollateralEth = BigNumber.from(collateralEth) // Create term param
-          const collateralFundingPeriod = BigNumber.from("604800")
           const collateralAmount = "60"
 
           let takaturnDiamond
@@ -25,16 +24,6 @@ const { hour } = require("../../../utils/units")
           let deployer,
               participant_1,
               participant_2,
-              participant_3,
-              participant_4,
-              participant_5,
-              participant_6,
-              participant_7,
-              participant_8,
-              participant_9,
-              participant_10,
-              participant_11,
-              participant_12,
               usdcOwner,
               usdcMasterMinter,
               usdcRegularMinter,
@@ -48,33 +37,25 @@ const { hour } = require("../../../utils/units")
               deployer = accounts[0]
               participant_1 = accounts[1]
               participant_2 = accounts[2]
-              participant_3 = accounts[3]
-              participant_4 = accounts[4]
-              participant_5 = accounts[5]
-              participant_6 = accounts[6]
-              participant_7 = accounts[7]
-              participant_8 = accounts[8]
-              participant_9 = accounts[9]
-              participant_10 = accounts[10]
-              participant_11 = accounts[11]
-              participant_12 = accounts[12]
               usdcOwner = accounts[13]
               usdcMasterMinter = accounts[14]
               usdcRegularMinter = accounts[15]
               usdcLostAndFound = accounts[16]
 
               // Deploy contracts
-              await deployments.fixture(["all"])
+              await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {
-                  aggregator = await ethers.getContract("MockV3Aggregator")
+                  aggregator = await ethers.getContract("MockEthUsdAggregator")
               } else {
                   const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
                   aggregator = await ethers.getContractAt(
                       "AggregatorV3Interface",
                       aggregatorAddress
                   )
+                  const usdcAddress = networkConfig[chainId]["usdc"]
+                  usdc = await ethers.getContractAt("FiatTokenV2_1", usdcAddress)
               }
 
               // Connect the accounts
@@ -153,7 +134,7 @@ const { hour } = require("../../../utils/units")
                   for (let i = 1; i <= totalParticipants; i++) {
                       balance = await usdc.balanceOf(accounts[i].address)
                       // console.log(`Accunt's ${i} balance: ${balance}`)
-                      assert.ok(balance > 0)
+                      assert.ok(balance.toNumber() > 0)
                   }
               })
           })

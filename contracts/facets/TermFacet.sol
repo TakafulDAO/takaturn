@@ -11,9 +11,6 @@ import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 
-import {FundFacet} from "./FundFacet.sol";
-import {CollateralFacet} from "./CollateralFacet.sol";
-
 /// @title Takaturn Term
 /// @author Mohammed Haddouti
 /// @notice This is used to deploy the collateral & fund contracts

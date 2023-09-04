@@ -1,10 +1,12 @@
-const { network } = require("hardhat")
+const { network, ethernal } = require("hardhat")
 const {
     networkConfig,
     developmentChains,
     VERIFICATION_BLOCK_CONFIRMATIONS,
     isDevnet,
     isFork,
+    isMainnet,
+    isTestnet,
 } = require("../utils/_networks")
 const { verify } = require("../scripts/verify")
 
@@ -15,19 +17,21 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const waitBlockConfirmations = developmentChains.includes(network.name)
         ? 1
         : VERIFICATION_BLOCK_CONFIRMATIONS
-    let ethUsdPriceFeedAddress
+    let sequencerUptimeFeedAddress
 
     log("01. Deploying Takaturn Diamond...")
 
+    if (isMainnet || isTestnet || isFork) {
+        sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
+    }
+
     if (isDevnet && !isFork) {
-        const ethUsdAggregator = await deployments.get("MockV3Aggregator")
-        ethUsdPriceFeedAddress = ethUsdAggregator.address
-    } else {
-        ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
+        const sequencer = await deployments.get("MockSequencer")
+        sequencerUptimeFeedAddress = sequencer.address
     }
 
     const args = []
-    const initArgs = []
+    const initArgs = [sequencerUptimeFeedAddress]
 
     const takaturnDiamond = await diamond.deploy("TakaturnDiamond", {
         from: deployer,
@@ -43,12 +47,53 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         waitConfirmations: waitBlockConfirmations,
     })
 
+    const collateralFacet = await deployments.get("CollateralFacet")
+    const fundFacet = await deployments.get("FundFacet")
+    const termFacet = await deployments.get("TermFacet")
+    const gettersFacet = await deployments.get("GettersFacet")
+    const diamondInit = await deployments.get("DiamondInit")
+    const diamondCutFacet = await deployments.get("_DefaultDiamondCutFacet")
+    const diamondOwnershipFacet = await deployments.get("_DefaultDiamondOwnershipFacet")
+    const diamondLoupeFacet = await deployments.get("_DefaultDiamondLoupeFacet")
+    const diamondERC165Init = await deployments.get("_DefaultDiamondERC165Init")
+
+    let contractNames = [
+        "CollateralFacet",
+        "FundFacet",
+        "TermFacet",
+        "GettersFacet",
+        "DiamondInit",
+        "_DefaultDiamondCutFacet",
+        "_DefaultDiamondOwnershipFacet",
+        "_DefaultDiamondLoupeFacet",
+        "_DefaultDiamondERC165Init",
+        "TakaturnDiamond",
+    ]
+
+    let contractAddresses = [
+        collateralFacet.address,
+        fundFacet.address,
+        termFacet.address,
+        gettersFacet.address,
+        diamondInit.address,
+        diamondCutFacet.address,
+        diamondOwnershipFacet.address,
+        diamondLoupeFacet.address,
+        diamondERC165Init.address,
+        takaturnDiamond.address,
+    ]
+
     log("01. Diamond Deployed!")
     log("==========================================================================")
 
-    if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
+    if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY && !isZayn) {
         log("01. Verifying Diamond...")
-        await verify(takaturnDiamond.address, args)
+        for (let i = 0; i < contractAddresses.length; i++) {
+            log(`01. Verifying "${contractNames[i]}"...`)
+            await verify(contractAddresses[i], args)
+            log(`01. Verified "${contractNames[i]}"...`)
+            log("==========================================================================")
+        }
         log("01. Diamond Verified!")
         log("==========================================================================")
     }

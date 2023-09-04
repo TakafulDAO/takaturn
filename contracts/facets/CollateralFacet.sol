@@ -221,7 +221,7 @@ contract CollateralFacet is ICollateral, TermOwnable {
     /// @return uint converted amount in wei
     function getToEthConversionRate(uint id, uint USDAmount) public view returns (uint) {
         uint ethPrice = getLatestPrice(id);
-        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice; //* 10 ** 18; // todo: fix this
+        uint USDAmountInEth = (USDAmount * 10 ** 18) / ethPrice; //* 10 ** 18;
         return USDAmountInEth;
     }
 

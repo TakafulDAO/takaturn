@@ -45,8 +45,6 @@ interface IGetters {
             uint
         );
 
-    function getBeneficiariesOrder(uint id) external view returns (address[] memory);
-
     function getParticipantFundSummary(
         address participant,
         uint id

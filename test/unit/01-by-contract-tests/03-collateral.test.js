@@ -28,7 +28,6 @@ const withdrawCollateral = async (termId, address) => {
           const fixedCollateralEth = ethers.utils.parseEther("0.055")
 
           let accounts
-          let contributionToPay = 10000000 //10$
 
           let deployer, participant_1, participant_2, participant_3, participant_4
 
@@ -42,13 +41,18 @@ const withdrawCollateral = async (termId, address) => {
               participant_2 = accounts[2]
               participant_3 = accounts[3]
               participant_4 = accounts[4]
+              usdcOwner = accounts[13]
+              usdcMasterMinter = accounts[14]
+              usdcRegularMinter = accounts[15]
+              usdcLostAndFound = accounts[16]
 
               // Deploy contracts
-              await deployments.fixture(["all"])
+              await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               //   usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {
-                  aggregator = await ethers.getContract("MockV3Aggregator")
+                  aggregator = await ethers.getContract("MockEthUsdAggregator")
+                  usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
                   const usdcAddress = networkConfig[chainId]["usdc"]
@@ -57,7 +61,7 @@ const withdrawCollateral = async (termId, address) => {
                       aggregatorAddress
                   )
                   usdc = await ethers.getContractAt(
-                      // contracts/mocks/USDC.sol:IERC20
+                      // "contracts/version-1/mocks/USDC.sol:IERC20"
                       "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
                       usdcAddress
                   )
@@ -108,6 +112,9 @@ const withdrawCollateral = async (termId, address) => {
               })
 
               it("checks if a user is under collaterized", async () => {
+                  if (!isFork) {
+                      await advanceTimeByDate(1, hour)
+                  }
                   const term = await takaturnDiamondDeployer.getTermsId()
                   const termId = term[0]
 
@@ -184,6 +191,9 @@ const withdrawCollateral = async (termId, address) => {
 
           describe("Collaterals & Fund Integration", () => {
               beforeEach(async () => {
+                  if (!isFork) {
+                      await advanceTimeByDate(1, hour)
+                  }
                   const termId = await takaturnDiamondDeployer.getTermsId()
                   const lastTermId = termId[0]
 
@@ -213,6 +223,46 @@ const withdrawCollateral = async (termId, address) => {
 
                           await usdc
                               .connect(accounts[i])
+                              .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                      }
+                  } else {
+                      // Initialize USDC
+                      const tokenName = "USD Coin"
+                      const tokenSymbol = "USDC"
+                      const tokenCurrency = "USD"
+                      const tokenDecimals = 6
+
+                      await usdc
+                          .connect(usdcOwner)
+                          .initialize(
+                              tokenName,
+                              tokenSymbol,
+                              tokenCurrency,
+                              tokenDecimals,
+                              usdcMasterMinter.address,
+                              usdcOwner.address,
+                              usdcOwner.address,
+                              usdcOwner.address
+                          )
+
+                      await usdc
+                          .connect(usdcMasterMinter)
+                          .configureMinter(usdcRegularMinter.address, 10000000000000)
+
+                      await usdc.connect(usdcOwner).initializeV2(tokenName)
+
+                      await usdc.connect(usdcOwner).initializeV2_1(usdcLostAndFound.address)
+
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          let depositor = accounts[i]
+
+                          // Mint USDC for depositor
+                          await usdc
+                              .connect(usdcRegularMinter)
+                              .mint(depositor.address, contributionAmount * 10 ** 6)
+
+                          await usdc
+                              .connect(depositor)
                               .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
                       }
                   }

@@ -7,11 +7,10 @@ const {
     FundStates,
     getCollateralStateFromIndex,
     getFundStateFromIndex,
-    advanceTimeByDate,
     toWei,
 } = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
-const { hour, erc20Units } = require("../../../utils/units")
+const { erc20Units } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -24,24 +23,11 @@ const { hour, erc20Units } = require("../../../utils/units")
           const contributionPeriod = BigNumber.from("20") // Create term param
           const collateralEth = toWei(3)
           const fixedCollateralEth = BigNumber.from(collateralEth) // Create term param
-          const collateralFundingPeriod = BigNumber.from("604800")
           const collateralAmount = "60"
 
           let takaturnDiamond
 
-          let deployer,
-              participant_1,
-              participant_2,
-              participant_3,
-              participant_4,
-              participant_5,
-              participant_6,
-              participant_7,
-              participant_8,
-              participant_9,
-              participant_10,
-              participant_11,
-              participant_12
+          let deployer, participant_1
 
           let takaturnDiamondDeployer, takaturnDiamondParticipant_1
 
@@ -50,24 +36,14 @@ const { hour, erc20Units } = require("../../../utils/units")
               accounts = await ethers.getSigners()
               deployer = accounts[0]
               participant_1 = accounts[1]
-              participant_2 = accounts[2]
-              participant_3 = accounts[3]
-              participant_4 = accounts[4]
-              participant_5 = accounts[5]
-              participant_6 = accounts[6]
-              participant_7 = accounts[7]
-              participant_8 = accounts[8]
-              participant_9 = accounts[9]
-              participant_10 = accounts[10]
-              participant_11 = accounts[11]
-              participant_12 = accounts[12]
 
               // Deploy contracts
-              await deployments.fixture(["all"])
+              await deployments.fixture(["takaturn_deploy"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               //   usdc = await ethers.getContract("FiatTokenV2_1")
               if (isDevnet && !isFork) {
-                  aggregator = await ethers.getContract("MockV3Aggregator")
+                  aggregator = await ethers.getContract("MockEthUsdAggregator")
+                  usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
                   const usdcAddress = networkConfig[chainId]["usdc"]
@@ -76,7 +52,7 @@ const { hour, erc20Units } = require("../../../utils/units")
                       aggregatorAddress
                   )
                   usdc = await ethers.getContractAt(
-                      // contracts/mocks/USDC.sol:IERC20
+                      // "contracts/version-1/mocks/USDC.sol:IERC20"
                       "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
                       usdcAddress
                   )
@@ -444,8 +420,6 @@ const { hour, erc20Units } = require("../../../utils/units")
                   it("Start term", async function () {
                       const termId = await takaturnDiamondDeployer.getTermsId()
                       const lastTermId = termId[0]
-
-                      await advanceTimeByDate(1, hour)
 
                       await expect(takaturnDiamondParticipant_1.startTerm(lastTermId))
                           .to.emit(takaturnDiamond, "OnTermStart")
