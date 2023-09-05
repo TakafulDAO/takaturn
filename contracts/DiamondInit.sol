@@ -19,7 +19,7 @@ contract DiamondInit {
 
         termConsts.sequencerStartupTime = 3600; // The sequencer must be running for at least an hour before it's reliable
         termConsts.aggregatorsAddresses["ETH/USD"] = _aggregatorAddressEthUsd;
-        termConsts.aggregatorsAddresses["USD/USDC"] = _aggregatorAddressUsdUsdc;
+        termConsts.aggregatorsAddresses["USDC/USD"] = _aggregatorAddressUsdUsdc;
         termConsts.sequencerUptimeFeedAddress = _sequencerUptimeFeedAddress;
 
         yieldProvider.providerAddresses["ZaynZap"] = _zapAddress;

@@ -330,7 +330,7 @@ contract GettersFacet is IGetters {
             ,
             /*uint startedAt*/ uint256 timeStamp_usdUSDC,
             uint80 answeredInRound_usdUSDC
-        ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["USD/USDC"]).latestRoundData(); //8 decimals
+        ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["USDC/USD"]).latestRoundData(); //8 decimals
 
         require(
             timeStamp_usdUSDC != 0 &&
