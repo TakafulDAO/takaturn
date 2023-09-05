@@ -324,7 +324,7 @@ contract CollateralFacet is ICollateral {
     ) internal returns (uint, address[] memory) {
         // require(_defaulters.length > 0, "No defaulters"); // todo: needed? only call this function when there are defaulters
 
-        address[] memory expellants;
+        address[] memory expellants = new address[](_defaulters.length);
         uint expellantsCounter;
         uint distributedCollateral;
 
