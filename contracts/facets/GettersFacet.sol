@@ -23,10 +23,10 @@ contract GettersFacet is IGetters {
         return (lastTermId, nextTermId);
     }
 
-    ///  @notice Gets the remaining contribution period of a term
+    ///  @notice Gets the remaining registration period for a term
     ///  @param termId the term id
-    ///  @return the remaining contribution period
-    function getRemainingContributionPeriod(uint termId) external view returns (uint) {
+    ///  @return remaining contribution period
+    function getRemainingRegistrationTime(uint termId) external view returns (uint) {
         LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
         if (block.timestamp >= term.creationTime + term.registrationPeriod) {
             return 0;

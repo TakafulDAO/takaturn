@@ -19,7 +19,7 @@ interface IGetters {
     /// @notice Must return 0 before starting the fund
     /// @param termId the id of the term
     /// @return remaining registration time in seconds
-    function getRemainingContributionPeriod(uint termId) external view returns (uint);
+    function getRemainingRegistrationTime(uint termId) external view returns (uint);
 
     /// @notice Get current information of a term
     /// @param termId the id of the term
