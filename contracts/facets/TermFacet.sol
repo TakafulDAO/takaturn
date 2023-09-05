@@ -294,11 +294,13 @@ contract TermFacet is ITerm {
             }
         }
 
-        yield.startTimeStamp = block.timestamp;
-        yield.initialized = true;
-        yield.providerAddresses["ZaynZap"] = yieldProviders.providerAddresses["ZaynZap"];
-        yield.providerAddresses["ZaynVault"] = yieldProviders.providerAddresses["ZaynVault"];
+        if (amountDeposited > 0) {
+            yield.startTimeStamp = block.timestamp;
+            yield.initialized = true;
+            yield.providerAddresses["ZaynZap"] = yieldProviders.providerAddresses["ZaynZap"];
+            yield.providerAddresses["ZaynVault"] = yieldProviders.providerAddresses["ZaynVault"];
 
-        IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
+            IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
+        }
     }
 }
