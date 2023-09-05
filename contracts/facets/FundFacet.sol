@@ -432,16 +432,9 @@ contract FundFacet is IFund {
 
         // Request contribution from the collateral for those who have to pay this cycle and haven't paid
         if (EnumerableSet.length(_fund._defaulters) > 0) {
-            address[] memory actualDefaulters = _actualDefaulters(
-                _fund,
-                _term,
-                beneficiary,
-                EnumerableSet.values(_fund._defaulters)
-            );
-
             address[] memory expellants = ICollateral(address(this)).requestContribution(
                 _term,
-                actualDefaulters
+                EnumerableSet.values(_fund._defaulters)
             );
 
             uint expellantsLength = expellants.length;
@@ -488,63 +481,6 @@ contract FundFacet is IFund {
 
         emit OnBeneficiaryAwarded(_term.termId, beneficiary);
         _setState(_term.termId, LibFund.FundStates.CycleOngoing);
-    }
-
-    /// @notice Called to get the defaulters
-    /// @dev Beneficiary is never considered a defaulter
-    /// @dev If the beneficiary was previously expelled, then we only consider previous beneficiaries
-    /// @param _fund Fund storage
-    /// @param _defaulters Complete defaulters array that will be filtered
-    /// @return actualDefaulters array of addresses that we will consider as defaulters for the current cycle
-    function _actualDefaulters(
-        LibFund.Fund storage _fund,
-        LibTerm.Term storage _term,
-        address _beneficiary,
-        address[] memory _defaulters
-    ) internal view returns (address[] memory) {
-        address[] memory actualDefaulters;
-        address[] memory beneficiariesOrder = _fund.beneficiariesOrder; // We check on the beneficiariesOrder array
-
-        uint defaultersLength = _defaulters.length;
-        uint defaultersCounter;
-
-        if (IGetters(address(this)).wasExpelled(_term.termId, _beneficiary)) {
-            uint cycleOfExpulsion = _fund.cycleOfExpulsion[_beneficiary];
-            for (uint i; i < cycleOfExpulsion; ) {
-                for (uint j; j < defaultersLength; ) {
-                    // We check if the previous beneficiary is on the defaulter array
-                    if (beneficiariesOrder[i] == _defaulters[j]) {
-                        actualDefaulters[defaultersCounter] = _defaulters[j];
-                        unchecked {
-                            ++defaultersCounter;
-                        }
-                    }
-                    unchecked {
-                        ++j;
-                    }
-                }
-                unchecked {
-                    ++i;
-                }
-            }
-        } else {
-            // We don't consider the beneficiary a defaulter
-            for (uint i; i < defaultersLength; ) {
-                if (_defaulters[i] == _beneficiary) {
-                    unchecked {
-                        ++i;
-                    }
-                    continue;
-                }
-                actualDefaulters[defaultersCounter] = _defaulters[i];
-                unchecked {
-                    ++defaultersCounter;
-                    ++i;
-                }
-            }
-        }
-
-        return actualDefaulters;
     }
 
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
