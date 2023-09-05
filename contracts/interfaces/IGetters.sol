@@ -156,9 +156,9 @@ interface IGetters {
 
     // YIELD GENERATION GETTERS
 
-    function userAPR(uint termId, address user) external view returns (uint256);
+    function userAPY(uint termId, address user) external view returns (uint256);
 
-    function termAPR(uint termId) external view returns (uint256);
+    function termAPY(uint termId) external view returns (uint256);
 
     function yieldDistributionRatio(uint termId, address user) external view returns (uint256);
 

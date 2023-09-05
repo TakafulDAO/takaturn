@@ -367,11 +367,11 @@ contract GettersFacet is IGetters {
 
     // YIELD GENERATION GETTERS
 
-    /// @notice This function is used to get a user APR
-    /// @param termId The term id for which the APR is being calculated
-    /// @param user The user for which the APR is being calculated
-    /// @return The APR for the user
-    function userAPR(uint termId, address user) external view returns (uint256) {
+    /// @notice This function is used to get a user APY
+    /// @param termId The term id for which the APY is being calculated
+    /// @param user The user for which the APY is being calculated
+    /// @return The APY for the user
+    function userAPY(uint termId, address user) external view returns (uint256) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
@@ -383,10 +383,10 @@ contract GettersFacet is IGetters {
             (elaspedTime * 365 days);
     }
 
-    /// @notice This function is used to get a term APR
-    /// @param termId The term id for which the APR is being calculated
-    /// @return The APR for the term
-    function termAPR(uint termId) external view returns (uint256) {
+    /// @notice This function is used to get a term APY
+    /// @param termId The term id for which the APY is being calculated
+    /// @return The APY for the term
+    function termAPY(uint termId) external view returns (uint256) {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
