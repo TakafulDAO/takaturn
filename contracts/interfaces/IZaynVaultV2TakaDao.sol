@@ -15,4 +15,6 @@ interface IZaynVaultV2TakaDao {
     function strategy() external pure returns (address);
 
     function balanceOf(uint256 term) external returns (uint256);
+
+    function getPricePerFullShare() external view returns (uint256);
 }
