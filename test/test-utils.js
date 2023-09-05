@@ -7,6 +7,7 @@ let contributionPeriod = 40
 let fixedCollateralEth = toWei(0.055)
 let collateralAmount = 60
 let collateralFundingPeriod = 604800
+let registrationPeriod = 600000
 
 const balanceForUser = 1000 * 10 ** 6
 
@@ -24,6 +25,7 @@ module.exports = {
     fixedCollateralEth,
     collateralAmount,
     collateralFundingPeriod,
+    registrationPeriod,
     // helper functions
     getRandomInt,
 }

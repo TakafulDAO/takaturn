@@ -1,12 +1,6 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
-const {
-    developmentChains,
-    isDevnet,
-    isFork,
-    networkConfig,
-    isZayn,
-} = require("../../utils/_networks")
+const { developmentChains, isDevnet, isFork, networkConfig } = require("../../utils/_networks")
 const { toWei, advanceTimeByDate } = require("../../utils/_helpers")
 const { BigNumber } = require("ethers")
 const { hour } = require("../../utils/units")
@@ -20,6 +14,7 @@ const { hour } = require("../../utils/units")
           const cycleTime = BigNumber.from("60") // Create term param
           const contributionAmount = BigNumber.from("100") // Create term param
           const contributionPeriod = BigNumber.from("20") // Create term param
+          const registrationPeriod = BigNumber.from("6000") // Create term param
           const collateralEth = toWei(3)
           const fixedCollateralEth = BigNumber.from(collateralEth) // Create term param
           const collateralFundingPeriod = BigNumber.from("604800")
@@ -67,7 +62,7 @@ const { hour } = require("../../utils/units")
               // Deploy contracts
               await deployments.fixture(["takaturn_upgrade"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
-              if (isDevnet && !isFork && !isZayn) {
+              if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockEthUsdAggregator")
                   sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
@@ -90,13 +85,14 @@ const { hour } = require("../../utils/units")
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
 
-              if (!isFork && !isZayn) {
+              if (!isFork) {
                   await advanceTimeByDate(1, hour)
               }
 
               // Create the first term
               await takaturnDiamondParticipant_1.createTerm(
                   totalParticipants,
+                  registrationPeriod,
                   cycleTime,
                   contributionAmount,
                   contributionPeriod,
@@ -104,7 +100,7 @@ const { hour } = require("../../utils/units")
               )
           })
 
-          if (!isFork && !isZayn) {
+          if (!isFork) {
               describe("Sequencer and oracle unit tests", function () {
                   it("Should revert if the sequencer does not met requires", async function () {
                       // Revert if the sequencer is down
@@ -148,6 +144,7 @@ const { hour } = require("../../utils/units")
                   for (let i = 0; i < 4; i++) {
                       await takaturnDiamondParticipant_1.createTerm(
                           totalParticipants,
+                          registrationPeriod,
                           cycleTime,
                           contributionAmount,
                           contributionPeriod,
@@ -167,7 +164,7 @@ const { hour } = require("../../utils/units")
                       await expect(
                           takaturnDiamond
                               .connect(participant_1)
-                              .joinTerm(termId, { value: entrance })
+                              .joinTerm(termId, false, { value: entrance })
                       ).to.emit(takaturnDiamond, "OnCollateralDeposited")
 
                       const participantSummary =
@@ -181,7 +178,7 @@ const { hour } = require("../../utils/units")
                       assert.ok(isCollateralMember)
                   }
 
-                  const participantTerms = await takaturnDiamond.getParticipantTerms(
+                  const participantTerms = await takaturnDiamond.getAllJoinedTerms(
                       participant_1.address
                   )
 
@@ -214,11 +211,13 @@ const { hour } = require("../../utils/units")
                       await expect(
                           takaturnDiamond
                               .connect(accounts[i])
-                              .joinTerm(termId, { value: failedEntrance })
+                              .joinTerm(termId, false, { value: failedEntrance })
                       ).to.be.revertedWith("Eth payment too low")
 
                       await expect(
-                          takaturnDiamond.connect(accounts[i]).joinTerm(termId, { value: entrance })
+                          takaturnDiamond
+                              .connect(accounts[i])
+                              .joinTerm(termId, false, { value: entrance })
                       ).not.to.be.reverted
                   }
 

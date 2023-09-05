@@ -1,11 +1,5 @@
 const { assert, expect } = require("chai")
-const {
-    developmentChains,
-    isDevnet,
-    isFork,
-    networkConfig,
-    isZayn,
-} = require("../../utils/_networks")
+const { developmentChains, isDevnet, isFork, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const {
     FundStates,
@@ -28,6 +22,7 @@ const {
     collateralAmount,
     balanceForUser,
     collateralFundingPeriod,
+    registrationPeriod,
     getRandomInt,
 } = require("../test-utils")
 const { BigNumber } = require("ethers")
@@ -229,7 +224,7 @@ async function executeCycle(
               await deployments.fixture(["takaturn_upgrade"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
 
-              if (isDevnet && !isFork && !isZayn) {
+              if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockEthUsdAggregator")
                   sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
@@ -252,7 +247,7 @@ async function executeCycle(
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
 
-              if (isFork && !isZayn) {
+              if (isFork) {
                   const usdcWhale = networkConfig[chainId]["usdcWhale"]
                   await impersonateAccount(usdcWhale)
                   const whale = await ethers.getSigner(usdcWhale)
@@ -322,6 +317,7 @@ async function executeCycle(
                   // This create the term and collateral
                   await takaturnDiamondParticipant_1.createTerm(
                       totalParticipants,
+                      registrationPeriod,
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
@@ -342,10 +338,10 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, { value: entrance })
+                          .joinTerm(termId, false, { value: entrance })
                   }
 
-                  await advanceTimeByDate(1, hour)
+                  await advanceTime(registrationPeriod + 1)
 
                   await takaturnDiamondParticipant_1.startTerm(termId)
               })
@@ -862,7 +858,7 @@ async function executeCycle(
                   })
               })
 
-              if (!isFork && !isZayn) {
+              if (!isFork) {
                   describe("Combined Tests Part 2", function () {
                       it("reduces the no. of cycles if a non-beneficiary user is expelled", async function () {
                           this.timeout(200000)
@@ -1012,6 +1008,7 @@ async function executeCycle(
                   // This create the term and collateral
                   await takaturnDiamondParticipant_1.createTerm(
                       totalParticipantsPart3,
+                      registrationPeriod,
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
@@ -1032,10 +1029,10 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, { value: entrance })
+                          .joinTerm(termId, false, { value: entrance })
                   }
 
-                  await advanceTimeByDate(1, hour)
+                  await advanceTime(registrationPeriod + 1)
 
                   await takaturnDiamondParticipant_1.startTerm(termId)
               })
@@ -1112,6 +1109,7 @@ async function executeCycle(
                   // This create the term and collateral
                   await takaturnDiamondParticipant_1.createTerm(
                       totalParticipantsPart4,
+                      registrationPeriod,
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
@@ -1132,10 +1130,10 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, { value: entrance })
+                          .joinTerm(termId, false, { value: entrance })
                   }
 
-                  await advanceTimeByDate(1, hour)
+                  await advanceTime(registrationPeriod + 1)
 
                   await takaturnDiamondParticipant_1.startTerm(termId)
               })
