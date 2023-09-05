@@ -112,7 +112,6 @@ contract CollateralFacet is ICollateral {
         return (expellants);
     }
 
-    // TODO: Move to fund facet? This function may not be called by anyone, only the term owner. But must be called from here
     /// @notice Called to exempt users from needing to pay
     /// @param _fund Fund storage
     /// @param _expellant The expellant in question
@@ -130,6 +129,7 @@ contract CollateralFacet is ICollateral {
             for (uint i; i < beneficiariesLength; ) {
                 if (_expellant == _fund.beneficiariesOrder[i]) {
                     expellantBeneficiaryCycle = i + 1;
+                    break;
                 }
                 unchecked {
                     ++i;
