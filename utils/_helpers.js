@@ -1,6 +1,13 @@
 const { network } = require("hardhat")
 const { now } = require("./units")
 
+const TermStates = {
+    InitializingTerm: "InitializingTerm",
+    ActiveTerm: "ActiveTerm",
+    ExpiredTerm: "ExpiredTerm",
+    ClosedTerm: "ClosedTerm",
+}
+
 const CollateralStates = {
     AcceptingCollateral: "AcceptingCollateral",
     CycleOngoing: "CycleOngoing",
@@ -14,6 +21,10 @@ const FundStates = {
     ChoosingBeneficiary: "ChoosingBeneficiary",
     CycleOngoing: "CycleOngoing",
     FundClosed: "FundClosed",
+}
+
+const getTermStateFromIndex = (index) => {
+    return Object.keys(TermStates)[index]
 }
 
 const getCollateralStateFromIndex = (index) => {
@@ -63,6 +74,7 @@ const fromWei = (num) => Number(ethers.utils.formatEther(num))
 module.exports = {
     CollateralStates,
     FundStates,
+    getTermStateFromIndex,
     getCollateralStateFromIndex,
     getFundStateFromIndex,
     // Time utilities
