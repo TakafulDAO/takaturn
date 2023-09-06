@@ -6,7 +6,6 @@ require("hardhat-deploy")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
 require("hardhat-contract-sizer")
-require("hardhat-ethernal")
 
 /******************************************** Private Keys *********************************************/
 const DEPLOYER_PK = process.env.DEPLOYER_PK
@@ -16,10 +15,6 @@ const TESTNET_DEPLOYER_PK = process.env.TESTNET_DEPLOYER_PK
 /******************************************** Deployer address *****************************************/
 const DEPLOYER = process.env.DEPLOYER_ADDRESS
 const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
-
-/******************************************** Mnemonic **************************************************/
-
-const MNEMONIC = "test test test test test test test test test test test junk" // https://hardhat.org/hardhat-network/docs/reference#accounts
 
 /******************************************* RPC providers **********************************************/
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
@@ -35,12 +30,6 @@ const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY
 const FORK = process.env.FORK
 const GAS_REPORT = process.env.GAS_REPORT
 const SIZE = process.env.SIZE
-
-/***************************************** Ethernal *****************************************************/
-const ZAYN = process.env.ZAYN
-const ETHERNAL_API_KEY = process.env.ETHERNAL_API_KEY
-const ETHERNAL_EMAIL = process.env.ETHERNAL_EMAIL
-const ETHERNAL_PASSWORD = process.env.ETHERNAL_PASSWORD
 
 /***************************************** Config ******************************************************/
 
@@ -108,14 +97,6 @@ module.exports = {
             url: ARBITRUM_TESTNET_RPC_URL,
             blockConfirmations: 6,
             timeout: 900000,
-        },
-        zayn: {
-            chainId: 42161,
-            url: "https://arbi.zayn.fi",
-            accounts: {
-                mnemonic: MNEMONIC,
-                count: 20,
-            },
         },
     },
     etherscan: {
@@ -231,17 +212,6 @@ module.exports = {
         alphaSort: true,
         runOnCompile: SIZE === "true",
         outputFile: "contracts-size-report.txt",
-    },
-    ethernal: {
-        disabled: ZAYN === "true",
-        disableSync: false,
-        uploadAst: false,
-        email: ETHERNAL_EMAIL,
-        password: ETHERNAL_PASSWORD,
-        apiToken: ETHERNAL_API_KEY,
-        workspace: "Zayn Arbitrum",
-        skipFirstBlock: true,
-        verbose: false,
     },
     external: {
         contracts: [

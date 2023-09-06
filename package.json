@@ -41,11 +41,9 @@
     "deploy:local": "yarn hardhat deploy --tags takaturn_deploy",
     "deploy:mainnet": "yarn hardhat deploy --network mainnet_arbitrum --tags takaturn_deploy",
     "deploy:goerli": "yarn hardhat deploy --network testnet_arbitrum --tags takaturn_deploy",
-    "deploy:zayn": "yarn hardhat deploy --network zayn --tags takaturn_deploy",
     "upgrade:local": "yarn hardhat deploy --tags takaturn_upgrade",
     "upgrade:mainnet": "yarn hardhat deploy --network mainnet_arbitrum --tags takaturn_upgrade",
-    "upgrade:goerli": "yarn hardhat deploy --network testnet_arbitrum --tags takaturn_upgrade", 
-    "upgrade:zayn": "yarn hardhat deploy --network zayn --tags takaturn_upgrade",    
+    "upgrade:goerli": "yarn hardhat deploy --network testnet_arbitrum --tags takaturn_upgrade",     
     "format": "yarn prettier --write ."
   },
   "dependencies": {
