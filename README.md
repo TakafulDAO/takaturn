@@ -51,7 +51,8 @@ There are some scripts set on the package.json file. Check them out
 1. Compile
     + `yarn compile`. Compile contracts
 2. Tests 
-    + `yarn test`. Run all tests
+    + `yarn test`. Run all unit tests, some tests run without fork, so you will have to set the .env variable FORK to false
+    + `yarn test:staging`. Run tests on the deployed contract on arbitrum goerli testnet
     + `yarn coverage`. Check the test coverage
 3. Deploy
     + `yarn deploy`. Run all deploy scripts on local

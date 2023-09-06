@@ -33,6 +33,7 @@
   "scripts": {
     "compile": "yarn hardhat compile",
     "test": "yarn hardhat test",
+    "test:staging": "yarn hardhat test --network testnet_arbitrum",
     "slither": "slither . --solc-remaps '@openzeppelin=node_modules/@openzeppelin' --exclude naming-convention,low-level-calls --buidler-ignore-compile",
     "coverage": "yarn hardhat coverage",
     "n": "yarn hardhat node",
