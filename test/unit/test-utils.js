@@ -1,4 +1,4 @@
-const { toWei } = require("../utils/_helpers")
+const { toWei } = require("../../utils/_helpers")
 
 let totalParticipants = 12
 let cycleTime = 60

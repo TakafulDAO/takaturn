@@ -1,5 +1,5 @@
 const { assert, expect } = require("chai")
-const { developmentChains, isDevnet, isFork, networkConfig } = require("../../utils/_networks")
+const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const {
     FundStates,
@@ -10,8 +10,8 @@ const {
     toWei,
     getCollateralStateFromIndex,
     CollateralStates,
-} = require("../../utils/_helpers")
-const { hour, day } = require("../../utils/units")
+} = require("../../../utils/_helpers")
+const { hour, day } = require("../../../utils/units")
 
 const {
     totalParticipants,
