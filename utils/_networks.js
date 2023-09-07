@@ -47,8 +47,8 @@ const networkConfig = {
         usdcWhale: "0x6ed0c4addc308bb800096b8daa41de5ae219cd36",
         sequencerUptimeFeed: "0x4da69F028a5790fCCAfe81a75C0D24f46ceCDd69", // https://docs.chain.link/data-feeds/l2-sequencer-feeds
         // TODO: Update these addresses when Zaynfi is deployed on testnet Arbitrum Goerli
-        zaynfiZap: "",
-        zaynfiVault: "",
+        zaynfiZap: "0xc931962FAF7eC41CcE5672c058080d655193A77E",
+        zaynfiVault: "0xC8d4424f1c77CD148aD31b852E8a9fbEC3FAE4e4",
     },
 }
 
