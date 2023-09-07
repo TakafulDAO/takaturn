@@ -195,6 +195,7 @@ contract CollateralFacet is ICollateral {
         }
 
         require(success, "Withdraw failed");
+        IYGFacetZaynFi(address(this)).claimAvailableYield(termId, msg.sender);
     }
 
     /// @param termId term id
