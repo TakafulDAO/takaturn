@@ -184,6 +184,39 @@ contract GettersFacet is IGetters {
         amount = (contributionAmountInWei * (term.totalParticipants - depositorIndex) * 150) / 100;
     }
 
+    /// @notice Called to check how much collateral a user can withdraw
+    /// @param termId term id
+    /// @param user depositor address
+    /// @return allowedWithdrawal amount the amount of collateral the depositor can withdraw
+    function getWithdrawableUserBalance(
+        uint termId,
+        address user
+    ) external view returns (uint allowedWithdrawal) {
+        LibCollateral.Collateral storage collateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[termId];
+
+        uint userCollateral = collateral.collateralMembersBank[user];
+
+        if (collateral.state == LibCollateral.CollateralStates.ReleasingCollateral) {
+            allowedWithdrawal = userCollateral;
+        } else if (collateral.state == LibCollateral.CollateralStates.CycleOngoing) {
+            // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
+            uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
+                termId
+            ) * 15) / 10; // 1.5 X RCC in wei
+
+            // Collateral must be higher than 1.5 X RCC
+            if (userCollateral > minRequiredCollateral) {
+                allowedWithdrawal = minRequiredCollateral - userCollateral; // We allow to withdraw the positive difference
+            } else {
+                allowedWithdrawal = 0;
+            }
+        } else {
+            allowedWithdrawal = 0;
+        }
+    }
+
     // FUND GETTERS
 
     /// @notice function to get the cycle information in one go

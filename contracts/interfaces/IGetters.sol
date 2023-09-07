@@ -94,6 +94,15 @@ interface IGetters {
         uint depositorIndex
     ) external view returns (uint);
 
+    /// @notice Called to check how much collateral a user can withdraw
+    /// @param termId term id
+    /// @param user depositor address
+    /// @return allowedWithdrawal amount the amount of collateral the depositor can withdraw
+    function getWithdrawableUserBalance(
+        uint termId,
+        address user
+    ) external view returns (uint allowedWithdrawal);
+
     // FUND GETTERS
     /// @notice Gets the fund summary of a term
     /// @param termId the id of the term
