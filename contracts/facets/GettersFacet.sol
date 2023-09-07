@@ -195,11 +195,15 @@ contract GettersFacet is IGetters {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];
+        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+            ._yieldStorage()
+            .yields[termId];
 
         uint userCollateral = collateral.collateralMembersBank[user];
+        uint availableYield = yield.availableYield[user];
 
         if (collateral.state == LibCollateral.CollateralStates.ReleasingCollateral) {
-            allowedWithdrawal = userCollateral;
+            allowedWithdrawal = userCollateral + availableYield;
         } else if (collateral.state == LibCollateral.CollateralStates.CycleOngoing) {
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
             uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
@@ -208,7 +212,7 @@ contract GettersFacet is IGetters {
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
-                allowedWithdrawal = minRequiredCollateral - userCollateral; // We allow to withdraw the positive difference
+                allowedWithdrawal = minRequiredCollateral - userCollateral + availableYield; // We allow to withdraw the positive difference
             } else {
                 allowedWithdrawal = 0;
             }
