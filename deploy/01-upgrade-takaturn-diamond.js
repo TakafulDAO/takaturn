@@ -193,7 +193,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             log(`01. Verified "${contractNames[i]}"...`)
             log("==========================================================================")
         }
-        log("01. Diamond Verified!")
+        if (isTestnet) {
+            log("01. Verifying Withdraw Goerli Eth Facet...")
+            await verify(withdrawGoerliEthFacet.address, args)
+            log("01. Withdraw Goerli Eth Facet Verified!")
+        }
         log("==========================================================================")
     }
 }
