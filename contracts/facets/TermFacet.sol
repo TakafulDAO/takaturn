@@ -127,7 +127,7 @@ contract TermFacet is ITerm {
 
         uint memberIndex = collateral.counterMembers;
 
-        uint minAmount = IGetters(address(this)).minCollateralToDeposit(term, memberIndex);
+        uint minAmount = IGetters(address(this)).minCollateralToDeposit(_termId, memberIndex);
         require(msg.value >= minAmount, "Eth payment too low");
 
         collateral.collateralMembersBank[msg.sender] += msg.value;

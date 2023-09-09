@@ -86,13 +86,10 @@ interface IGetters {
     ) external view returns (bool, LibCollateral.CollateralStates, uint, uint, address[] memory);
 
     /// @notice Gets the required minimum collateral deposit based on the position
-    /// @param term the term object
+    /// @param termId the term id
     /// @param depositorIndex the index of the depositor
     /// @return required minimum in wei
-    function minCollateralToDeposit(
-        LibTerm.Term memory term,
-        uint depositorIndex
-    ) external view returns (uint);
+    function minCollateralToDeposit(uint termId, uint depositorIndex) external view returns (uint);
 
     /// @notice Called to check how much collateral a user can withdraw
     /// @param termId term id

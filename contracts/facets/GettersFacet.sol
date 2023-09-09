@@ -174,9 +174,11 @@ contract GettersFacet is IGetters {
     /// @dev C = 1.5 Cp (Tp - I) where C = minimum collateral amount, Cp = contribution amount,
     /// Tp = total participants, I = depositor index (starts at 0). 1.5
     function minCollateralToDeposit(
-        LibTerm.Term memory term,
+        uint termId,
         uint depositorIndex
     ) external view returns (uint amount) {
+        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+
         uint contributionAmountInWei = getToCollateralConversionRate(
             term.contributionAmount * 10 ** 18
         );
