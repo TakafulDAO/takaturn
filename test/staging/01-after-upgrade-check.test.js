@@ -1,4 +1,4 @@
-const { expect } = require("chai")
+const { expect, assert } = require("chai")
 const { getNamedAccounts, ethers } = require("hardhat")
 const { developmentChains } = require("../../utils/_networks")
 const { getTermStateFromIndex } = require("../../utils/_helpers")
@@ -21,6 +21,7 @@ developmentChains.includes(network.name)
 
           describe("After upgrade check", function () {
               it("Should check the correct term params for the term id 0", async function () {
+                  // This test check that old terms are still working after the upgrade
                   // This hardcoded params are taken from the first term already created
                   const termId = 0
                   const initialized = true
@@ -62,7 +63,7 @@ developmentChains.includes(network.name)
               })
 
               it("Should check the correct term params for the last term id", async function () {
-                  // This hardcoded params are taken from the last term already created.
+                  // This test check that the last term after the upgrade is working after the upgrade
                   // This term is created via the createTerm.js script just before the upgrade
                   // The test should be updated if the createTerm.js script changes
                   // The flow is: createTerm.js -> upgrade contract -> this test
@@ -102,6 +103,42 @@ developmentChains.includes(network.name)
                   expect(termParams.contributionAmount).to.equal(contributionAmount)
                   expect(termParams.contributionPeriod).to.equal(contributionPeriod)
                   expect(termParams.stableTokenAddress).to.equal(stableTokenAddress)
+              })
+
+              it("Should check the correct term params for the last term id", async function () {
+                  // This test check the termIds upgrade correctly after the upgrade
+                  const termIds = await takaturn.getTermsId()
+                  // The last Term id before the upgrade
+                  const termIdBefore = termIds[0]
+
+                  // Create a new term after the upgrade
+                  console.log("Creating term...")
+                  const totalParticipants = 3
+                  const registrationPeriod = 86400
+                  const cycleTime = 172800
+                  const contributionAmount = 10
+                  const contributionPeriod = 86400
+                  const stableTokenAddress = "0x72A9c57cD5E2Ff20450e409cF6A542f1E6c710fc"
+
+                  await expect(
+                      takaturn.createTerm(
+                          totalParticipants,
+                          registrationPeriod,
+                          cycleTime,
+                          contributionAmount,
+                          contributionPeriod,
+                          stableTokenAddress
+                      )
+                  ).to.emit(takaturn, "OnTermCreated")
+
+                  console.log("Term created on testnet")
+
+                  // Get the new termIds
+                  const termIdsAfter = await takaturn.getTermsId()
+                  // The last Term id after the upgrade
+                  const termIdAfter = termIdsAfter[0]
+
+                  assert.equal(termIdBefore, termIdAfter - 1)
               })
           })
       })
