@@ -1,6 +1,6 @@
 const { deployments, ethers, getNamedAccounts, network } = require("hardhat")
-const { moveBlocks } = require("../utils/move-blocks")
-const { getTermStateFromIndex } = require("../utils/_helpers")
+const { moveBlocks } = require("../../utils/move-blocks")
+const { getTermStateFromIndex } = require("../../utils/_helpers")
 
 async function createTerm() {
     // await deployments.fixture(["diamond"])
@@ -43,7 +43,7 @@ async function createTerm() {
     console.log(`stableTokenAddress:: ${termParams.stableTokenAddress}`)
 
     if (network.config.chainId === 31337) {
-        console.log("Term created in local network, moving blocks...")
+        console.log("Working on a local network, moving blocks...")
         await moveBlocks(1, (sleepAmount = 1000))
     }
 }
