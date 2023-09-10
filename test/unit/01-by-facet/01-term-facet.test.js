@@ -106,23 +106,23 @@ const { hour } = require("../../../utils/units")
                       // Revert if the sequencer is down
                       await sequencer.setSequencerAnswer()
 
-                      const term = await takaturnDiamondDeployer.getTermSummary(0)
+                      const termId = await takaturnDiamondDeployer.getTermsId()
                       await expect(
-                          takaturnDiamondDeployer.minCollateralToDeposit(term, 0)
+                          takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)
                       ).to.be.revertedWith("Sequencer down")
 
                       // Revert if the has not passed an hour since started
                       await sequencer.setSequencerAnswer()
 
                       await expect(
-                          takaturnDiamondDeployer.minCollateralToDeposit(term, 0)
+                          takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)
                       ).to.be.revertedWith("Sequencer starting up")
 
                       // Should not revert if the sequencer is up and has passed an hour since started
                       await advanceTimeByDate(1, hour)
 
-                      await expect(takaturnDiamondDeployer.minCollateralToDeposit(term, 0)).not.to
-                          .be.reverted
+                      await expect(takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)).not
+                          .to.be.reverted
                   })
 
                   it("Should revert if the oracle does not met requires", async function () {
@@ -130,9 +130,9 @@ const { hour } = require("../../../utils/units")
 
                       await aggregator.setPrice(0)
 
-                      const term = await takaturnDiamondDeployer.getTermSummary(0)
+                      const termId = await takaturnDiamondDeployer.getTermsId()
                       await expect(
-                          takaturnDiamondDeployer.minCollateralToDeposit(term, 0)
+                          takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)
                       ).to.be.revertedWith("ChainlinkOracle: stale data")
                   })
               })
@@ -154,7 +154,10 @@ const { hour } = require("../../../utils/units")
 
                   // Get the collateral payment deposit
                   const term = await takaturnDiamondDeployer.getTermSummary(0)
-                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(term, 0)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
+                      0
+                  )
 
                   // Participant 1 joins the the five terms
                   for (let i = 0; i < 5; i++) {
@@ -195,12 +198,10 @@ const { hour } = require("../../../utils/units")
               it("Last participant pays less than the first one", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
-                  // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
 
                   for (let i = 1; i <= totalParticipants; i++) {
                       const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
-                          term,
+                          termId,
                           i - 1
                       )
 

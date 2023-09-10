@@ -328,11 +328,9 @@ async function executeCycle(
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
 
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
-
                   for (let i = 1; i <= totalParticipants; i++) {
                       const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
-                          term,
+                          termId,
                           i - 1
                       )
 
@@ -905,11 +903,9 @@ async function executeCycle(
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
 
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
-
                   for (let i = 1; i <= totalParticipantsPart3; i++) {
                       const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
-                          term,
+                          termId,
                           i - 1
                       )
 
@@ -1007,11 +1003,9 @@ async function executeCycle(
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
 
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
-
                   for (let i = 1; i <= totalParticipantsPart4; i++) {
                       const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
-                          term,
+                          termId,
                           i - 1
                       )
 
