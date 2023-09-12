@@ -101,7 +101,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         );
 
         yield.hasOptedIn[user] = optIn;
-        emit OnYGOptInToggled(termId, msg.sender, optIn);
+        emit OnYGOptInToggled(termId, user, optIn);
     }
 
     function updateYieldProvider(
