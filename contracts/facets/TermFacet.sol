@@ -79,8 +79,6 @@ contract TermFacet is ITerm {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         uint termId = termStorage.nextTermId;
 
-        //require(!termStorage.terms[termId].initialized, "Term already exists");
-
         LibTerm.Term memory newTerm;
 
         newTerm.termId = termId;
@@ -118,10 +116,12 @@ contract TermFacet is ITerm {
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
-        require(
-            block.timestamp <= term.creationTime + term.registrationPeriod,
-            "Registration period ended"
-        );
+        if (collateral.counterMembers >= 1) {
+            require(
+                block.timestamp <= collateral.firstDepositTime + term.registrationPeriod,
+                "Registration period ended"
+            );
+        }
 
         require(!collateral.isCollateralMember[msg.sender], "Reentry");
 
@@ -162,7 +162,7 @@ contract TermFacet is ITerm {
         uint depositorsArrayLength = depositors.length;
 
         require(
-            block.timestamp > term.creationTime + term.registrationPeriod,
+            block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
             "Term not ready to start"
         );
 
@@ -230,7 +230,7 @@ contract TermFacet is ITerm {
         require(LibTerm._termExists(_termId) && LibCollateral._collateralExists(_termId));
 
         require(
-            block.timestamp > term.creationTime + term.registrationPeriod,
+            block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
             "Registration period not ended"
         );
 

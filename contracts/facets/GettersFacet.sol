@@ -28,10 +28,14 @@ contract GettersFacet is IGetters {
     ///  @return remaining contribution period
     function getRemainingRegistrationTime(uint termId) external view returns (uint) {
         LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
-        if (block.timestamp >= term.creationTime + term.registrationPeriod) {
+        LibCollateral.Collateral storage collateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[termId];
+        require(collateral.firstDepositTime != 0, "Nobody has deposited yet");
+        if (block.timestamp >= collateral.firstDepositTime + term.registrationPeriod) {
             return 0;
         } else {
-            return term.creationTime + term.registrationPeriod - block.timestamp;
+            return collateral.firstDepositTime + term.registrationPeriod - block.timestamp;
         }
     }
 
