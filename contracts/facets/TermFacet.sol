@@ -149,7 +149,7 @@ contract TermFacet is ITerm {
             emit OnTermFilled(_termId);
         }
 
-        IYGFacetZaynFi(address(this)).toggleOptInYG(_termId, _optYield);
+        IYGFacetZaynFi(address(this)).toggleOptInYG(_termId, msg.sender, _optYield);
     }
 
     function _startTerm(uint _termId) internal {

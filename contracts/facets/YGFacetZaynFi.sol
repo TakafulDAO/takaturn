@@ -86,7 +86,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         _claimAvailableYield(termId, user);
     }
 
-    function toggleOptInYG(uint termId, bool optIn) external {
+    function toggleOptInYG(uint termId, address user, bool optIn) external {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
@@ -100,7 +100,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             "Too late to change YG opt in"
         );
 
-        yield.hasOptedIn[msg.sender] = optIn;
+        yield.hasOptedIn[user] = optIn;
         emit OnYGOptInToggled(termId, msg.sender, optIn);
     }
 
