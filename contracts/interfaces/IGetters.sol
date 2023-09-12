@@ -162,6 +162,8 @@ interface IGetters {
 
     // YIELD GENERATION GETTERS
 
+    function userHasoptedInYG(uint termId, address user) external view returns (bool);
+
     function userAPY(uint termId, address user) external returns (uint256);
 
     function termAPY(uint termId) external returns (uint256);

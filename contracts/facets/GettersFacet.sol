@@ -410,6 +410,18 @@ contract GettersFacet is IGetters {
 
     // YIELD GENERATION GETTERS
 
+    /// @notice This function is used to check if a user has opted in for yield generation
+    /// @param termId The term id for which the check is being made
+    /// @param user The user for which the check is being made
+    /// @return True if the user has opted in
+    function userHasoptedInYG(uint termId, address user) external view returns (bool) {
+        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+            ._yieldStorage()
+            .yields[termId];
+
+        return yield.hasOptedIn[user];
+    }
+
     /// @notice This function is used to get a user APY
     /// @param termId The term id for which the APY is being calculated
     /// @param user The user for which the APY is being calculated
