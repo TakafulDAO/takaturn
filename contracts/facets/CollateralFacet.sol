@@ -301,7 +301,7 @@ contract CollateralFacet is ICollateral {
 
         if (!LibFund._fundExists(_termId)) {
             // Only check here when starting the term
-            (, , , collateralLimit) = IGetters(address(this)).getDepositorCollateralSummary(
+            (, , , collateralLimit, ) = IGetters(address(this)).getDepositorCollateralSummary(
                 _member,
                 _termId
             );

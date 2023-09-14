@@ -72,7 +72,7 @@ interface IGetters {
     function getDepositorCollateralSummary(
         address depositor,
         uint termId
-    ) external view returns (bool, uint, uint, uint);
+    ) external view returns (bool, uint, uint, uint, uint);
 
     /// @notice Gets the collateral summary of a term
     /// @param termId the id of the term

@@ -142,15 +142,28 @@ contract GettersFacet is IGetters {
     function getDepositorCollateralSummary(
         address depositor,
         uint termId
-    ) external view returns (bool, uint, uint, uint) {
+    ) external view returns (bool, uint, uint, uint, uint) {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+
+        uint limit;
+        if (fund.isBeneficiary[depositor]) {
+            limit = IGetters(address(this)).getToCollateralConversionRate(
+                term.contributionAmount * 10 ** 18
+            );
+        } else {
+            limit = IGetters(address(this)).getRemainingCyclesContributionWei(termId);
+        }
+
         return (
             collateral.isCollateralMember[depositor],
             collateral.collateralMembersBank[depositor],
             collateral.collateralPaymentBank[depositor],
-            collateral.collateralDepositByUser[depositor]
+            collateral.collateralDepositByUser[depositor],
+            limit
         );
     }
 
@@ -335,23 +348,23 @@ contract GettersFacet is IGetters {
     /// @return uint latest price in Wei Note: 18 decimals
     function getLatestPrice() public view returns (uint) {
         LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
-        (
-            ,
-            /*uint80 roundID*/ int256 answer,
-            uint256 startedAt /*uint256 updatedAt*/ /*uint80 answeredInRound*/,
-            ,
+        // (
+        //     ,
+        //     /*uint80 roundID*/ int256 answer,
+        //     uint256 startedAt /*uint256 updatedAt*/ /*uint80 answeredInRound*/,
+        //     ,
 
-        ) = AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
+        // ) = AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
 
-        // Answer == 0: Sequencer is up
-        // Answer == 1: Sequencer is down
-        require(answer == 0, "Sequencer down");
+        // // Answer == 0: Sequencer is up
+        // // Answer == 1: Sequencer is down
+        // require(answer == 0, "Sequencer down");
 
-        //We must wait at least an hour after the sequencer started up
-        require(
-            termConsts.sequencerStartupTime <= block.timestamp - startedAt,
-            "Sequencer starting up"
-        );
+        // //We must wait at least an hour after the sequencer started up
+        // require(
+        //     termConsts.sequencerStartupTime <= block.timestamp - startedAt,
+        //     "Sequencer starting up"
+        // );
 
         (
             uint80 roundID_ethUSD,
