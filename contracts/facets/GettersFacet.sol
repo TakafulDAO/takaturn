@@ -150,7 +150,7 @@ contract GettersFacet is IGetters {
         LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
 
         uint limit;
-        if (fund.isBeneficiary[depositor]) {
+        if (!fund.isBeneficiary[depositor]) {
             limit = IGetters(address(this)).getToCollateralConversionRate(
                 term.contributionAmount * 10 ** 18
             );
