@@ -45,7 +45,10 @@
     "upgrade:local": "yarn hardhat deploy --tags takaturn_upgrade",
     "upgrade:mainnet": "yarn hardhat deploy --network mainnet_arbitrum --tags takaturn_upgrade",
     "upgrade:goerli": "yarn hardhat deploy --network testnet_arbitrum --tags takaturn_upgrade",
-    "format": "yarn prettier --write ."
+    "format": "yarn prettier --write .",
+    "term": "yarn hardhat run scripts/contractInteractions/createTerm.js --network testnet_arbitrum",
+    "term:join": "yarn hardhat run scripts/contractInteractions/createAndJoinTerm.js --network testnet_arbitrum",
+    "start:term": "yarn hardhat run scripts/contractInteractions/startTerm.js --network testnet_arbitrum"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.6.1",
