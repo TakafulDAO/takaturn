@@ -1,11 +1,10 @@
-const { deployments, ethers, getNamedAccounts, network } = require("hardhat")
+const { ethers, network } = require("hardhat")
 const { moveBlocks } = require("../../utils/move-blocks")
 const { getTermStateFromIndex } = require("../../utils/_helpers")
 
 async function createTerm() {
     // await deployments.fixture(["diamond"])
     const takaturn = await ethers.getContract("TakaturnDiamond")
-    const deployer = (await getNamedAccounts()).deployer
 
     console.log("Creating term...")
     const totalParticipants = 4
