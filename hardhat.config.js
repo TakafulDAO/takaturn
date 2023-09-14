@@ -31,6 +31,16 @@ const FORK = process.env.FORK
 const GAS_REPORT = process.env.GAS_REPORT
 const SIZE = process.env.SIZE
 
+/******************************************** Burnable Wallets **************************************/
+// Only used for front-end testing
+const PARTICIPANT_1_PK = "aa590ecfed7e88085c93a68877d57bed40c16c6bae04da1274beb7091b668f0f"
+const PARTICIPANT_2_PK = "7d5e0d884a76313732fab7485890d7f5bf88ea32620800637fab35966c2d7409"
+const PARTICIPANT_3_PK = "7d5e0d884a76313732fab7485890d7f5bf88ea32620800637fab35966c2d7409"
+
+const PARTICIPANT_1_ADDRESS = "0x5ab2d59849a91484ab35312121e8a47a494d1622"
+const PARTICIPANT_2_ADDRESS = "0xd26235AF7919C81470481fF4436B5465B0bbF6F2"
+const PARTICIPANT_3_ADDRESS = "0x73FA3916DEeE2316876A0d88E763C6D6566c50D0"
+
 /***************************************** Config ******************************************************/
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -93,7 +103,12 @@ module.exports = {
         },
         testnet_arbitrum: {
             chainId: 421613,
-            accounts: [DEPLOYER_PK || TESTNET_DEPLOYER_PK],
+            accounts: [
+                DEPLOYER_PK || TESTNET_DEPLOYER_PK,
+                PARTICIPANT_1_PK,
+                PARTICIPANT_2_PK,
+                PARTICIPANT_3_PK,
+            ],
             url: ARBITRUM_TESTNET_RPC_URL,
             blockConfirmations: 6,
             timeout: 900000,
@@ -119,88 +134,74 @@ module.exports = {
 
             testnet_arbitrum: TESTNET_DEPLOYER,
 
-            zayn: 0,
             default: 0,
             localhost: 0,
         },
         participant_1: {
-            zayn: 1,
+            testnet_arbitrum: PARTICIPANT_1_ADDRESS,
             default: 1,
             localhost: 1,
         },
         participant_2: {
-            zayn: 2,
+            testnet_arbitrum: PARTICIPANT_2_ADDRESS,
             default: 2,
             localhost: 2,
         },
         participant_3: {
-            zayn: 3,
+            testnet_arbitrum: PARTICIPANT_3_ADDRESS,
             default: 3,
             localhost: 3,
         },
         participant_4: {
-            zayn: 4,
             default: 4,
             localhost: 4,
         },
         participant_5: {
-            zayn: 5,
             default: 5,
             localhost: 5,
         },
         participant_6: {
-            zayn: 6,
             default: 6,
             localhost: 6,
         },
         participant_7: {
-            zayn: 7,
             default: 7,
             localhost: 7,
         },
         participant_8: {
-            zayn: 8,
             default: 8,
             localhost: 8,
         },
         participant_9: {
-            zayn: 9,
             default: 9,
             localhost: 9,
         },
         participant_10: {
-            zayn: 10,
             default: 10,
             localhost: 10,
         },
         participant_11: {
-            zayn: 11,
             default: 11,
             localhost: 11,
         },
         participant_12: {
-            zayn: 12,
             default: 12,
             localhost: 12,
         },
         usdcOwner: {
-            zayn: 13,
             default: 13,
             localhost: 13,
             // owner, blacklister,pauser
         },
         usdcMasterMinter: {
-            zayn: 14,
             default: 14,
             localhost: 14,
         },
         usdcRegularMinter: {
-            zayn: 15,
             default: 15,
             localhost: 15,
         },
         usdcLostAndFound: {
-            zayn: 16,
             default: 16,
             localhost: 16,
         },
