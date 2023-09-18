@@ -276,7 +276,9 @@ contract FundFacet is IFund {
         if (hasFrozenPool) {
             bool freeze = _freezePot(LibTerm._termStorage().terms[termId], fund, msg.sender);
 
-            require(!freeze, "Need at least 1.1RCC collateral to unfreeze your fund");
+            if (fund.currentState != LibFund.FundStates.FundClosed) {
+                require(!freeze, "Need at least 1.1RCC collateral to unfreeze your fund");
+            }
 
             _transferPoolToBeneficiary(termId, msg.sender);
         }
