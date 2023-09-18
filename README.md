@@ -1,26 +1,64 @@
-<p align="center">
-<br />
-<a href="takaturn.io"><img src="https://cdn.discordapp.com/attachments/1058266134970900482/1105685111934033991/logo.png" width="300" alt=""/></a>
-<!-- TODO(kkharji): CI and CI status -->
+# Takaturn Diamond migration
 
-<p align="center">
-  <strong>
-    Collection of smart contracts deployed in <a href="takaturn.io">Takaturn</a>. <br/> Start engaging in trustless, debt-free community-based savings and short-term investments.
-  </strong>
-</p>
++ [Walkthrough](#rocket-walkthrough)
+    + [env](#rocket-env)
++ [Deploy test and coverage](#dart-deploy-test-and-coverage)
+     
+## :rocket: Walkthrough 
 
-## Install
-<!-- TODO(mohammed): Install instruction -->
-Soon
+1. Clone this repo.
+3. Install the dependencies with  `yarn install`.
+    + Be sure to not remove the yarn.lock file for a clean installation
+4. Create a .env file with the variables explained on the next section. You can alse check the `.env.example` file
+5. As package manager it was used yarn
 
-## Test
-<!-- TODO(mohammed): Running tests instruction -->
-Soon
+[top](#takaturn-diamond-migration)
 
-## Security 
+### :rocket: env
 
-Found a security issue with our smart contracts? Send us bug reports to security@takadao.io and we'll continue togther from there.
+1. Private keys. For development purposes, this three private keys can be the same
+    + DEPLOYER_PK
+    + ARBITRUM_MAINNET_DEPLOYER_PK
+    + TESTNET_DEPLOYER_PK
+2. Deployers address. Address of the private keys above. For development purposes, this three private keys can be the same
+    + DEPLOYER_ADDRESS
+    + TESTNET_DEPLOYER_ADDRESS
+3. Mainnet RPC URL. For the development process it was tooked from [here](https://www.alchemy.com/)
+    + ARBITRUM_MAINNET_RPC_URL
+4. Testnet RPC_URL. For the development process it was tooked from [here](https://www.alchemy.com/)
+ + ARBITRUM_TESTNET_RPC_URL=
+5. Scans api keys. [here](https://docs.arbiscan.io/getting-started/viewing-api-usage-statistics) is the process for arbiscan block explorer.
+    + ARBISCAN_API_KEY
+6. Price feeds api keys. You can get it [here](https://coinmarketcap.com/api/)
+    + COINMARKETCAP_API_KEY=
+7. Features. Especial features for tests
+    + FORK= true to fork arbitrum mainnet. Most of the tests require this to be set to true
+    + GAS_REPORT= true to get gas report on the output file
+    + SIZE= true to get contract's size report when compile
 
-# License
 
-[GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.en.html)
+
+[top](#takaturn-diamond-migration)
+
+## :dart: Deploy test and coverage
+
+There are some scripts set on the package.json file. Check them out
+
+1. Compile
+    + `yarn compile`. Compile contracts
+2. Tests 
+    + `yarn test`. Run all unit tests, some tests run without fork, so you will have to set the .env variable FORK to false
+    + `yarn test:staging`. Run tests on the deployed contract on arbitrum goerli testnet
+    + `yarn coverage`. Check the test coverage
+3. Deploy
+    + `yarn deploy`. Run all deploy scripts on local
+    + `yarn deploy:local`. Deploy version 1 on local
+    + `yarn deploy:mainnet`. Deploy version 1 on arbitrum one
+    + `yarn deploy:goerli`. Deploy version 1 on arbitrum goerli
+    + `yarn upgrade:local`. Upgrades to version 2 on local
+    + `yarn upgrade:mainnet`. Upgrades to version 2 on mainnet
+    + `yarn upgrade:goerli`. Upgrades to version 2 on goerli
+    + `yarn n` You can also run a node to interact with the deployed contracts
+
+
+[top](#takaturn-diamond-migration)
