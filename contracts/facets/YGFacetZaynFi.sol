@@ -5,10 +5,12 @@ pragma solidity 0.8.18;
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 import {IZaynZapV2TakaDAO} from "../interfaces/IZaynZapV2TakaDAO.sol";
 import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
+import {IGetters} from "../interfaces/IGetters.sol";
 
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
+import {LibFund} from "../libraries/LibFund.sol";
 
 contract YGFacetZaynFi is IYGFacetZaynFi {
     event OnYGOptInToggled(uint indexed termId, address indexed user, bool indexed optedIn); // Emits when a user succesfully toggles yield generation
@@ -86,22 +88,26 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         _claimAvailableYield(termId, user);
     }
 
-    function toggleOptInYG(uint termId, address user, bool optIn) external {
+    function toggleOptInYG(uint termId) external {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
-
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];
+        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
 
+        require(LibYieldGeneration._yieldExists(termId));
         require(
             collateral.state == LibCollateral.CollateralStates.AcceptingCollateral,
             "Too late to change YG opt in"
         );
+        require(fund.isParticipant[msg.sender], "User is not participating in the fund");
+        require(!IGetters(address(this)).wasExpelled(termId, msg.sender), "User was expelled");
 
-        yield.hasOptedIn[user] = optIn;
-        emit OnYGOptInToggled(termId, user, optIn);
+        bool optIn = !yield.hasOptedIn[msg.sender];
+        yield.hasOptedIn[msg.sender] = optIn;
+        emit OnYGOptInToggled(termId, msg.sender, optIn);
     }
 
     function updateYieldProvider(

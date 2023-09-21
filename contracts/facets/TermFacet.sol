@@ -109,6 +109,9 @@ contract TermFacet is ITerm {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[_termId];
+        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+            ._yieldStorage()
+            .yields[_termId];
 
         require(LibTerm._termExists(_termId) && LibCollateral._collateralExists(_termId));
 
@@ -138,6 +141,8 @@ contract TermFacet is ITerm {
 
         termStorage.participantToTermId[msg.sender].push(_termId);
 
+        yield.hasOptedIn[msg.sender] = _optYield;
+
         emit OnCollateralDeposited(_termId, msg.sender, msg.value);
 
         if (collateral.counterMembers == 1) {
@@ -148,8 +153,6 @@ contract TermFacet is ITerm {
         if (collateral.counterMembers == term.totalParticipants) {
             emit OnTermFilled(_termId);
         }
-
-        IYGFacetZaynFi(address(this)).toggleOptInYG(_termId, msg.sender, _optYield);
     }
 
     function _startTerm(uint _termId) internal {
