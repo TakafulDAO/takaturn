@@ -2,12 +2,6 @@
 pragma solidity 0.8.18;
 
 library LibCollateral {
-    event OnCollateralStateChanged(
-        uint indexed termId,
-        LibCollateral.CollateralStates indexed oldState,
-        LibCollateral.CollateralStates indexed newState
-    );
-
     uint public constant COLLATERAL_VERSION = 1;
     bytes32 constant COLLATERAL_STORAGE_POSITION = keccak256("diamond.standard.collateral.storage");
 
@@ -54,14 +48,5 @@ library LibCollateral {
         assembly {
             collateralStorage.slot := position
         }
-    }
-
-    /// @param _termId term id
-    /// @param _newState collateral state
-    function _setState(uint _termId, LibCollateral.CollateralStates _newState) internal {
-        Collateral storage collateral = _collateralStorage().collaterals[_termId];
-        CollateralStates oldState = collateral.state;
-        collateral.state = _newState;
-        emit OnCollateralStateChanged(_termId, oldState, _newState);
     }
 }
