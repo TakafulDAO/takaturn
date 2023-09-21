@@ -189,10 +189,7 @@ contract TermFacet is ITerm {
         _createYieldGenerator(term, collateral);
 
         // Tell the collateral that the term has started
-        ICollateral(address(this)).setStateOwner(
-            term.termId,
-            LibCollateral.CollateralStates.CycleOngoing
-        );
+        LibCollateral._setState(term.termId, LibCollateral.CollateralStates.CycleOngoing);
 
         term.state = LibTerm.TermStates.ActiveTerm;
     }

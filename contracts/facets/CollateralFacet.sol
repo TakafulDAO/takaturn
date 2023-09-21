@@ -49,8 +49,11 @@ contract CollateralFacet is ICollateral {
 
     /// @param termId term id
     /// @param newState collateral state
-    function setStateOwner(uint termId, LibCollateral.CollateralStates newState) external {
-        _setState(termId, newState);
+    function setStateOwner(
+        uint termId,
+        LibCollateral.CollateralStates newState
+    ) external onlyTermOwner(termId) {
+        LibCollateral._setState(termId, newState);
     }
 
     /// @notice Called from Fund contract when someone defaults
@@ -220,7 +223,7 @@ contract CollateralFacet is ICollateral {
     function releaseCollateral(uint termId) external {
         LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
         require(fund.currentState == LibFund.FundStates.FundClosed, "Wrong state");
-        _setState(termId, LibCollateral.CollateralStates.ReleasingCollateral);
+        LibCollateral._setState(termId, LibCollateral.CollateralStates.ReleasingCollateral);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
@@ -269,21 +272,10 @@ contract CollateralFacet is ICollateral {
                 ++i;
             }
         }
-        _setState(termId, LibCollateral.CollateralStates.Closed);
+        LibCollateral._setState(termId, LibCollateral.CollateralStates.Closed);
 
         (bool success, ) = payable(msg.sender).call{value: totalToWithdraw}("");
         require(success);
-    }
-
-    /// @param _termId term id
-    /// @param _newState collateral state
-    function _setState(uint _termId, LibCollateral.CollateralStates _newState) internal {
-        LibCollateral.Collateral storage collateral = LibCollateral
-            ._collateralStorage()
-            .collaterals[_termId];
-        LibCollateral.CollateralStates oldState = collateral.state;
-        collateral.state = _newState;
-        emit OnCollateralStateChanged(_termId, oldState, _newState);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
