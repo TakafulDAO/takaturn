@@ -22,7 +22,6 @@ contract FundFacet is IFund {
 
     uint public constant FUND_VERSION = 2; // The version of the contract
 
-    event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
     event OnFundStateChanged(
         uint indexed termId,
         uint indexed currentCycle,
@@ -54,34 +53,34 @@ contract FundFacet is IFund {
     /// @param required requested amount to transfer.
     error InsufficientBalance(uint available, uint required);
 
-    /// @notice called by the term to init the fund
-    /// @param termId the id of the term
-    function initFund(uint termId) external {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
-        uint participantsArrayLength = fund.beneficiariesOrder.length;
-        // Set and track participants
-        for (uint i; i < participantsArrayLength; ) {
-            EnumerableSet.add(fund._participants, fund.beneficiariesOrder[i]);
-            fund.isParticipant[fund.beneficiariesOrder[i]] = true;
-            unchecked {
-                ++i;
-            }
-        }
+    // /// @notice called by the term to init the fund
+    // /// @param termId the id of the term
+    // function initFund(uint termId) external {
+    //     LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+    //     uint participantsArrayLength = fund.beneficiariesOrder.length;
+    //     // Set and track participants
+    //     for (uint i; i < participantsArrayLength; ) {
+    //         EnumerableSet.add(fund._participants, fund.beneficiariesOrder[i]);
+    //         fund.isParticipant[fund.beneficiariesOrder[i]] = true;
+    //         unchecked {
+    //             ++i;
+    //         }
+    //     }
 
-        // Starts the first cycle
-        _startNewCycle(termId);
+    //     // Starts the first cycle
+    //     _startNewCycle(termId);
 
-        // Set timestamp of deployment, which will be used to determine cycle times
-        // We do this after starting the first cycle to make sure the first cycle starts smoothly
-        fund.fundStart = block.timestamp;
-        //emit LibFund.OnTermStart(termId);
-        emit OnTermStart(termId);
-    }
+    //     // Set timestamp of deployment, which will be used to determine cycle times
+    //     // We do this after starting the first cycle to make sure the first cycle starts smoothly
+    //     fund.fundStart = block.timestamp;
+    //     //emit LibFund.OnTermStart(termId);
+    //     emit OnTermStart(termId);
+    // }
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
     /// @param termId the id of the term
     function startNewCycle(uint termId) external {
-        _startNewCycle(termId);
+        LibFund._startNewCycle(termId);
     }
 
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
@@ -100,10 +99,10 @@ contract FundFacet is IFund {
         address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
 
         // We attempt to make the autopayers pay their contribution right away
-        _autoPay(termId);
+        LibFund._autoPay(termId);
 
         // Only then award the beneficiary
-        _setState(termId, LibFund.FundStates.AwardingBeneficiary);
+        LibFund._setState(termId, LibFund.FundStates.AwardingBeneficiary);
 
         // We must check who hasn't paid and default them, check all participants based on beneficiariesOrder
         address[] memory participants = fund.beneficiariesOrder;
@@ -292,101 +291,101 @@ contract FundFacet is IFund {
         return fund.isBeneficiary[beneficiary];
     }
 
-    /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
-    /// @param _termId The id of the term
-    /// @param _newState The new state of the fund
-    function _setState(uint _termId, LibFund.FundStates _newState) internal {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[_termId];
-        require(fund.currentState != LibFund.FundStates.FundClosed, "Fund closed");
-        fund.currentState = _newState;
-        emit OnFundStateChanged(_termId, fund.currentCycle, _newState);
-    }
+    // /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
+    // /// @param _termId The id of the term
+    // /// @param _newState The new state of the fund
+    // function _setState(uint _termId, LibFund.FundStates _newState) internal {
+    //     LibFund.Fund storage fund = LibFund._fundStorage().funds[_termId];
+    //     require(fund.currentState != LibFund.FundStates.FundClosed, "Fund closed");
+    //     fund.currentState = _newState;
+    //     emit OnFundStateChanged(_termId, fund.currentCycle, _newState);
+    // }
 
-    /// @notice This starts the new cycle and can only be called internally. Used upon deploy
-    /// @param _termId The id of the term
-    function _startNewCycle(uint _termId) internal {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[_termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
-        // currentCycle is 0 when this is called for the first time
-        require(
-            block.timestamp > term.cycleTime * fund.currentCycle + fund.fundStart,
-            "Too early to start new cycle"
-        );
-        require(
-            fund.currentState == LibFund.FundStates.InitializingFund ||
-                fund.currentState == LibFund.FundStates.CycleOngoing,
-            "Wrong state"
-        );
+    // /// @notice This starts the new cycle and can only be called internally. Used upon deploy
+    // /// @param _termId The id of the term
+    // function _startNewCycle(uint _termId) internal {
+    //     LibFund.Fund storage fund = LibFund._fundStorage().funds[_termId];
+    //     LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
+    //     // currentCycle is 0 when this is called for the first time
+    //     require(
+    //         block.timestamp > term.cycleTime * fund.currentCycle + fund.fundStart,
+    //         "Too early to start new cycle"
+    //     );
+    //     require(
+    //         fund.currentState == LibFund.FundStates.InitializingFund ||
+    //             fund.currentState == LibFund.FundStates.CycleOngoing,
+    //         "Wrong state"
+    //     );
 
-        ++fund.currentCycle;
-        uint length = fund.beneficiariesOrder.length;
-        for (uint i; i < length; ) {
-            fund.paidThisCycle[fund.beneficiariesOrder[i]] = false;
-            unchecked {
-                ++i;
-            }
-        }
+    //     ++fund.currentCycle;
+    //     uint length = fund.beneficiariesOrder.length;
+    //     for (uint i; i < length; ) {
+    //         fund.paidThisCycle[fund.beneficiariesOrder[i]] = false;
+    //         unchecked {
+    //             ++i;
+    //         }
+    //     }
 
-        _setState(_termId, LibFund.FundStates.AcceptingContributions);
+    //     _setState(_termId, LibFund.FundStates.AcceptingContributions);
 
-        // We attempt to make the autopayers pay their contribution right away
-        _autoPay(_termId);
-    }
+    //     // We attempt to make the autopayers pay their contribution right away
+    //     _autoPay(_termId);
+    // }
 
-    /// @notice function to attempt to make autopayers pay their contribution
-    /// @param _termId the id of the term
-    function _autoPay(uint _termId) internal {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[_termId];
+    // /// @notice function to attempt to make autopayers pay their contribution
+    // /// @param _termId the id of the term
+    // function _autoPay(uint _termId) internal {
+    //     LibFund.Fund storage fund = LibFund._fundStorage().funds[_termId];
 
-        // Get the beneficiary for this cycle
-        address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(_termId);
+    //     // Get the beneficiary for this cycle
+    //     address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(_termId);
 
-        address[] memory autoPayers = fund.beneficiariesOrder; // use beneficiariesOrder because it is a single array with all participants
-        uint autoPayersArray = autoPayers.length;
+    //     address[] memory autoPayers = fund.beneficiariesOrder; // use beneficiariesOrder because it is a single array with all participants
+    //     uint autoPayersArray = autoPayers.length;
 
-        for (uint i; i < autoPayersArray; ) {
-            address autoPayer = autoPayers[i];
-            // The beneficiary doesn't pay
-            if (currentBeneficiary == autoPayer) {
-                unchecked {
-                    ++i;
-                }
-                continue;
-            }
+    //     for (uint i; i < autoPayersArray; ) {
+    //         address autoPayer = autoPayers[i];
+    //         // The beneficiary doesn't pay
+    //         if (currentBeneficiary == autoPayer) {
+    //             unchecked {
+    //                 ++i;
+    //             }
+    //             continue;
+    //         }
 
-            if (
-                fund.autoPayEnabled[autoPayer] &&
-                !fund.paidThisCycle[autoPayer] &&
-                !fund.isExemptedOnCycle[fund.currentCycle].exempted[autoPayer]
-            ) {
-                _payContributionSafe(_termId, autoPayer, autoPayer);
-            }
+    //         if (
+    //             fund.autoPayEnabled[autoPayer] &&
+    //             !fund.paidThisCycle[autoPayer] &&
+    //             !fund.isExemptedOnCycle[fund.currentCycle].exempted[autoPayer]
+    //         ) {
+    //             _payContributionSafe(_termId, autoPayer, autoPayer);
+    //         }
 
-            unchecked {
-                ++i;
-            }
-        }
-    }
+    //         unchecked {
+    //             ++i;
+    //         }
+    //     }
+    // }
 
-    /// @notice function to pay the actual contribution for the cycle, used for autopay to prevent reverts
-    /// @param _termId the id of the term
-    /// @param _payer the address that's paying
-    /// @param _participant the (participant) address that's being paid for
-    function _payContributionSafe(uint _termId, address _payer, address _participant) internal {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[_termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
+    // /// @notice function to pay the actual contribution for the cycle, used for autopay to prevent reverts
+    // /// @param _termId the id of the term
+    // /// @param _payer the address that's paying
+    // /// @param _participant the (participant) address that's being paid for
+    // function _payContributionSafe(uint _termId, address _payer, address _participant) internal {
+    //     LibFund.Fund storage fund = LibFund._fundStorage().funds[_termId];
+    //     LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
 
-        // Get the amount and do the actual transfer
-        // This will only succeed if the sender approved this contract address beforehand
-        uint amount = term.contributionAmount * 10 ** 6; // Deducted from user's wallet, six decimals
-        try fund.stableToken.transferFrom(_payer, address(this), amount) returns (bool success) {
-            if (success) {
-                // Finish up, set that the participant paid for this cycle and emit an event that it's been done
-                fund.paidThisCycle[_participant] = true;
-                emit OnPaidContribution(_termId, _participant, fund.currentCycle);
-            }
-        } catch {}
-    }
+    //     // Get the amount and do the actual transfer
+    //     // This will only succeed if the sender approved this contract address beforehand
+    //     uint amount = term.contributionAmount * 10 ** 6; // Deducted from user's wallet, six decimals
+    //     try fund.stableToken.transferFrom(_payer, address(this), amount) returns (bool success) {
+    //         if (success) {
+    //             // Finish up, set that the participant paid for this cycle and emit an event that it's been done
+    //             fund.paidThisCycle[_participant] = true;
+    //             emit OnPaidContribution(_termId, _participant, fund.currentCycle);
+    //         }
+    //     } catch {}
+    // }
 
     /// @notice function to pay the actual contribution for the cycle
     /// @param _termId the id of the term
@@ -482,7 +481,7 @@ contract FundFacet is IFund {
         _fund.beneficiariesPool[beneficiary] += _term.contributionAmount * paidCount * 10 ** 6; // Six decimals
 
         emit OnBeneficiaryAwarded(_term.termId, beneficiary);
-        _setState(_term.termId, LibFund.FundStates.CycleOngoing);
+        LibFund._setState(_term.termId, LibFund.FundStates.CycleOngoing);
     }
 
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
@@ -515,7 +514,7 @@ contract FundFacet is IFund {
         LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
         fund.fundEnd = block.timestamp;
         term.state = LibTerm.TermStates.ClosedTerm;
-        _setState(_termId, LibFund.FundStates.FundClosed);
+        LibFund._setState(_termId, LibFund.FundStates.FundClosed);
         ICollateral(address(this)).releaseCollateral(_termId);
     }
 

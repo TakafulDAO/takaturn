@@ -25,6 +25,7 @@ contract TermFacet is ITerm {
     event OnCollateralDeposited(uint indexed termId, address indexed user, uint amount);
     event OnTermFilled(uint indexed termId);
     event OnTermExpired(uint indexed termId);
+    event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
 
     function createTerm(
         uint totalParticipants,
@@ -218,7 +219,7 @@ contract TermFacet is ITerm {
         newFund.totalAmountOfCycles = newFund.beneficiariesOrder.length;
         newFund.currentState = LibFund.FundStates.InitializingFund;
 
-        IFund(address(this)).initFund(_term.termId);
+        LibFund._initFund(_term.termId);
     }
 
     function _expireTerm(uint _termId) internal {

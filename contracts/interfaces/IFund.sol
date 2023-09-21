@@ -10,7 +10,7 @@ pragma solidity 0.8.18;
 import {LibFund} from "../libraries/LibFund.sol";
 
 interface IFund {
-    function initFund(uint termId) external;
+    // function initFund(uint termId) external;
 
     /// @notice starts a new cycle manually called by the owner. Only the first cycle starts automatically upon deploy
     function startNewCycle(uint termId) external;
