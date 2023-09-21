@@ -6,7 +6,7 @@ import {ICollateral} from "../interfaces/ICollateral.sol";
 import {IGetters} from "../interfaces/IGetters.sol";
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
-import {LibFund} from "../libraries/LibFund.sol";
+import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
@@ -71,7 +71,7 @@ contract CollateralFacet is ICollateral {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[term.termId];
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[term.termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[term.termId];
 
         (uint collateralToDistribute, address[] memory expellants) = _solveDefaulters(
             collateral,
@@ -120,7 +120,7 @@ contract CollateralFacet is ICollateral {
     /// @param _expellant The expellant in question
     /// @param _nonBeneficiaries All non-beneficiaries at this time
     function _exemptNonBeneficiariesFromPaying(
-        LibFund.Fund storage _fund,
+        LibFundStorage.Fund storage _fund,
         address _expellant,
         uint _nonBeneficiaryCounter,
         address[] memory _nonBeneficiaries
@@ -204,7 +204,7 @@ contract CollateralFacet is ICollateral {
     /// @param termId term id
     /// @param depositor Address of the depositor
     function withdrawReimbursement(uint termId, address depositor) external {
-        require(LibFund._fundExists(termId), "Fund does not exists");
+        require(LibFundStorage._fundExists(termId), "Fund does not exists");
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];
@@ -221,8 +221,8 @@ contract CollateralFacet is ICollateral {
 
     /// @param termId term id
     function releaseCollateral(uint termId) external {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
-        require(fund.currentState == LibFund.FundStates.FundClosed, "Wrong state");
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        require(fund.currentState == LibFundStorage.FundStates.FundClosed, "Wrong state");
         LibCollateral._setState(termId, LibCollateral.CollateralStates.ReleasingCollateral);
     }
 
@@ -291,7 +291,7 @@ contract CollateralFacet is ICollateral {
         uint collateralLimit;
         uint memberCollateral = collateral.collateralMembersBank[_member];
 
-        if (!LibFund._fundExists(_termId)) {
+        if (!LibFundStorage._fundExists(_termId)) {
             // Only check here when starting the term
             (, , , collateralLimit, ) = IGetters(address(this)).getDepositorCollateralSummary(
                 _member,
@@ -312,7 +312,7 @@ contract CollateralFacet is ICollateral {
     function _solveDefaulters(
         LibCollateral.Collateral storage _collateral,
         LibTerm.Term memory _term,
-        LibFund.Fund storage _fund,
+        LibFundStorage.Fund storage _fund,
         address[] memory _defaulters
     ) internal returns (uint, address[] memory) {
         // require(_defaulters.length > 0, "No defaulters"); // todo: needed? only call this function when there are defaulters
@@ -418,7 +418,7 @@ contract CollateralFacet is ICollateral {
     /// @notice called internally to pay defaulter contribution
     function _payDefaulterContribution(
         LibCollateral.Collateral storage _collateral,
-        LibFund.Fund storage _fund,
+        LibFundStorage.Fund storage _fund,
         LibTerm.Term memory _term,
         address _defaulter,
         uint _contributionAmountWei,
@@ -511,7 +511,7 @@ contract CollateralFacet is ICollateral {
     /// @return nonBeneficiaries array of addresses that were expelled
     function _findNonBeneficiaries(
         LibCollateral.Collateral storage _collateral,
-        LibFund.Fund storage _fund
+        LibFundStorage.Fund storage _fund
     ) internal view returns (uint, address[] memory) {
         address currentDepositor;
         address[] memory nonBeneficiaries = new address[](_collateral.depositors.length);

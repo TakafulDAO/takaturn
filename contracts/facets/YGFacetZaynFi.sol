@@ -10,7 +10,7 @@ import {IGetters} from "../interfaces/IGetters.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
-import {LibFund} from "../libraries/LibFund.sol";
+import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
 contract YGFacetZaynFi is IYGFacetZaynFi {
     event OnYGOptInToggled(uint indexed termId, address indexed user, bool indexed optedIn); // Emits when a user succesfully toggles yield generation
@@ -95,7 +95,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
         require(LibYieldGeneration._yieldExists(termId));
         require(

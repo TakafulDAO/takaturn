@@ -9,6 +9,7 @@ import {ITerm} from "../interfaces/ITerm.sol";
 import {IGetters} from "../interfaces/IGetters.sol";
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
+import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
@@ -210,14 +211,14 @@ contract TermFacet is ITerm {
         LibTerm.Term memory _term,
         LibCollateral.Collateral storage _collateral
     ) internal {
-        require(!LibFund._fundExists(_term.termId), "Fund already exists");
-        LibFund.Fund storage newFund = LibFund._fundStorage().funds[_term.termId];
+        require(!LibFundStorage._fundExists(_term.termId), "Fund already exists");
+        LibFundStorage.Fund storage newFund = LibFundStorage._fundStorage().funds[_term.termId];
 
         newFund.stableToken = IERC20(_term.stableTokenAddress);
         newFund.beneficiariesOrder = _collateral.depositors;
         newFund.initialized = true;
         newFund.totalAmountOfCycles = newFund.beneficiariesOrder.length;
-        newFund.currentState = LibFund.FundStates.InitializingFund;
+        newFund.currentState = LibFundStorage.FundStates.InitializingFund;
 
         LibFund._initFund(_term.termId);
     }

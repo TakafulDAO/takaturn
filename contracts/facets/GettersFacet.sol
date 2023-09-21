@@ -9,7 +9,7 @@ import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
-import {LibFund} from "../libraries/LibFund.sol";
+import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
 contract GettersFacet is IGetters {
@@ -102,7 +102,7 @@ contract GettersFacet is IGetters {
     /// @param termId the term id
     /// @return remaining time in the current cycle
     function getRemainingCycles(uint termId) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
         return (1 + fund.totalAmountOfCycles - fund.currentCycle);
     }
@@ -110,7 +110,7 @@ contract GettersFacet is IGetters {
     /// @param termId the term id
     /// @return remaining time in the current cycle
     function getRemainingCycleTime(uint termId) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
         uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
         if (block.timestamp > cycleEndTimestamp) {
@@ -123,7 +123,7 @@ contract GettersFacet is IGetters {
     /// @param termId the term id
     /// @return remaining cycles contribution
     function getRemainingCyclesContributionWei(uint termId) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
 
         uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
@@ -146,7 +146,7 @@ contract GettersFacet is IGetters {
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
 
         uint limit;
@@ -250,9 +250,9 @@ contract GettersFacet is IGetters {
     )
         external
         view
-        returns (bool, LibFund.FundStates, IERC20, address[] memory, uint, uint, uint, uint)
+        returns (bool, LibFundStorage.FundStates, IERC20, address[] memory, uint, uint, uint, uint)
     {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         return (
             fund.initialized,
             fund.currentState,
@@ -269,7 +269,7 @@ contract GettersFacet is IGetters {
     /// @param termId the fund id
     /// @return the current beneficiary
     function getCurrentBeneficiary(uint termId) external view returns (address) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         return fund.beneficiariesOrder[fund.currentCycle - 1];
     }
 
@@ -278,7 +278,7 @@ contract GettersFacet is IGetters {
     /// @param user the user to check
     /// @return true if the user was expelled before
     function wasExpelled(uint termId, address user) public view returns (bool) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibCollateral.Collateral storage collateral = LibCollateral
             ._collateralStorage()
             .collaterals[termId];
@@ -292,7 +292,7 @@ contract GettersFacet is IGetters {
 
     /// @notice function to see if a user is exempted from paying a cycle
     function isExempted(uint termId, uint cycle, address user) external view returns (bool) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         return fund.isExemptedOnCycle[cycle].exempted[user];
     }
 
@@ -309,7 +309,7 @@ contract GettersFacet is IGetters {
         address participant,
         uint termId
     ) external view returns (bool, bool, bool, bool, uint, bool) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         return (
             fund.isParticipant[participant],
             fund.isBeneficiary[participant],
@@ -324,9 +324,9 @@ contract GettersFacet is IGetters {
     /// @param termId the fund id
     /// @return the time left to contribute
     function getRemainingContributionTime(uint termId) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
-        if (fund.currentState != LibFund.FundStates.AcceptingContributions) {
+        if (fund.currentState != LibFundStorage.FundStates.AcceptingContributions) {
             return 0;
         }
 

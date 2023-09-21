@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
-import {LibFund} from "../libraries/LibFund.sol";
+import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
 interface IGetters {
     // TERM GETTERS
@@ -116,7 +116,7 @@ interface IGetters {
     )
         external
         view
-        returns (bool, LibFund.FundStates, IERC20, address[] memory, uint, uint, uint, uint);
+        returns (bool, LibFundStorage.FundStates, IERC20, address[] memory, uint, uint, uint, uint);
 
     /// @notice Gets the current beneficiary of a term
     /// @param termId the id of the term
