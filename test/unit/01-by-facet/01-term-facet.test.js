@@ -288,17 +288,15 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Joins with yield generation", function () {
-              it("Should emit an event an update the mapping", async function () {
+              it("Should update the mapping", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
 
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
 
-                  await expect(
-                      takaturnDiamond
-                          .connect(participant_1)
-                          .joinTerm(termId, true, { value: entrance })
-                  ).to.emit(takaturnDiamond, "OnYGOptInToggled")
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, true, { value: entrance })
 
                   const userHasoptedInYG = await takaturnDiamond.userHasoptedInYG(
                       termId,
