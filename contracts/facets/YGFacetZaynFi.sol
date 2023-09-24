@@ -5,7 +5,6 @@ pragma solidity 0.8.18;
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 import {IZaynZapV2TakaDAO} from "../interfaces/IZaynZapV2TakaDAO.sol";
 import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
-import {IGetters} from "../interfaces/IGetters.sol";
 
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
@@ -103,7 +102,6 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             "Too late to change YG opt in"
         );
         require(fund.isParticipant[msg.sender], "User is not participating in the fund");
-        require(!IGetters(address(this)).wasExpelled(termId, msg.sender), "User was expelled");
 
         bool optIn = !yield.hasOptedIn[msg.sender];
         yield.hasOptedIn[msg.sender] = optIn;
