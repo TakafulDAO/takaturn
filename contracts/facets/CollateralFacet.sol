@@ -185,7 +185,7 @@ contract CollateralFacet is ICollateral {
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
-                uint allowedWithdrawal = minRequiredCollateral - userCollateral; // We allow to withdraw the positive difference
+                uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
                 _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
@@ -196,7 +196,9 @@ contract CollateralFacet is ICollateral {
         }
 
         require(success, "Withdraw failed");
-        IYGFacetZaynFi(address(this)).claimAvailableYield(termId, msg.sender);
+        if (yield.hasOptedIn[msg.sender]) {
+            IYGFacetZaynFi(address(this)).claimAvailableYield(termId, msg.sender);
+        }
     }
 
     /// @param termId term id
