@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-library LibCollateral {
+library LibCollateralStorage {
     uint public constant COLLATERAL_VERSION = 1;
     bytes32 constant COLLATERAL_STORAGE_POSITION = keccak256("diamond.standard.collateral.storage");
 
