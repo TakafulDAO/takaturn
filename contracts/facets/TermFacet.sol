@@ -12,7 +12,7 @@ import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
 /// @title Takaturn Term
@@ -108,16 +108,19 @@ contract TermFacet is ITerm {
     function _joinTerm(uint _termId, bool _optYield) internal {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         LibTerm.Term memory term = termStorage.terms[_termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[_termId];
 
-        require(LibTerm._termExists(_termId) && LibCollateral._collateralExists(_termId));
+        require(LibTerm._termExists(_termId) && LibCollateralStorage._collateralExists(_termId));
 
-        require(collateral.state == LibCollateral.CollateralStates.AcceptingCollateral, "Closed");
+        require(
+            collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
+            "Closed"
+        );
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
@@ -159,7 +162,7 @@ contract TermFacet is ITerm {
 
     function _startTerm(uint _termId) internal {
         LibTerm.Term memory term = LibTerm._termStorage().terms[_termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
         address[] memory depositors = collateral.depositors;
@@ -193,26 +196,26 @@ contract TermFacet is ITerm {
         // Tell the collateral that the term has started
         ICollateral(address(this)).setStateOwner(
             term.termId,
-            LibCollateral.CollateralStates.CycleOngoing
+            LibCollateralStorage.CollateralStates.CycleOngoing
         );
 
         term.state = LibTerm.TermStates.ActiveTerm;
     }
 
     function _createCollateral(uint _termId, uint _totalParticipants) internal {
-        //require(!LibCollateral._collateralExists(termId), "Collateral already exists");
-        LibCollateral.Collateral storage newCollateral = LibCollateral
+        //require(!LibCollateralStorage._collateralExists(termId), "Collateral already exists");
+        LibCollateralStorage.Collateral storage newCollateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
 
         newCollateral.initialized = true;
-        newCollateral.state = LibCollateral.CollateralStates.AcceptingCollateral;
+        newCollateral.state = LibCollateralStorage.CollateralStates.AcceptingCollateral;
         newCollateral.depositors = new address[](_totalParticipants);
     }
 
     function _createFund(
         LibTerm.Term memory _term,
-        LibCollateral.Collateral storage _collateral
+        LibCollateralStorage.Collateral storage _collateral
     ) internal {
         require(!LibFundStorage._fundExists(_term.termId), "Fund already exists");
         LibFundStorage.Fund storage newFund = LibFundStorage._fundStorage().funds[_term.termId];
@@ -228,11 +231,11 @@ contract TermFacet is ITerm {
 
     function _expireTerm(uint _termId) internal {
         LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
 
-        require(LibTerm._termExists(_termId) && LibCollateral._collateralExists(_termId));
+        require(LibTerm._termExists(_termId) && LibCollateralStorage._collateralExists(_termId));
 
         require(
             block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
@@ -268,14 +271,14 @@ contract TermFacet is ITerm {
 
         term.state = LibTerm.TermStates.ExpiredTerm;
         collateral.initialized = false;
-        collateral.state = LibCollateral.CollateralStates.Closed;
+        collateral.state = LibCollateralStorage.CollateralStates.Closed;
 
         emit OnTermExpired(_termId);
     }
 
     function _createYieldGenerator(
         LibTerm.Term memory _term,
-        LibCollateral.Collateral storage _collateral
+        LibCollateralStorage.Collateral storage _collateral
     ) internal {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()

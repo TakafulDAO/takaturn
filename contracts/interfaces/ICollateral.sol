@@ -7,14 +7,14 @@ pragma solidity 0.8.18;
 /// @notice This is used to allow fund to easily communicate with collateral
 /// @dev v2.0 (post-deploy)
 
-import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
 
 interface ICollateral {
     // Function cannot be called at this time.
     error FunctionInvalidAtThisState();
 
-    function setStateOwner(uint termId, LibCollateral.CollateralStates newState) external;
+    function setStateOwner(uint termId, LibCollateralStorage.CollateralStates newState) external;
 
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract

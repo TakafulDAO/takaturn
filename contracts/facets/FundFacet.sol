@@ -8,7 +8,7 @@ import {ICollateral} from "../interfaces/ICollateral.sol";
 import {IGetters} from "../interfaces/IGetters.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
@@ -215,7 +215,7 @@ contract FundFacet is IFund {
     /// @param termId the id of the term
     function withdrawFund(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
         // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
@@ -419,7 +419,7 @@ contract FundFacet is IFund {
         LibFundStorage.Fund storage _fund,
         address _user
     ) internal returns (bool) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_term.termId];
 
