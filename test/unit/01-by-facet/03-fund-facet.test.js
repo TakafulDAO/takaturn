@@ -7,7 +7,7 @@ const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Collateral facet tests", function () {
+    : describe("Fund facet tests", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = BigNumber.from("3") // Create term param
@@ -20,10 +20,7 @@ const { hour } = require("../../../utils/units")
 
           let deployer, participant_1, participant_2, participant_3
 
-          let takaturnDiamondDeployer,
-              takaturnDiamondParticipant_1,
-              takaturnDiamondParticipant_2,
-              takaturnDiamondParticipant_3
+          let takaturnDiamondDeployer, takaturnDiamondParticipant_1
 
           beforeEach(async () => {
               // Get the accounts
@@ -78,6 +75,20 @@ const { hour } = require("../../../utils/units")
                   contributionPeriod,
                   usdc.address
               )
+
+              const lastTerm = await takaturnDiamondDeployer.getTermsId()
+              const termId = lastTerm[0]
+              for (let i = 0; i < totalParticipants; i++) {
+                  // Get the collateral payment deposit
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, i)
+                  // Each participant joins the term
+                  await takaturnDiamondParticipant_1
+                      .connect(accounts[i + 1])
+                      .joinTerm(termId, false, { value: entrance })
+              }
+
+              await advanceTime(registrationPeriod.toNumber() + 1)
+              await takaturnDiamond.startTerm(termId)
 
               const balanceForUser = contributionAmount * totalParticipants * 10 ** 6
 
@@ -140,82 +151,90 @@ const { hour } = require("../../../utils/units")
               }
           })
 
-          describe("Participant can withdraw collateral", function () {
-              describe("Participant joins without yield generation", function () {
-                  beforeEach(async () => {
-                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                      const termId = lastTerm[0]
-                      for (let i = 0; i < totalParticipants; i++) {
-                          // Get the collateral payment deposit
-                          const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
-                              termId,
-                              i
-                          )
-                          // Each participant joins the term
-                          await takaturnDiamondParticipant_1
-                              .connect(accounts[i + 1])
-                              .joinTerm(termId, false, { value: entrance })
-                      }
+          describe("Withdraw funding", function () {
+              it("Revert if the contract does not have enough USDC", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
 
-                      await advanceTime(registrationPeriod.toNumber() + 1)
-                      await takaturnDiamond.startTerm(termId)
-                  })
-                  it("Should withdraw", async function () {
-                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                      const termId = lastTerm[0]
-
-                      // Pay the contribution for the first cycle
-                      for (let i = 0; i < totalParticipants; i++) {
-                          try {
-                              await takaturnDiamondParticipant_1
-                                  .connect(accounts[i + 1])
-                                  .payContribution(termId)
-                          } catch (e) {}
-                      }
-
-                      await advanceTime(cycleTime.toNumber() + 1)
-
-                      await takaturnDiamond.closeFundingPeriod(termId)
-
-                      await takaturnDiamond.startNewCycle(termId)
-
-                      // Pay the contribution for the second cycle
-                      for (let i = 0; i < totalParticipants; i++) {
-                          try {
-                              await takaturnDiamondParticipant_1
-                                  .connect(accounts[i + 1])
-                                  .payContribution(termId)
-                          } catch (e) {}
-                      }
-
-                      await advanceTime(cycleTime.toNumber() + 1)
-
-                      await takaturnDiamond.closeFundingPeriod(termId)
-
-                      await takaturnDiamond.startNewCycle(termId)
-
-                      // Pay the contribution for the third cycle
-                      for (let i = 0; i < totalParticipants; i++) {
-                          try {
-                              await takaturnDiamondParticipant_1
-                                  .connect(accounts[i + 1])
-                                  .payContribution(termId)
-                          } catch (e) {}
-                      }
-
-                      await advanceTime(cycleTime.toNumber() + 1)
-
-                      await takaturnDiamond.closeFundingPeriod(termId)
-
-                      // Withdraw the collateral
-                      for (let i = 0; i < totalParticipants; i++) {
+                  // Pay the contribution for the first cycle
+                  for (let i = 0; i < totalParticipants; i++) {
+                      if (i == 0) {
                           await expect(
                               takaturnDiamondParticipant_1
                                   .connect(accounts[i + 1])
-                                  .withdrawCollateral(termId)
-                          ).not.to.be.reverted
+                                  .payContribution(termId)
+                          ).to.be.revertedWith("Beneficiary doesn't pay")
+                      } else {
+                          await takaturnDiamondParticipant_1
+                              .connect(accounts[i + 1])
+                              .payContribution(termId)
                       }
-                  })
+                  }
+
+                  await advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  await takaturnDiamondDeployer.testInsufficientBalance(termId)
+
+                  await expect(
+                      takaturnDiamondParticipant_1.withdrawFund(termId)
+                  ).to.be.revertedWith("InsufficientBalance")
+              })
+          })
+
+          describe("isBeneficiary function", function () {
+              it("Check the isBeneficiary return vale", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  let isBeneficiary = await takaturnDiamondDeployer.isBeneficiary(
+                      termId,
+                      participant_1.address
+                  )
+                  assert.equal(isBeneficiary, false, "The participant is not a beneficiary")
+
+                  // Pay the contribution for the first cycle
+                  for (let i = 0; i < totalParticipants; i++) {
+                      if (i == 0) {
+                          await expect(
+                              takaturnDiamondParticipant_1
+                                  .connect(accounts[i + 1])
+                                  .payContribution(termId)
+                          ).to.be.revertedWith("Beneficiary doesn't pay")
+                      } else {
+                          await takaturnDiamondParticipant_1
+                              .connect(accounts[i + 1])
+                              .payContribution(termId)
+                      }
+                  }
+
+                  await advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  isBeneficiary = await takaturnDiamondDeployer.isBeneficiary(
+                      termId,
+                      participant_1.address
+                  )
+                  assert.equal(isBeneficiary, true, "The participant is a beneficiary")
+              })
+          })
+
+          describe("payContributionOnBehalfOf function", function () {
+              it("Check the payContributionOnBehalfOf functionality", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  await expect(
+                      takaturnDiamondParticipant_1
+                          .connect(participant_1)
+                          .payContributionOnBehalfOf(termId, participant_2.address)
+                  ).not.to.be.reverted
               })
           })
       })

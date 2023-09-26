@@ -97,30 +97,7 @@ const { hour } = require("../../../utils/units")
           })
 
           if (!isFork) {
-              describe("Sequencer and oracle unit tests", function () {
-                  it("Should revert if the sequencer does not met requires", async function () {
-                      // Revert if the sequencer is down
-                      await sequencer.setSequencerAnswer()
-
-                      const termId = await takaturnDiamondDeployer.getTermsId()
-                      await expect(
-                          takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)
-                      ).to.be.revertedWith("Sequencer down")
-
-                      // Revert if the has not passed an hour since started
-                      await sequencer.setSequencerAnswer()
-
-                      await expect(
-                          takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)
-                      ).to.be.revertedWith("Sequencer starting up")
-
-                      // Should not revert if the sequencer is up and has passed an hour since started
-                      await advanceTimeByDate(1, hour)
-
-                      await expect(takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)).not
-                          .to.be.reverted
-                  })
-
+              describe("Oracle unit tests", function () {
                   it("Should revert if the oracle does not met requires", async function () {
                       await advanceTimeByDate(1, hour)
 

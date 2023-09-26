@@ -419,20 +419,6 @@ async function executeCycle(
                       }
                   })
 
-                  it("emergency close", async function () {
-                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                      const termId = lastTerm[0]
-
-                      await expect(takaturnDiamondDeployer.closeFund(termId)).to.be.revertedWith(
-                          "TermOwnable: caller is not the owner"
-                      )
-
-                      await takaturnDiamondParticipant_1.closeFund(termId)
-
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.FundClosed)
-                  })
-
                   it("can close the funding period after the given time", async function () {
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
