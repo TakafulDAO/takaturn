@@ -134,24 +134,6 @@ contract FundFacet is IFund {
         }
     }
 
-    /// @notice Fallback function, if the internal call fails somehow and the state gets stuck, allow owner to call the function again manually
-    /// @dev This shouldn't happen, but is here in case there's an edge-case we didn't take into account, can possibly be removed in the future
-    /// @param termId the id of the term
-    function awardBeneficiary(uint termId) external onlyTermOwner(termId) {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        require(fund.currentState == LibFundStorage.FundStates.AwardingBeneficiary, "Wrong state");
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
-
-        _awardBeneficiary(fund, term);
-    }
-
-    /// @notice called by the owner to close the fund for emergency reasons.
-    /// @param termId the id of the term
-    function closeFund(uint termId) external onlyTermOwner(termId) {
-        //require (!(currentCycle < totalAmountOfCycles), "Not all cycles have happened yet");
-        _closeFund(termId);
-    }
-
     /// @notice allow the owner to empty the fund if there's any excess fund left after 180 days,
     ///         this with the assumption that beneficiaries can't claim it themselves due to losing their keys for example,
     ///         and prevent the fund to be stuck in limbo
