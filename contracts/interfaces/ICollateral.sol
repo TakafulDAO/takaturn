@@ -14,8 +14,6 @@ interface ICollateral {
     // Function cannot be called at this time.
     error FunctionInvalidAtThisState();
 
-    function setStateOwner(uint termId, LibCollateralStorage.CollateralStates newState) external;
-
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
     /// @param term the term object

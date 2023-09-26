@@ -12,6 +12,7 @@ import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibFund} from "../libraries/LibFund.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
@@ -194,10 +195,7 @@ contract TermFacet is ITerm {
         _createYieldGenerator(term, collateral);
 
         // Tell the collateral that the term has started
-        ICollateral(address(this)).setStateOwner(
-            term.termId,
-            LibCollateralStorage.CollateralStates.CycleOngoing
-        );
+        LibCollateral._setState(term.termId, LibCollateralStorage.CollateralStates.CycleOngoing);
 
         term.state = LibTerm.TermStates.ActiveTerm;
     }

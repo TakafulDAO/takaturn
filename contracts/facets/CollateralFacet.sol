@@ -8,6 +8,7 @@ import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
@@ -45,13 +46,6 @@ contract CollateralFacet is ICollateral {
     modifier onlyTermOwner(uint termId) {
         LibTermOwnership._ensureTermOwner(termId);
         _;
-    }
-
-    /// @param termId term id
-    /// @param newState collateral state
-    function setStateOwner(uint termId, LibCollateralStorage.CollateralStates newState) external {
-        require(msg.sender == address(this));
-        _setState(termId, newState);
     }
 
     /// @notice Called from Fund contract when someone defaults
@@ -223,7 +217,7 @@ contract CollateralFacet is ICollateral {
     function releaseCollateral(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         require(fund.currentState == LibFundStorage.FundStates.FundClosed, "Wrong state");
-        _setState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral);
+        LibCollateral._setState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
@@ -272,21 +266,10 @@ contract CollateralFacet is ICollateral {
                 ++i;
             }
         }
-        _setState(termId, LibCollateralStorage.CollateralStates.Closed);
+        LibCollateral._setState(termId, LibCollateralStorage.CollateralStates.Closed);
 
         (bool success, ) = payable(msg.sender).call{value: totalToWithdraw}("");
         require(success);
-    }
-
-    /// @param _termId term id
-    /// @param _newState collateral state
-    function _setState(uint _termId, LibCollateralStorage.CollateralStates _newState) internal {
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[_termId];
-        LibCollateralStorage.CollateralStates oldState = collateral.state;
-        collateral.state = _newState;
-        emit OnCollateralStateChanged(_termId, oldState, _newState);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
