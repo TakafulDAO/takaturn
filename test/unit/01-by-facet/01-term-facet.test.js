@@ -111,6 +111,50 @@ const { hour } = require("../../../utils/units")
               })
           }
 
+          describe("Participant can join enable autoPay when they join", function () {
+              it("Should allow autoPay", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
+                      0
+                  )
+
+                  await expect(
+                      takaturnDiamond.connect(participant_1).toggleAutoPay(termId)
+                  ).to.be.revertedWith("Pay collateral security first")
+
+                  // Join
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, false, { value: entrance })
+
+                  await expect(takaturnDiamond.connect(participant_1).toggleAutoPay(termId)).not.to
+                      .be.reverted
+
+                  const participantFundSummary =
+                      await takaturnDiamondParticipant_1.getParticipantFundSummary(
+                          participant_1.address,
+                          termId
+                      )
+
+                  const participantCollateralSummary =
+                      await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
+                          participant_1.address,
+                          termId
+                      )
+
+                  const isParticipant = participantFundSummary[0]
+                  const isCollateralMember = participantCollateralSummary[0]
+
+                  assert.ok(!isParticipant)
+                  assert.ok(isCollateralMember)
+              })
+          })
+
           describe("Participant can join multiple terms", function () {
               it("Should update the users mappings", async function () {
                   // Create five terms

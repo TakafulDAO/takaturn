@@ -156,8 +156,11 @@ contract FundFacet is IFund {
     /// @notice function to enable/disable autopay
     /// @param termId the id of the term
     function toggleAutoPay(uint termId) external {
+        LibCollateral.Collateral storage collateral = LibCollateral
+            ._collateralStorage()
+            .collaterals[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        require(fund.isParticipant[msg.sender], "Not a participant");
+        require(collateral.isCollateralMember[msg.sender], "Pay collateral security first");
         bool enabled = !fund.autoPayEnabled[msg.sender];
         fund.autoPayEnabled[msg.sender] = enabled;
 
