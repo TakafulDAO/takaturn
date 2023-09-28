@@ -147,7 +147,19 @@ contract FundFacet is IFund {
             "Can't empty yet"
         );
 
-        uint balance = fund.stableToken.balanceOf(address(this));
+        uint balance;
+        uint beneficiariesLength = fund.beneficiariesOrder.length;
+
+        for (uint i; i < beneficiariesLength; ) {
+            if (fund.beneficiariesPool[fund.beneficiariesOrder[i]] > 0) {
+                balance += fund.beneficiariesPool[fund.beneficiariesOrder[i]];
+                fund.beneficiariesPool[fund.beneficiariesOrder[i]] = 0;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
         if (balance > 0) {
             bool success = fund.stableToken.transfer(msg.sender, balance);
             require(success, "Transfer failed");
