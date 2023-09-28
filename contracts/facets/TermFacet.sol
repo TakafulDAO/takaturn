@@ -125,13 +125,6 @@ contract TermFacet is ITerm {
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
-        if (collateral.counterMembers >= 1) {
-            require(
-                block.timestamp <= collateral.firstDepositTime + term.registrationPeriod,
-                "Registration period ended"
-            );
-        }
-
         require(!collateral.isCollateralMember[msg.sender], "Reentry");
 
         uint memberIndex = collateral.counterMembers;
