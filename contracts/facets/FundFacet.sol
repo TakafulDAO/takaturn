@@ -11,6 +11,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 import {LibFund} from "../libraries/LibFund.sol";
 
@@ -156,7 +157,7 @@ contract FundFacet is IFund {
     /// @notice function to enable/disable autopay
     /// @param termId the id of the term
     function toggleAutoPay(uint termId) external {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
