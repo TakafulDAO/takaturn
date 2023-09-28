@@ -417,13 +417,13 @@ contract FundFacet is IFund {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
 
         // Get the amount this beneficiary can withdraw
-        uint transferAmount = fund.beneficiariesPool[msg.sender];
+        uint transferAmount = fund.beneficiariesPool[_beneficiary];
         uint contractBalance = fund.stableToken.balanceOf(address(this));
         if (contractBalance < transferAmount) {
             revert InsufficientBalance({available: contractBalance, required: transferAmount});
         } else {
-            fund.beneficiariesPool[msg.sender] = 0;
-            bool success = fund.stableToken.transfer(msg.sender, transferAmount);
+            fund.beneficiariesPool[_beneficiary] = 0;
+            bool success = fund.stableToken.transfer(_beneficiary, transferAmount);
             require(success, "Transfer failed");
         }
         emit OnFundWithdrawn(_termId, _beneficiary, transferAmount);
