@@ -451,8 +451,8 @@ contract GettersFacet is IGetters {
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
         return
-            (userYieldGenerated(termId, user) / yield.currentTotalDeposit) /
-            (elaspedTime * 365 days);
+            ((userYieldGenerated(termId, user) / yield.currentTotalDeposit) * 365 days) /
+            elaspedTime;
     }
 
     /// @notice This function is used to get a term APY
