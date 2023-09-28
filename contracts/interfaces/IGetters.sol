@@ -5,7 +5,7 @@ pragma solidity 0.8.18;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {LibTerm} from "../libraries/LibTerm.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
 interface IGetters {
@@ -77,13 +77,16 @@ interface IGetters {
     /// @notice Gets the collateral summary of a term
     /// @param termId the id of the term
     /// @return if collateral is initialized
-    /// @return current state of the collateral, see States struct in LibCollateral.sol
+    /// @return current state of the collateral, see States struct in LibCollateralStorage.sol
     /// @return time of first deposit in seconds, 0 if no deposit occured yet
     /// @return current member count
     /// @return list of depositors
     function getCollateralSummary(
         uint termId
-    ) external view returns (bool, LibCollateral.CollateralStates, uint, uint, address[] memory);
+    )
+        external
+        view
+        returns (bool, LibCollateralStorage.CollateralStates, uint, uint, address[] memory);
 
     /// @notice Gets the required minimum collateral deposit based on the position
     /// @param termId the term id

@@ -8,7 +8,7 @@ import {IGetters} from "../interfaces/IGetters.sol";
 import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
 import {LibTerm} from "../libraries/LibTerm.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
@@ -28,7 +28,7 @@ contract GettersFacet is IGetters {
     ///  @return remaining contribution period
     function getRemainingRegistrationTime(uint termId) external view returns (uint) {
         LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
         require(collateral.firstDepositTime != 0, "Nobody has deposited yet");
@@ -143,7 +143,7 @@ contract GettersFacet is IGetters {
         address depositor,
         uint termId
     ) external view returns (bool, uint, uint, uint, uint) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
@@ -171,8 +171,12 @@ contract GettersFacet is IGetters {
     /// @return collateral: initialized, state, firstDepositTime, counterMembers, depositors, collateralDeposit
     function getCollateralSummary(
         uint termId
-    ) external view returns (bool, LibCollateral.CollateralStates, uint, uint, address[] memory) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+    )
+        external
+        view
+        returns (bool, LibCollateralStorage.CollateralStates, uint, uint, address[] memory)
+    {
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
         return (
@@ -211,7 +215,7 @@ contract GettersFacet is IGetters {
         uint termId,
         address user
     ) external view returns (uint allowedWithdrawal) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
@@ -221,9 +225,9 @@ contract GettersFacet is IGetters {
         uint userCollateral = collateral.collateralMembersBank[user];
         uint availableYield = yield.availableYield[user];
 
-        if (collateral.state == LibCollateral.CollateralStates.ReleasingCollateral) {
+        if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
             allowedWithdrawal = userCollateral + availableYield;
-        } else if (collateral.state == LibCollateral.CollateralStates.CycleOngoing) {
+        } else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
             uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
                 termId
@@ -279,7 +283,7 @@ contract GettersFacet is IGetters {
     /// @return true if the user was expelled before
     function wasExpelled(uint termId, address user) public view returns (bool) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
 
@@ -472,7 +476,7 @@ contract GettersFacet is IGetters {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
 

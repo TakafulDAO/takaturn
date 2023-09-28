@@ -18,13 +18,6 @@ interface IFund {
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
     function closeFundingPeriod(uint termId) external;
 
-    /// @notice Fallback function, if the internal call fails somehow and the state gets stuck, allow owner to call the function again manually
-    /// @dev This shouldn't happen, but is here in case there's an edge-case we didn't take into account, can possibly be removed in the future
-    function awardBeneficiary(uint termId) external;
-
-    /// @notice called by the owner to close the fund for emergency reasons.
-    function closeFund(uint termId) external;
-
     // @notice allow the owner to empty the fund if there's any excess fund left after 180 days,
     //         this with the assumption that beneficiaries can't claim it themselves due to losing their keys for example,
     //         and prevent the fund to be stuck in limbo

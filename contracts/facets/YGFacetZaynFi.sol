@@ -5,10 +5,9 @@ pragma solidity 0.8.18;
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 import {IZaynZapV2TakaDAO} from "../interfaces/IZaynZapV2TakaDAO.sol";
 import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
-import {IGetters} from "../interfaces/IGetters.sol";
 
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
@@ -92,18 +91,17 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
             ._yieldStorage()
             .yields[termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
         require(LibYieldGeneration._yieldExists(termId));
         require(
-            collateral.state == LibCollateral.CollateralStates.AcceptingCollateral,
+            collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
             "Too late to change YG opt in"
         );
         require(fund.isParticipant[msg.sender], "User is not participating in the fund");
-        require(!IGetters(address(this)).wasExpelled(termId, msg.sender), "User was expelled");
 
         bool optIn = !yield.hasOptedIn[msg.sender];
         yield.hasOptedIn[msg.sender] = optIn;
