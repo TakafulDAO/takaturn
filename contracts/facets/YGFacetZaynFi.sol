@@ -94,14 +94,16 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
         require(LibYieldGeneration._yieldExists(termId));
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
             "Too late to change YG opt in"
         );
-        require(fund.isParticipant[msg.sender], "User is not participating in the fund");
+        require(
+            collateral.isCollateralMember[msg.sender],
+            "Pay the collateral security deposit first"
+        );
 
         bool optIn = !yield.hasOptedIn[msg.sender];
         yield.hasOptedIn[msg.sender] = optIn;
@@ -125,6 +127,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
         uint availableYield = yield.availableYield[user];
         require(availableYield > 0, "No yield to withdraw");
+        yield.availableYield[user] = 0;
         (bool success, ) = payable(user).call{value: availableYield}("");
         require(success);
 
