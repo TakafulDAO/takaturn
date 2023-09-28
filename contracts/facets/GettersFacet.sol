@@ -46,7 +46,7 @@ contract GettersFacet is IGetters {
     }
 
     /// @param participant the participant address
-    /// @return the term ids the participant is part of
+    /// @return an array with the term ids the participant is part of
     function getAllJoinedTerms(address participant) public view returns (uint[] memory) {
         LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
         uint[] memory participantTermIds = termStorage.participantToTermId[participant];
@@ -55,7 +55,7 @@ contract GettersFacet is IGetters {
 
     /// @param participant the participant address
     /// @param state the term state
-    /// @return the term ids the participant is part of, giving the state of the term
+    /// @return an array with the term ids the participant is part of, giving the state of the term
     function getJoinedTermsByState(
         address participant,
         LibTerm.TermStates state
@@ -79,7 +79,7 @@ contract GettersFacet is IGetters {
     }
 
     /// @param participant the participant address
-    /// @return the term ids the participant is part of, giving the state of the term
+    /// @return an array the term ids the participant is part of, giving the state of the term
     function getExpelledTerms(address participant) external view returns (uint[] memory) {
         uint[] memory joinedTerms = getAllJoinedTerms(participant);
         uint[] memory termsExpelled;
@@ -100,7 +100,7 @@ contract GettersFacet is IGetters {
     }
 
     /// @param termId the term id
-    /// @return remaining time in the current cycle
+    /// @return remaining cycles
     function getRemainingCycles(uint termId) external view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
@@ -138,7 +138,11 @@ contract GettersFacet is IGetters {
 
     /// @param depositor the depositor address
     /// @param termId the collateral id
-    /// @return isCollateralMember, collateralMembersBank, collateralPaymentBank
+    /// @return isCollateralMember
+    /// @return collateralMembersBank
+    /// @return collateralPaymentBank
+    /// @return collateralDepositByUser
+    /// @return expulsion limit
     function getDepositorCollateralSummary(
         address depositor,
         uint termId
@@ -168,7 +172,11 @@ contract GettersFacet is IGetters {
     }
 
     /// @param termId the collateral id
-    /// @return collateral: initialized, state, firstDepositTime, counterMembers, depositors, collateralDeposit
+    /// @return collateral initialized
+    /// @return collateral state
+    /// @return collateral firstDepositTime
+    /// @return counterMembers
+    /// @return collateral depositors
     function getCollateralSummary(
         uint termId
     )
@@ -248,7 +256,14 @@ contract GettersFacet is IGetters {
 
     /// @notice function to get the cycle information in one go
     /// @param termId the fund id
-    /// @return initialized, currentState, stableToken, currentCycle, beneficiariesOrder, fundStart, currentCycle, totalAmountOfCycles, fundEnd
+    /// @return fund initialized
+    /// @return fund currentState
+    /// @return fund stableToken
+    /// @return fund beneficiariesOrder
+    /// @return fund fundStart
+    /// @return fund fundEnd
+    /// @return fund currentCycle
+    /// @return fund totalAmountOfCycles
     function getFundSummary(
         uint termId
     )
@@ -295,6 +310,10 @@ contract GettersFacet is IGetters {
     }
 
     /// @notice function to see if a user is exempted from paying a cycle
+    /// @param termId the fund id
+    /// @param cycle the cycle to check
+    /// @param user the user to check
+    /// @return true if the user is exempted
     function isExempted(uint termId, uint cycle, address user) external view returns (bool) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         return fund.isExemptedOnCycle[cycle].exempted[user];
@@ -303,12 +322,12 @@ contract GettersFacet is IGetters {
     /// @notice function to get cycle information of a specific participant
     /// @param participant the user to get the info from
     /// @param termId the fund id
-    /// @return isParticipant, true if is participant
-    /// @return isBeneficiary, true if has been beneficiary
-    /// @return paidThisCycle, true if has paid the current cycle
-    /// @return autoPayEnabled, true if auto pay is enabled
-    /// @return beneficiariesPool, the beneficiary pool, 6 decimals
-    /// @return beneficiariesFrozenPool, true if the beneficiary pool is frozen
+    /// @return fund isParticipant, true if is participant
+    /// @return fund isBeneficiary, true if has been beneficiary
+    /// @return fund paidThisCycle, true if has paid the current cycle
+    /// @return fund autoPayEnabled, true if auto pay is enabled
+    /// @return fund beneficiariesPool, the beneficiary pool, 6 decimals
+    /// @return fund beneficiariesFrozenPool, true if the beneficiary pool is frozen
     function getParticipantFundSummary(
         address participant,
         uint termId
@@ -352,23 +371,6 @@ contract GettersFacet is IGetters {
     /// @return uint latest price in Wei Note: 18 decimals
     function getLatestPrice() public view returns (uint) {
         LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
-        // (
-        //     ,
-        //     /*uint80 roundID*/ int256 answer,
-        //     uint256 startedAt /*uint256 updatedAt*/ /*uint80 answeredInRound*/,
-        //     ,
-
-        // ) = AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
-
-        // // Answer == 0: Sequencer is up
-        // // Answer == 1: Sequencer is down
-        // require(answer == 0, "Sequencer down");
-
-        // //We must wait at least an hour after the sequencer started up
-        // require(
-        //     termConsts.sequencerStartupTime <= block.timestamp - startedAt,
-        //     "Sequencer starting up"
-        // );
 
         (
             uint80 roundID_ethUSD,
@@ -406,7 +408,7 @@ contract GettersFacet is IGetters {
 
     /// @notice Gets the conversion rate of an amount in USD to ETH
     /// @dev should we always deal with in Wei?
-    /// @param USDAmount The amount in USD
+    /// @param USDAmount The amount in USD with 18 decimals
     /// @return uint converted amount in wei
     function getToCollateralConversionRate(uint USDAmount) public view returns (uint) {
         uint ethPrice = getLatestPrice();
