@@ -155,6 +155,9 @@ contract FundFacet is IFund {
                 balance += fund.beneficiariesPool[fund.beneficiariesOrder[i]];
                 fund.beneficiariesPool[fund.beneficiariesOrder[i]] = 0;
             }
+            unchecked {
+                ++i;
+            }
         }
 
         if (balance > 0) {
