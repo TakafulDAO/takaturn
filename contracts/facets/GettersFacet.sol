@@ -482,7 +482,11 @@ contract GettersFacet is IGetters {
             ._collateralStorage()
             .collaterals[termId];
 
-        return collateral.collateralMembersBank[user] / yield.currentTotalDeposit;
+        if (yield.currentTotalDeposit == 0) {
+            return 0;
+        } else {
+            return collateral.collateralMembersBank[user] / yield.currentTotalDeposit;
+        }
     }
 
     /// @notice This function is used to get the total yield generated for a term
