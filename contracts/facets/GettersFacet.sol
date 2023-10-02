@@ -518,7 +518,8 @@ contract GettersFacet is IGetters {
 
         return
             totalWithdrawnYield +
-            (totalDeposit - _sharesToEth(currentShares, totalDeposit, totalShares));
+            _sharesToEth(currentShares, totalDeposit, totalShares) -
+            yield.currentTotalDeposit;
     }
 
     /// @notice This function is used to get the total yield generated for a user
