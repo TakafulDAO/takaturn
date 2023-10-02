@@ -467,7 +467,7 @@ contract GettersFacet is IGetters {
 
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
-        return (totalYieldGenerated(termId) / yield.currentTotalDeposit) / (elaspedTime * 365 days);
+        return ((totalYieldGenerated(termId) / yield.currentTotalDeposit) * 365 days) / elaspedTime;
     }
 
     /// @notice This function is used to get the yield distribution ratio for a user
@@ -482,7 +482,11 @@ contract GettersFacet is IGetters {
             ._collateralStorage()
             .collaterals[termId];
 
-        return collateral.collateralMembersBank[user] / yield.currentTotalDeposit;
+        if (yield.currentTotalDeposit == 0) {
+            return 0;
+        } else {
+            return collateral.collateralMembersBank[user] / yield.currentTotalDeposit;
+        }
     }
 
     /// @notice This function is used to get the total yield generated for a term
@@ -506,10 +510,16 @@ contract GettersFacet is IGetters {
             }
         }
 
+        uint currentShares = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(
+            termId
+        );
+        uint totalDeposit = yield.totalDeposit;
+        uint totalShares = yield.totalShares;
+
         return
             totalWithdrawnYield +
-            (yield.totalDeposit -
-                IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(termId));
+            LibYieldGeneration._sharesToEth(currentShares, totalDeposit, totalShares) -
+            yield.currentTotalDeposit;
     }
 
     /// @notice This function is used to get the total yield generated for a user
