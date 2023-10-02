@@ -53,7 +53,11 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             ._yieldStorage()
             .yields[termId];
 
-        uint neededShares = (collateralAmount * yield.totalShares) / yield.totalDeposit;
+        uint neededShares = LibYieldGeneration._ethToShares(
+            collateralAmount,
+            yield.totalShares,
+            yield.totalDeposit
+        );
 
         yield.withdrawnCollateral[user] += collateralAmount;
         yield.currentTotalDeposit -= collateralAmount;
