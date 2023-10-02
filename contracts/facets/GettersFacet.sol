@@ -518,7 +518,7 @@ contract GettersFacet is IGetters {
 
         return
             totalWithdrawnYield +
-            _sharesToEth(currentShares, totalDeposit, totalShares) -
+            LibYieldGeneration._sharesToEth(currentShares, totalDeposit, totalShares) -
             yield.currentTotalDeposit;
     }
 
@@ -535,13 +535,5 @@ contract GettersFacet is IGetters {
             yield.withdrawnYield[user] +
             totalYieldGenerated(termId) *
             yieldDistributionRatio(termId, user);
-    }
-
-    function _sharesToEth(
-        uint _currentShares,
-        uint _totalDeposit,
-        uint _totalShares
-    ) internal pure returns (uint) {
-        return (_currentShares * _totalDeposit) / _totalShares;
     }
 }
