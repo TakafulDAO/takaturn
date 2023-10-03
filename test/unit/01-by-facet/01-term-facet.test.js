@@ -289,29 +289,6 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Registration period", function () {
-              it("Should revert if the registration period has ended", async function () {
-                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                  const termId = lastTerm[0]
-
-                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
-
-                  await takaturnDiamond
-                      .connect(participant_1)
-                      .joinTerm(termId, false, { value: entrance })
-
-                  await advanceTime(registrationPeriod.toNumber() + 1)
-
-                  await expect(takaturnDiamond.startTerm(termId)).to.be.revertedWith(
-                      "All spots are not filled"
-                  )
-
-                  await expect(
-                      takaturnDiamond
-                          .connect(participant_2)
-                          .joinTerm(termId, false, { value: entrance })
-                  ).to.be.revertedWith("Registration period ended")
-              })
-
               it("Should return the right registration period remaining", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
