@@ -1,7 +1,12 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
-const { advanceTimeByDate, advanceTime } = require("../../../utils/_helpers")
+const {
+    advanceTimeByDate,
+    advanceTime,
+    getTermStateFromIndex,
+    TermStates,
+} = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
 const { hour } = require("../../../utils/units")
 
@@ -110,6 +115,33 @@ const { hour } = require("../../../utils/units")
                   })
               })
           }
+
+          describe("Initialize a term", function () {
+              it("Correct initialization", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          termId,
+                          i - 1
+                      )
+
+                      await takaturnDiamond
+                          .connect(accounts[i])
+                          .joinTerm(termId, false, { value: entrance })
+                  }
+
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+
+                  await takaturnDiamond.startTerm(termId)
+
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const termState = term.state
+
+                  await expect(getTermStateFromIndex(termState)).to.equal(TermStates.ActiveTerm)
+              })
+          })
 
           describe("Participant can join enable autoPay when they join", function () {
               it("Should allow autoPay", async function () {
