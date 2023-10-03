@@ -362,4 +362,55 @@ const { hour } = require("../../../utils/units")
                   await takaturnDiamond.startTerm(termId)
               })
           })
+
+          describe("Expire term", function () {
+              it("Should revert if the try to expire before time", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
+                      "Registration period not ended"
+                  )
+              })
+
+              it("Should revert if all the spots are filled", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          termId,
+                          i - 1
+                      )
+
+                      await takaturnDiamond
+                          .connect(accounts[i])
+                          .joinTerm(termId, false, { value: entrance })
+                  }
+
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+
+                  await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
+                      "All spots are filled, can't expire"
+                  )
+              })
+
+              it.only("Should revert if all the spots are filled", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
+
+                  await takaturnDiamondParticipant_1.joinTerm(termId, false, { value: entrance })
+
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+
+                  await expect(takaturnDiamond.expireTerm(termId)).to.not.be.reverted
+
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const termState = term.state
+
+                  await expect(getTermStateFromIndex(termState)).to.equal(TermStates.ExpiredTerm)
+              })
+          })
       })
