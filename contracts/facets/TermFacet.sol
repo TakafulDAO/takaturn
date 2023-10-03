@@ -229,7 +229,8 @@ contract TermFacet is ITerm {
         require(LibTerm._termExists(_termId) && LibCollateralStorage._collateralExists(_termId));
 
         require(
-            block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
+            collateral.firstDepositTime != 0 &&
+                block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
             "Registration period not ended"
         );
 
