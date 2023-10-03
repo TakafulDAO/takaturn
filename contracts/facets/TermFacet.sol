@@ -155,7 +155,7 @@ contract TermFacet is ITerm {
     }
 
     function _startTerm(uint _termId) internal {
-        LibTerm.Term memory term = LibTerm._termStorage().terms[_termId];
+        LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
