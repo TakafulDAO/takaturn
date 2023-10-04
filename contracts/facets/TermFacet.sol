@@ -116,7 +116,7 @@ contract TermFacet is ITerm {
             ._yieldStorage()
             .yields[_termId];
 
-        require(LibTerm._termExists(_termId) && LibCollateralStorage._collateralExists(_termId));
+        require(LibTerm._termExists(_termId), "Term doesn't exist");
 
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
