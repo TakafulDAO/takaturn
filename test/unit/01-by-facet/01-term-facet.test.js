@@ -144,9 +144,10 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Participant can join enable autoPay when they join", function () {
-              it("Should allow autoPay", async function () {
+              it.only("Should allow autoPay", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
+                  const wrongTermId = termId + 1
 
                   // Get the collateral payment deposit
                   const term = await takaturnDiamondDeployer.getTermSummary(termId)
@@ -160,6 +161,12 @@ const { hour } = require("../../../utils/units")
                   ).to.be.revertedWith("Pay collateral security first")
 
                   // Join
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_1)
+                          .joinTerm(wrongTermId, false, { value: entrance })
+                  ).to.be.revertedWith("Term doesn't exist")
+
                   await takaturnDiamond
                       .connect(participant_1)
                       .joinTerm(termId, false, { value: entrance })
@@ -395,7 +402,7 @@ const { hour } = require("../../../utils/units")
                   )
               })
 
-              it.only("Should revert if all the spots are filled", async function () {
+              it("Should revert if all the spots are filled", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
 
