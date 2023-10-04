@@ -243,7 +243,7 @@ contract GettersFacet is IGetters {
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
-                allowedWithdrawal = minRequiredCollateral - userCollateral + availableYield; // We allow to withdraw the positive difference
+                allowedWithdrawal = userCollateral - minRequiredCollateral + availableYield; // We allow to withdraw the positive difference
             } else {
                 allowedWithdrawal = 0;
             }
