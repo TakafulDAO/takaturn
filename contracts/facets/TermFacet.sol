@@ -116,7 +116,7 @@ contract TermFacet is ITerm {
             ._yieldStorage()
             .yields[_termId];
 
-        require(LibTerm._termExists(_termId) && LibCollateralStorage._collateralExists(_termId));
+        require(LibTerm._termExists(_termId), "Term doesn't exist");
 
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
@@ -155,7 +155,7 @@ contract TermFacet is ITerm {
     }
 
     function _startTerm(uint _termId) internal {
-        LibTerm.Term memory term = LibTerm._termStorage().terms[_termId];
+        LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
@@ -229,7 +229,8 @@ contract TermFacet is ITerm {
         require(LibTerm._termExists(_termId) && LibCollateralStorage._collateralExists(_termId));
 
         require(
-            block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
+            collateral.firstDepositTime != 0 &&
+                block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
             "Registration period not ended"
         );
 

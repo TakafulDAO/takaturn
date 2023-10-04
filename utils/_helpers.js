@@ -74,6 +74,7 @@ const fromWei = (num) => Number(ethers.utils.formatEther(num))
 module.exports = {
     CollateralStates,
     FundStates,
+    TermStates,
     getTermStateFromIndex,
     getCollateralStateFromIndex,
     getFundStateFromIndex,
