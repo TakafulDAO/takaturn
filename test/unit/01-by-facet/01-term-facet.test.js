@@ -65,7 +65,6 @@ const { hour } = require("../../../utils/units")
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockEthUsdAggregator")
-                  sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   // Fork
@@ -144,7 +143,7 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Participant can join enable autoPay when they join", function () {
-              it.only("Should allow autoPay", async function () {
+              it("Should allow autoPay", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
                   const wrongTermId = termId + 1

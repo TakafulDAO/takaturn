@@ -226,7 +226,6 @@ async function executeCycle(
 
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockEthUsdAggregator")
-                  sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   // Fork
@@ -300,9 +299,6 @@ async function executeCycle(
                           .connect(depositor)
                           .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
                   }
-
-                  // Wait for the sequencer
-                  await advanceTimeByDate(1, hour)
               }
           })
 

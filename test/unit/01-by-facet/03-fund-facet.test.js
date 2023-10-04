@@ -39,7 +39,6 @@ const { hour } = require("../../../utils/units")
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockEthUsdAggregator")
-                  sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   // Fork
@@ -145,9 +144,6 @@ const { hour } = require("../../../utils/units")
                           .connect(depositor)
                           .approve(takaturnDiamond.address, balanceForUser * 10 ** 6)
                   }
-
-                  // Wait for the sequencer
-                  await advanceTimeByDate(1, hour)
               }
           })
 

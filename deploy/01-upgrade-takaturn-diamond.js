@@ -17,7 +17,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const waitBlockConfirmations = developmentChains.includes(network.name)
         ? 1
         : VERIFICATION_BLOCK_CONFIRMATIONS
-    let ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress, sequencerUptimeFeedAddress
+    let ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress
     let zaynfiZapAddress, zaynfiVaultAddress
     let contractNames, contractAddresses
     let takaturnDiamondUpgrade
@@ -38,7 +38,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     if (isMainnet || isTestnet || isFork) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
         usdcUsdPriceFeedAddress = networkConfig[chainId]["usdcUsdPriceFeed"]
-        sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
@@ -50,9 +49,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const usdcUsdAggregator = await deployments.get("MockUsdcUsdAggregator")
         usdcUsdPriceFeedAddress = usdcUsdAggregator.address
 
-        const sequencer = await deployments.get("MockSequencer")
-        sequencerUptimeFeedAddress = sequencer.address
-
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
@@ -61,7 +57,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const initArgs = [
         ethUsdPriceFeedAddress,
         usdcUsdPriceFeedAddress,
-        sequencerUptimeFeedAddress,
         zaynfiZapAddress,
         zaynfiVaultAddress,
     ]
