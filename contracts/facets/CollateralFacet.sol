@@ -190,7 +190,7 @@ contract CollateralFacet is ICollateral {
         }
 
         require(success, "Withdraw failed");
-        if (yield.hasOptedIn[msg.sender]) {
+        if (yield.hasOptedIn[msg.sender] && yield.availableYield[msg.sender] > 0) {
             IYGFacetZaynFi(address(this)).claimAvailableYield(termId, msg.sender);
         }
     }

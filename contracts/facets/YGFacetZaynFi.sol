@@ -130,7 +130,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             .yields[termId];
 
         uint availableYield = yield.availableYield[user];
-        require(availableYield > 0, "No yield to withdraw");
+
         yield.availableYield[user] = 0;
         (bool success, ) = payable(user).call{value: availableYield}("");
         require(success);
