@@ -5,14 +5,6 @@ pragma solidity 0.8.18;
 import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 
 interface IYGFacetZaynFi {
-    function depositYG(uint termId, uint amount) external;
-
-    function withdrawYG(
-        uint termId,
-        uint256 ethAmount,
-        address user
-    ) external returns (uint neededShares);
-
     function claimAvailableYield(uint termId) external;
 
     function claimAvailableYield(uint termId, address user) external;

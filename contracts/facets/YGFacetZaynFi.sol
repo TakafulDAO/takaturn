@@ -3,13 +3,11 @@
 pragma solidity 0.8.18;
 
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
-import {IZaynZapV2TakaDAO} from "../interfaces/IZaynZapV2TakaDAO.sol";
-import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
+import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
-import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
 contract YGFacetZaynFi is IYGFacetZaynFi {
     event OnYGOptInToggled(uint indexed termId, address indexed user, bool indexed optedIn); // Emits when a user succesfully toggles yield generation
@@ -18,64 +16,6 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
         _;
-    }
-
-    /// @notice This function is used to deposit collateral for yield generation
-    /// @param termId The term id for which the collateral is being deposited
-    /// @param ethAmount The amount of collateral being deposited
-    function depositYG(uint termId, uint ethAmount) external {
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
-
-        yield.totalDeposit = ethAmount;
-        yield.currentTotalDeposit = ethAmount;
-
-        address vaultAddress = yield.providerAddresses["ZaynVault"];
-
-        IZaynZapV2TakaDAO(yield.providerAddresses["ZaynZap"]).zapInEth{value: ethAmount}(
-            vaultAddress,
-            termId
-        );
-
-        yield.totalShares = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
-    }
-
-    /// @notice This function is used to withdraw collateral from the yield generation protocol
-    /// @param termId The term id for which the collateral is being withdrawn
-    /// @param collateralAmount The amount of collateral being withdrawn
-    function withdrawYG(
-        uint termId,
-        uint256 collateralAmount,
-        address user
-    ) external returns (uint) {
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
-
-        uint neededShares = LibYieldGenerationStorage._ethToShares(
-            collateralAmount,
-            yield.totalShares,
-            yield.totalDeposit
-        );
-
-        yield.withdrawnCollateral[user] += collateralAmount;
-        yield.currentTotalDeposit -= collateralAmount;
-
-        address zapAddress = yield.providerAddresses["ZaynZap"];
-        address vaultAddress = yield.providerAddresses["ZaynVault"];
-
-        uint withdrawnAmount = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
-            vaultAddress,
-            neededShares,
-            termId
-        );
-
-        uint withdrawnYield = withdrawnAmount - collateralAmount;
-        yield.withdrawnYield[user] += withdrawnYield;
-        yield.availableYield[user] += withdrawnYield;
-
-        return withdrawnYield;
     }
 
     /// @notice This function allows a user to claim the current available yield

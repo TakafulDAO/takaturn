@@ -52,20 +52,4 @@ library LibYieldGenerationStorage {
             yieldStorage.slot := position
         }
     }
-
-    function _sharesToEth(
-        uint _currentShares,
-        uint _totalDeposit,
-        uint _totalShares
-    ) internal pure returns (uint) {
-        return (_currentShares * _totalDeposit) / _totalShares;
-    }
-
-    function _ethToShares(
-        uint _collateralAmount,
-        uint _totalShares,
-        uint _totalDeposit
-    ) internal pure returns (uint) {
-        return (_collateralAmount * _totalShares) / _totalDeposit;
-    }
 }
