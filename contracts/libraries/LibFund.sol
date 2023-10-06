@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 import {IGetters} from "../interfaces/IGetters.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {LibTerm} from "./LibTerm.sol";
+import {LibTermStorage} from "./LibTermStorage.sol";
 import {LibFundStorage} from "./LibFundStorage.sol";
 
 library LibFund {
@@ -46,7 +46,7 @@ library LibFund {
     /// @param _termId The id of the term
     function _startNewCycle(uint _termId) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
         // currentCycle is 0 when this is called for the first time
         require(
             block.timestamp > term.cycleTime * fund.currentCycle + fund.fundStart,
@@ -124,7 +124,7 @@ library LibFund {
     /// @param _participant the (participant) address that's being paid for
     function _payContributionSafe(uint _termId, address _payer, address _participant) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
 
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand

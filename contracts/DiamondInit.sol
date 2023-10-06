@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.18;
 
-import {LibTerm} from "./libraries/LibTerm.sol";
+import {LibTermStorage} from "./libraries/LibTermStorage.sol";
 import {LibYieldGeneration} from "./libraries/LibYieldGeneration.sol";
 
 contract DiamondInit {
@@ -13,7 +13,7 @@ contract DiamondInit {
         address _zapAddress, // Zaynfi Zap address
         address _vaultAddress // Zaynfi Vault address
     ) external {
-        LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
+        LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
         LibYieldGeneration.YieldProviders storage yieldProvider = LibYieldGeneration
             ._yieldProviders();
 

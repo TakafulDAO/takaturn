@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.18;
 
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 
 interface IYGFacetZaynFi {
     function depositYG(uint termId, uint amount) external;

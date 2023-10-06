@@ -7,7 +7,7 @@ import {IGetters} from "../interfaces/IGetters.sol";
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
@@ -53,7 +53,7 @@ contract CollateralFacet is ICollateral {
     /// @param defaulters Addressess of all defaulters of the current cycle
     /// @return expellants array of addresses that were expelled
     function requestContribution(
-        LibTerm.Term memory term,
+        LibTermStorage.Term memory term,
         address[] calldata defaulters
     )
         external
@@ -305,7 +305,7 @@ contract CollateralFacet is ICollateral {
     /// @return expellants array of addresses that were expelled
     function _solveDefaulters(
         LibCollateralStorage.Collateral storage _collateral,
-        LibTerm.Term memory _term,
+        LibTermStorage.Term memory _term,
         LibFundStorage.Fund storage _fund,
         address[] memory _defaulters
     ) internal returns (uint, address[] memory) {
@@ -413,7 +413,7 @@ contract CollateralFacet is ICollateral {
     function _payDefaulterContribution(
         LibCollateralStorage.Collateral storage _collateral,
         LibFundStorage.Fund storage _fund,
-        LibTerm.Term memory _term,
+        LibTermStorage.Term memory _term,
         address _defaulter,
         uint _contributionAmountWei,
         LibCollateralStorage.DefaulterState memory _defaulterState

@@ -7,7 +7,7 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 import {IGetters} from "../interfaces/IGetters.sol";
 import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
@@ -17,7 +17,7 @@ contract GettersFacet is IGetters {
     /// @return the current term id
     /// @return the next term id
     function getTermsId() external view returns (uint, uint) {
-        LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
+        LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         uint lastTermId = termStorage.nextTermId - 1;
         uint nextTermId = termStorage.nextTermId;
         return (lastTermId, nextTermId);
@@ -27,7 +27,7 @@ contract GettersFacet is IGetters {
     ///  @param termId the term id
     ///  @return remaining contribution period
     function getRemainingRegistrationTime(uint termId) external view returns (uint) {
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
@@ -41,14 +41,14 @@ contract GettersFacet is IGetters {
 
     /// @param termId the term id
     /// @return the term struct
-    function getTermSummary(uint termId) external view returns (LibTerm.Term memory) {
-        return (LibTerm._termStorage().terms[termId]);
+    function getTermSummary(uint termId) external view returns (LibTermStorage.Term memory) {
+        return (LibTermStorage._termStorage().terms[termId]);
     }
 
     /// @param participant the participant address
     /// @return an array with the term ids the participant is part of
     function getAllJoinedTerms(address participant) public view returns (uint[] memory) {
-        LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
+        LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         uint[] memory participantTermIds = termStorage.participantToTermId[participant];
         return participantTermIds;
     }
@@ -58,14 +58,14 @@ contract GettersFacet is IGetters {
     /// @return an array with the term ids the participant is part of, giving the state of the term
     function getJoinedTermsByState(
         address participant,
-        LibTerm.TermStates state
+        LibTermStorage.TermStates state
     ) external view returns (uint[] memory) {
         uint[] memory joinedTerms = getAllJoinedTerms(participant);
         uint[] memory userTermsByState;
         uint termscounter;
         uint joinedTermsLength = joinedTerms.length;
         for (uint i; i < joinedTermsLength; ) {
-            if (LibTerm._termStorage().terms[joinedTerms[i]].state == state) {
+            if (LibTermStorage._termStorage().terms[joinedTerms[i]].state == state) {
                 userTermsByState[termscounter] = i;
                 unchecked {
                     ++termscounter;
@@ -111,7 +111,7 @@ contract GettersFacet is IGetters {
     /// @return remaining time in the current cycle
     function getRemainingCycleTime(uint termId) external view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
         if (block.timestamp > cycleEndTimestamp) {
             return 0;
@@ -124,7 +124,7 @@ contract GettersFacet is IGetters {
     /// @return remaining cycles contribution
     function getRemainingCyclesContributionWei(uint termId) external view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
         uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
         uint contributionAmountWei = IGetters(address(this)).getToCollateralConversionRate(
@@ -151,7 +151,7 @@ contract GettersFacet is IGetters {
             ._collateralStorage()
             .collaterals[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
         uint limit;
         if (!fund.isBeneficiary[depositor]) {
@@ -206,7 +206,7 @@ contract GettersFacet is IGetters {
         uint termId,
         uint depositorIndex
     ) external view returns (uint amount) {
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
         uint contributionAmountInWei = getToCollateralConversionRate(
             term.contributionAmount * 10 ** 18
@@ -348,7 +348,7 @@ contract GettersFacet is IGetters {
     /// @return the time left to contribute
     function getRemainingContributionTime(uint termId) external view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         if (fund.currentState != LibFundStorage.FundStates.AcceptingContributions) {
             return 0;
         }
@@ -370,7 +370,7 @@ contract GettersFacet is IGetters {
     /// @notice Gets latest ETH / USD price
     /// @return uint latest price in Wei Note: 18 decimals
     function getLatestPrice() public view returns (uint) {
-        LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
+        LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
 
         (
             uint80 roundID_ethUSD,

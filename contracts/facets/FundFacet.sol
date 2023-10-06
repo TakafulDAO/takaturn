@@ -10,7 +10,7 @@ import {IGetters} from "../interfaces/IGetters.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 import {LibFund} from "../libraries/LibFund.sol";
@@ -65,7 +65,7 @@ contract FundFacet is IFund {
     /// @param termId the id of the term
     function closeFundingPeriod(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         // Current cycle minus 1 because we use the previous cycle time as start point then  add contribution period
         require(
             block.timestamp >
@@ -258,7 +258,7 @@ contract FundFacet is IFund {
         }
 
         if (hasFrozenPool) {
-            bool freeze = _freezePot(LibTerm._termStorage().terms[termId], fund, msg.sender);
+            bool freeze = _freezePot(LibTermStorage._termStorage().terms[termId], fund, msg.sender);
 
             if (fund.currentState != LibFundStorage.FundStates.FundClosed) {
                 require(!freeze, "Need at least 1.1RCC collateral to unfreeze your fund");
@@ -282,7 +282,7 @@ contract FundFacet is IFund {
     /// @param _participant the (participant) address that's being paid for
     function _payContribution(uint _termId, address _payer, address _participant) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
 
         // Get the amount and do the actual transfer
         // This will only succeed if the sender approved this contract address beforehand
@@ -319,7 +319,7 @@ contract FundFacet is IFund {
     /// @notice It will loop through the array and choose the first in line to be eligible to be beneficiary.
     function _awardBeneficiary(
         LibFundStorage.Fund storage _fund,
-        LibTerm.Term storage _term
+        LibTermStorage.Term storage _term
     ) internal {
         address beneficiary = IGetters(address(this)).getCurrentBeneficiary(_term.termId);
 
@@ -380,7 +380,7 @@ contract FundFacet is IFund {
     /// @param _expellant The address of the defaulter that will be expelled
     function _expelDefaulter(
         LibFundStorage.Fund storage _fund,
-        LibTerm.Term storage _term,
+        LibTermStorage.Term storage _term,
         address _expellant
     ) internal {
         // Expellants should only be in the defauters set so no need to touch the other sets
@@ -403,9 +403,9 @@ contract FundFacet is IFund {
     /// @param _termId The id of the term
     function _closeFund(uint _termId) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
         fund.fundEnd = block.timestamp;
-        term.state = LibTerm.TermStates.ClosedTerm;
+        term.state = LibTermStorage.TermStates.ClosedTerm;
         LibFund._setState(_termId, LibFundStorage.FundStates.FundClosed);
         ICollateral(address(this)).releaseCollateral(_termId);
     }
@@ -431,7 +431,7 @@ contract FundFacet is IFund {
 
     /// @notice Internal function to freeze the pot for the beneficiary
     function _freezePot(
-        LibTerm.Term memory _term,
+        LibTermStorage.Term memory _term,
         LibFundStorage.Fund storage _fund,
         address _user
     ) internal returns (bool) {

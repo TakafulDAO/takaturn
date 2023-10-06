@@ -8,7 +8,7 @@ pragma solidity 0.8.18;
 /// @dev v2.0 (post-deploy)
 
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 
 interface ICollateral {
     // Function cannot be called at this time.
@@ -19,7 +19,7 @@ interface ICollateral {
     /// @param term the term object
     /// @param defaulters Address that was randomly selected for the current cycle
     function requestContribution(
-        LibTerm.Term memory term,
+        LibTermStorage.Term memory term,
         address[] calldata defaulters
     ) external returns (address[] memory);
 
