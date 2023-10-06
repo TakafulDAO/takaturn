@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-library LibYieldGeneration {
+library LibYieldGenerationStorage {
     uint public constant YIELD_GENERATION_VERSION = 1;
     bytes32 constant YIELD_PROVIDERS_POSITION = keccak256("diamond.standard.yield.providers");
     bytes32 constant YIELD_STORAGE_POSITION = keccak256("diamond.standard.yield.storage");
