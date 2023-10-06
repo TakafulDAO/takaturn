@@ -41,11 +41,7 @@ library LibYieldGeneration {
             ._yieldStorage()
             .yields[_termId];
 
-        uint neededShares = LibYieldGeneration._ethToShares(
-            _collateralAmount,
-            yield.totalShares,
-            yield.totalDeposit
-        );
+        uint neededShares = _ethToShares(_collateralAmount, yield.totalShares, yield.totalDeposit);
 
         yield.withdrawnCollateral[_user] += _collateralAmount;
         yield.currentTotalDeposit -= _collateralAmount;
@@ -71,7 +67,11 @@ library LibYieldGeneration {
         uint _totalDeposit,
         uint _totalShares
     ) internal pure returns (uint) {
-        return (_currentShares * _totalDeposit) / _totalShares;
+        if (_totalShares == 0) {
+            return 0;
+        } else {
+            return (_currentShares * _totalDeposit) / _totalShares;
+        }
     }
 
     function _ethToShares(
@@ -79,6 +79,10 @@ library LibYieldGeneration {
         uint _totalShares,
         uint _totalDeposit
     ) internal pure returns (uint) {
-        return (_collateralAmount * _totalShares) / _totalDeposit;
+        if (_totalDeposit == 0) {
+            return 0;
+        } else {
+            return (_collateralAmount * _totalShares) / _totalDeposit;
+        }
     }
 }
