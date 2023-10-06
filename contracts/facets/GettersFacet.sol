@@ -11,6 +11,7 @@ import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
+import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
 contract GettersFacet is IGetters {
     // TERM GETTERS
@@ -518,7 +519,7 @@ contract GettersFacet is IGetters {
 
         return
             totalWithdrawnYield +
-            LibYieldGenerationStorage._sharesToEth(currentShares, totalDeposit, totalShares) -
+            LibYieldGeneration._sharesToEth(currentShares, totalDeposit, totalShares) -
             yield.currentTotalDeposit;
     }
 

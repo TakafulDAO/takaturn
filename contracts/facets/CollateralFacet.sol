@@ -10,6 +10,7 @@ import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
+import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 
@@ -537,7 +538,7 @@ contract CollateralFacet is ICollateral {
         LibYieldGenerationStorage.YieldGeneration storage _yieldStorage
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
-            withdrawnYield = IYGFacetZaynFi(address(this)).withdrawYG(_termId, _amount, _user);
+            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, _amount, _user);
         } else {
             withdrawnYield = 0;
         }

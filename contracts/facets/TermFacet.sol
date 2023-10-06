@@ -15,6 +15,7 @@ import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
+import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
 /// @title Takaturn Term
 /// @author Mohammed Haddouti
@@ -302,7 +303,7 @@ contract TermFacet is ITerm {
             yield.providerAddresses["ZaynZap"] = yieldProviders.providerAddresses["ZaynZap"];
             yield.providerAddresses["ZaynVault"] = yieldProviders.providerAddresses["ZaynVault"];
 
-            IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
+            LibYieldGeneration._depositYG(_term.termId, amountDeposited);
         }
     }
 }
