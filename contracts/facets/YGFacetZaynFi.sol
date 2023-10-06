@@ -6,7 +6,7 @@ import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 import {IZaynZapV2TakaDAO} from "../interfaces/IZaynZapV2TakaDAO.sol";
 import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
-import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
@@ -24,7 +24,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
     /// @param termId The term id for which the collateral is being deposited
     /// @param ethAmount The amount of collateral being deposited
     function depositYG(uint termId, uint ethAmount) external {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -49,11 +49,11 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         uint256 collateralAmount,
         address user
     ) external returns (uint) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
-        uint neededShares = LibYieldGeneration._ethToShares(
+        uint neededShares = LibYieldGenerationStorage._ethToShares(
             collateralAmount,
             yield.totalShares,
             yield.totalDeposit
@@ -92,14 +92,14 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
     }
 
     function toggleOptInYG(uint termId) external {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
 
-        require(LibYieldGeneration._yieldExists(termId));
+        require(LibYieldGenerationStorage._yieldExists(termId));
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
             "Too late to change YG opt in"
@@ -118,14 +118,14 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         string memory providerString,
         address providerAddress
     ) external onlyOwner {
-        LibYieldGeneration.YieldProviders storage yieldProvider = LibYieldGeneration
+        LibYieldGenerationStorage.YieldProviders storage yieldProvider = LibYieldGenerationStorage
             ._yieldProviders();
 
         yieldProvider.providerAddresses[providerString] = providerAddress;
     }
 
     function _claimAvailableYield(uint termId, address user) internal {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 

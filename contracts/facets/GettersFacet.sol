@@ -10,7 +10,7 @@ import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
-import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 
 contract GettersFacet is IGetters {
     // TERM GETTERS
@@ -226,7 +226,7 @@ contract GettersFacet is IGetters {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -434,7 +434,7 @@ contract GettersFacet is IGetters {
     /// @param user The user for which the check is being made
     /// @return True if the user has opted in
     function userHasoptedInYG(uint termId, address user) external view returns (bool) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -446,7 +446,7 @@ contract GettersFacet is IGetters {
     /// @param user The user for which the APY is being calculated
     /// @return The APY for the user
     function userAPY(uint termId, address user) external returns (uint256) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -461,7 +461,7 @@ contract GettersFacet is IGetters {
     /// @param termId The term id for which the APY is being calculated
     /// @return The APY for the term
     function termAPY(uint termId) external returns (uint256) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -475,7 +475,7 @@ contract GettersFacet is IGetters {
     /// @param user The user for which the ratio is being calculated
     /// @return The yield distribution ratio for the user
     function yieldDistributionRatio(uint termId, address user) public view returns (uint256) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -493,7 +493,7 @@ contract GettersFacet is IGetters {
     /// @param termId The term id for which the yield is being calculated
     /// @return The total yield generated for the term
     function totalYieldGenerated(uint termId) public returns (uint) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -518,7 +518,7 @@ contract GettersFacet is IGetters {
 
         return
             totalWithdrawnYield +
-            LibYieldGeneration._sharesToEth(currentShares, totalDeposit, totalShares) -
+            LibYieldGenerationStorage._sharesToEth(currentShares, totalDeposit, totalShares) -
             yield.currentTotalDeposit;
     }
 
@@ -527,7 +527,7 @@ contract GettersFacet is IGetters {
     /// @param user The user for which the yield is being calculated
     /// @return The total yield generated for the user
     function userYieldGenerated(uint termId, address user) public returns (uint) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 

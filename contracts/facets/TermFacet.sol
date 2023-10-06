@@ -14,7 +14,7 @@ import {LibFund} from "../libraries/LibFund.sol";
 import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
-import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 
 /// @title Takaturn Term
 /// @author Mohammed Haddouti
@@ -112,7 +112,7 @@ contract TermFacet is ITerm {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[_termId];
 
@@ -274,10 +274,10 @@ contract TermFacet is ITerm {
         LibTermStorage.Term memory _term,
         LibCollateralStorage.Collateral storage _collateral
     ) internal {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[_term.termId];
-        LibYieldGeneration.YieldProviders storage yieldProviders = LibYieldGeneration
+        LibYieldGenerationStorage.YieldProviders storage yieldProviders = LibYieldGenerationStorage
             ._yieldProviders();
 
         uint amountDeposited;

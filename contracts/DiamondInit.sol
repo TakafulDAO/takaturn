@@ -3,7 +3,7 @@
 pragma solidity 0.8.18;
 
 import {LibTermStorage} from "./libraries/LibTermStorage.sol";
-import {LibYieldGeneration} from "./libraries/LibYieldGeneration.sol";
+import {LibYieldGenerationStorage} from "./libraries/LibYieldGenerationStorage.sol";
 
 contract DiamondInit {
     function init(
@@ -14,7 +14,7 @@ contract DiamondInit {
         address _vaultAddress // Zaynfi Vault address
     ) external {
         LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
-        LibYieldGeneration.YieldProviders storage yieldProvider = LibYieldGeneration
+        LibYieldGenerationStorage.YieldProviders storage yieldProvider = LibYieldGenerationStorage
             ._yieldProviders();
 
         termConsts.sequencerStartupTime = 3600; // The sequencer must be running for at least an hour before it's reliable

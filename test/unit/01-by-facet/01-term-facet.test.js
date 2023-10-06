@@ -144,7 +144,7 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Participant can join enable autoPay when they join", function () {
-              it.only("Should allow autoPay", async function () {
+              it("Should allow autoPay", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
                   const wrongTermId = termId + 1

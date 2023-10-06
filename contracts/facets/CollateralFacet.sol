@@ -10,7 +10,7 @@ import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
-import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 
 /// @title Takaturn Collateral
@@ -151,7 +151,7 @@ contract CollateralFacet is ICollateral {
             ._collateralStorage()
             .collaterals[termId];
 
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -241,7 +241,7 @@ contract CollateralFacet is ICollateral {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -418,7 +418,7 @@ contract CollateralFacet is ICollateral {
         uint _contributionAmountWei,
         LibCollateralStorage.DefaulterState memory _defaulterState
     ) internal returns (uint distributedCollateral) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[_term.termId];
 
@@ -534,7 +534,7 @@ contract CollateralFacet is ICollateral {
         uint _termId,
         address _user,
         uint _amount,
-        LibYieldGeneration.YieldGeneration storage _yieldStorage
+        LibYieldGenerationStorage.YieldGeneration storage _yieldStorage
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
             withdrawnYield = IYGFacetZaynFi(address(this)).withdrawYG(_termId, _amount, _user);
