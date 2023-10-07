@@ -7,10 +7,11 @@ import {IGetters} from "../interfaces/IGetters.sol";
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 
 /// @title Takaturn Collateral
@@ -53,7 +54,7 @@ contract CollateralFacet is ICollateral {
     /// @param defaulters Addressess of all defaulters of the current cycle
     /// @return expellants array of addresses that were expelled
     function requestContribution(
-        LibTerm.Term memory term,
+        LibTermStorage.Term memory term,
         address[] calldata defaulters
     )
         external
@@ -151,7 +152,7 @@ contract CollateralFacet is ICollateral {
             ._collateralStorage()
             .collaterals[termId];
 
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -190,7 +191,7 @@ contract CollateralFacet is ICollateral {
         }
 
         require(success, "Withdraw failed");
-        if (yield.hasOptedIn[msg.sender]) {
+        if (yield.hasOptedIn[msg.sender] && yield.availableYield[msg.sender] > 0) {
             IYGFacetZaynFi(address(this)).claimAvailableYield(termId, msg.sender);
         }
     }
@@ -241,7 +242,7 @@ contract CollateralFacet is ICollateral {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -305,7 +306,7 @@ contract CollateralFacet is ICollateral {
     /// @return expellants array of addresses that were expelled
     function _solveDefaulters(
         LibCollateralStorage.Collateral storage _collateral,
-        LibTerm.Term memory _term,
+        LibTermStorage.Term memory _term,
         LibFundStorage.Fund storage _fund,
         address[] memory _defaulters
     ) internal returns (uint, address[] memory) {
@@ -413,12 +414,12 @@ contract CollateralFacet is ICollateral {
     function _payDefaulterContribution(
         LibCollateralStorage.Collateral storage _collateral,
         LibFundStorage.Fund storage _fund,
-        LibTerm.Term memory _term,
+        LibTermStorage.Term memory _term,
         address _defaulter,
         uint _contributionAmountWei,
         LibCollateralStorage.DefaulterState memory _defaulterState
     ) internal returns (uint distributedCollateral) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[_term.termId];
 
@@ -534,10 +535,10 @@ contract CollateralFacet is ICollateral {
         uint _termId,
         address _user,
         uint _amount,
-        LibYieldGeneration.YieldGeneration storage _yieldStorage
+        LibYieldGenerationStorage.YieldGeneration storage _yieldStorage
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
-            withdrawnYield = IYGFacetZaynFi(address(this)).withdrawYG(_termId, _amount, _user);
+            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, _amount, _user);
         } else {
             withdrawnYield = 0;
         }

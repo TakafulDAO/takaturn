@@ -1,56 +1,65 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+import {IZaynZapV2TakaDAO} from "../interfaces/IZaynZapV2TakaDAO.sol";
+import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
+
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
+
 library LibYieldGeneration {
-    uint public constant YIELD_GENERATION_VERSION = 1;
-    bytes32 constant YIELD_PROVIDERS_POSITION = keccak256("diamond.standard.yield.providers");
-    bytes32 constant YIELD_STORAGE_POSITION = keccak256("diamond.standard.yield.storage");
+    /// @notice This function is used to deposit collateral for yield generation
+    /// @param _termId The term id for which the collateral is being deposited
+    /// @param _ethAmount The amount of collateral being deposited
+    function _depositYG(uint _termId, uint _ethAmount) internal {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[_termId];
 
-    enum YGProviders {
-        InHouse,
-        ZaynFi
+        yield.totalDeposit = _ethAmount;
+        yield.currentTotalDeposit = _ethAmount;
+
+        address vaultAddress = yield.providerAddresses["ZaynVault"];
+
+        IZaynZapV2TakaDAO(yield.providerAddresses["ZaynZap"]).zapInEth{value: _ethAmount}(
+            vaultAddress,
+            _termId
+        );
+
+        yield.totalShares = IZaynVaultV2TakaDao(vaultAddress).balanceOf(_termId);
     }
 
-    // Both index 0 are reserved for ZaynFi
-    struct YieldProviders {
-        mapping(string => address) providerAddresses;
-    }
+    /// @notice This function is used to withdraw collateral from the yield generation protocol
+    /// @param _termId The term id for which the collateral is being withdrawn
+    /// @param _collateralAmount The amount of collateral being withdrawn
+    /// @param _user The user address that is withdrawing the collateral
+    function _withdrawYG(
+        uint _termId,
+        uint256 _collateralAmount,
+        address _user
+    ) internal returns (uint) {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[_termId];
 
-    struct YieldGeneration {
-        bool initialized;
-        YGProviders provider;
-        mapping(string => address) providerAddresses;
-        uint startTimeStamp;
-        uint totalDeposit;
-        uint currentTotalDeposit;
-        uint totalShares;
-        address[] yieldUsers;
-        mapping(address => bool) hasOptedIn;
-        mapping(address => uint256) withdrawnYield;
-        mapping(address => uint256) withdrawnCollateral;
-        mapping(address => uint256) availableYield;
-    }
+        uint neededShares = _ethToShares(_collateralAmount, yield.totalShares, yield.totalDeposit);
 
-    struct YieldStorage {
-        mapping(uint => YieldGeneration) yields; // termId => YieldGeneration struct
-    }
+        yield.withdrawnCollateral[_user] += _collateralAmount;
+        yield.currentTotalDeposit -= _collateralAmount;
 
-    function _yieldExists(uint termId) internal view returns (bool) {
-        return _yieldStorage().yields[termId].initialized;
-    }
+        address zapAddress = yield.providerAddresses["ZaynZap"];
+        address vaultAddress = yield.providerAddresses["ZaynVault"];
 
-    function _yieldProviders() internal pure returns (YieldProviders storage yieldProviders) {
-        bytes32 position = YIELD_PROVIDERS_POSITION;
-        assembly {
-            yieldProviders.slot := position
-        }
-    }
+        uint withdrawnAmount = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+            vaultAddress,
+            neededShares,
+            _termId
+        );
 
-    function _yieldStorage() internal pure returns (YieldStorage storage yieldStorage) {
-        bytes32 position = YIELD_STORAGE_POSITION;
-        assembly {
-            yieldStorage.slot := position
-        }
+        uint withdrawnYield = withdrawnAmount - _collateralAmount;
+        yield.withdrawnYield[_user] += withdrawnYield;
+        yield.availableYield[_user] += withdrawnYield;
+
+        return withdrawnYield;
     }
 
     function _sharesToEth(
@@ -58,7 +67,11 @@ library LibYieldGeneration {
         uint _totalDeposit,
         uint _totalShares
     ) internal pure returns (uint) {
-        return (_currentShares * _totalDeposit) / _totalShares;
+        if (_totalShares == 0) {
+            return 0;
+        } else {
+            return (_currentShares * _totalDeposit) / _totalShares;
+        }
     }
 
     function _ethToShares(
@@ -66,6 +79,10 @@ library LibYieldGeneration {
         uint _totalShares,
         uint _totalDeposit
     ) internal pure returns (uint) {
-        return (_collateralAmount * _totalShares) / _totalDeposit;
+        if (_totalDeposit == 0) {
+            return 0;
+        } else {
+            return (_collateralAmount * _totalShares) / _totalDeposit;
+        }
     }
 }

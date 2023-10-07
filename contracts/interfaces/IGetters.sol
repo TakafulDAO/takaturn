@@ -4,7 +4,7 @@ pragma solidity 0.8.18;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
@@ -23,8 +23,8 @@ interface IGetters {
 
     /// @notice Get current information of a term
     /// @param termId the id of the term
-    /// @return Term Struct, see LibTerm.sol
-    function getTermSummary(uint termId) external view returns (LibTerm.Term memory);
+    /// @return Term Struct, see LibTermStorage.sol
+    function getTermSummary(uint termId) external view returns (LibTermStorage.Term memory);
 
     /// @notice Gets all terms a user has previously joined
     /// @param participant address
@@ -37,7 +37,7 @@ interface IGetters {
     /// @return List of termIDs
     function getJoinedTermsByState(
         address participant,
-        LibTerm.TermStates state
+        LibTermStorage.TermStates state
     ) external view returns (uint[] memory);
 
     /// @notice Gets all terms a user was previously expelled from
