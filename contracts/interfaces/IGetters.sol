@@ -69,7 +69,7 @@ interface IGetters {
     /// @return current users locked collateral balance in wei
     /// @return current users unlocked collateral balance in wei
     /// @return initial users deposit in wei
-    /// @retrun expulsion limit
+    /// @return expulsion limit
     function getDepositorCollateralSummary(
         address depositor,
         uint termId

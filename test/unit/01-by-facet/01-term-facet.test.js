@@ -195,7 +195,7 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Participant can join multiple terms", function () {
-              it.only("Should update the users mappings", async function () {
+              it("Should update the users mappings", async function () {
                   // Create five terms
                   for (let i = 0; i < 4; i++) {
                       await takaturnDiamondParticipant_1.createTerm(
