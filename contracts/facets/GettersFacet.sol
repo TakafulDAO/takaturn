@@ -62,20 +62,31 @@ contract GettersFacet is IGetters {
         LibTermStorage.TermStates state
     ) external view returns (uint[] memory) {
         uint[] memory joinedTerms = getAllJoinedTerms(participant);
-        uint[] memory userTermsByState = new uint[](joinedTerms.length);
-        uint termscounter;
+        uint[] memory temporaryArray = new uint[](joinedTerms.length);
+        uint termsCounter;
         uint joinedTermsLength = joinedTerms.length;
+
         for (uint i; i < joinedTermsLength; ) {
             if (LibTermStorage._termStorage().terms[joinedTerms[i]].state == state) {
-                userTermsByState[termscounter] = i;
+                temporaryArray[termsCounter] = i;
                 unchecked {
-                    ++termscounter;
+                    ++termsCounter;
                 }
             }
             unchecked {
                 ++i;
             }
         }
+
+        uint[] memory userTermsByState = new uint[](termsCounter);
+
+        for (uint i; i < termsCounter; ) {
+            userTermsByState[i] = temporaryArray[i];
+            unchecked {
+                ++i;
+            }
+        }
+
         return userTermsByState;
     }
 
@@ -83,20 +94,31 @@ contract GettersFacet is IGetters {
     /// @return an array the term ids the participant is part of, giving the state of the term
     function getExpelledTerms(address participant) external view returns (uint[] memory) {
         uint[] memory joinedTerms = getAllJoinedTerms(participant);
-        uint[] memory termsExpelled = new uint[](joinedTerms.length);
-        uint termscounter;
+        uint[] memory temporaryArray = new uint[](joinedTerms.length);
+        uint termsCounter;
         uint joinedTermsLength = joinedTerms.length;
+
         for (uint i; i < joinedTermsLength; ) {
             if (wasExpelled(joinedTerms[i], participant)) {
-                termsExpelled[termscounter] = i;
+                temporaryArray[termsCounter] = i;
                 unchecked {
-                    ++termscounter;
+                    ++termsCounter;
                 }
             }
             unchecked {
                 ++i;
             }
         }
+
+        uint[] memory termsExpelled = new uint[](termsCounter);
+
+        for (uint i; i < termsCounter; ) {
+            termsExpelled[i] = temporaryArray[i];
+            unchecked {
+                ++i;
+            }
+        }
+
         return termsExpelled;
     }
 
