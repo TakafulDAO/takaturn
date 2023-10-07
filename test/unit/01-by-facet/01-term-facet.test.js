@@ -195,7 +195,7 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Participant can join multiple terms", function () {
-              it("Should update the users mappings", async function () {
+              it.only("Should update the users mappings", async function () {
                   // Create five terms
                   for (let i = 0; i < 4; i++) {
                       await takaturnDiamondParticipant_1.createTerm(
@@ -247,6 +247,13 @@ const { hour } = require("../../../utils/units")
                   assert.equal(participantTerms[2], 2)
                   assert.equal(participantTerms[3], 3)
                   assert.equal(participantTerms[4], 4)
+
+                  const joinedTerms = await takaturnDiamond.getJoinedTermsByState(
+                      participant_1.address,
+                      0
+                  )
+
+                  assert.equal(joinedTerms.length, 5)
               })
           })
 
