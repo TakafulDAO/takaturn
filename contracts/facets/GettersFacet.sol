@@ -62,7 +62,7 @@ contract GettersFacet is IGetters {
         LibTermStorage.TermStates state
     ) external view returns (uint[] memory) {
         uint[] memory joinedTerms = getAllJoinedTerms(participant);
-        uint[] memory userTermsByState;
+        uint[] memory userTermsByState = new uint[](joinedTerms.length);
         uint termscounter;
         uint joinedTermsLength = joinedTerms.length;
         for (uint i; i < joinedTermsLength; ) {
@@ -83,7 +83,7 @@ contract GettersFacet is IGetters {
     /// @return an array the term ids the participant is part of, giving the state of the term
     function getExpelledTerms(address participant) external view returns (uint[] memory) {
         uint[] memory joinedTerms = getAllJoinedTerms(participant);
-        uint[] memory termsExpelled;
+        uint[] memory termsExpelled = new uint[](joinedTerms.length);
         uint termscounter;
         uint joinedTermsLength = joinedTerms.length;
         for (uint i; i < joinedTermsLength; ) {
