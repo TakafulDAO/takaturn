@@ -209,6 +209,8 @@ contract GettersFacet is IGetters {
     ) external view returns (uint amount) {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
+        require(depositorIndex < term.totalParticipants, "Index out of bounds");
+
         uint contributionAmountInWei = getToCollateralConversionRate(
             term.contributionAmount * 10 ** 18
         );
