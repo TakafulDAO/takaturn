@@ -246,6 +246,13 @@ const { hour } = require("../../../utils/units")
                   assert.equal(participantTerms[2], 2)
                   assert.equal(participantTerms[3], 3)
                   assert.equal(participantTerms[4], 4)
+
+                  const joinedTerms = await takaturnDiamond.getJoinedTermsByState(
+                      participant_1.address,
+                      0
+                  )
+
+                  assert.equal(joinedTerms.length, 5)
               })
           })
 

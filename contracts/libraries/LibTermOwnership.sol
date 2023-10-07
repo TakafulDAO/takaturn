@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.18;
 
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 
 library LibTermOwnership {
     /**
@@ -11,7 +11,7 @@ library LibTermOwnership {
      */
     function _ensureTermOwner(uint termId) internal view {
         require(
-            LibTerm._termStorage().terms[termId].termOwner == msg.sender,
+            LibTermStorage._termStorage().terms[termId].termOwner == msg.sender,
             "TermOwnable: caller is not the owner"
         );
     }
