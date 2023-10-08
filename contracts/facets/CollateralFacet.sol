@@ -198,24 +198,6 @@ contract CollateralFacet is ICollateral {
     }
 
     /// @param termId term id
-    /// @param depositor Address of the depositor
-    function withdrawReimbursement(uint termId, address depositor) external {
-        require(LibFundStorage._fundExists(termId), "Fund does not exists");
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[termId];
-
-        uint amount = collateral.collateralPaymentBank[depositor];
-        require(amount > 0, "Nothing to claim");
-        collateral.collateralPaymentBank[depositor] = 0;
-
-        (bool success, ) = payable(depositor).call{value: amount}("");
-        require(success);
-
-        emit OnReimbursementWithdrawn(termId, depositor, amount);
-    }
-
-    /// @param termId term id
     function releaseCollateral(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         require(fund.currentState == LibFundStorage.FundStates.FundClosed, "Wrong state");
