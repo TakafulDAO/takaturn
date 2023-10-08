@@ -141,7 +141,13 @@ contract TermFacet is ITerm {
 
         termStorage.participantToTermId[msg.sender].push(_termId);
 
-        yield.hasOptedIn[msg.sender] = _optYield;
+        // If the lock is false, I accept the opt in
+        if (!LibYieldGenerationStorage._yieldLock().yieldLock) {
+            yield.hasOptedIn[msg.sender] = _optYield;
+        } else {
+            // If the lock is true, opt in is always false
+            yield.hasOptedIn[msg.sender] = false;
+        }
 
         emit OnCollateralDeposited(_termId, msg.sender, msg.value);
 
@@ -160,6 +166,9 @@ contract TermFacet is ITerm {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[_termId];
         address[] memory depositors = collateral.depositors;
 
         uint depositorsArrayLength = depositors.length;
@@ -186,7 +195,20 @@ contract TermFacet is ITerm {
         // Actually create and initialize the fund
         _createFund(term, collateral);
 
-        _createYieldGenerator(term, collateral);
+        // If the lock is false
+        if (!LibYieldGenerationStorage._yieldLock().yieldLock) {
+            // Check on each depositor if they opted in for yield generation
+            for (uint i; i < depositorsArrayLength; ) {
+                if (yield.hasOptedIn[depositors[i]]) {
+                    // If someone opted in, create the yield generator
+                    _createYieldGenerator(term, collateral);
+                    break;
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+        }
 
         // Tell the collateral that the term has started
         LibCollateral._setState(term.termId, LibCollateralStorage.CollateralStates.CycleOngoing);
