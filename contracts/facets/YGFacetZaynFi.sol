@@ -80,7 +80,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         emit OnYieldClaimed(termId, user, availableYield);
     }
 
-    function toggleYieldLock() external returns (bool) {
+    function toggleYieldLock() external onlyOwner returns (bool) {
         bool newYieldLock = !LibYieldGenerationStorage._yieldLock().yieldLock;
         LibYieldGenerationStorage._yieldLock().yieldLock = newYieldLock;
 
