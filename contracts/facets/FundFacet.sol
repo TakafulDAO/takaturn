@@ -250,14 +250,6 @@ contract FundFacet is IFund {
 
         require(hasFundPool || hasFrozenPool || hasCollateralPool, "Nothing to withdraw");
 
-        if (hasFundPool) {
-            _transferPoolToBeneficiary(termId, msg.sender);
-        }
-
-        if (hasCollateralPool) {
-            ICollateral(address(this)).withdrawReimbursement(termId, msg.sender);
-        }
-
         if (hasFrozenPool) {
             bool freeze = _freezePot(LibTermStorage._termStorage().terms[termId], fund, msg.sender);
 
@@ -266,6 +258,12 @@ contract FundFacet is IFund {
             }
 
             _transferPoolToBeneficiary(termId, msg.sender);
+        } else if (hasFundPool) {
+            _transferPoolToBeneficiary(termId, msg.sender);
+        }
+
+        if (hasCollateralPool) {
+            ICollateral(address(this)).withdrawReimbursement(termId, msg.sender);
         }
     }
 
