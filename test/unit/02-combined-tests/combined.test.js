@@ -226,7 +226,6 @@ async function executeCycle(
 
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockEthUsdAggregator")
-                  sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   // Fork
@@ -300,9 +299,6 @@ async function executeCycle(
                           .connect(depositor)
                           .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
                   }
-
-                  // Wait for the sequencer
-                  await advanceTimeByDate(1, hour)
               }
           })
 
@@ -417,20 +413,6 @@ async function executeCycle(
                               contributionAmount * 10 ** 6
                           )
                       }
-                  })
-
-                  it("emergency close", async function () {
-                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                      const termId = lastTerm[0]
-
-                      await expect(takaturnDiamondDeployer.closeFund(termId)).to.be.revertedWith(
-                          "TermOwnable: caller is not the owner"
-                      )
-
-                      await takaturnDiamondParticipant_1.closeFund(termId)
-
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.FundClosed)
                   })
 
                   it("can close the funding period after the given time", async function () {

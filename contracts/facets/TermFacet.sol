@@ -9,9 +9,12 @@ import {ITerm} from "../interfaces/ITerm.sol";
 import {IGetters} from "../interfaces/IGetters.sol";
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
+import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibFund} from "../libraries/LibFund.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
 /// @title Takaturn Term
@@ -25,6 +28,7 @@ contract TermFacet is ITerm {
     event OnCollateralDeposited(uint indexed termId, address indexed user, uint amount);
     event OnTermFilled(uint indexed termId);
     event OnTermExpired(uint indexed termId);
+    event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
 
     function createTerm(
         uint totalParticipants,
@@ -76,10 +80,10 @@ contract TermFacet is ITerm {
             "Invalid inputs"
         );
 
-        LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
+        LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         uint termId = termStorage.nextTermId;
 
-        LibTerm.Term memory newTerm;
+        LibTermStorage.Term memory newTerm;
 
         newTerm.termId = termId;
         newTerm.totalParticipants = _totalParticipants;
@@ -91,7 +95,7 @@ contract TermFacet is ITerm {
         newTerm.termOwner = msg.sender;
         newTerm.creationTime = block.timestamp;
         newTerm.initialized = true;
-        newTerm.state = LibTerm.TermStates.InitializingTerm;
+        newTerm.state = LibTermStorage.TermStates.InitializingTerm;
 
         termStorage.terms[termId] = newTerm;
         termStorage.nextTermId++;
@@ -104,24 +108,23 @@ contract TermFacet is ITerm {
     }
 
     function _joinTerm(uint _termId, bool _optYield) internal {
-        LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
-        LibTerm.Term memory term = termStorage.terms[_termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
+        LibTermStorage.Term memory term = termStorage.terms[_termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[_termId];
 
-        require(LibTerm._termExists(_termId) && LibCollateral._collateralExists(_termId));
+        require(LibTermStorage._termExists(_termId), "Term doesn't exist");
 
-        require(collateral.state == LibCollateral.CollateralStates.AcceptingCollateral, "Closed");
+        require(
+            collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
+            "Closed"
+        );
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
-
-        if (collateral.counterMembers >= 1) {
-            require(
-                block.timestamp <= collateral.firstDepositTime + term.registrationPeriod,
-                "Registration period ended"
-            );
-        }
 
         require(!collateral.isCollateralMember[msg.sender], "Reentry");
 
@@ -138,6 +141,14 @@ contract TermFacet is ITerm {
 
         termStorage.participantToTermId[msg.sender].push(_termId);
 
+        // If the lock is false, I accept the opt in
+        if (!LibYieldGenerationStorage._yieldLock().yieldLock) {
+            yield.hasOptedIn[msg.sender] = _optYield;
+        } else {
+            // If the lock is true, opt in is always false
+            yield.hasOptedIn[msg.sender] = false;
+        }
+
         emit OnCollateralDeposited(_termId, msg.sender, msg.value);
 
         if (collateral.counterMembers == 1) {
@@ -148,15 +159,16 @@ contract TermFacet is ITerm {
         if (collateral.counterMembers == term.totalParticipants) {
             emit OnTermFilled(_termId);
         }
-
-        IYGFacetZaynFi(address(this)).toggleOptInYG(_termId, msg.sender, _optYield);
     }
 
     function _startTerm(uint _termId) internal {
-        LibTerm.Term memory term = LibTerm._termStorage().terms[_termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[_termId];
         address[] memory depositors = collateral.depositors;
 
         uint depositorsArrayLength = depositors.length;
@@ -183,54 +195,67 @@ contract TermFacet is ITerm {
         // Actually create and initialize the fund
         _createFund(term, collateral);
 
-        _createYieldGenerator(term, collateral);
+        // If the lock is false
+        if (!LibYieldGenerationStorage._yieldLock().yieldLock) {
+            // Check on each depositor if they opted in for yield generation
+            for (uint i; i < depositorsArrayLength; ) {
+                if (yield.hasOptedIn[depositors[i]]) {
+                    // If someone opted in, create the yield generator
+                    _createYieldGenerator(term, collateral);
+                    break;
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+        }
 
         // Tell the collateral that the term has started
-        ICollateral(address(this)).setStateOwner(
-            term.termId,
-            LibCollateral.CollateralStates.CycleOngoing
-        );
+        LibCollateral._setState(term.termId, LibCollateralStorage.CollateralStates.CycleOngoing);
 
-        term.state = LibTerm.TermStates.ActiveTerm;
+        term.state = LibTermStorage.TermStates.ActiveTerm;
     }
 
     function _createCollateral(uint _termId, uint _totalParticipants) internal {
-        //require(!LibCollateral._collateralExists(termId), "Collateral already exists");
-        LibCollateral.Collateral storage newCollateral = LibCollateral
+        //require(!LibCollateralStorage._collateralExists(termId), "Collateral already exists");
+        LibCollateralStorage.Collateral storage newCollateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
 
         newCollateral.initialized = true;
-        newCollateral.state = LibCollateral.CollateralStates.AcceptingCollateral;
+        newCollateral.state = LibCollateralStorage.CollateralStates.AcceptingCollateral;
         newCollateral.depositors = new address[](_totalParticipants);
     }
 
     function _createFund(
-        LibTerm.Term memory _term,
-        LibCollateral.Collateral storage _collateral
+        LibTermStorage.Term memory _term,
+        LibCollateralStorage.Collateral storage _collateral
     ) internal {
-        require(!LibFund._fundExists(_term.termId), "Fund already exists");
-        LibFund.Fund storage newFund = LibFund._fundStorage().funds[_term.termId];
+        require(!LibFundStorage._fundExists(_term.termId), "Fund already exists");
+        LibFundStorage.Fund storage newFund = LibFundStorage._fundStorage().funds[_term.termId];
 
         newFund.stableToken = IERC20(_term.stableTokenAddress);
         newFund.beneficiariesOrder = _collateral.depositors;
         newFund.initialized = true;
         newFund.totalAmountOfCycles = newFund.beneficiariesOrder.length;
-        newFund.currentState = LibFund.FundStates.InitializingFund;
+        newFund.currentState = LibFundStorage.FundStates.InitializingFund;
 
-        IFund(address(this)).initFund(_term.termId);
+        LibFund._initFund(_term.termId);
     }
 
     function _expireTerm(uint _termId) internal {
-        LibTerm.Term storage term = LibTerm._termStorage().terms[_termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
 
-        require(LibTerm._termExists(_termId) && LibCollateral._collateralExists(_termId));
+        require(
+            LibTermStorage._termExists(_termId) && LibCollateralStorage._collateralExists(_termId)
+        );
 
         require(
-            block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
+            collateral.firstDepositTime != 0 &&
+                block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
             "Registration period not ended"
         );
 
@@ -239,7 +264,7 @@ contract TermFacet is ITerm {
             "All spots are filled, can't expire"
         );
 
-        require(term.state != LibTerm.TermStates.ExpiredTerm, "Term already expired");
+        require(term.state != LibTermStorage.TermStates.ExpiredTerm, "Term already expired");
 
         uint depositorsArrayLength = collateral.depositors.length;
 
@@ -261,21 +286,21 @@ contract TermFacet is ITerm {
             }
         }
 
-        term.state = LibTerm.TermStates.ExpiredTerm;
+        term.state = LibTermStorage.TermStates.ExpiredTerm;
         collateral.initialized = false;
-        collateral.state = LibCollateral.CollateralStates.Closed;
+        collateral.state = LibCollateralStorage.CollateralStates.Closed;
 
         emit OnTermExpired(_termId);
     }
 
     function _createYieldGenerator(
-        LibTerm.Term memory _term,
-        LibCollateral.Collateral storage _collateral
+        LibTermStorage.Term memory _term,
+        LibCollateralStorage.Collateral storage _collateral
     ) internal {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[_term.termId];
-        LibYieldGeneration.YieldProviders storage yieldProviders = LibYieldGeneration
+        LibYieldGenerationStorage.YieldProviders storage yieldProviders = LibYieldGenerationStorage
             ._yieldProviders();
 
         uint amountDeposited;
@@ -300,7 +325,7 @@ contract TermFacet is ITerm {
             yield.providerAddresses["ZaynZap"] = yieldProviders.providerAddresses["ZaynZap"];
             yield.providerAddresses["ZaynVault"] = yieldProviders.providerAddresses["ZaynVault"];
 
-            IYGFacetZaynFi(address(this)).depositYG(_term.termId, amountDeposited);
+            LibYieldGeneration._depositYG(_term.termId, amountDeposited);
         }
     }
 }

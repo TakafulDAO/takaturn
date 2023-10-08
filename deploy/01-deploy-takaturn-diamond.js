@@ -17,7 +17,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const waitBlockConfirmations = developmentChains.includes(network.name)
         ? 1
         : VERIFICATION_BLOCK_CONFIRMATIONS
-    let ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress, sequencerUptimeFeedAddress
+    let ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress
     let zaynfiZapAddress, zaynfiVaultAddress
     let contractNames, contractAddresses
     let takaturnDiamondUpgrade
@@ -33,12 +33,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         diamondERC165Init,
         withdrawGoerliEthFacet
 
-    log("01. Upgrading Takaturn Diamond...")
+    log("01. Deploying Takaturn Diamond...")
 
     if (isMainnet || isTestnet || isFork) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
         usdcUsdPriceFeedAddress = networkConfig[chainId]["usdcUsdPriceFeed"]
-        sequencerUptimeFeedAddress = networkConfig[chainId]["sequencerUptimeFeed"]
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
@@ -50,9 +49,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const usdcUsdAggregator = await deployments.get("MockUsdcUsdAggregator")
         usdcUsdPriceFeedAddress = usdcUsdAggregator.address
 
-        const sequencer = await deployments.get("MockSequencer")
-        sequencerUptimeFeedAddress = sequencer.address
-
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
@@ -61,9 +57,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const initArgs = [
         ethUsdPriceFeedAddress,
         usdcUsdPriceFeedAddress,
-        sequencerUptimeFeedAddress,
         zaynfiZapAddress,
         zaynfiVaultAddress,
+        false,
     ]
 
     if (isMainnet) {
@@ -80,45 +76,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             },
             waitConfirmations: waitBlockConfirmations,
         })
-
-        collateralFacet = await deployments.get("CollateralFacet")
-        fundFacet = await deployments.get("FundFacet")
-        termFacet = await deployments.get("TermFacet")
-        gettersFacet = await deployments.get("GettersFacet")
-        yieldFacet = await deployments.get("YGFacetZaynFi")
-        diamondInit = await deployments.get("DiamondInit")
-        diamondCutFacet = await deployments.get("_DefaultDiamondCutFacet")
-        diamondOwnershipFacet = await deployments.get("_DefaultDiamondOwnershipFacet")
-        diamondLoupeFacet = await deployments.get("_DefaultDiamondLoupeFacet")
-        diamondERC165Init = await deployments.get("_DefaultDiamondERC165Init")
-
-        contractNames = [
-            "TakaturnDiamond",
-            "CollateralFacet",
-            "FundFacet",
-            "TermFacet",
-            "GettersFacet",
-            "YGFacetZaynFi",
-            "DiamondInit",
-            "_DefaultDiamondCutFacet",
-            "_DefaultDiamondOwnershipFacet",
-            "_DefaultDiamondLoupeFacet",
-            "_DefaultDiamondERC165Init",
-        ]
-
-        contractAddresses = [
-            takaturnDiamondUpgrade.address,
-            collateralFacet.address,
-            fundFacet.address,
-            termFacet.address,
-            gettersFacet.address,
-            yieldFacet.address,
-            diamondInit.address,
-            diamondCutFacet.address,
-            diamondOwnershipFacet.address,
-            diamondLoupeFacet.address,
-            diamondERC165Init.address,
-        ]
     } else {
         takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
             from: deployer,
@@ -141,48 +98,49 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             waitConfirmations: waitBlockConfirmations,
         })
 
-        collateralFacet = await deployments.get("CollateralFacet")
-        fundFacet = await deployments.get("FundFacet")
-        termFacet = await deployments.get("TermFacet")
-        gettersFacet = await deployments.get("GettersFacet")
-        yieldFacet = await deployments.get("YGFacetZaynFi")
-        diamondInit = await deployments.get("DiamondInit")
-        diamondCutFacet = await deployments.get("_DefaultDiamondCutFacet")
-        diamondOwnershipFacet = await deployments.get("_DefaultDiamondOwnershipFacet")
-        diamondLoupeFacet = await deployments.get("_DefaultDiamondLoupeFacet")
-        diamondERC165Init = await deployments.get("_DefaultDiamondERC165Init")
         withdrawGoerliEthFacet = await deployments.get("WithdrawGoerliEthFacet") // This facet is never deployed on mainnet
-
-        contractNames = [
-            "TakaturnDiamond",
-            "CollateralFacet",
-            "FundFacet",
-            "TermFacet",
-            "GettersFacet",
-            "YGFacetZaynFi",
-            "DiamondInit",
-            "_DefaultDiamondCutFacet",
-            "_DefaultDiamondOwnershipFacet",
-            "_DefaultDiamondLoupeFacet",
-            "_DefaultDiamondERC165Init",
-        ]
-
-        contractAddresses = [
-            takaturnDiamondUpgrade.address,
-            collateralFacet.address,
-            fundFacet.address,
-            termFacet.address,
-            gettersFacet.address,
-            yieldFacet.address,
-            diamondInit.address,
-            diamondCutFacet.address,
-            diamondOwnershipFacet.address,
-            diamondLoupeFacet.address,
-            diamondERC165Init.address,
-        ]
     }
 
-    log("01. Diamond Upgraded!")
+    collateralFacet = await deployments.get("CollateralFacet")
+    fundFacet = await deployments.get("FundFacet")
+    termFacet = await deployments.get("TermFacet")
+    gettersFacet = await deployments.get("GettersFacet")
+    yieldFacet = await deployments.get("YGFacetZaynFi")
+    diamondInit = await deployments.get("DiamondInit")
+    diamondCutFacet = await deployments.get("_DefaultDiamondCutFacet")
+    diamondOwnershipFacet = await deployments.get("_DefaultDiamondOwnershipFacet")
+    diamondLoupeFacet = await deployments.get("_DefaultDiamondLoupeFacet")
+    diamondERC165Init = await deployments.get("_DefaultDiamondERC165Init")
+
+    contractNames = [
+        "TakaturnDiamond",
+        "CollateralFacet",
+        "FundFacet",
+        "TermFacet",
+        "GettersFacet",
+        "YGFacetZaynFi",
+        "DiamondInit",
+        "_DefaultDiamondCutFacet",
+        "_DefaultDiamondOwnershipFacet",
+        "_DefaultDiamondLoupeFacet",
+        "_DefaultDiamondERC165Init",
+    ]
+
+    contractAddresses = [
+        takaturnDiamondUpgrade.address,
+        collateralFacet.address,
+        fundFacet.address,
+        termFacet.address,
+        gettersFacet.address,
+        yieldFacet.address,
+        diamondInit.address,
+        diamondCutFacet.address,
+        diamondOwnershipFacet.address,
+        diamondLoupeFacet.address,
+        diamondERC165Init.address,
+    ]
+
+    log("01. Diamond Deployed!")
     log("==========================================================================")
 
     if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
@@ -202,4 +160,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 }
 
-module.exports.tags = ["all", "diamond", "takaturn_upgrade"]
+module.exports.tags = ["all", "diamond", "takaturn_deploy", "takaturn_upgrade"]

@@ -6,10 +6,12 @@ import {ICollateral} from "../interfaces/ICollateral.sol";
 import {IGetters} from "../interfaces/IGetters.sol";
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
-import {LibFund} from "../libraries/LibFund.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibFundStorage} from "../libraries/LibFundStorage.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 
 /// @title Takaturn Collateral
@@ -19,8 +21,8 @@ import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 contract CollateralFacet is ICollateral {
     event OnCollateralStateChanged(
         uint indexed termId,
-        LibCollateral.CollateralStates indexed oldState,
-        LibCollateral.CollateralStates indexed newState
+        LibCollateralStorage.CollateralStates indexed oldState,
+        LibCollateralStorage.CollateralStates indexed newState
     );
     event OnCollateralWithdrawal(
         uint indexed termId,
@@ -37,7 +39,7 @@ contract CollateralFacet is ICollateral {
 
     /// @param termId term id
     /// @param _state collateral state
-    modifier atState(uint termId, LibCollateral.CollateralStates _state) {
+    modifier atState(uint termId, LibCollateralStorage.CollateralStates _state) {
         _atState(termId, _state);
         _;
     }
@@ -47,28 +49,23 @@ contract CollateralFacet is ICollateral {
         _;
     }
 
-    /// @param termId term id
-    /// @param newState collateral state
-    function setStateOwner(uint termId, LibCollateral.CollateralStates newState) external {
-        _setState(termId, newState);
-    }
-
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
     /// @param defaulters Addressess of all defaulters of the current cycle
     /// @return expellants array of addresses that were expelled
     function requestContribution(
-        LibTerm.Term memory term,
+        LibTermStorage.Term memory term,
         address[] calldata defaulters
     )
         external
-        atState(term.termId, LibCollateral.CollateralStates.CycleOngoing)
+        atState(term.termId, LibCollateralStorage.CollateralStates.CycleOngoing)
         returns (address[] memory)
     {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[term.termId];
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[term.termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[term.termId];
+        require(msg.sender == address(this));
 
         (uint collateralToDistribute, address[] memory expellants) = _solveDefaulters(
             collateral,
@@ -117,7 +114,7 @@ contract CollateralFacet is ICollateral {
     /// @param _expellant The expellant in question
     /// @param _nonBeneficiaries All non-beneficiaries at this time
     function _exemptNonBeneficiariesFromPaying(
-        LibFund.Fund storage _fund,
+        LibFundStorage.Fund storage _fund,
         address _expellant,
         uint _nonBeneficiaryCounter,
         address[] memory _nonBeneficiaries
@@ -152,11 +149,11 @@ contract CollateralFacet is ICollateral {
     /// @dev This follows the pull-over-push pattern.
     /// @param termId term id
     function withdrawCollateral(uint termId) external {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
 
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -165,7 +162,7 @@ contract CollateralFacet is ICollateral {
 
         bool success;
         // Withdraw all the user has
-        if (collateral.state == LibCollateral.CollateralStates.ReleasingCollateral) {
+        if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
             collateral.collateralMembersBank[msg.sender] = 0;
 
             _withdrawFromYield(termId, msg.sender, userCollateral, yield);
@@ -176,7 +173,7 @@ contract CollateralFacet is ICollateral {
             emit OnCollateralWithdrawal(termId, msg.sender, userCollateral);
         }
         // Or withdraw partially
-        else if (collateral.state == LibCollateral.CollateralStates.CycleOngoing) {
+        else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
             uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
                 termId
@@ -184,7 +181,7 @@ contract CollateralFacet is ICollateral {
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
-                uint allowedWithdrawal = minRequiredCollateral - userCollateral; // We allow to withdraw the positive difference
+                uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
                 _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
@@ -195,32 +192,16 @@ contract CollateralFacet is ICollateral {
         }
 
         require(success, "Withdraw failed");
-        IYGFacetZaynFi(address(this)).claimAvailableYield(termId, msg.sender);
-    }
-
-    /// @param termId term id
-    /// @param depositor Address of the depositor
-    function withdrawReimbursement(uint termId, address depositor) external {
-        require(LibFund._fundExists(termId), "Fund does not exists");
-        LibCollateral.Collateral storage collateral = LibCollateral
-            ._collateralStorage()
-            .collaterals[termId];
-
-        uint amount = collateral.collateralPaymentBank[depositor];
-        require(amount > 0, "Nothing to claim");
-        collateral.collateralPaymentBank[depositor] = 0;
-
-        (bool success, ) = payable(depositor).call{value: amount}("");
-        require(success);
-
-        emit OnReimbursementWithdrawn(termId, depositor, amount);
+        if (yield.hasOptedIn[msg.sender] && yield.availableYield[msg.sender] > 0) {
+            IYGFacetZaynFi(address(this)).claimAvailableYield(termId, msg.sender);
+        }
     }
 
     /// @param termId term id
     function releaseCollateral(uint termId) external {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
-        require(fund.currentState == LibFund.FundStates.FundClosed, "Wrong state");
-        _setState(termId, LibCollateral.CollateralStates.ReleasingCollateral);
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        require(fund.currentState == LibFundStorage.FundStates.FundClosed, "Wrong state");
+        LibCollateral._setState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
@@ -239,12 +220,12 @@ contract CollateralFacet is ICollateral {
     )
         external
         onlyTermOwner(termId)
-        atState(termId, LibCollateral.CollateralStates.ReleasingCollateral)
+        atState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral)
     {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -269,21 +250,10 @@ contract CollateralFacet is ICollateral {
                 ++i;
             }
         }
-        _setState(termId, LibCollateral.CollateralStates.Closed);
+        LibCollateral._setState(termId, LibCollateralStorage.CollateralStates.Closed);
 
         (bool success, ) = payable(msg.sender).call{value: totalToWithdraw}("");
         require(success);
-    }
-
-    /// @param _termId term id
-    /// @param _newState collateral state
-    function _setState(uint _termId, LibCollateral.CollateralStates _newState) internal {
-        LibCollateral.Collateral storage collateral = LibCollateral
-            ._collateralStorage()
-            .collaterals[_termId];
-        LibCollateral.CollateralStates oldState = collateral.state;
-        collateral.state = _newState;
-        emit OnCollateralStateChanged(_termId, oldState, _newState);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
@@ -292,14 +262,14 @@ contract CollateralFacet is ICollateral {
     /// @param _member The user to check for
     /// @return Bool check if member is below 1.0x of collateralDeposit
     function _isUnderCollaterized(uint _termId, address _member) internal view returns (bool) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
 
         uint collateralLimit;
         uint memberCollateral = collateral.collateralMembersBank[_member];
 
-        if (!LibFund._fundExists(_termId)) {
+        if (!LibFundStorage._fundExists(_termId)) {
             // Only check here when starting the term
             (, , , collateralLimit, ) = IGetters(address(this)).getDepositorCollateralSummary(
                 _member,
@@ -318,9 +288,9 @@ contract CollateralFacet is ICollateral {
     /// @return share The total amount of collateral to be divided among non-beneficiaries
     /// @return expellants array of addresses that were expelled
     function _solveDefaulters(
-        LibCollateral.Collateral storage _collateral,
-        LibTerm.Term memory _term,
-        LibFund.Fund storage _fund,
+        LibCollateralStorage.Collateral storage _collateral,
+        LibTermStorage.Term memory _term,
+        LibFundStorage.Fund storage _fund,
         address[] memory _defaulters
     ) internal returns (uint, address[] memory) {
         // require(_defaulters.length > 0, "No defaulters"); // todo: needed? only call this function when there are defaulters
@@ -335,7 +305,7 @@ contract CollateralFacet is ICollateral {
 
         // Determine who will be expelled and who will just pay the contribution from their collateral.
         for (uint i; i < _defaulters.length; ) {
-            LibCollateral.DefaulterState memory defaulterState;
+            LibCollateralStorage.DefaulterState memory defaulterState;
             defaulterState.isBeneficiary = _fund.isBeneficiary[_defaulters[i]];
             uint collateralAmount = _collateral.collateralMembersBank[_defaulters[i]];
             if (defaulterState.isBeneficiary) {
@@ -425,14 +395,14 @@ contract CollateralFacet is ICollateral {
 
     /// @notice called internally to pay defaulter contribution
     function _payDefaulterContribution(
-        LibCollateral.Collateral storage _collateral,
-        LibFund.Fund storage _fund,
-        LibTerm.Term memory _term,
+        LibCollateralStorage.Collateral storage _collateral,
+        LibFundStorage.Fund storage _fund,
+        LibTermStorage.Term memory _term,
         address _defaulter,
         uint _contributionAmountWei,
-        LibCollateral.DefaulterState memory _defaulterState
+        LibCollateralStorage.DefaulterState memory _defaulterState
     ) internal returns (uint distributedCollateral) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[_term.termId];
 
@@ -518,8 +488,8 @@ contract CollateralFacet is ICollateral {
     /// @return nonBeneficiaryCounter The total amount of collateral to be divided among non-beneficiaries
     /// @return nonBeneficiaries array of addresses that were expelled
     function _findNonBeneficiaries(
-        LibCollateral.Collateral storage _collateral,
-        LibFund.Fund storage _fund
+        LibCollateralStorage.Collateral storage _collateral,
+        LibFundStorage.Fund storage _fund
     ) internal view returns (uint, address[] memory) {
         address currentDepositor;
         address[] memory nonBeneficiaries = new address[](_collateral.depositors.length);
@@ -548,17 +518,17 @@ contract CollateralFacet is ICollateral {
         uint _termId,
         address _user,
         uint _amount,
-        LibYieldGeneration.YieldGeneration storage _yieldStorage
+        LibYieldGenerationStorage.YieldGeneration storage _yieldStorage
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
-            withdrawnYield = IYGFacetZaynFi(address(this)).withdrawYG(_termId, _amount, _user);
+            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, _amount, _user);
         } else {
             withdrawnYield = 0;
         }
     }
 
-    function _atState(uint _termId, LibCollateral.CollateralStates _state) internal view {
-        LibCollateral.CollateralStates state = LibCollateral
+    function _atState(uint _termId, LibCollateralStorage.CollateralStates _state) internal view {
+        LibCollateralStorage.CollateralStates state = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId]
             .state;

@@ -2,27 +2,33 @@
 
 pragma solidity 0.8.18;
 
-import {LibTerm} from "./libraries/LibTerm.sol";
-import {LibYieldGeneration} from "./libraries/LibYieldGeneration.sol";
+import {LibTermStorage} from "./libraries/LibTermStorage.sol";
+import {LibYieldGenerationStorage} from "./libraries/LibYieldGenerationStorage.sol";
+import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
 
 contract DiamondInit {
+    modifier onlyOwner() {
+        LibDiamond.enforceIsContractOwner();
+        _;
+    }
+
     function init(
         address _aggregatorAddressEthUsd,
         address _aggregatorAddressUsdUsdc,
-        address _sequencerUptimeFeedAddress,
         address _zapAddress, // Zaynfi Zap address
-        address _vaultAddress // Zaynfi Vault address
-    ) external {
-        LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
-        LibYieldGeneration.YieldProviders storage yieldProvider = LibYieldGeneration
+        address _vaultAddress, // Zaynfi Vault address
+        bool _yieldLock
+    ) external onlyOwner {
+        LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
+        LibYieldGenerationStorage.YieldProviders storage yieldProvider = LibYieldGenerationStorage
             ._yieldProviders();
 
-        termConsts.sequencerStartupTime = 3600; // The sequencer must be running for at least an hour before it's reliable
         termConsts.aggregatorsAddresses["ETH/USD"] = _aggregatorAddressEthUsd;
         termConsts.aggregatorsAddresses["USDC/USD"] = _aggregatorAddressUsdUsdc;
-        termConsts.sequencerUptimeFeedAddress = _sequencerUptimeFeedAddress;
 
         yieldProvider.providerAddresses["ZaynZap"] = _zapAddress;
         yieldProvider.providerAddresses["ZaynVault"] = _vaultAddress;
+
+        LibYieldGenerationStorage._yieldLock().yieldLock = _yieldLock;
     }
 }

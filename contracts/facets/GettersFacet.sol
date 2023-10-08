@@ -7,9 +7,10 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
 import {IGetters} from "../interfaces/IGetters.sol";
 import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
-import {LibTerm} from "../libraries/LibTerm.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
-import {LibFund} from "../libraries/LibFund.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
+import {LibFundStorage} from "../libraries/LibFundStorage.sol";
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
 contract GettersFacet is IGetters {
@@ -17,7 +18,7 @@ contract GettersFacet is IGetters {
     /// @return the current term id
     /// @return the next term id
     function getTermsId() external view returns (uint, uint) {
-        LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
+        LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         uint lastTermId = termStorage.nextTermId - 1;
         uint nextTermId = termStorage.nextTermId;
         return (lastTermId, nextTermId);
@@ -27,8 +28,8 @@ contract GettersFacet is IGetters {
     ///  @param termId the term id
     ///  @return remaining contribution period
     function getRemainingRegistrationTime(uint termId) external view returns (uint) {
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
         require(collateral.firstDepositTime != 0, "Nobody has deposited yet");
@@ -41,68 +42,90 @@ contract GettersFacet is IGetters {
 
     /// @param termId the term id
     /// @return the term struct
-    function getTermSummary(uint termId) external view returns (LibTerm.Term memory) {
-        return (LibTerm._termStorage().terms[termId]);
+    function getTermSummary(uint termId) external view returns (LibTermStorage.Term memory) {
+        return (LibTermStorage._termStorage().terms[termId]);
     }
 
     /// @param participant the participant address
-    /// @return the term ids the participant is part of
+    /// @return an array with the term ids the participant is part of
     function getAllJoinedTerms(address participant) public view returns (uint[] memory) {
-        LibTerm.TermStorage storage termStorage = LibTerm._termStorage();
+        LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         uint[] memory participantTermIds = termStorage.participantToTermId[participant];
         return participantTermIds;
     }
 
     /// @param participant the participant address
     /// @param state the term state
-    /// @return the term ids the participant is part of, giving the state of the term
+    /// @return an array with the term ids the participant is part of, giving the state of the term
     function getJoinedTermsByState(
         address participant,
-        LibTerm.TermStates state
+        LibTermStorage.TermStates state
     ) external view returns (uint[] memory) {
         uint[] memory joinedTerms = getAllJoinedTerms(participant);
-        uint[] memory userTermsByState;
-        uint termscounter;
+        uint[] memory temporaryArray = new uint[](joinedTerms.length);
+        uint termsCounter;
         uint joinedTermsLength = joinedTerms.length;
+
         for (uint i; i < joinedTermsLength; ) {
-            if (LibTerm._termStorage().terms[joinedTerms[i]].state == state) {
-                userTermsByState[termscounter] = i;
+            if (LibTermStorage._termStorage().terms[joinedTerms[i]].state == state) {
+                temporaryArray[termsCounter] = joinedTerms[i];
                 unchecked {
-                    ++termscounter;
+                    ++termsCounter;
                 }
             }
             unchecked {
                 ++i;
             }
         }
+
+        uint[] memory userTermsByState = new uint[](termsCounter);
+
+        for (uint i; i < termsCounter; ) {
+            userTermsByState[i] = temporaryArray[i];
+            unchecked {
+                ++i;
+            }
+        }
+
         return userTermsByState;
     }
 
     /// @param participant the participant address
-    /// @return the term ids the participant is part of, giving the state of the term
+    /// @return an array the term ids the participant is part of, giving the state of the term
     function getExpelledTerms(address participant) external view returns (uint[] memory) {
         uint[] memory joinedTerms = getAllJoinedTerms(participant);
-        uint[] memory termsExpelled;
-        uint termscounter;
+        uint[] memory temporaryArray = new uint[](joinedTerms.length);
+        uint termsCounter;
         uint joinedTermsLength = joinedTerms.length;
+
         for (uint i; i < joinedTermsLength; ) {
             if (wasExpelled(joinedTerms[i], participant)) {
-                termsExpelled[termscounter] = i;
+                temporaryArray[termsCounter] = joinedTerms[i];
                 unchecked {
-                    ++termscounter;
+                    ++termsCounter;
                 }
             }
             unchecked {
                 ++i;
             }
         }
+
+        uint[] memory termsExpelled = new uint[](termsCounter);
+
+        for (uint i; i < termsCounter; ) {
+            termsExpelled[i] = temporaryArray[i];
+            unchecked {
+                ++i;
+            }
+        }
+
         return termsExpelled;
     }
 
     /// @param termId the term id
-    /// @return remaining time in the current cycle
+    /// @return remaining cycles
     function getRemainingCycles(uint termId) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
         return (1 + fund.totalAmountOfCycles - fund.currentCycle);
     }
@@ -110,8 +133,8 @@ contract GettersFacet is IGetters {
     /// @param termId the term id
     /// @return remaining time in the current cycle
     function getRemainingCycleTime(uint termId) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
         if (block.timestamp > cycleEndTimestamp) {
             return 0;
@@ -123,8 +146,8 @@ contract GettersFacet is IGetters {
     /// @param termId the term id
     /// @return remaining cycles contribution
     function getRemainingCyclesContributionWei(uint termId) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
         uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
         uint contributionAmountWei = IGetters(address(this)).getToCollateralConversionRate(
@@ -138,16 +161,20 @@ contract GettersFacet is IGetters {
 
     /// @param depositor the depositor address
     /// @param termId the collateral id
-    /// @return isCollateralMember, collateralMembersBank, collateralPaymentBank
+    /// @return isCollateralMember
+    /// @return collateralMembersBank
+    /// @return collateralPaymentBank
+    /// @return collateralDepositByUser
+    /// @return expulsion limit
     function getDepositorCollateralSummary(
         address depositor,
         uint termId
     ) external view returns (bool, uint, uint, uint, uint) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
         uint limit;
         if (!fund.isBeneficiary[depositor]) {
@@ -168,11 +195,19 @@ contract GettersFacet is IGetters {
     }
 
     /// @param termId the collateral id
-    /// @return collateral: initialized, state, firstDepositTime, counterMembers, depositors, collateralDeposit
+    /// @return collateral initialized
+    /// @return collateral state
+    /// @return collateral firstDepositTime
+    /// @return counterMembers
+    /// @return collateral depositors
     function getCollateralSummary(
         uint termId
-    ) external view returns (bool, LibCollateral.CollateralStates, uint, uint, address[] memory) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+    )
+        external
+        view
+        returns (bool, LibCollateralStorage.CollateralStates, uint, uint, address[] memory)
+    {
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
         return (
@@ -194,7 +229,9 @@ contract GettersFacet is IGetters {
         uint termId,
         uint depositorIndex
     ) external view returns (uint amount) {
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+
+        require(depositorIndex < term.totalParticipants, "Index out of bounds");
 
         uint contributionAmountInWei = getToCollateralConversionRate(
             term.contributionAmount * 10 ** 18
@@ -211,19 +248,19 @@ contract GettersFacet is IGetters {
         uint termId,
         address user
     ) external view returns (uint allowedWithdrawal) {
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
         uint userCollateral = collateral.collateralMembersBank[user];
         uint availableYield = yield.availableYield[user];
 
-        if (collateral.state == LibCollateral.CollateralStates.ReleasingCollateral) {
+        if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
             allowedWithdrawal = userCollateral + availableYield;
-        } else if (collateral.state == LibCollateral.CollateralStates.CycleOngoing) {
+        } else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
             uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
                 termId
@@ -231,7 +268,7 @@ contract GettersFacet is IGetters {
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
-                allowedWithdrawal = minRequiredCollateral - userCollateral + availableYield; // We allow to withdraw the positive difference
+                allowedWithdrawal = userCollateral - minRequiredCollateral + availableYield; // We allow to withdraw the positive difference
             } else {
                 allowedWithdrawal = 0;
             }
@@ -244,15 +281,22 @@ contract GettersFacet is IGetters {
 
     /// @notice function to get the cycle information in one go
     /// @param termId the fund id
-    /// @return initialized, currentState, stableToken, currentCycle, beneficiariesOrder, fundStart, currentCycle, totalAmountOfCycles, fundEnd
+    /// @return fund initialized
+    /// @return fund currentState
+    /// @return fund stableToken
+    /// @return fund beneficiariesOrder
+    /// @return fund fundStart
+    /// @return fund fundEnd
+    /// @return fund currentCycle
+    /// @return fund totalAmountOfCycles
     function getFundSummary(
         uint termId
     )
         external
         view
-        returns (bool, LibFund.FundStates, IERC20, address[] memory, uint, uint, uint, uint)
+        returns (bool, LibFundStorage.FundStates, IERC20, address[] memory, uint, uint, uint, uint)
     {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         return (
             fund.initialized,
             fund.currentState,
@@ -269,7 +313,7 @@ contract GettersFacet is IGetters {
     /// @param termId the fund id
     /// @return the current beneficiary
     function getCurrentBeneficiary(uint termId) external view returns (address) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         return fund.beneficiariesOrder[fund.currentCycle - 1];
     }
 
@@ -278,8 +322,8 @@ contract GettersFacet is IGetters {
     /// @param user the user to check
     /// @return true if the user was expelled before
     function wasExpelled(uint termId, address user) public view returns (bool) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
 
@@ -291,25 +335,29 @@ contract GettersFacet is IGetters {
     }
 
     /// @notice function to see if a user is exempted from paying a cycle
+    /// @param termId the fund id
+    /// @param cycle the cycle to check
+    /// @param user the user to check
+    /// @return true if the user is exempted
     function isExempted(uint termId, uint cycle, address user) external view returns (bool) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         return fund.isExemptedOnCycle[cycle].exempted[user];
     }
 
     /// @notice function to get cycle information of a specific participant
     /// @param participant the user to get the info from
     /// @param termId the fund id
-    /// @return isParticipant, true if is participant
-    /// @return isBeneficiary, true if has been beneficiary
-    /// @return paidThisCycle, true if has paid the current cycle
-    /// @return autoPayEnabled, true if auto pay is enabled
-    /// @return beneficiariesPool, the beneficiary pool, 6 decimals
-    /// @return beneficiariesFrozenPool, true if the beneficiary pool is frozen
+    /// @return fund isParticipant, true if is participant
+    /// @return fund isBeneficiary, true if has been beneficiary
+    /// @return fund paidThisCycle, true if has paid the current cycle
+    /// @return fund autoPayEnabled, true if auto pay is enabled
+    /// @return fund beneficiariesPool, the beneficiary pool, 6 decimals
+    /// @return fund beneficiariesFrozenPool, true if the beneficiary pool is frozen
     function getParticipantFundSummary(
         address participant,
         uint termId
     ) external view returns (bool, bool, bool, bool, uint, bool) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         return (
             fund.isParticipant[participant],
             fund.isBeneficiary[participant],
@@ -324,9 +372,9 @@ contract GettersFacet is IGetters {
     /// @param termId the fund id
     /// @return the time left to contribute
     function getRemainingContributionTime(uint termId) external view returns (uint) {
-        LibFund.Fund storage fund = LibFund._fundStorage().funds[termId];
-        LibTerm.Term storage term = LibTerm._termStorage().terms[termId];
-        if (fund.currentState != LibFund.FundStates.AcceptingContributions) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        if (fund.currentState != LibFundStorage.FundStates.AcceptingContributions) {
             return 0;
         }
 
@@ -347,24 +395,7 @@ contract GettersFacet is IGetters {
     /// @notice Gets latest ETH / USD price
     /// @return uint latest price in Wei Note: 18 decimals
     function getLatestPrice() public view returns (uint) {
-        LibTerm.TermConsts storage termConsts = LibTerm._termConsts();
-        // (
-        //     ,
-        //     /*uint80 roundID*/ int256 answer,
-        //     uint256 startedAt /*uint256 updatedAt*/ /*uint80 answeredInRound*/,
-        //     ,
-
-        // ) = AggregatorV3Interface(termConsts.sequencerUptimeFeedAddress).latestRoundData(); //8 decimals
-
-        // // Answer == 0: Sequencer is up
-        // // Answer == 1: Sequencer is down
-        // require(answer == 0, "Sequencer down");
-
-        // //We must wait at least an hour after the sequencer started up
-        // require(
-        //     termConsts.sequencerStartupTime <= block.timestamp - startedAt,
-        //     "Sequencer starting up"
-        // );
+        LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
 
         (
             uint80 roundID_ethUSD,
@@ -402,7 +433,7 @@ contract GettersFacet is IGetters {
 
     /// @notice Gets the conversion rate of an amount in USD to ETH
     /// @dev should we always deal with in Wei?
-    /// @param USDAmount The amount in USD
+    /// @param USDAmount The amount in USD with 18 decimals
     /// @return uint converted amount in wei
     function getToCollateralConversionRate(uint USDAmount) public view returns (uint) {
         uint ethPrice = getLatestPrice();
@@ -428,7 +459,7 @@ contract GettersFacet is IGetters {
     /// @param user The user for which the check is being made
     /// @return True if the user has opted in
     function userHasoptedInYG(uint termId, address user) external view returns (bool) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -440,28 +471,28 @@ contract GettersFacet is IGetters {
     /// @param user The user for which the APY is being calculated
     /// @return The APY for the user
     function userAPY(uint termId, address user) external returns (uint256) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
         return
-            (userYieldGenerated(termId, user) / yield.currentTotalDeposit) /
-            (elaspedTime * 365 days);
+            ((userYieldGenerated(termId, user) / yield.currentTotalDeposit) * 365 days) /
+            elaspedTime;
     }
 
     /// @notice This function is used to get a term APY
     /// @param termId The term id for which the APY is being calculated
     /// @return The APY for the term
     function termAPY(uint termId) external returns (uint256) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
-        return (totalYieldGenerated(termId) / yield.currentTotalDeposit) / (elaspedTime * 365 days);
+        return ((totalYieldGenerated(termId) / yield.currentTotalDeposit) * 365 days) / elaspedTime;
     }
 
     /// @notice This function is used to get the yield distribution ratio for a user
@@ -469,21 +500,25 @@ contract GettersFacet is IGetters {
     /// @param user The user for which the ratio is being calculated
     /// @return The yield distribution ratio for the user
     function yieldDistributionRatio(uint termId, address user) public view returns (uint256) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
-        LibCollateral.Collateral storage collateral = LibCollateral
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
 
-        return collateral.collateralMembersBank[user] / yield.currentTotalDeposit;
+        if (yield.currentTotalDeposit == 0) {
+            return 0;
+        } else {
+            return collateral.collateralMembersBank[user] / yield.currentTotalDeposit;
+        }
     }
 
     /// @notice This function is used to get the total yield generated for a term
     /// @param termId The term id for which the yield is being calculated
     /// @return The total yield generated for the term
     function totalYieldGenerated(uint termId) public returns (uint) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -500,10 +535,16 @@ contract GettersFacet is IGetters {
             }
         }
 
+        uint currentShares = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(
+            termId
+        );
+        uint totalDeposit = yield.totalDeposit;
+        uint totalShares = yield.totalShares;
+
         return
             totalWithdrawnYield +
-            (yield.totalDeposit -
-                IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(termId));
+            LibYieldGeneration._sharesToEth(currentShares, totalDeposit, totalShares) -
+            yield.currentTotalDeposit;
     }
 
     /// @notice This function is used to get the total yield generated for a user
@@ -511,7 +552,7 @@ contract GettersFacet is IGetters {
     /// @param user The user for which the yield is being calculated
     /// @return The total yield generated for the user
     function userYieldGenerated(uint termId, address user) public returns (uint) {
-        LibYieldGeneration.YieldGeneration storage yield = LibYieldGeneration
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
@@ -519,5 +560,33 @@ contract GettersFacet is IGetters {
             yield.withdrawnYield[user] +
             totalYieldGenerated(termId) *
             yieldDistributionRatio(termId, user);
+    }
+
+    /// @notice This function is used to get the current state of the yield lock
+    function getYieldLockState() external view returns (bool) {
+        return LibYieldGenerationStorage._yieldLock().yieldLock;
+    }
+
+    /// @notice This function return the current constant values for oracles and yield providers
+    /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
+    /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"
+    /// @param zapAddress The name of the zap address. Example: "ZaynZap"
+    /// @param vaultAddress The name of the vault address. Example: "ZaynVault"
+    function getConstants(
+        string memory firstAggregator,
+        string memory secondAggregator,
+        string memory zapAddress,
+        string memory vaultAddress
+    ) external view returns (address, address, address, address) {
+        LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
+        LibYieldGenerationStorage.YieldProviders storage yieldProvider = LibYieldGenerationStorage
+            ._yieldProviders();
+
+        return (
+            termConsts.aggregatorsAddresses[firstAggregator],
+            termConsts.aggregatorsAddresses[secondAggregator],
+            yieldProvider.providerAddresses[zapAddress],
+            yieldProvider.providerAddresses[vaultAddress]
+        );
     }
 }

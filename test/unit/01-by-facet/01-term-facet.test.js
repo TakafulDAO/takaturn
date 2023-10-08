@@ -1,13 +1,18 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
-const { advanceTimeByDate, advanceTime } = require("../../../utils/_helpers")
+const {
+    advanceTimeByDate,
+    advanceTime,
+    getTermStateFromIndex,
+    TermStates,
+} = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
 const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Upgrades Term Facet unit tests", function () {
+    : describe("Term Facet unit tests", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = BigNumber.from("12") // Create term param
@@ -60,7 +65,6 @@ const { hour } = require("../../../utils/units")
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockEthUsdAggregator")
-                  sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   // Fork
@@ -97,30 +101,7 @@ const { hour } = require("../../../utils/units")
           })
 
           if (!isFork) {
-              describe("Sequencer and oracle unit tests", function () {
-                  it("Should revert if the sequencer does not met requires", async function () {
-                      // Revert if the sequencer is down
-                      await sequencer.setSequencerAnswer()
-
-                      const termId = await takaturnDiamondDeployer.getTermsId()
-                      await expect(
-                          takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)
-                      ).to.be.revertedWith("Sequencer down")
-
-                      // Revert if the has not passed an hour since started
-                      await sequencer.setSequencerAnswer()
-
-                      await expect(
-                          takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)
-                      ).to.be.revertedWith("Sequencer starting up")
-
-                      // Should not revert if the sequencer is up and has passed an hour since started
-                      await advanceTimeByDate(1, hour)
-
-                      await expect(takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)).not
-                          .to.be.reverted
-                  })
-
+              describe("Oracle unit tests", function () {
                   it("Should revert if the oracle does not met requires", async function () {
                       await advanceTimeByDate(1, hour)
 
@@ -133,6 +114,128 @@ const { hour } = require("../../../utils/units")
                   })
               })
           }
+
+          describe("Initialize a term", function () {
+              it("Correct initialization", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          termId,
+                          i - 1
+                      )
+
+                      await takaturnDiamond
+                          .connect(accounts[i])
+                          .joinTerm(termId, false, { value: entrance })
+                  }
+
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+
+                  await takaturnDiamond.startTerm(termId)
+
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const termState = term.state
+
+                  await expect(getTermStateFromIndex(termState)).to.equal(TermStates.ActiveTerm)
+              })
+          })
+
+          describe("Participant can join enable autoPay when they join", function () {
+              it("Should allow autoPay", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+                  const wrongTermId = termId + 1
+
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
+                      0
+                  )
+
+                  await expect(
+                      takaturnDiamond.connect(participant_1).toggleAutoPay(termId)
+                  ).to.be.revertedWith("Pay collateral security first")
+
+                  // Join
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_1)
+                          .joinTerm(wrongTermId, false, { value: entrance })
+                  ).to.be.revertedWith("Term doesn't exist")
+
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, false, { value: entrance })
+
+                  await expect(takaturnDiamond.connect(participant_1).toggleAutoPay(termId)).not.to
+                      .be.reverted
+
+                  const participantFundSummary =
+                      await takaturnDiamondParticipant_1.getParticipantFundSummary(
+                          participant_1.address,
+                          termId
+                      )
+
+                  const participantCollateralSummary =
+                      await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
+                          participant_1.address,
+                          termId
+                      )
+
+                  const isParticipant = participantFundSummary[0]
+                  const isCollateralMember = participantCollateralSummary[0]
+
+                  assert.ok(!isParticipant)
+                  assert.ok(isCollateralMember)
+              })
+              it("Should revert when the fund is closed", async function () {
+                  // Create a term with only  two participants and close the two cycles
+                  await takaturnDiamondParticipant_1.createTerm(
+                      2,
+                      registrationPeriod,
+                      cycleTime,
+                      contributionAmount,
+                      contributionPeriod,
+                      usdc.address
+                  )
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
+                      0
+                  )
+
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, false, { value: entrance })
+                  await takaturnDiamond
+                      .connect(participant_2)
+                      .joinTerm(termId, false, { value: entrance })
+
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+                  await takaturnDiamond.startTerm(termId)
+                  await advanceTime(cycleTime.toNumber() + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  await advanceTime(cycleTime.toNumber() + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  await expect(
+                      takaturnDiamond.connect(participant_1).toggleAutoPay(termId)
+                  ).to.be.revertedWith("Wrong state")
+
+                  await expect(
+                      takaturnDiamond.connect(participant_2).toggleAutoPay(termId)
+                  ).to.be.revertedWith("Wrong state")
+              })
+          })
 
           describe("Participant can join multiple terms", function () {
               it("Should update the users mappings", async function () {
@@ -176,17 +279,73 @@ const { hour } = require("../../../utils/units")
 
                       assert.ok(isCollateralMember)
                   }
+              })
 
-                  const participantTerms = await takaturnDiamond.getAllJoinedTerms(
-                      participant_1.address
+              it("Joined terms getters", async function () {
+                  // Create five terms
+                  for (let i = 0; i < 4; i++) {
+                      await takaturnDiamondParticipant_1.createTerm(
+                          totalParticipants,
+                          registrationPeriod,
+                          cycleTime,
+                          contributionAmount,
+                          contributionPeriod,
+                          usdc.address
+                      )
+                  }
+
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(0)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
+                      0
                   )
 
-                  assert.equal(participantTerms.length, 5)
-                  assert.equal(participantTerms[0], 0)
-                  assert.equal(participantTerms[1], 1)
-                  assert.equal(participantTerms[2], 2)
-                  assert.equal(participantTerms[3], 3)
-                  assert.equal(participantTerms[4], 4)
+                  // Participant 1 joins terms 2, 3 and 4
+                  for (let i = 2; i < 5; i++) {
+                      const termId = i
+
+                      await takaturnDiamond
+                          .connect(participant_1)
+                          .joinTerm(termId, false, { value: entrance })
+                  }
+
+                  // Everyone joins term 3
+                  for (let i = 2; i <= totalParticipants; i++) {
+                      await takaturnDiamond
+                          .connect(accounts[i + 1])
+                          .joinTerm(3, false, { value: entrance })
+                  }
+
+                  // Start the term 3
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+
+                  await takaturnDiamond.startTerm(3)
+
+                  const joinedTerms = await takaturnDiamond.getAllJoinedTerms(participant_1.address)
+
+                  const joinedInitializedTerms = await takaturnDiamond.getJoinedTermsByState(
+                      participant_1.address,
+                      0
+                  )
+                  const joinedActiveTerms = await takaturnDiamond.getJoinedTermsByState(
+                      participant_1.address,
+                      1
+                  )
+
+                  //   console.table(joinedTerms)
+                  //   console.table(joinedInitializedTerms)
+                  //   console.table(joinedActiveTerms)
+
+                  assert.equal(joinedTerms[0].toString(), 2)
+                  assert.equal(joinedTerms[1].toString(), 3)
+                  assert.equal(joinedTerms[2].toString(), 4)
+                  assert.equal(joinedTerms.length, 3)
+                  assert.equal(joinedInitializedTerms[0].toString(), 2)
+                  assert.equal(joinedInitializedTerms[1].toString(), 4)
+                  assert.equal(joinedInitializedTerms.length, 2)
+                  assert.equal(joinedActiveTerms[0].toString(), 3)
+                  assert.equal(joinedActiveTerms.length, 1)
               })
           })
 
@@ -236,29 +395,6 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Registration period", function () {
-              it("Should revert if the registration period has ended", async function () {
-                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                  const termId = lastTerm[0]
-
-                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
-
-                  await takaturnDiamond
-                      .connect(participant_1)
-                      .joinTerm(termId, false, { value: entrance })
-
-                  await advanceTime(registrationPeriod.toNumber() + 1)
-
-                  await expect(takaturnDiamond.startTerm(termId)).to.be.revertedWith(
-                      "All spots are not filled"
-                  )
-
-                  await expect(
-                      takaturnDiamond
-                          .connect(participant_2)
-                          .joinTerm(termId, false, { value: entrance })
-                  ).to.be.revertedWith("Registration period ended")
-              })
-
               it("Should return the right registration period remaining", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
@@ -288,17 +424,15 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Joins with yield generation", function () {
-              it("Should emit an event an update the mapping", async function () {
+              it("Should update the mapping", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
 
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
 
-                  await expect(
-                      takaturnDiamond
-                          .connect(participant_1)
-                          .joinTerm(termId, true, { value: entrance })
-                  ).to.emit(takaturnDiamond, "OnYGOptInToggled")
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, true, { value: entrance })
 
                   const userHasoptedInYG = await takaturnDiamond.userHasoptedInYG(
                       termId,
@@ -332,6 +466,108 @@ const { hour } = require("../../../utils/units")
                   await advanceTime(registrationPeriod.toNumber() + 1)
 
                   await takaturnDiamond.startTerm(termId)
+              })
+          })
+
+          describe("Lock yield when joins", function () {
+              it("Should allow optedIn yield when lock is false", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
+
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, true, { value: entrance })
+
+                  const userHasoptedInYG = await takaturnDiamond.userHasoptedInYG(
+                      termId,
+                      participant_1.address
+                  )
+
+                  await advanceTime(registrationPeriod.toNumber() / 2)
+
+                  // Should be true as the lock is false, and the user joins with true
+                  assert.ok(userHasoptedInYG)
+              })
+
+              it("Should allow optedIn yield when lock is false", async function () {
+                  // Only the owner can toggle the lock
+                  await expect(takaturnDiamondParticipant_1.toggleYieldLock()).to.be.revertedWith(
+                      "LibDiamond: Must be contract owner"
+                  )
+                  // Lock true
+                  await takaturnDiamond.toggleYieldLock()
+
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
+
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, true, { value: entrance })
+
+                  const userHasoptedInYG = await takaturnDiamond.userHasoptedInYG(
+                      termId,
+                      participant_1.address
+                  )
+
+                  await advanceTime(registrationPeriod.toNumber() / 2)
+
+                  // Should be false as the lock is true, Even if the user joins with true on yield generation
+                  assert.ok(!userHasoptedInYG)
+              })
+          })
+
+          describe("Expire term", function () {
+              it("Should revert if the try to expire before time", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
+                      "Registration period not ended"
+                  )
+              })
+
+              it("Should revert if all the spots are filled", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          termId,
+                          i - 1
+                      )
+
+                      await takaturnDiamond
+                          .connect(accounts[i])
+                          .joinTerm(termId, false, { value: entrance })
+                  }
+
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+
+                  await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
+                      "All spots are filled, can't expire"
+                  )
+              })
+
+              it("Should revert if all the spots are filled", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
+
+                  await takaturnDiamondParticipant_1.joinTerm(termId, false, { value: entrance })
+
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+
+                  await expect(takaturnDiamond.expireTerm(termId)).to.not.be.reverted
+
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const termState = term.state
+
+                  await expect(getTermStateFromIndex(termState)).to.equal(TermStates.ExpiredTerm)
               })
           })
       })
