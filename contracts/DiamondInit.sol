@@ -2,16 +2,18 @@
 
 pragma solidity 0.8.18;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
 import {LibTermStorage} from "./libraries/LibTermStorage.sol";
 import {LibYieldGenerationStorage} from "./libraries/LibYieldGenerationStorage.sol";
 
-contract DiamondInit {
+contract DiamondInit is Ownable {
     function init(
         address _aggregatorAddressEthUsd,
         address _aggregatorAddressUsdUsdc,
         address _zapAddress, // Zaynfi Zap address
         address _vaultAddress // Zaynfi Vault address
-    ) external {
+    ) external onlyOwner {
         LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
         LibYieldGenerationStorage.YieldProviders storage yieldProvider = LibYieldGenerationStorage
             ._yieldProviders();
