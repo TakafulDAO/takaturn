@@ -258,8 +258,8 @@ const { hour } = require("../../../utils/units")
                       0
                   )
 
-                  // Participant 1 joins the the five terms
-                  for (let i = 0; i < 5; i++) {
+                  // Participant 1 joins terms 2, 3 and 4
+                  for (let i = 2; i < 5; i++) {
                       const termId = i
 
                       await takaturnDiamond
@@ -267,17 +267,17 @@ const { hour } = require("../../../utils/units")
                           .joinTerm(termId, false, { value: entrance })
                   }
 
+                  // Everyone joins term 3
                   for (let i = 2; i <= totalParticipants; i++) {
-                      // Everyone joins term 4
                       await takaturnDiamond
                           .connect(accounts[i + 1])
-                          .joinTerm(4, false, { value: entrance })
+                          .joinTerm(3, false, { value: entrance })
                   }
 
-                  // Start the term 4
+                  // Start the term 3
                   await advanceTime(registrationPeriod.toNumber() + 1)
 
-                  await takaturnDiamond.startTerm(4)
+                  await takaturnDiamond.startTerm(3)
 
                   const joinedTerms = await takaturnDiamond.getAllJoinedTerms(participant_1.address)
 
@@ -290,12 +290,18 @@ const { hour } = require("../../../utils/units")
                       1
                   )
 
-                  console.table(joinedTerms)
-                  console.table(joinedInitializedTerms)
-                  console.table(joinedActiveTerms)
+                  //   console.table(joinedTerms)
+                  //   console.table(joinedInitializedTerms)
+                  //   console.table(joinedActiveTerms)
 
-                  assert.equal(joinedTerms.length, 5)
-                  assert.equal(joinedInitializedTerms.length, 4)
+                  assert.equal(joinedTerms[0].toString(), 2)
+                  assert.equal(joinedTerms[1].toString(), 3)
+                  assert.equal(joinedTerms[2].toString(), 4)
+                  assert.equal(joinedTerms.length, 3)
+                  assert.equal(joinedInitializedTerms[0].toString(), 2)
+                  assert.equal(joinedInitializedTerms[1].toString(), 4)
+                  assert.equal(joinedInitializedTerms.length, 2)
+                  assert.equal(joinedActiveTerms[0].toString(), 3)
                   assert.equal(joinedActiveTerms.length, 1)
               })
           })
