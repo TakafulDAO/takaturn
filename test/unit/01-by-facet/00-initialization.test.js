@@ -48,7 +48,7 @@ const { developmentChains, isDevnet, isFork, networkConfig } = require("../../..
                   )
 
                   const lock = await takaturnDiamond.getYieldLockState()
-                  assert.ok(lock)
+                  assert.ok(!lock)
                   assert.equal(
                       deployConstants[0].toLowerCase(),
                       networkConfig[chainId]["ethUsdPriceFeed"].toLowerCase()
@@ -71,12 +71,12 @@ const { developmentChains, isDevnet, isFork, networkConfig } = require("../../..
                   await takaturnDiamond.toggleYieldLock()
                   let lock = await takaturnDiamond.getYieldLockState()
 
-                  assert.ok(!lock)
+                  assert.ok(lock)
 
                   await takaturnDiamond.toggleYieldLock()
                   lock = await takaturnDiamond.getYieldLockState()
 
-                  assert.ok(lock)
+                  assert.ok(!lock)
               })
           })
       })
