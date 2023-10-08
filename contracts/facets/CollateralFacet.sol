@@ -65,6 +65,7 @@ contract CollateralFacet is ICollateral {
             ._collateralStorage()
             .collaterals[term.termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[term.termId];
+        require(msg.sender == address(this));
 
         (uint collateralToDistribute, address[] memory expellants) = _solveDefaulters(
             collateral,
