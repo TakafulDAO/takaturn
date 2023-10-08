@@ -14,8 +14,6 @@ library LibTermStorage {
     }
 
     struct TermConsts {
-        uint sequencerStartupTime;
-        address sequencerUptimeFeedAddress;
         mapping(string => address) aggregatorsAddresses; // "ETH/USD" => address , "USDC/USD" => address
     }
 

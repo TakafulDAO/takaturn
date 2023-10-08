@@ -23,7 +23,6 @@ const networkConfig = {
         usdcUsdPriceFeed: "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3", // Same as mainnet
         usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // Same as mainnet
         usdcWhale: "0xe68ee8a12c611fd043fb05d65e1548dc1383f2b9", // Same as mainnet
-        sequencerUptimeFeed: "0xFdB631F5EE196F0ed6FAa767959853A9F217697D", // Same as mainnet
         // !Alert: This next values are false. Only used to test local deployment
         zaynfiZap: "0xa61db548ec834e1c74113cd86bd1f8f9fdd6ef22",
         zaynfiVault: "0xf3b23b373dc8854cc2936f4ab4b8e782011ccf87",
@@ -34,7 +33,6 @@ const networkConfig = {
         usdcUsdPriceFeed: "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
         usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // https://developers.circle.com/developer/docs/supported-chains-and-currencies#native-usdc
         usdcWhale: "0xe68ee8a12c611fd043fb05d65e1548dc1383f2b9",
-        sequencerUptimeFeed: "0xFdB631F5EE196F0ed6FAa767959853A9F217697D", // https://docs.chain.link/data-feeds/l2-sequencer-feeds
         // TODO: Update these addresses when Zaynfi is deployed on Arbitrum One
         zaynfiZap: "",
         zaynfiVault: "",
@@ -45,7 +43,6 @@ const networkConfig = {
         usdcUsdPriceFeed: "0x1692Bdd32F31b831caAc1b0c9fAF68613682813b", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
         usdc: "0xfd064A18f3BF249cf1f87FC203E90D8f650f2d63", // https://developers.circle.com/developer/docs/usdc-on-testnet#usdc-on-arbitrum-testnet
         usdcWhale: "0x6ed0c4addc308bb800096b8daa41de5ae219cd36",
-        sequencerUptimeFeed: "0x4da69F028a5790fCCAfe81a75C0D24f46ceCDd69", // https://docs.chain.link/data-feeds/l2-sequencer-feeds
         // TODO: Update these addresses when Zaynfi is deployed on testnet Arbitrum Goerli
         zaynfiZap: "0xc931962FAF7eC41CcE5672c058080d655193A77E",
         zaynfiVault: "0xC8d4424f1c77CD148aD31b852E8a9fbEC3FAE4e4",

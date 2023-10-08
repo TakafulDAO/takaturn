@@ -65,7 +65,6 @@ const { hour } = require("../../../utils/units")
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               if (isDevnet && !isFork) {
                   aggregator = await ethers.getContract("MockEthUsdAggregator")
-                  sequencer = await ethers.getContract("MockSequencer")
                   usdc = await ethers.getContract("FiatTokenV2_1")
               } else {
                   // Fork

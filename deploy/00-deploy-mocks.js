@@ -39,17 +39,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
         log("00. MockUsdcUsdAggregator Deployed!...")
         log("==========================================================================")
-        log("00. Deploying MockSequencer...")
-
-        await deploy("MockSequencer", {
-            contract: "MockSequencer",
-            from: deployer,
-            log: true,
-            args: [decimals, initialPriceEthUsd],
-        })
-
-        log("00. MockSequencer Deployed!...")
-        log("==========================================================================")
         log("00. Deploying USDC mock...")
 
         await deploy("FiatTokenV2_1", {
