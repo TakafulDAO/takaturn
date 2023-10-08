@@ -33,7 +33,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         diamondERC165Init,
         withdrawGoerliEthFacet
 
-    log("01. Deploying Takaturn Diamond...")
+    log("02. Upgrading Takaturn Diamond...")
 
     if (isMainnet || isTestnet || isFork) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
@@ -54,12 +54,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 
     const args = []
-    const initArgs = [
-        ethUsdPriceFeedAddress,
-        usdcUsdPriceFeedAddress,
-        zaynfiZapAddress,
-        zaynfiVaultAddress,
-    ]
 
     if (isMainnet) {
         takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
@@ -68,11 +62,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             args: args,
             log: true,
             facets: ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet", "YGFacetZaynFi"],
-            execute: {
-                contract: "DiamondInit",
-                methodName: "init",
-                args: initArgs,
-            },
             waitConfirmations: waitBlockConfirmations,
         })
     } else {
@@ -89,11 +78,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
                 "YGFacetZaynFi",
                 "WithdrawGoerliEthFacet",
             ],
-            execute: {
-                contract: "DiamondInit",
-                methodName: "init",
-                args: initArgs,
-            },
             waitConfirmations: waitBlockConfirmations,
         })
 
@@ -139,24 +123,24 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         diamondERC165Init.address,
     ]
 
-    log("01. Diamond Deployed!")
+    log("02. Diamond Upgraded!")
     log("==========================================================================")
 
     if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
-        log("01. Verifying Diamond...")
+        log("02. Verifying Diamond...")
         for (let i = 0; i < contractAddresses.length; i++) {
-            log(`01. Verifying "${contractNames[i]}"...`)
+            log(`02. Verifying "${contractNames[i]}"...`)
             await verify(contractAddresses[i], args)
-            log(`01. Verified "${contractNames[i]}"...`)
+            log(`02. Verified "${contractNames[i]}"...`)
             log("==========================================================================")
         }
         if (isTestnet) {
-            log("01. Verifying Withdraw Goerli Eth Facet...")
+            log("02. Verifying Withdraw Goerli Eth Facet...")
             await verify(withdrawGoerliEthFacet.address, args)
-            log("01. Withdraw Goerli Eth Facet Verified!")
+            log("02. Withdraw Goerli Eth Facet Verified!")
         }
         log("==========================================================================")
     }
 }
 
-module.exports.tags = ["all", "diamond", "takaturn_deploy"]
+module.exports.tags = ["all", "diamond", "takaturn_upgrade"]
