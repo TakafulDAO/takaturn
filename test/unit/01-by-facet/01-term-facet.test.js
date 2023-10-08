@@ -235,24 +235,73 @@ const { hour } = require("../../../utils/units")
 
                       assert.ok(isCollateralMember)
                   }
+              })
 
-                  const participantTerms = await takaturnDiamond.getAllJoinedTerms(
-                      participant_1.address
-                  )
+              it.only("Joined terms getters", async function () {
+                  // Create five terms
+                  for (let i = 0; i < 4; i++) {
+                      await takaturnDiamondParticipant_1.createTerm(
+                          totalParticipants,
+                          registrationPeriod,
+                          cycleTime,
+                          contributionAmount,
+                          contributionPeriod,
+                          usdc.address
+                      )
+                  }
 
-                  assert.equal(participantTerms.length, 5)
-                  assert.equal(participantTerms[0], 0)
-                  assert.equal(participantTerms[1], 1)
-                  assert.equal(participantTerms[2], 2)
-                  assert.equal(participantTerms[3], 3)
-                  assert.equal(participantTerms[4], 4)
-
-                  const joinedTerms = await takaturnDiamond.getJoinedTermsByState(
-                      participant_1.address,
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(0)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
                       0
                   )
 
-                  assert.equal(joinedTerms.length, 5)
+                  // Participant 1 joins terms 2, 3 and 4
+                  for (let i = 2; i < 5; i++) {
+                      const termId = i
+
+                      await takaturnDiamond
+                          .connect(participant_1)
+                          .joinTerm(termId, false, { value: entrance })
+                  }
+
+                  // Everyone joins term 3
+                  for (let i = 2; i <= totalParticipants; i++) {
+                      await takaturnDiamond
+                          .connect(accounts[i + 1])
+                          .joinTerm(3, false, { value: entrance })
+                  }
+
+                  // Start the term 3
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+
+                  await takaturnDiamond.startTerm(3)
+
+                  const joinedTerms = await takaturnDiamond.getAllJoinedTerms(participant_1.address)
+
+                  const joinedInitializedTerms = await takaturnDiamond.getJoinedTermsByState(
+                      participant_1.address,
+                      0
+                  )
+                  const joinedActiveTerms = await takaturnDiamond.getJoinedTermsByState(
+                      participant_1.address,
+                      1
+                  )
+
+                  //   console.table(joinedTerms)
+                  //   console.table(joinedInitializedTerms)
+                  //   console.table(joinedActiveTerms)
+
+                  assert.equal(joinedTerms[0].toString(), 2)
+                  assert.equal(joinedTerms[1].toString(), 3)
+                  assert.equal(joinedTerms[2].toString(), 4)
+                  assert.equal(joinedTerms.length, 3)
+                  assert.equal(joinedInitializedTerms[0].toString(), 2)
+                  assert.equal(joinedInitializedTerms[1].toString(), 4)
+                  assert.equal(joinedInitializedTerms.length, 2)
+                  assert.equal(joinedActiveTerms[0].toString(), 3)
+                  assert.equal(joinedActiveTerms.length, 1)
               })
           })
 
