@@ -213,6 +213,70 @@ const { hour } = require("../../../utils/units")
                   await advanceTime(registrationPeriod.toNumber() + 1)
                   await takaturnDiamond.startTerm(termId)
               })
+
+              it("Expells participant 6 before becoming beneficiary at cycle 2", async function () {
+                // Contribution period ended on the 2nd cycle
+                // Participant 6 has defaulted all cycles so far
+                // Participant 2 is the beneficiary
+                // Collateral lower than 1.0 SCC
+                // Participant 6 gets expelled
+                // Participant 6 gets his collateral (which is < 1.0 SCC) back
+                // Participant 2 receives less money in the money pot
+                // Participant 3 to 5 will receive less money in the money pot
+                // Participant 2 to 5 are exempted from paying the contribution during cycle 6
+                // Participant 1 will still be required to pay the contribution during cycle 6
+                // Nobody else defaults
+                const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                const termId = lastTerm[0]
+
+                // First cycle
+                for (let i = 1; i <= totalParticipants; i++) {
+                    if (i == 1) {
+                        continue
+                    }
+                    if (i !== 6) {
+                        await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                    }
+                }
+                await advanceTime(cycleTime.toNumber() + 1)
+                await takaturnDiamond.closeFundingPeriod(termId)
+                await takaturnDiamond.startNewCycle(termId)
+
+                // Second cycle
+                for (let i = 1; i <= totalParticipants; i++) {
+                    if (i == 2) {
+                        continue
+                    }
+                    if (i !== 6) {
+                        await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                    }
+                }
+
+                await advanceTime(cycleTime.toNumber() + 1)
+                // Participant 6 should get expelled
+                await expect(takaturnDiamond.closeFundingPeriod(termId))
+                .to.emit(takaturnDiamond, "OnDefaulterExpelled")
+                .withArgs(termId, 2, participant_6.address)
+
+                // Participant 6 can claim their remaining collateral back, even when the term isn't closed
+                /*const balance = await takaturnDiamond.getWithdrawableUserBalance(termId, participant_6.address)
+                assert.ok(balance > 0)
+
+                await expect(takaturnDiamond.connect(participant_6).withdrawCollateral(termId))
+                .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                .withArgs(termId, participant_6.address, balance)*/
+
+                // Participant 2 receives less money in the money pot
+                const moneyPot = contributionAmount * (totalParticipants - 2) * 10 ** 6
+                await expect(takaturnDiamond.connect(participant_2).withdrawFund(termId))
+                .to.emit(takaturnDiamond, "OnFundWithdrawn")
+                .withArgs(termId, participant_2.address, moneyPot)
+
+                await takaturnDiamond.startNewCycle(termId)
+
+
+            })
+
               it("Participant 1 gets the money pot, nobody defaults", async function () {
                   // Contribution period ended
                   // Participant 1 does not have to pay the contribution
@@ -334,6 +398,9 @@ const { hour } = require("../../../utils/units")
                   // Collateral liquidated for participant 6
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
+
+                  const summary = await takaturnDiamondDeployer.getTermSummary()
+                  console.log(summary)
 
                   // Pay the contribution for the first cycle
                   for (let i = 2; i < totalParticipants; i++) {
