@@ -263,7 +263,7 @@ contract FundFacet is IFund {
         }
 
         if (hasCollateralPool) {
-            ICollateral(address(this)).withdrawReimbursement(termId, msg.sender);
+            LibCollateral._withdrawReimbursement(termId, msg.sender);
         }
     }
 
