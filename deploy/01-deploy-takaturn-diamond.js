@@ -59,7 +59,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         usdcUsdPriceFeedAddress,
         zaynfiZapAddress,
         zaynfiVaultAddress,
-        true,
+        false,
     ]
 
     if (isMainnet) {
