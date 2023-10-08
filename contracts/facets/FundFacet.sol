@@ -174,6 +174,7 @@ contract FundFacet is IFund {
             .collaterals[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         require(collateral.isCollateralMember[msg.sender], "Pay collateral security first");
+        require(fund.currentState != LibFundStorage.FundStates.FundClosed, "Wrong state");
         bool enabled = !fund.autoPayEnabled[msg.sender];
         fund.autoPayEnabled[msg.sender] = enabled;
 
