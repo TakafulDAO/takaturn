@@ -330,7 +330,7 @@ const { hour } = require("../../../utils/units")
                   assert.ok(moneyPotFrozen)
               })
 
-              it("Liquidate collateral", async function () {
+              it("Liquidate collateral to non previous beneficiary", async function () {
                   // Contribution period ended on the first cycle
                   // Participant 6 defaults
                   // Everyone else pays
@@ -351,7 +351,7 @@ const { hour } = require("../../../utils/units")
                       .withArgs(termId, participant_6.address, 5316321105794790)
               })
 
-              it("Participant 1 gets the money pot, participant 6 defaults", async function () {
+              it("Liquidate collateral previous beneficiary", async function () {
                   // Contribution period ended on the second cycle
                   // Nobody defaults on first cycle
                   // Participant 1 defaults on second cycle
@@ -455,7 +455,7 @@ const { hour } = require("../../../utils/units")
                       .withArgs(termId, participant_4.address, contributionAmount)
               })
 
-              it("Defaulter expelled", async function () {
+              it("Defaulter expelled, non previous beneficiary", async function () {
                   // Participant 5 defaults all cycles
                   // Participant 5 expelled at the end of the fourth cycle
                   this.timeout(200000)
