@@ -7,6 +7,18 @@ require("solidity-coverage")
 require("hardhat-gas-reporter")
 require("hardhat-contract-sizer")
 
+const { joinTerm } = require("./tasks/joinTerm")
+const { startTerm } = require("./tasks/startTerm")
+const { payContribution } = require("./tasks/payContribution")
+const { toggleAutoPay } = require("./tasks/toggleAutoPay")
+const { withdrawFund } = require("./tasks/withdrawFund")
+const { withdrawCollateral } = require("./tasks/withdrawCollateral")
+const { closeFundingPeriod } = require("./tasks/closeFundingPeriod")
+const { startNewCycle } = require("./tasks/startNewCycle")
+const { termSummary } = require("./tasks/termSummary")
+const { userSummary } = require("./tasks/userSummary")
+const { userSummaryByTermId } = require("./tasks/userSummaryByTermId")
+
 /******************************************** Private Keys *********************************************/
 const DEPLOYER_PK = process.env.DEPLOYER_PK
 const ARBITRUM_MAINNET_DEPLOYER_PK = process.env.ARBITRUM_MAINNET_DEPLOYER_PK
@@ -41,6 +53,73 @@ const PARTICIPANT_1_ADDRESS = "0x5ab2d59849a91484ab35312121e8a47a494d1622"
 const PARTICIPANT_2_ADDRESS = "0xd26235AF7919C81470481fF4436B5465B0bbF6F2"
 const PARTICIPANT_3_ADDRESS = "0x73FA3916DEeE2316876A0d88E763C6D6566c50D0"
 
+/***************************************** Tasks ******************************************************/
+task("joinTerm", "Join the term")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return joinTerm(taskArguments, hre)
+    })
+
+task("startTerm", "Start the term")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return startTerm(taskArguments, hre)
+    })
+
+task("payContribution", "Pay contribution for the term")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return payContribution(taskArguments, hre)
+    })
+
+task("toggleAutoPay", "Toggle auto pay for the term")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return toggleAutoPay(taskArguments, hre)
+    })
+
+task("withdrawFund", "Withdraw fund for the term")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return withdrawFund(taskArguments, hre)
+    })
+
+task("withdrawCollateral", "Withdraw collateral for the term")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return withdrawCollateral(taskArguments, hre)
+    })
+
+task("closeFundingPeriod", "Close the funding period for the current cycle")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return closeFundingPeriod(taskArguments, hre)
+    })
+
+task("startNewCycle", "Start a new cycle")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return startNewCycle(taskArguments, hre)
+    })
+
+task("termSummary", "Prints the term summary")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return termSummary(taskArguments, hre)
+    })
+
+task("userSummary", "Prints the user summary")
+    .addParam("userAddress", "The user address to check")
+    .setAction(async (taskArguments, hre) => {
+        return userSummary(taskArguments, hre)
+    })
+
+task("userSummaryByTermId", "Prints the user summary for a term")
+    .addParam("userAddress", "The user address to check")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return userSummaryByTermId(taskArguments, hre)
+    })
 /***************************************** Config ******************************************************/
 
 /** @type import('hardhat/config').HardhatUserConfig */

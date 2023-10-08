@@ -7,12 +7,12 @@ async function createTerm() {
     const takaturn = await ethers.getContract("TakaturnDiamond")
 
     console.log("Creating term...")
-    const totalParticipants = 4
-    const registrationPeriod = 86400
-    const cycleTime = 172800
-    const contributionAmount = 10
-    const contributionPeriod = 86400
-    const stableTokenAddress = "0x72A9c57cD5E2Ff20450e409cF6A542f1E6c710fc"
+    const totalParticipants = 3
+    const registrationPeriod = 120 // 2 minutes
+    const cycleTime = 180 // 2 minutes
+    const contributionAmount = 10 // USDC
+    const contributionPeriod = 120 // 1 minute 50 seconds
+    const stableTokenAddress = "0xfd064A18f3BF249cf1f87FC203E90D8f650f2d63"
 
     const tx = await takaturn.createTerm(
         totalParticipants,
