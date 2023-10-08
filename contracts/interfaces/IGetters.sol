@@ -177,4 +177,6 @@ interface IGetters {
     function totalYieldGenerated(uint termId) external returns (uint);
 
     function userYieldGenerated(uint termId, address user) external returns (uint);
+
+    function getYieldLockState() external view returns (bool);
 }

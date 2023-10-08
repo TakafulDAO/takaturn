@@ -561,4 +561,9 @@ contract GettersFacet is IGetters {
             totalYieldGenerated(termId) *
             yieldDistributionRatio(termId, user);
     }
+
+    /// @notice This function is used to get the current state of the yield lock
+    function getYieldLockState() external view returns (bool) {
+        return LibYieldGenerationStorage._yieldLock().yieldLock;
+    }
 }
