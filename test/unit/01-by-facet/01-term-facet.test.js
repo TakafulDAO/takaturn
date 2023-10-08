@@ -469,6 +469,57 @@ const { hour } = require("../../../utils/units")
               })
           })
 
+          describe("Lock yield when joins", function () {
+              it("Should allow optedIn yield when lock is false", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
+
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, true, { value: entrance })
+
+                  const userHasoptedInYG = await takaturnDiamond.userHasoptedInYG(
+                      termId,
+                      participant_1.address
+                  )
+
+                  await advanceTime(registrationPeriod.toNumber() / 2)
+
+                  // Should be true as the lock is false, and the user joins with true
+                  assert.ok(userHasoptedInYG)
+              })
+
+              it("Should allow optedIn yield when lock is false", async function () {
+                  // Only the owner can toggle the lock
+                  await expect(takaturnDiamondParticipant_1.toggleYieldLock()).to.be.revertedWith(
+                      "LibDiamond: Must be contract owner"
+                  )
+                  // Lock true
+                  await takaturnDiamond.toggleYieldLock()
+
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
+
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, true, { value: entrance })
+
+                  const userHasoptedInYG = await takaturnDiamond.userHasoptedInYG(
+                      termId,
+                      participant_1.address
+                  )
+
+                  await advanceTime(registrationPeriod.toNumber() / 2)
+
+                  // Should be false as the lock is true, Even if the user joins with true on yield generation
+                  assert.ok(!userHasoptedInYG)
+              })
+          })
+
           describe("Expire term", function () {
               it("Should revert if the try to expire before time", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
