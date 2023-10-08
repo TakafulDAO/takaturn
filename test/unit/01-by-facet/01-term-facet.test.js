@@ -191,6 +191,50 @@ const { hour } = require("../../../utils/units")
                   assert.ok(!isParticipant)
                   assert.ok(isCollateralMember)
               })
+              it.only("Should revert when the fund is closed", async function () {
+                  // Create a term with only  two participants and close the two cycles
+                  await takaturnDiamondParticipant_1.createTerm(
+                      2,
+                      registrationPeriod,
+                      cycleTime,
+                      contributionAmount,
+                      contributionPeriod,
+                      usdc.address
+                  )
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
+                      0
+                  )
+
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTerm(termId, false, { value: entrance })
+                  await takaturnDiamond
+                      .connect(participant_2)
+                      .joinTerm(termId, false, { value: entrance })
+
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+                  await takaturnDiamond.startTerm(termId)
+                  await advanceTime(cycleTime.toNumber() + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  await advanceTime(cycleTime.toNumber() + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  await expect(
+                      takaturnDiamond.connect(participant_1).toggleAutoPay(termId)
+                  ).to.be.revertedWith("Wrong state")
+
+                  await expect(
+                      takaturnDiamond.connect(participant_2).toggleAutoPay(termId)
+                  ).to.be.revertedWith("Wrong state")
+              })
           })
 
           describe("Participant can join multiple terms", function () {
