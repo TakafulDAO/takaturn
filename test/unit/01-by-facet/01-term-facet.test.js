@@ -191,7 +191,7 @@ const { hour } = require("../../../utils/units")
                   assert.ok(!isParticipant)
                   assert.ok(isCollateralMember)
               })
-              it.only("Should revert when the fund is closed", async function () {
+              it("Should revert when the fund is closed", async function () {
                   // Create a term with only  two participants and close the two cycles
                   await takaturnDiamondParticipant_1.createTerm(
                       2,
@@ -281,7 +281,7 @@ const { hour } = require("../../../utils/units")
                   }
               })
 
-              it.only("Joined terms getters", async function () {
+              it("Joined terms getters", async function () {
                   // Create five terms
                   for (let i = 0; i < 4; i++) {
                       await takaturnDiamondParticipant_1.createTerm(
