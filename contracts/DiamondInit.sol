@@ -10,7 +10,8 @@ contract DiamondInit {
         address _aggregatorAddressEthUsd,
         address _aggregatorAddressUsdUsdc,
         address _zapAddress, // Zaynfi Zap address
-        address _vaultAddress // Zaynfi Vault address
+        address _vaultAddress, // Zaynfi Vault address
+        bool _yieldLock
     ) external {
         LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
         LibYieldGenerationStorage.YieldProviders storage yieldProvider = LibYieldGenerationStorage
@@ -21,5 +22,7 @@ contract DiamondInit {
 
         yieldProvider.providerAddresses["ZaynZap"] = _zapAddress;
         yieldProvider.providerAddresses["ZaynVault"] = _vaultAddress;
+
+        LibYieldGenerationStorage._yieldLock().yieldLock = _yieldLock;
     }
 }

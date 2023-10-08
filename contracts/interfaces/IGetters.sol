@@ -177,4 +177,18 @@ interface IGetters {
     function totalYieldGenerated(uint termId) external returns (uint);
 
     function userYieldGenerated(uint termId, address user) external returns (uint);
+
+    function getYieldLockState() external view returns (bool);
+
+    /// @notice This function return the current constant values for oracles and yield providers
+    /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
+    /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"
+    /// @param zapAddress The name of the zap address. Example: "ZaynZap"
+    /// @param vaultAddress The name of the vault address. Example: "ZaynVault"
+    function getConstants(
+        string memory firstAggregator,
+        string memory secondAggregator,
+        string memory zapAddress,
+        string memory vaultAddress
+    ) external view returns (address, address, address, address);
 }

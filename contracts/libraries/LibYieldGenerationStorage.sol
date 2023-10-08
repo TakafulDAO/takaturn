@@ -5,10 +5,15 @@ library LibYieldGenerationStorage {
     uint public constant YIELD_GENERATION_VERSION = 1;
     bytes32 constant YIELD_PROVIDERS_POSITION = keccak256("diamond.standard.yield.providers");
     bytes32 constant YIELD_STORAGE_POSITION = keccak256("diamond.standard.yield.storage");
+    bytes32 constant YIELD_LOCK_POSITION = keccak256("diamond.standard.yield.lock");
 
     enum YGProviders {
         InHouse,
         ZaynFi
+    }
+
+    struct YieldLock {
+        bool yieldLock;
     }
 
     // Both index 0 are reserved for ZaynFi
@@ -37,6 +42,13 @@ library LibYieldGenerationStorage {
 
     function _yieldExists(uint termId) internal view returns (bool) {
         return _yieldStorage().yields[termId].initialized;
+    }
+
+    function _yieldLock() internal pure returns (YieldLock storage yieldLock) {
+        bytes32 position = YIELD_LOCK_POSITION;
+        assembly {
+            yieldLock.slot := position
+        }
     }
 
     function _yieldProviders() internal pure returns (YieldProviders storage yieldProviders) {
