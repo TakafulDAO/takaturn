@@ -68,7 +68,7 @@ contract GettersFacet is IGetters {
 
         for (uint i; i < joinedTermsLength; ) {
             if (LibTermStorage._termStorage().terms[joinedTerms[i]].state == state) {
-                temporaryArray[termsCounter] = i;
+                temporaryArray[termsCounter] = joinedTerms[i];
                 unchecked {
                     ++termsCounter;
                 }
@@ -100,7 +100,7 @@ contract GettersFacet is IGetters {
 
         for (uint i; i < joinedTermsLength; ) {
             if (wasExpelled(joinedTerms[i], participant)) {
-                temporaryArray[termsCounter] = i;
+                temporaryArray[termsCounter] = joinedTerms[i];
                 unchecked {
                     ++termsCounter;
                 }
