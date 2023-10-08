@@ -29,10 +29,6 @@ interface ICollateral {
     function withdrawCollateral(uint termId) external;
 
     /// @param termId The term id
-    /// @param participant The participant address
-    function withdrawReimbursement(uint termId, address participant) external;
-
-    /// @param termId The term id
     function releaseCollateral(uint termId) external;
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
