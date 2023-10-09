@@ -267,14 +267,6 @@ contract FundFacet is IFund {
         }
     }
 
-    /// @param termId the id of the term
-    /// @param beneficiary the address of the participant to check
-    /// @return true if the participant is a beneficiary
-    function isBeneficiary(uint termId, address beneficiary) external view returns (bool) {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        return fund.isBeneficiary[beneficiary];
-    }
-
     /// @notice function to pay the actual contribution for the cycle
     /// @param _termId the id of the term
     /// @param _payer the address that's paying
