@@ -331,7 +331,7 @@ contract FundFacet is IFund {
 
             uint expellantsLength = expellants.length;
             for (uint i; i < expellantsLength; ) {
-                if (expellants[i] == address(0)) {
+                if (expellants[i] == address(0) || expellants[i] == beneficiary) {
                     unchecked {
                         ++i;
                     }
