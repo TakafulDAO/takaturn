@@ -16,6 +16,7 @@ const { withdrawCollateral } = require("./tasks/withdrawCollateral")
 const { closeFundingPeriod } = require("./tasks/closeFundingPeriod")
 const { startNewCycle } = require("./tasks/startNewCycle")
 const { termSummary } = require("./tasks/termSummary")
+const { fundSummary } = require("./tasks/fundSummary")
 const { userSummary } = require("./tasks/userSummary")
 const { userSummaryByTermId } = require("./tasks/userSummaryByTermId")
 
@@ -106,6 +107,12 @@ task("termSummary", "Prints the term summary")
     .addParam("termId", "The term Id to check")
     .setAction(async (taskArguments, hre) => {
         return termSummary(taskArguments, hre)
+    })
+
+task("fundSummary", "Prints the fund summary")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return fundSummary(taskArguments, hre)
     })
 
 task("userSummary", "Prints the user summary")

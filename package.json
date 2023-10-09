@@ -57,6 +57,7 @@
     "close:cycle": "yarn hardhat closeFundingPeriod --network testnet_arbitrum --term-id",
     "start:cycle": "yarn hardhat startNewCycle --network testnet_arbitrum --term-id",
     "summary:term": "yarn hardhat termSummary --network testnet_arbitrum --term-id",
+    "summary:fund": "yarn hardhat fundSummary --network testnet_arbitrum --term-id",
     "summary:user": "yarn hardhat userSummary --network testnet_arbitrum --user-address",
     "summary:user:id": "yarn hardhat userSummaryByTermId --network testnet_arbitrum --user-address"
   },
