@@ -95,6 +95,9 @@ contract FundFacet is IFund {
 
             // The current beneficiary or someone who is exempt doesn't pay neither gets defaulted
             if (p == currentBeneficiary || fund.isExemptedOnCycle[currentCycle].exempted[p]) {
+                if (EnumerableSet.contains(fund._defaulters, p)) {
+                    EnumerableSet.remove(fund._defaulters, p);
+                }
                 unchecked {
                     ++i;
                 }
