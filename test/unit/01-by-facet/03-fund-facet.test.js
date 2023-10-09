@@ -181,15 +181,17 @@ const { hour } = require("../../../utils/units")
               })
           })
 
-          describe("isBeneficiary function", function () {
-              it("Check the isBeneficiary return vale", async function () {
+          describe("isBeneficiary", function () {
+              it("Check the return vale", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
 
-                  let isBeneficiary = await takaturnDiamondDeployer.isBeneficiary(
-                      termId,
-                      participant_1.address
-                  )
+                  let participant_1_fundSummary =
+                      await takaturnDiamondDeployer.getParticipantFundSummary(
+                          participant_1.address,
+                          termId
+                      )
+                  let isBeneficiary = participant_1_fundSummary[1]
                   assert.equal(isBeneficiary, false, "The participant is not a beneficiary")
 
                   // Pay the contribution for the first cycle
@@ -213,10 +215,12 @@ const { hour } = require("../../../utils/units")
 
                   await takaturnDiamond.startNewCycle(termId)
 
-                  isBeneficiary = await takaturnDiamondDeployer.isBeneficiary(
-                      termId,
-                      participant_1.address
-                  )
+                  participant_1_fundSummary =
+                      await takaturnDiamondDeployer.getParticipantFundSummary(
+                          participant_1.address,
+                          termId
+                      )
+                  isBeneficiary = participant_1_fundSummary[1]
                   assert.equal(isBeneficiary, true, "The participant is a beneficiary")
               })
           })
