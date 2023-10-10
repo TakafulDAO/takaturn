@@ -60,7 +60,7 @@ contract GettersFacet is IGetters {
     function getJoinedTermsByState(
         address participant,
         LibTermStorage.TermStates state
-    ) external view returns (uint[] memory) {
+    ) public view returns (uint[] memory) {
         uint[] memory joinedTerms = getAllJoinedTerms(participant);
         uint[] memory temporaryArray = new uint[](joinedTerms.length);
         uint termsCounter;
@@ -124,7 +124,7 @@ contract GettersFacet is IGetters {
 
     /// @param termId the term id
     /// @return remaining cycles
-    function getRemainingCycles(uint termId) external view returns (uint) {
+    function getRemainingCycles(uint termId) public view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
         return (1 + fund.totalAmountOfCycles - fund.currentCycle);
@@ -155,6 +155,33 @@ contract GettersFacet is IGetters {
         );
 
         return remainingCycles * contributionAmountWei;
+    }
+
+    /// @notice a function to get the needed allowance for every active term the user is part of
+    /// @param user the user address
+    /// @return the needed allowance
+    function getNeededAllowance(address user) external view returns (uint) {
+        uint neededAllowance;
+
+        uint[] memory activeTerms = getJoinedTermsByState(
+            user,
+            LibTermStorage.TermStates.ActiveTerm
+        );
+
+        uint activeTermsLength = activeTerms.length;
+
+        for (uint i; i < activeTermsLength; ) {
+            LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[activeTerms[i]];
+            uint remainingPayments = term.contributionAmount *
+                getRemainingCycles(activeTerms[i]) *
+                10 ** 6;
+            neededAllowance += remainingPayments;
+            unchecked {
+                ++i;
+            }
+        }
+
+        return neededAllowance;
     }
 
     // COLLATERAL GETTERS
