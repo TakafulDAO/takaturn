@@ -167,8 +167,13 @@ contract GettersFacet is IGetters {
             user,
             LibTermStorage.TermStates.ActiveTerm
         );
+        uint[] memory initializedTerms = getJoinedTermsByState(
+            user,
+            LibTermStorage.TermStates.InitializingTerm
+        );
 
         uint activeTermsLength = activeTerms.length;
+        uint initializedTermsLength = initializedTerms.length;
 
         for (uint i; i < activeTermsLength; ) {
             LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[activeTerms[i]];
@@ -176,6 +181,17 @@ contract GettersFacet is IGetters {
                 getRemainingCycles(activeTerms[i]) *
                 10 ** 6;
             neededAllowance += remainingPayments;
+            unchecked {
+                ++i;
+            }
+        }
+
+        for (uint i; i < initializedTermsLength; ) {
+            LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[
+                initializedTerms[i]
+            ];
+            uint totalPayments = term.contributionAmount * term.totalParticipants * 10 ** 6;
+            neededAllowance += totalPayments;
             unchecked {
                 ++i;
             }
