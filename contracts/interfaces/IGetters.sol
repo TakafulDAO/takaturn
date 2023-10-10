@@ -4,9 +4,9 @@ pragma solidity 0.8.18;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {LibTerm} from "../libraries/LibTerm.sol";
-import {LibCollateral} from "../libraries/LibCollateral.sol";
-import {LibFund} from "../libraries/LibFund.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
+import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
 interface IGetters {
     // TERM GETTERS
@@ -23,8 +23,8 @@ interface IGetters {
 
     /// @notice Get current information of a term
     /// @param termId the id of the term
-    /// @return Term Struct, see LibTerm.sol
-    function getTermSummary(uint termId) external view returns (LibTerm.Term memory);
+    /// @return Term Struct, see LibTermStorage.sol
+    function getTermSummary(uint termId) external view returns (LibTermStorage.Term memory);
 
     /// @notice Gets all terms a user has previously joined
     /// @param participant address
@@ -37,7 +37,7 @@ interface IGetters {
     /// @return List of termIDs
     function getJoinedTermsByState(
         address participant,
-        LibTerm.TermStates state
+        LibTermStorage.TermStates state
     ) external view returns (uint[] memory);
 
     /// @notice Gets all terms a user was previously expelled from
@@ -60,6 +60,11 @@ interface IGetters {
     /// @return total remaining contribution in wei
     function getRemainingCyclesContributionWei(uint termId) external view returns (uint);
 
+    /// @notice a function to get the needed allowance
+    /// @param user the user address
+    /// @return the needed allowance
+    function getNeededAllowance(address user) external view returns (uint);
+
     // COLLATERAL GETTERS
 
     /// @notice Gets a users collateral summary
@@ -69,6 +74,7 @@ interface IGetters {
     /// @return current users locked collateral balance in wei
     /// @return current users unlocked collateral balance in wei
     /// @return initial users deposit in wei
+    /// @return expulsion limit
     function getDepositorCollateralSummary(
         address depositor,
         uint termId
@@ -77,13 +83,16 @@ interface IGetters {
     /// @notice Gets the collateral summary of a term
     /// @param termId the id of the term
     /// @return if collateral is initialized
-    /// @return current state of the collateral, see States struct in LibCollateral.sol
+    /// @return current state of the collateral, see States struct in LibCollateralStorage.sol
     /// @return time of first deposit in seconds, 0 if no deposit occured yet
     /// @return current member count
     /// @return list of depositors
     function getCollateralSummary(
         uint termId
-    ) external view returns (bool, LibCollateral.CollateralStates, uint, uint, address[] memory);
+    )
+        external
+        view
+        returns (bool, LibCollateralStorage.CollateralStates, uint, uint, address[] memory);
 
     /// @notice Gets the required minimum collateral deposit based on the position
     /// @param termId the term id
@@ -116,7 +125,7 @@ interface IGetters {
     )
         external
         view
-        returns (bool, LibFund.FundStates, IERC20, address[] memory, uint, uint, uint, uint);
+        returns (bool, LibFundStorage.FundStates, IERC20, address[] memory, uint, uint, uint, uint);
 
     /// @notice Gets the current beneficiary of a term
     /// @param termId the id of the term
@@ -173,4 +182,18 @@ interface IGetters {
     function totalYieldGenerated(uint termId) external returns (uint);
 
     function userYieldGenerated(uint termId, address user) external returns (uint);
+
+    function getYieldLockState() external view returns (bool);
+
+    /// @notice This function return the current constant values for oracles and yield providers
+    /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
+    /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"
+    /// @param zapAddress The name of the zap address. Example: "ZaynZap"
+    /// @param vaultAddress The name of the vault address. Example: "ZaynVault"
+    function getConstants(
+        string memory firstAggregator,
+        string memory secondAggregator,
+        string memory zapAddress,
+        string memory vaultAddress
+    ) external view returns (address, address, address, address);
 }

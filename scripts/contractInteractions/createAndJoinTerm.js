@@ -14,11 +14,11 @@ async function createAndJoinTerm() {
 
     console.log("Creating term...")
     const totalParticipants = 3
-    const registrationPeriod = 30 // Three minutes
-    const cycleTime = 60 // One minute
+    const registrationPeriod = 120 // Two minutes
+    const cycleTime = 180 // Three minute
     const contributionAmount = 10
-    const contributionPeriod = 50 // One minute
-    const stableTokenAddress = "0x72A9c57cD5E2Ff20450e409cF6A542f1E6c710fc"
+    const contributionPeriod = 120 // Two minutes
+    const stableTokenAddress = "0xfd064A18f3BF249cf1f87FC203E90D8f650f2d63"
 
     const createTermTx = await takaturn
         .connect(participant_1)
@@ -39,17 +39,9 @@ async function createAndJoinTerm() {
 
     console.log("Joining term...")
 
-    for (let i = 0; i < totalParticipants; i++) {
-        console.log(`Participant ${i + 1} joining term ${termParams.termId}...`)
-        const entrance = await takaturn.minCollateralToDeposit(termParams.termId, i)
-
-        if (i === 0) {
-            const joinTermTx = await takaturn
-                .connect(accounts[i])
-                .joinTerm(termParams.termId, true, { value: entrance })
-            await joinTermTx.wait(1)
-            continue
-        }
+    for (let i = 1; i < accounts.length; i++) {
+        console.log(`Participant ${i} joining term ${termParams.termId}...`)
+        const entrance = await takaturn.minCollateralToDeposit(termParams.termId, i - 1)
 
         const joinTermTx = await takaturn
             .connect(accounts[i])
@@ -58,8 +50,7 @@ async function createAndJoinTerm() {
     }
 
     console.log("Everyone joined!")
-    console.log("Participant 1 opted in for yield generation, Participant 2 and 3 opted out.")
-    console.log("Wait 30 seconds for registration period to end and start the term...")
+    console.log("Wait two minutes for registration period to end and start the term...")
 
     if (network.config.chainId === 31337) {
         console.log("Working on a local network, moving blocks...")

@@ -7,21 +7,19 @@ pragma solidity 0.8.18;
 /// @notice This is used to allow fund to easily communicate with collateral
 /// @dev v2.0 (post-deploy)
 
-import {LibCollateral} from "../libraries/LibCollateral.sol";
-import {LibTerm} from "../libraries/LibTerm.sol";
+import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
+import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 
 interface ICollateral {
     // Function cannot be called at this time.
     error FunctionInvalidAtThisState();
-
-    function setStateOwner(uint termId, LibCollateral.CollateralStates newState) external;
 
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
     /// @param term the term object
     /// @param defaulters Address that was randomly selected for the current cycle
     function requestContribution(
-        LibTerm.Term memory term,
+        LibTermStorage.Term memory term,
         address[] calldata defaulters
     ) external returns (address[] memory);
 
@@ -29,10 +27,6 @@ interface ICollateral {
     /// @dev This follows the pull-over-push pattern.
     /// @param termId The term id
     function withdrawCollateral(uint termId) external;
-
-    /// @param termId The term id
-    /// @param participant The participant address
-    function withdrawReimbursement(uint termId, address participant) external;
 
     /// @param termId The term id
     function releaseCollateral(uint termId) external;

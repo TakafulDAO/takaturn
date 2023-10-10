@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-library LibTerm {
+library LibTermStorage {
     uint public constant TERM_VERSION = 2;
     bytes32 constant TERM_CONSTS_POSITION = keccak256("diamond.standard.term.consts");
     bytes32 constant TERM_STORAGE_POSITION = keccak256("diamond.standard.term.storage");
@@ -14,8 +14,6 @@ library LibTerm {
     }
 
     struct TermConsts {
-        uint sequencerStartupTime;
-        address sequencerUptimeFeedAddress;
         mapping(string => address) aggregatorsAddresses; // "ETH/USD" => address , "USDC/USD" => address
     }
 

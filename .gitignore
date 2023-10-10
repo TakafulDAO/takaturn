@@ -6,7 +6,6 @@ coverage.json
 typechain
 typechain-types
 gas-report.txt
-contracts-size-report.txt
 
 #Hardhat files
 cache
