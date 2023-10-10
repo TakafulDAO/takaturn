@@ -97,6 +97,11 @@ contract FundFacet is IFund {
             if (p == currentBeneficiary || fund.isExemptedOnCycle[currentCycle].exempted[p]) {
                 if (EnumerableSet.contains(fund._defaulters, p)) {
                     EnumerableSet.remove(fund._defaulters, p);
+                    if (p == currentBeneficiary) {
+                        EnumerableSet.add(fund._beneficiaries, p);
+                    } else {
+                        EnumerableSet.add(fund._participants, p);
+                    }
                 }
                 unchecked {
                     ++i;
