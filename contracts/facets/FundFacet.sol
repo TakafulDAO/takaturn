@@ -95,6 +95,14 @@ contract FundFacet is IFund {
 
             // The current beneficiary or someone who is exempt doesn't pay neither gets defaulted
             if (p == currentBeneficiary || fund.isExemptedOnCycle[currentCycle].exempted[p]) {
+                if (EnumerableSet.contains(fund._defaulters, p)) {
+                    EnumerableSet.remove(fund._defaulters, p);
+                    if (p == currentBeneficiary) {
+                        EnumerableSet.add(fund._beneficiaries, p);
+                    } else {
+                        EnumerableSet.add(fund._participants, p);
+                    }
+                }
                 unchecked {
                     ++i;
                 }
@@ -331,7 +339,7 @@ contract FundFacet is IFund {
 
             uint expellantsLength = expellants.length;
             for (uint i; i < expellantsLength; ) {
-                if (expellants[i] == address(0)) {
+                if (expellants[i] == address(0) || expellants[i] == beneficiary) {
                     unchecked {
                         ++i;
                     }
