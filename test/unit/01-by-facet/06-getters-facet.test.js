@@ -153,8 +153,8 @@ const { hour } = require("../../../utils/units")
               }
           })
 
-          describe("Withdraw funding", function () {
-              it.only("Allowance", async function () {
+          describe("Allowance", function () {
+              it("Calculate the correct allowance", async function () {
                   const neededAllowanceAtBeginning =
                       await takaturnDiamondDeployer.getNeededAllowance(participant_1.address)
                   const expectedAllowanceAtBeginning =

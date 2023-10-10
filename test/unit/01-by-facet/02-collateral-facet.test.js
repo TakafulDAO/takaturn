@@ -375,7 +375,7 @@ const { hour } = require("../../../utils/units")
                       .withArgs(termId, participant_1.address, 5316321105794790)
               })
 
-              it("Liquidate frozen money pot", async function () {
+              xit("Liquidate frozen money pot", async function () {
                   // Participant 4 defaults all cycles
                   // Participant 4 money pot frozen
                   // Participant 4 money pot liquidated

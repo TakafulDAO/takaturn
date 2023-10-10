@@ -189,12 +189,7 @@ module.exports = {
         },
         testnet_arbitrum: {
             chainId: 421613,
-            accounts: [
-                DEPLOYER_PK || TESTNET_DEPLOYER_PK,
-                PARTICIPANT_1_PK,
-                PARTICIPANT_2_PK,
-                PARTICIPANT_3_PK,
-            ],
+            accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
             url: ARBITRUM_TESTNET_RPC_URL,
             blockConfirmations: 6,
             timeout: 900000,
