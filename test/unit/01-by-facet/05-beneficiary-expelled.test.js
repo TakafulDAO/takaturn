@@ -208,12 +208,12 @@ const { hour } = require("../../../utils/units")
                   await advanceTime(cycleTime.toNumber() + 1)
 
                   // Participant 2 consider a defaulter on second cycle
-                  await expect(takaturnDiamond.closeFundingPeriod(termId))
-                      .to.emit(takaturnDiamond, "OnParticipantDefaulted")
-                      .withArgs(termId, 1, participant_2.address)
+                  await takaturnDiamond.closeFundingPeriod(termId)
 
                   // Second cycle starts
                   await takaturnDiamond.startNewCycle(termId)
+
+                  await takaturnDiamondParticipant_1.payContribution(termId)
 
                   let participant_2_collateralSummary =
                       await takaturnDiamondDeployer.getDepositorCollateralSummary(
@@ -221,14 +221,17 @@ const { hour } = require("../../../utils/units")
                           termId
                       )
 
-                  const participant_2_collateralPaymentBankBefore =
-                      participant_2_collateralSummary[2]
+                  const participant_2_collateralBefore =
+                      participant_2_collateralSummary[1] + participant_2_collateralSummary[2]
 
                   // Second cycle ends
                   await advanceTime(cycleTime.toNumber() + 1)
 
                   // Second cycle ends
-                  await takaturnDiamond.closeFundingPeriod(termId)
+                  await expect(takaturnDiamond.closeFundingPeriod(termId)).not.to.emit(
+                      takaturnDiamond,
+                      "OnCollateralLiquidated"
+                  )
 
                   participant_2_collateralSummary =
                       await takaturnDiamondDeployer.getDepositorCollateralSummary(
@@ -236,14 +239,11 @@ const { hour } = require("../../../utils/units")
                           termId
                       )
 
-                  const participant_2_collateralPaymentBankAfter =
-                      participant_2_collateralSummary[2]
+                  const participant_2_collateralAfter =
+                      participant_2_collateralSummary[1] + participant_2_collateralSummary[2]
 
                   // Check the collaterals
-                  assert(
-                      participant_2_collateralPaymentBankBefore <
-                          participant_2_collateralPaymentBankAfter
-                  )
+                  assert.equal(participant_2_collateralBefore, participant_2_collateralAfter)
               })
           })
       })
