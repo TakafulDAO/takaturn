@@ -288,7 +288,7 @@ contract TermFacet is ITerm {
 
         term.state = LibTermStorage.TermStates.ExpiredTerm;
         collateral.initialized = false;
-        collateral.state = LibCollateralStorage.CollateralStates.Closed;
+        collateral.state = LibCollateralStorage.CollateralStates.ReleasingCollateral;
 
         emit OnTermExpired(_termId);
     }
