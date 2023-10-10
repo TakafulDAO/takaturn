@@ -60,6 +60,11 @@ interface IGetters {
     /// @return total remaining contribution in wei
     function getRemainingCyclesContributionWei(uint termId) external view returns (uint);
 
+    /// @notice a function to get the needed allowance
+    /// @param user the user address
+    /// @return the needed allowance
+    function getNeededAllowance(address user) external view returns (uint);
+
     // COLLATERAL GETTERS
 
     /// @notice Gets a users collateral summary
