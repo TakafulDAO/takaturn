@@ -7,7 +7,7 @@ const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Fund facet tests", function () {
+    : describe("Beneficiaries tests", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = BigNumber.from("2") // Create term param
@@ -198,6 +198,52 @@ const { hour } = require("../../../utils/units")
                   assert.ok(participant_2_isCollateralMember)
                   // Assert participant 2 is not expelled
                   assert.ok(!participat_2_expelled)
+              })
+
+              it("Collateral should be assign. Not liquidated", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  // First cycle ends
+                  await advanceTime(cycleTime.toNumber() + 1)
+
+                  // Participant 2 consider a defaulter on second cycle
+                  await expect(takaturnDiamond.closeFundingPeriod(termId))
+                      .to.emit(takaturnDiamond, "OnParticipantDefaulted")
+                      .withArgs(termId, 1, participant_2.address)
+
+                  // Second cycle starts
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  let participant_2_collateralSummary =
+                      await takaturnDiamondDeployer.getDepositorCollateralSummary(
+                          participant_2.address,
+                          termId
+                      )
+
+                  const participant_2_collateralPaymentBankBefore =
+                      participant_2_collateralSummary[2]
+
+                  // Second cycle ends
+                  await advanceTime(cycleTime.toNumber() + 1)
+
+                  // Second cycle ends
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  participant_2_collateralSummary =
+                      await takaturnDiamondDeployer.getDepositorCollateralSummary(
+                          participant_2.address,
+                          termId
+                      )
+
+                  const participant_2_collateralPaymentBankAfter =
+                      participant_2_collateralSummary[2]
+
+                  // Check the collaterals
+                  assert(
+                      participant_2_collateralPaymentBankBefore <
+                          participant_2_collateralPaymentBankAfter
+                  )
               })
           })
       })

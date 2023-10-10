@@ -4,7 +4,7 @@ const { developmentChains } = require("../../../utils/_networks")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Fund facet tests", function () {
+    : describe("Ownership tests", function () {
           let takaturnDiamond
 
           let deployer, participant_1
