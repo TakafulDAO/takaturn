@@ -173,15 +173,15 @@ interface IGetters {
 
     function userHasoptedInYG(uint termId, address user) external view returns (bool);
 
-    function userAPY(uint termId, address user) external returns (uint256);
+    function userAPY(uint termId, address user) external view returns (uint256);
 
-    function termAPY(uint termId) external returns (uint256);
+    function termAPY(uint termId) external view returns (uint256);
 
     function yieldDistributionRatio(uint termId, address user) external view returns (uint256);
 
-    function totalYieldGenerated(uint termId) external returns (uint);
+    function totalYieldGenerated(uint termId) external view returns (uint);
 
-    function userYieldGenerated(uint termId, address user) external returns (uint);
+    function userYieldGenerated(uint termId, address user) external view returns (uint);
 
     function getYieldLockState() external view returns (bool);
 
