@@ -513,7 +513,7 @@ contract GettersFacet is IGetters {
     /// @param termId The term id for which the APY is being calculated
     /// @param user The user for which the APY is being calculated
     /// @return The APY for the user
-    function userAPY(uint termId, address user) external returns (uint256) {
+    function userAPY(uint termId, address user) external view returns (uint256) {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
@@ -528,7 +528,7 @@ contract GettersFacet is IGetters {
     /// @notice This function is used to get a term APY
     /// @param termId The term id for which the APY is being calculated
     /// @return The APY for the term
-    function termAPY(uint termId) external returns (uint256) {
+    function termAPY(uint termId) external view returns (uint256) {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
@@ -560,7 +560,7 @@ contract GettersFacet is IGetters {
     /// @notice This function is used to get the total yield generated for a term
     /// @param termId The term id for which the yield is being calculated
     /// @return The total yield generated for the term
-    function totalYieldGenerated(uint termId) public returns (uint) {
+    function totalYieldGenerated(uint termId) public view returns (uint) {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
@@ -594,7 +594,7 @@ contract GettersFacet is IGetters {
     /// @param termId The term id for which the yield is being calculated
     /// @param user The user for which the yield is being calculated
     /// @return The total yield generated for the user
-    function userYieldGenerated(uint termId, address user) public returns (uint) {
+    function userYieldGenerated(uint termId, address user) public view returns (uint) {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
