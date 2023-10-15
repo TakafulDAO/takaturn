@@ -109,6 +109,13 @@ interface IGetters {
         address user
     ) external view returns (uint allowedWithdrawal);
 
+    /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
+    /// @dev This will revert if called during ReleasingCollateral or after
+    /// @param termId The term id
+    /// @param member The user to check for
+    /// @return Bool check if member is below 1.0x of collateralDeposit
+    function isUnderCollaterized(uint termId, address member) external view returns (bool);
+
     // FUND GETTERS
     /// @notice Gets the fund summary of a term
     /// @param termId the id of the term
@@ -162,6 +169,11 @@ interface IGetters {
     /// @param termId the id of the term
     /// @return remaining contribution time in seconds
     function getRemainingContributionTime(uint termId) external view returns (uint);
+
+    /// @param termId the id of the term
+    /// @param beneficiary the address of the participant to check
+    /// @return true if the participant is a beneficiary
+    function isBeneficiary(uint termId, address beneficiary) external view returns (bool);
 
     // CONVERSION GETTERS
 

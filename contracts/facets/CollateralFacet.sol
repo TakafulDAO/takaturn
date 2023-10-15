@@ -204,15 +204,6 @@ contract CollateralFacet is ICollateral {
         LibCollateral._setState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral);
     }
 
-    /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
-    /// @dev This will revert if called during ReleasingCollateral or after
-    /// @param termId The term id
-    /// @param member The user to check for
-    /// @return Bool check if member is below 1.0x of collateralDeposit
-    function isUnderCollaterized(uint termId, address member) external view returns (bool) {
-        return _isUnderCollaterized(termId, member);
-    }
-
     /// @notice allow the owner to empty the Collateral after 180 days
     /// @param termId The term id
     function emptyCollateralAfterEnd(
@@ -256,32 +247,6 @@ contract CollateralFacet is ICollateral {
         require(success);
     }
 
-    /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
-    /// @dev This will revert if called during ReleasingCollateral or after
-    /// @param _termId The fund id
-    /// @param _member The user to check for
-    /// @return Bool check if member is below 1.0x of collateralDeposit
-    function _isUnderCollaterized(uint _termId, address _member) internal view returns (bool) {
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[_termId];
-
-        uint collateralLimit;
-        uint memberCollateral = collateral.collateralMembersBank[_member];
-
-        if (!LibFundStorage._fundExists(_termId)) {
-            // Only check here when starting the term
-            (, , , collateralLimit, ) = IGetters(address(this)).getDepositorCollateralSummary(
-                _member,
-                _termId
-            );
-        } else {
-            collateralLimit = IGetters(address(this)).getRemainingCyclesContributionWei(_termId);
-        }
-
-        return (memberCollateral < collateralLimit);
-    }
-
     /// @param _collateral Collateral storage
     /// @param _term Term storage
     /// @param _defaulters Defaulters array
@@ -310,7 +275,7 @@ contract CollateralFacet is ICollateral {
             uint collateralAmount = _collateral.collateralMembersBank[_defaulters[i]];
             if (defaulterState.isBeneficiary) {
                 // Has the user been beneficiary?
-                if (_isUnderCollaterized(_term.termId, _defaulters[i])) {
+                if (IGetters(address(this)).isUnderCollaterized(_term.termId, _defaulters[i])) {
                     // Is the collateral below 1.0 X RCC?
                     if (_fund.beneficiariesFrozenPool[_defaulters[i]]) {
                         // Is the pool currently frozen?
