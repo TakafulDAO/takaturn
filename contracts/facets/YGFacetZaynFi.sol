@@ -39,7 +39,6 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             ._collateralStorage()
             .collaterals[termId];
 
-        require(LibYieldGenerationStorage._yieldExists(termId));
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
             "Too late to change YG opt in"
