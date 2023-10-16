@@ -275,7 +275,7 @@ contract CollateralFacet is ICollateral {
             uint collateralAmount = _collateral.collateralMembersBank[_defaulters[i]];
             if (defaulterState.isBeneficiary) {
                 // Has the user been beneficiary?
-                if (IGetters(address(this)).isUnderCollaterized(_term.termId, _defaulters[i])) {
+                if (LibCollateral._isUnderCollaterized(_term.termId, _defaulters[i])) {
                     // Is the collateral below 1.0 X RCC?
                     if (_fund.beneficiariesFrozenPool[_defaulters[i]]) {
                         // Is the pool currently frozen?

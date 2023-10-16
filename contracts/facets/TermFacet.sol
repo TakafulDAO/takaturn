@@ -183,7 +183,7 @@ contract TermFacet is ITerm {
         // Need to check each user because they can have different collateral amounts
         for (uint i; i < depositorsArrayLength; ) {
             require(
-                !IGetters(address(this)).isUnderCollaterized(term.termId, depositors[i]),
+                !LibCollateral._isUnderCollaterized(term.termId, depositors[i]),
                 "Eth prices dropped"
             );
 
