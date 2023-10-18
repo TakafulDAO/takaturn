@@ -564,14 +564,11 @@ contract GettersFacet is IGetters {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[termId];
 
         if (yield.currentTotalDeposit == 0) {
             return 0;
         } else {
-            return collateral.collateralMembersBank[user] / yield.currentTotalDeposit;
+            return (yield.depositedCollateralByUser[user] / yield.currentTotalDeposit) * 10 ** 18;
         }
     }
 
