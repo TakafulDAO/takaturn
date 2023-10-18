@@ -8,6 +8,7 @@ import {IGetters} from "../interfaces/IGetters.sol";
 import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
 import {LibTermStorage} from "../libraries/LibTermStorage.sol";
+import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
@@ -320,6 +321,15 @@ contract GettersFacet is IGetters {
         }
     }
 
+    /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
+    /// @dev This will revert if called during ReleasingCollateral or after
+    /// @param termId The term id
+    /// @param member The user to check for
+    /// @return Bool check if member is below 1.0x of collateralDeposit
+    function isUnderCollaterized(uint termId, address member) external view returns (bool) {
+        return LibCollateral._isUnderCollaterized(termId, member);
+    }
+
     // FUND GETTERS
 
     /// @notice function to get the cycle information in one go
@@ -409,6 +419,14 @@ contract GettersFacet is IGetters {
             fund.beneficiariesPool[participant],
             fund.beneficiariesFrozenPool[participant]
         );
+    }
+
+    /// @param termId the id of the term
+    /// @param beneficiary the address of the participant to check
+    /// @return true if the participant is a beneficiary
+    function isBeneficiary(uint termId, address beneficiary) external view returns (bool) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        return fund.isBeneficiary[beneficiary];
     }
 
     /// @notice returns the time left to contribute for this cycle
