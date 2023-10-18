@@ -55,11 +55,15 @@ library LibYieldGeneration {
             _termId
         );
 
-        uint withdrawnYield = withdrawnAmount - _collateralAmount;
-        yield.withdrawnYield[_user] += withdrawnYield;
-        yield.availableYield[_user] += withdrawnYield;
+        if (withdrawnAmount < _collateralAmount) {
+            return 0;
+        } else {
+            uint withdrawnYield = withdrawnAmount - _collateralAmount;
+            yield.withdrawnYield[_user] += withdrawnYield;
+            yield.availableYield[_user] += withdrawnYield;
 
-        return withdrawnYield;
+            return withdrawnYield;
+        }
     }
 
     function _sharesToEth(

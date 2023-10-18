@@ -34,6 +34,7 @@ library LibYieldGenerationStorage {
         mapping(address => uint256) withdrawnYield;
         mapping(address => uint256) withdrawnCollateral;
         mapping(address => uint256) availableYield;
+        mapping(address => uint256) depositedCollateralByUser;
     }
 
     struct YieldStorage {

@@ -165,8 +165,10 @@ contract CollateralFacet is ICollateral {
         if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
             collateral.collateralMembersBank[msg.sender] = 0;
 
-            _withdrawFromYield(termId, msg.sender, userCollateral, yield);
-            (success, ) = payable(msg.sender).call{value: userCollateral}("");
+            uint amountToTransfer = userCollateral +
+                _withdrawFromYield(termId, msg.sender, userCollateral, yield);
+
+            (success, ) = payable(msg.sender).call{value: amountToTransfer}("");
 
             --collateral.counterMembers; // todo: Is this needed?
 
@@ -184,8 +186,9 @@ contract CollateralFacet is ICollateral {
                 uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
-                _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
-                (success, ) = payable(msg.sender).call{value: allowedWithdrawal}("");
+                uint amountToTransfer = userCollateral +
+                    _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
+                (success, ) = payable(msg.sender).call{value: amountToTransfer}("");
 
                 emit OnCollateralWithdrawal(termId, msg.sender, allowedWithdrawal);
             }
@@ -376,9 +379,14 @@ contract CollateralFacet is ICollateral {
             if (_defaulterState.gettingExpelled) {
                 if (_defaulterState.isBeneficiary) {
                     uint remainingCollateral = _collateral.collateralMembersBank[_defaulter];
-                    _withdrawFromYield(_term.termId, _defaulter, remainingCollateral, yield);
+                    uint withdrawnYield = _withdrawFromYield(
+                        _term.termId,
+                        _defaulter,
+                        remainingCollateral,
+                        yield
+                    );
 
-                    distributedCollateral += remainingCollateral; // This will be distributed later
+                    distributedCollateral += remainingCollateral + withdrawnYield; // This will be distributed later
                     _collateral.collateralMembersBank[_defaulter] = 0;
                     emit OnCollateralLiquidated(_term.termId, _defaulter, remainingCollateral);
                 }
@@ -386,11 +394,18 @@ contract CollateralFacet is ICollateral {
                 // Expelled
                 _collateral.isCollateralMember[_defaulter] = false;
             } else {
-                _withdrawFromYield(_term.termId, _defaulter, _contributionAmountWei, yield);
+                uint withdrawnYield = _withdrawFromYield(
+                    _term.termId,
+                    _defaulter,
+                    _contributionAmountWei,
+                    yield
+                );
 
                 // Subtract contribution from defaulter and add to beneficiary.
                 _collateral.collateralMembersBank[_defaulter] -= _contributionAmountWei;
-                _collateral.collateralPaymentBank[beneficiary] += _contributionAmountWei;
+                _collateral.collateralPaymentBank[beneficiary] +=
+                    _contributionAmountWei +
+                    withdrawnYield;
 
                 emit OnCollateralLiquidated(_term.termId, _defaulter, _contributionAmountWei);
             }
@@ -486,7 +501,13 @@ contract CollateralFacet is ICollateral {
         LibYieldGenerationStorage.YieldGeneration storage _yieldStorage
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
-            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, _amount, _user);
+            uint amountToWithdraw;
+            if (_amount > _yieldStorage.depositedCollateralByUser[_user]) {
+                amountToWithdraw = _yieldStorage.depositedCollateralByUser[_user];
+            } else {
+                amountToWithdraw = _amount;
+            }
+            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, amountToWithdraw, _user);
         } else {
             withdrawnYield = 0;
         }

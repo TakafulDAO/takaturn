@@ -564,14 +564,11 @@ contract GettersFacet is IGetters {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[termId];
 
         if (yield.currentTotalDeposit == 0) {
             return 0;
         } else {
-            return collateral.collateralMembersBank[user] / yield.currentTotalDeposit;
+            return (yield.depositedCollateralByUser[user] / yield.currentTotalDeposit) * 10 ** 18;
         }
     }
 
@@ -621,6 +618,53 @@ contract GettersFacet is IGetters {
             yield.withdrawnYield[user] +
             totalYieldGenerated(termId) *
             yieldDistributionRatio(termId, user);
+    }
+
+    /// @param user the depositor address
+    /// @param termId the collateral id
+    /// @return hasOptedIn
+    /// @return withdrawnYield
+    /// @return withdrawnCollateral
+    /// @return availableYield
+    /// @return depositedCollateralByUser
+    function getUserYieldSummary(
+        address user,
+        uint termId
+    ) external view returns (bool, uint, uint, uint, uint) {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        return (
+            yield.hasOptedIn[user],
+            yield.withdrawnYield[user],
+            yield.withdrawnCollateral[user],
+            yield.availableYield[user],
+            yield.depositedCollateralByUser[user]
+        );
+    }
+
+    /// @param termId the collateral id
+    /// @return initialized
+    /// @return startTimeStamp
+    /// @return totalDeposit
+    /// @return currentTotalDeposit
+    /// @return totalShares
+    /// @return yieldUsers
+    function getYieldSummary(
+        uint termId
+    ) external view returns (bool, uint, uint, uint, uint, address[] memory) {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+        return (
+            yield.initialized,
+            yield.startTimeStamp,
+            yield.totalDeposit,
+            yield.currentTotalDeposit,
+            yield.totalShares,
+            yield.yieldUsers
+        );
     }
 
     /// @notice This function is used to get the current state of the yield lock
