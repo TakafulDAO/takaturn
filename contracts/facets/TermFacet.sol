@@ -322,7 +322,10 @@ contract TermFacet is ITerm {
         for (uint i; i < depositorsArrayLength; ) {
             if (yield.hasOptedIn[depositors[i]]) {
                 yield.yieldUsers.push(depositors[i]);
-                collateralDeposited += _collateral.collateralMembersBank[depositors[i]];
+                yield.depositedCollateralByUser[depositors[i]] =
+                    (_collateral.collateralMembersBank[depositors[i]] * 90) /
+                    100;
+                collateralDeposited += yield.depositedCollateralByUser[depositors[i]];
             }
 
             unchecked {
@@ -331,7 +334,7 @@ contract TermFacet is ITerm {
         }
 
         if (collateralDeposited > 0) {
-            uint amountToYield = (collateralDeposited * 90) / 100;
+            uint amountToYield = collateralDeposited;
             yield.startTimeStamp = block.timestamp;
             yield.initialized = true;
             yield.providerAddresses["ZaynZap"] = yieldProviders.providerAddresses["ZaynZap"];
