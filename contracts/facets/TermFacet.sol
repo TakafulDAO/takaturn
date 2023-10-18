@@ -208,6 +208,17 @@ contract TermFacet is ITerm {
                     ++i;
                 }
             }
+        } else {
+            // If the lock is set to true, before the term starts and after users have joined term
+            // There is a chance that somebody has opted in for yield generation
+            for (uint i; i < depositorsArrayLength; ) {
+                if (yield.hasOptedIn[depositors[i]]) {
+                    yield.hasOptedIn[depositors[i]] = false;
+                }
+                unchecked {
+                    ++i;
+                }
+            }
         }
 
         // Tell the collateral that the term has started
