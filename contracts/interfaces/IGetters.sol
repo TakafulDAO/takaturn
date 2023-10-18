@@ -195,6 +195,29 @@ interface IGetters {
 
     function userYieldGenerated(uint termId, address user) external view returns (uint);
 
+    /// @param user the depositor address
+    /// @param termId the collateral id
+    /// @return hasOptedIn
+    /// @return withdrawnYield
+    /// @return withdrawnCollateral
+    /// @return availableYield
+    /// @return depositedCollateralByUser
+    function getUserYieldSummary(
+        address user,
+        uint termId
+    ) external view returns (bool, uint, uint, uint, uint);
+
+    /// @param termId the collateral id
+    /// @return initialized
+    /// @return startTimeStamp
+    /// @return totalDeposit
+    /// @return currentTotalDeposit
+    /// @return totalShares
+    /// @return yieldUsers
+    function getYieldSummary(
+        uint termId
+    ) external view returns (bool, uint, uint, uint, uint, address[] memory);
+
     function getYieldLockState() external view returns (bool);
 
     /// @notice This function return the current constant values for oracles and yield providers
