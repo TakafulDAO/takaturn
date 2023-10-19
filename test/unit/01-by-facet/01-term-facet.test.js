@@ -390,7 +390,7 @@ const { hour } = require("../../../utils/units")
                       )
                   const participant_12_Collateral = participant_12_Summary[3]
 
-                  assert(participant_1_Collateral > participant_12_Collateral)
+                  expect(participant_1_Collateral).to.be.gt(participant_12_Collateral)
               })
           })
 

@@ -1068,7 +1068,7 @@ async function executeCycle(
                           participant_2BeneficiariesPool.toNumber()
                   )
                   assert.ok(
-                      participant_1PaymentBank.toNumber() == participant_2PaymentBank.toNumber()
+                      participant_1PaymentBank.toString() == participant_2PaymentBank.toString()
                   )
               })
 
