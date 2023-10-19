@@ -239,60 +239,19 @@ async function executeCycle(
                       .connect(accounts[i])
                       .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
               }
+
+              await takaturnDiamondParticipant_1.createTerm(
+                  totalParticipants,
+                  registrationPeriod,
+                  cycleTime,
+                  contributionAmount,
+                  contributionPeriod,
+                  usdc.address
+              )
           })
 
           describe("Yield generation term creation", function () {
-              beforeEach(async function () {
-                  // Deploy upgrade
-                  //   const waitBlockConfirmations = 1
-
-                  //   const diamondDeployer = "0xF5C5B85eA5f255495e037563cB8cDe3513eE602e"
-                  //   await impersonateAccount(diamondDeployer)
-
-                  //   console.log("chainId", chainId)
-                  //   ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
-                  //   usdcUsdPriceFeedAddress = networkConfig[chainId]["usdcUsdPriceFeed"]
-                  //   zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
-                  //   zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
-
-                  //   const args = []
-                  //   const initArgs = [
-                  //       ethUsdPriceFeedAddress,
-                  //       usdcUsdPriceFeedAddress,
-                  //       zaynfiZapAddress,
-                  //       zaynfiVaultAddress,
-                  //       false,
-                  //   ]
-                  //   console.log("Deploying upgrade...")
-                  //   takaturnDiamondUpgrade = await deployments.diamond.deploy("TakaturnDiamond", {
-                  //       from: deployer.address,
-                  //       owner: deployer.address,
-                  //       args: args,
-                  //       log: true,
-                  //       facets: [
-                  //           "CollateralFacet",
-                  //           "FundFacet",
-                  //           "TermFacet",
-                  //           "GettersFacet",
-                  //           "YGFacetZaynFi",
-                  //       ],
-                  //       execute: {
-                  //           contract: "DiamondInit",
-                  //           methodName: "init",
-                  //           args: initArgs,
-                  //       },
-                  //       waitConfirmations: waitBlockConfirmations,
-                  //   })
-                  console.log("Deployed upgrade")
-                  await takaturnDiamondParticipant_1.createTerm(
-                      totalParticipants,
-                      registrationPeriod,
-                      cycleTime,
-                      contributionAmount,
-                      contributionPeriod,
-                      usdc.address
-                  )
-              })
+              beforeEach(async function () {})
 
               it("allows participant to join with yield generation and emit events", async function () {
                   const ids = await takaturnDiamondDeployer.getTermsId()
@@ -353,17 +312,8 @@ async function executeCycle(
               })
           })
 
-          describe("Yield generation Getters", function () {
+          describe("Yield", function () {
               beforeEach(async function () {
-                  await takaturnDiamondParticipant_1.createTerm(
-                      totalParticipants,
-                      registrationPeriod,
-                      cycleTime,
-                      contributionAmount,
-                      contributionPeriod,
-                      usdc.address
-                  )
-
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
 
@@ -373,77 +323,31 @@ async function executeCycle(
                           i - 1
                       )
 
-                      if (i < 2) {
-                          await takaturnDiamond
-                              .connect(accounts[i])
-                              .joinTerm(termId, true, { value: entrance })
-                      } else {
-                          await takaturnDiamond
-                              .connect(accounts[i])
-                              .joinTerm(termId, false, { value: entrance })
-                      }
+                      await takaturnDiamond
+                          .connect(accounts[i])
+                          .joinTerm(termId, true, { value: entrance })
                   }
                   await advanceTime(registrationPeriod + 1)
                   await takaturnDiamond.startTerm(termId)
               })
 
-              it("Return value of balanceOf", async function () {
+              it("Should not revert when somebody defaults and close funding period", async function () {
                   const ids = await takaturnDiamond.getTermsId()
                   const termId = ids[0]
 
-                  await executeCycle(termId, 0, [], false) // First cycle
-                  //   await executeCycle(termId, 0, [], false) // Second cycle
-                  //   await executeCycle(termId, 0, [], false) // Third cycle
-                  //   await executeCycle(termId, 0, [], false) // Fourth cycle
-                  //   await executeCycle(termId, 0, [], false) // Fifth cycle
-                  //   await executeCycle(termId, 0, [], false) // Sixth cycle
-                  //   await executeCycle(termId, 0, [], false) // Seventh cycle
-                  //   await executeCycle(termId, 0, [], false) // Eighth cycle
-                  //   await executeCycle(termId, 0, [], false) // Ninth cycle
-                  //   await executeCycle(termId, 0, [], false) // Tenth cycle
-                  //   await executeCycle(termId, 0, [], false) // Eleventh cycle
-                  //   await executeCycle(termId, 0, [], false) // Twelfth cycle
+                  await advanceTime(cycleTime + 1)
 
-                  const balanceOf = await zaynVault.callStatic.balanceOf(termId)
+                  await expect(takaturnDiamond.closeFundingPeriod(termId)).not.to.be.reverted
+              })
 
-                  console.log(`Balance of: ${balanceOf}`)
+              it("Should not revert when everyone pays and somebody want to withdraw collateral", async function () {
+                  const ids = await takaturnDiamond.getTermsId()
+                  const termId = ids[0]
 
-                  const yieldDistributionRatio =
-                      await takaturnDiamondDeployer.yieldDistributionRatio(
-                          termId,
-                          accounts[1].address
-                      )
-                  console.log("yieldDistributionRatio", yieldDistributionRatio.toString())
+                  await executeCycle(termId, 0, [], false)
 
-                  const userYieldGenerated =
-                      await takaturnDiamondDeployer.callStatic.userYieldGenerated(
-                          termId,
-                          accounts[1].address
-                      )
-                  console.log("userYieldGenerated", userYieldGenerated.toString())
-
-                  //   for (let i = 1; i <= totalParticipants; i++) {
-                  //       const getWithdrawableUserBalance =
-                  //           await takaturnDiamond.callStatic.user(
-                  //               termId,
-                  //               accounts[i].address
-                  //           )
-                  //       const getDepositorCollateralSummary =
-                  //           await takaturnDiamond.getDepositorCollateralSummary(
-                  //               accounts[i].address,
-                  //               termId
-                  //           )
-                  //       const getCollateralSummary = await takaturnDiamond.getCollateralSummary(
-                  //           termId
-                  //       )
-                  //       console.log(`Collateral state: ${getCollateralSummary[1]}`)
-                  //       console.log(
-                  //           `Participant ${i} collateralMembersBank: ${getDepositorCollateralSummary[1]}`
-                  //       )
-                  //       console.log(
-                  //           `Participant ${i} getWithdrawableUserBalance: ${getWithdrawableUserBalance}`
-                  //       )
-                  //   }
+                  await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId)).not.to.be
+                      .reverted
               })
           })
       })
