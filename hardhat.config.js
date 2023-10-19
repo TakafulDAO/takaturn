@@ -172,7 +172,7 @@ module.exports = {
                 //chainId: 42161,
                 accounts: [DEPLOYER_PK],
                 url: ARBITRUM_MAINNET_RPC_URL,
-                blockNumber: 104233350,
+                blockNumber: 140128200, // Block to ensure zayn contracts are deployed and trusted sender is set
                 enabled: FORK === "true",
             },
         },
@@ -294,12 +294,5 @@ module.exports = {
         alphaSort: true,
         runOnCompile: SIZE === "true",
         outputFile: "contracts-size-report.txt",
-    },
-    external: {
-        contracts: [
-            {
-                artifacts: "./zayn_artifacts",
-            },
-        ],
     },
 }

@@ -1,13 +1,8 @@
-const { toWei } = require("../../utils/_helpers")
-
 let totalParticipants = 12
-let cycleTime = 60
-let contributionAmount = 5
-let contributionPeriod = 40
-let fixedCollateralEth = toWei(0.055)
-let collateralAmount = 60
-let collateralFundingPeriod = 604800
-let registrationPeriod = 600000
+let cycleTime = 2592002
+let contributionAmount = 50
+let contributionPeriod = 43200
+let registrationPeriod = 604800
 
 const balanceForUser = 1000 * 10 ** 6
 
@@ -22,9 +17,6 @@ module.exports = {
     cycleTime,
     contributionAmount,
     contributionPeriod,
-    fixedCollateralEth,
-    collateralAmount,
-    collateralFundingPeriod,
     registrationPeriod,
     // helper functions
     getRandomInt,
