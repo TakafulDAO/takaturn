@@ -1,7 +1,7 @@
 const { expect, assert } = require("chai")
 const { getNamedAccounts, ethers } = require("hardhat")
-const { developmentChains } = require("../../utils/_networks")
-const { getTermStateFromIndex } = require("../../utils/_helpers")
+const { developmentChains } = require("../../../utils/_networks")
+const { getTermStateFromIndex } = require("../../../utils/_helpers")
 
 developmentChains.includes(network.name)
     ? describe.skip
