@@ -469,7 +469,15 @@ const { hour } = require("../../../utils/units")
               })
           })
 
-          describe("Lock yield when joins", function () {
+          describe("Lock yield generation", function () {
+              it("Only the contract owner can lock the yield", async function () {
+                  // Only the owner can toggle the lock
+                  await expect(takaturnDiamondParticipant_1.toggleYieldLock()).to.be.revertedWith(
+                      "LibDiamond: Must be contract owner"
+                  )
+                  // Lock true
+                  await expect(takaturnDiamondDeployer.toggleYieldLock()).not.to.be.reverted
+              })
               it("Should allow optedIn yield when lock is false", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
