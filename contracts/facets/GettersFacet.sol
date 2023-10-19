@@ -146,12 +146,12 @@ contract GettersFacet is IGetters {
 
     /// @param termId the term id
     /// @return remaining cycles contribution
-    function getRemainingCyclesContributionWei(uint termId) external view returns (uint) {
+    function getRemainingCyclesContributionWei(uint termId) public view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
         uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
-        uint contributionAmountWei = IGetters(address(this)).getToCollateralConversionRate(
+        uint contributionAmountWei = getToCollateralConversionRate(
             term.contributionAmount * 10 ** 18
         );
 
@@ -222,11 +222,9 @@ contract GettersFacet is IGetters {
 
         uint limit;
         if (!fund.isBeneficiary[depositor]) {
-            limit = IGetters(address(this)).getToCollateralConversionRate(
-                term.contributionAmount * 10 ** 18
-            );
+            limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
         } else {
-            limit = IGetters(address(this)).getRemainingCyclesContributionWei(termId);
+            limit = getRemainingCyclesContributionWei(termId);
         }
 
         return (
@@ -306,9 +304,7 @@ contract GettersFacet is IGetters {
             allowedWithdrawal = userCollateral + availableYield;
         } else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
-            uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
-                termId
-            ) * 15) / 10; // 1.5 X RCC in wei
+            uint minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
