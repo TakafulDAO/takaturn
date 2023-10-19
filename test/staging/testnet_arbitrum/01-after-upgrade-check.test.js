@@ -1,9 +1,9 @@
 const { expect, assert } = require("chai")
 const { getNamedAccounts, ethers } = require("hardhat")
-const { developmentChains } = require("../../../utils/_networks")
+const { isTestnet } = require("../../../utils/_networks")
 const { getTermStateFromIndex } = require("../../../utils/_helpers")
 
-developmentChains.includes(network.name)
+!isTestnet
     ? describe.skip
     : describe("Upgrades Term Facet unit tests", function () {
           let deployer, takaturn
