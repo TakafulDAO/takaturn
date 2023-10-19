@@ -314,7 +314,7 @@ contract TermFacet is ITerm {
         LibYieldGenerationStorage.YieldProviders storage yieldProviders = LibYieldGenerationStorage
             ._yieldProviders();
 
-        uint collateralDeposited;
+        uint amountToYield;
 
         address[] memory depositors = _collateral.depositors;
         uint depositorsArrayLength = depositors.length;
@@ -325,7 +325,7 @@ contract TermFacet is ITerm {
                 yield.depositedCollateralByUser[depositors[i]] =
                     (_collateral.collateralMembersBank[depositors[i]] * 90) /
                     100;
-                collateralDeposited += yield.depositedCollateralByUser[depositors[i]];
+                amountToYield += yield.depositedCollateralByUser[depositors[i]];
             }
 
             unchecked {
@@ -333,8 +333,7 @@ contract TermFacet is ITerm {
             }
         }
 
-        if (collateralDeposited > 0) {
-            uint amountToYield = collateralDeposited;
+        if (amountToYield > 0) {
             yield.startTimeStamp = block.timestamp;
             yield.initialized = true;
             yield.providerAddresses["ZaynZap"] = yieldProviders.providerAddresses["ZaynZap"];
