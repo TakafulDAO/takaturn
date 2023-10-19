@@ -186,7 +186,7 @@ contract CollateralFacet is ICollateral {
                 uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
-                uint amountToTransfer = userCollateral +
+                uint amountToTransfer = allowedWithdrawal +
                     _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
                 (success, ) = payable(msg.sender).call{value: amountToTransfer}("");
 
@@ -379,14 +379,9 @@ contract CollateralFacet is ICollateral {
             if (_defaulterState.gettingExpelled) {
                 if (_defaulterState.isBeneficiary) {
                     uint remainingCollateral = _collateral.collateralMembersBank[_defaulter];
-                    uint withdrawnYield = _withdrawFromYield(
-                        _term.termId,
-                        _defaulter,
-                        remainingCollateral,
-                        yield
-                    );
+                    _withdrawFromYield(_term.termId, _defaulter, remainingCollateral, yield);
 
-                    distributedCollateral += remainingCollateral + withdrawnYield; // This will be distributed later
+                    distributedCollateral += remainingCollateral; // This will be distributed later
                     _collateral.collateralMembersBank[_defaulter] = 0;
                     emit OnCollateralLiquidated(_term.termId, _defaulter, remainingCollateral);
                 }
@@ -394,18 +389,11 @@ contract CollateralFacet is ICollateral {
                 // Expelled
                 _collateral.isCollateralMember[_defaulter] = false;
             } else {
-                uint withdrawnYield = _withdrawFromYield(
-                    _term.termId,
-                    _defaulter,
-                    _contributionAmountWei,
-                    yield
-                );
+                _withdrawFromYield(_term.termId, _defaulter, _contributionAmountWei, yield);
 
                 // Subtract contribution from defaulter and add to beneficiary.
                 _collateral.collateralMembersBank[_defaulter] -= _contributionAmountWei;
-                _collateral.collateralPaymentBank[beneficiary] +=
-                    _contributionAmountWei +
-                    withdrawnYield;
+                _collateral.collateralPaymentBank[beneficiary] += _contributionAmountWei;
 
                 emit OnCollateralLiquidated(_term.termId, _defaulter, _contributionAmountWei);
             }
