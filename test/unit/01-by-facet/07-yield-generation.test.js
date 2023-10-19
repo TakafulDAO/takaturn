@@ -334,7 +334,7 @@ async function executeCycle(
                   }
               })
 
-              it.only("allows to start a term with participants joining yield generation", async function () {
+              it("allows to start a term with participants joining yield generation", async function () {
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
 
