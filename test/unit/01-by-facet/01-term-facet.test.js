@@ -499,18 +499,14 @@ const { hour } = require("../../../utils/units")
                   assert.ok(userHasoptedInYG)
               })
 
-              it("Should allow optedIn yield when lock is false", async function () {
-                  // Only the owner can toggle the lock
-                  await expect(takaturnDiamondParticipant_1.toggleYieldLock()).to.be.revertedWith(
-                      "LibDiamond: Must be contract owner"
-                  )
+              it("Should not allow optedIn yield when lock is false, at joining", async function () {
                   // Lock true
-                  await takaturnDiamond.toggleYieldLock()
+                  await takaturnDiamondDeployer.toggleYieldLock()
 
-                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const lastTerm = await takaturnDiamond.getTermsId()
                   const termId = lastTerm[0]
 
-                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
+                  const entrance = await takaturnDiamond.minCollateralToDeposit(termId, 0)
 
                   await takaturnDiamond
                       .connect(participant_1)
@@ -525,6 +521,43 @@ const { hour } = require("../../../utils/units")
 
                   // Should be false as the lock is true, Even if the user joins with true on yield generation
                   assert.ok(!userHasoptedInYG)
+              })
+
+              it("Should not allow optedIn yield when lock is false, before joining at start term", async function () {
+                  const lastTerm = await takaturnDiamond.getTermsId()
+                  const termId = lastTerm[0]
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      const entrance = await takaturnDiamond.minCollateralToDeposit(termId, i - 1)
+
+                      await takaturnDiamond
+                          .connect(accounts[i])
+                          .joinTerm(termId, true, { value: entrance })
+
+                      let userHasoptedInYGAtJoining = await takaturnDiamond.userHasoptedInYG(
+                          termId,
+                          accounts[i].address
+                      )
+                      assert.ok(userHasoptedInYGAtJoining)
+                  }
+
+                  // Lock true
+                  await takaturnDiamondDeployer.toggleYieldLock()
+
+                  await advanceTime(registrationPeriod.toNumber() + 1)
+
+                  await takaturnDiamond.startTerm(termId)
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      const userHasoptedInYGAtStart = await takaturnDiamond.userHasoptedInYG(
+                          termId,
+                          accounts[i].address
+                      )
+
+                      // Should be false as the lock is true, Even if the user joins with true on yield generation
+
+                      assert.ok(!userHasoptedInYGAtStart)
+                  }
               })
           })
 

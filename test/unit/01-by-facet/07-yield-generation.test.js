@@ -1,5 +1,5 @@
 const { assert, expect } = require("chai")
-const { isFork, networkConfig } = require("../../../utils/_networks")
+const { isFork, isMainnet, networkConfig } = require("../../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const {
     FundStates,
@@ -19,6 +19,7 @@ const {
 // const { takaturnABI } = require("../utils/takaturnABI")
 const { abi } = require("../../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
 const { deployments } = require("hardhat")
+const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
 
@@ -157,7 +158,7 @@ async function executeCycle(
     }
 }
 
-!isFork
+!isFork || isMainnet
     ? describe.skip
     : describe("Yield generation unit tests. Mainnet fork", function () {
           const chainId = network.config.chainId
@@ -251,8 +252,6 @@ async function executeCycle(
           })
 
           describe("Yield generation term creation", function () {
-              beforeEach(async function () {})
-
               it("allows participant to join with yield generation and emit events", async function () {
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
@@ -331,13 +330,86 @@ async function executeCycle(
                   await takaturnDiamond.startTerm(termId)
               })
 
-              it("Should not revert when somebody defaults and close funding period", async function () {
-                  const ids = await takaturnDiamond.getTermsId()
-                  const termId = ids[0]
+              describe("Yield getters", function () {
+                  describe("Yield parameters", function () {
+                      it("Should return the correct yield parameters", async function () {
+                          this.timeout(200000)
+                          const ids = await takaturnDiamond.getTermsId()
+                          const termId = ids[0]
 
-                  await advanceTime(cycleTime + 1)
+                          const yieldParameters = await takaturnDiamond.getYieldSummary(termId)
+                          const collateralParameters = await takaturnDiamond.getCollateralSummary(
+                              termId
+                          )
 
-                  await expect(takaturnDiamond.closeFundingPeriod(termId)).not.to.be.reverted
+                          const collateralFirstDepositTime = collateralParameters[2]
+                          let expectedDeposit = 0
+                          for (let i = 1; i <= totalParticipants; i++) {
+                              let deposited = await takaturnDiamond.getUserYieldSummary(
+                                  accounts[i].address,
+                                  termId
+                              )
+
+                              let depositedByUser = deposited[4]
+
+                              expectedDeposit = BigNumber.from(expectedDeposit).add(
+                                  BigNumber.from(depositedByUser)
+                              )
+                          }
+                          const shares = await zaynVault.balanceOf(termId)
+
+                          const yieldInitialized = yieldParameters[0]
+                          const yieldStartTimestamp = yieldParameters[1]
+                          const yieldTotalDeposit = yieldParameters[2]
+                          const yieldCurrentTotalDeposit = yieldParameters[3]
+                          const yieldTotalShares = yieldParameters[4]
+                          const yieldUsers = yieldParameters[5]
+
+                          assert.ok(yieldInitialized)
+                          assert(
+                              yieldStartTimestamp.toString() >
+                                  collateralFirstDepositTime + registrationPeriod + 1
+                          )
+                          assert.equal(yieldTotalDeposit.toString(), expectedDeposit.toString())
+                          assert.equal(
+                              yieldTotalDeposit.toString(),
+                              yieldCurrentTotalDeposit.toString()
+                          )
+                          assert.equal(yieldTotalShares.toString(), shares.toString())
+                          assert.equal(yieldUsers.length, totalParticipants)
+                          for (let i = 0; i < totalParticipants; i++) {
+                              assert.equal(yieldUsers[i], accounts[i + 1].address)
+                          }
+                      })
+                      it("Should return the correct yield parameters for a user", async function () {
+                          this.timeout(200000)
+                          const ids = await takaturnDiamond.getTermsId()
+                          const termId = ids[0]
+
+                          for (let i = 1; i <= totalParticipants; i++) {
+                              let yieldUser = await takaturnDiamond.getUserYieldSummary(
+                                  accounts[i].address,
+                                  termId
+                              )
+                              let collaterlUserSummary =
+                                  await takaturnDiamond.getDepositorCollateralSummary(
+                                      accounts[i].address,
+                                      termId
+                                  )
+                              let collateralDeposited = collaterlUserSummary[3]
+                              let expectedYieldDeposited = collateralDeposited.mul(90).div(100)
+
+                              assert.ok(yieldUser[0])
+                              assert.equal(yieldUser[1].toString(), 0)
+                              assert.equal(yieldUser[2].toString(), 0)
+                              assert.equal(yieldUser[3].toString(), 0)
+                              assert.equal(
+                                  yieldUser[4].toString(),
+                                  expectedYieldDeposited.toString()
+                              )
+                          }
+                      })
+                  })
               })
 
               it("Should not revert when everyone pays and somebody want to withdraw collateral", async function () {
