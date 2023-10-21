@@ -172,7 +172,7 @@ module.exports = {
                 //chainId: 42161,
                 accounts: [DEPLOYER_PK],
                 url: ARBITRUM_MAINNET_RPC_URL,
-                blockNumber: 141892459, // Block to ensure zayn contracts are deployed and trusted sender is set
+                blockNumber: 142401055, // Block to ensure zayn contracts are deployed and trusted sender is set
                 enabled: FORK === "true",
             },
         },
