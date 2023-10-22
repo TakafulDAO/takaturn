@@ -171,11 +171,17 @@ const { hour } = require("../../../utils/units")
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
+                      const underCollateralized = await takaturnDiamond.isUnderCollaterized(
+                          termId,
+                          participant_1.address
+                      )
+                      const currentBeneficiary = await takaturnDiamond.getCurrentBeneficiary(termId)
+
                       // Pay the contribution for the first cycle
-                      for (let i = 0; i < totalParticipants; i++) {
+                      for (let i = 1; i <= totalParticipants; i++) {
                           try {
                               await takaturnDiamondParticipant_1
-                                  .connect(accounts[i + 1])
+                                  .connect(accounts[i])
                                   .payContribution(termId)
                           } catch (e) {}
                       }
@@ -186,10 +192,17 @@ const { hour } = require("../../../utils/units")
 
                       await takaturnDiamond.startNewCycle(termId)
 
-                      await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId)).to.emit(
-                          takaturnDiamond,
-                          "OnCollateralWithdrawal"
+                      const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
+                          termId,
+                          participant_1.address
                       )
+
+                      await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId))
+                          .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                          .withArgs(termId, participant_1.address, withdrawable)
+
+                      assert.ok(!underCollateralized)
+                      assert.equal(currentBeneficiary, participant_1.address)
                   })
               })
           })

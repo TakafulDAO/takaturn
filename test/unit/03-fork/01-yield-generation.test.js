@@ -16,23 +16,10 @@ const {
     registrationPeriod,
     getRandomInt,
 } = require("../utils/test-utils")
-// const { takaturnABI } = require("../utils/takaturnABI")
 const { abi } = require("../../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
 const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
-
-async function everyonePaysAndCloseCycle(termId) {
-    for (let i = 1; i <= totalParticipants; i++) {
-        try {
-            await takaturnDiamond.connect(accounts[i]).payContribution(termId)
-        } catch (e) {}
-    }
-
-    // Artifically increase time to skip the wait
-    await advanceTime(contributionPeriod + 1)
-    await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
-}
 
 async function executeCycle(
     termId,
@@ -159,7 +146,7 @@ async function executeCycle(
 
 !isFork || isMainnet
     ? describe.skip
-    : describe.only("Yield", function () {
+    : describe("Yield", function () {
           const chainId = network.config.chainId
 
           let deployer,
@@ -205,7 +192,6 @@ async function executeCycle(
 
               // Get the contract instances
               const takaturnDiamondAddress = networkConfig[chainId]["takaturnDiamond"]
-              //   takaturnDiamond = await ethers.getContractAt(takaturnABI, takaturnDiamondAddress)
               takaturnDiamond = await ethers.getContractAt(abi, takaturnDiamondAddress)
 
               const zaynVaultAddress = networkConfig[chainId]["zaynfiVault"]
@@ -354,6 +340,69 @@ async function executeCycle(
                       await advanceTime(registrationPeriod + 1)
                       await expect(takaturnDiamond.startTerm(termId)).not.to.be.reverted
                   })
+
+                  it("Should revert to toggle optIn if has not payed", async function () {
+                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                      const termId = lastTerm[0]
+
+                      await expect(
+                          takaturnDiamondParticipant_1.toggleOptInYG(termId)
+                      ).to.be.revertedWith("Pay the collateral security deposit first")
+                  })
+
+                  it("Should allow to opt out from yield generation if the term has not started", async function () {
+                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                      const termId = lastTerm[0]
+
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          termId,
+                          0
+                      )
+
+                      await takaturnDiamondParticipant_1.joinTerm(termId, true, {
+                          value: entrance,
+                      })
+
+                      const userHasoptedInYGBefore = await takaturnDiamond.userHasoptedInYG(
+                          termId,
+                          participant_1.address
+                      )
+
+                      await expect(takaturnDiamondParticipant_1.toggleOptInYG(termId))
+                          .to.emit(takaturnDiamond, "OnYGOptInToggled")
+                          .withArgs(termId, participant_1.address, false)
+
+                      const userHasoptedInYGAfter = await takaturnDiamond.userHasoptedInYG(
+                          termId,
+                          participant_1.address
+                      )
+
+                      assert.ok(userHasoptedInYGBefore)
+                      assert.ok(!userHasoptedInYGAfter)
+                  })
+
+                  it("Should revert to toggle optIn if the term started", async function () {
+                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                      const termId = lastTerm[0]
+
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                              termId,
+                              i - 1
+                          )
+
+                          await takaturnDiamond
+                              .connect(accounts[i])
+                              .joinTerm(termId, true, { value: entrance })
+                      }
+                      await advanceTime(registrationPeriod + 1)
+
+                      await takaturnDiamondParticipant_1.startTerm(termId)
+
+                      await expect(
+                          takaturnDiamondParticipant_1.toggleOptInYG(termId)
+                      ).to.be.revertedWith("Too late to change YG opt in")
+                  })
               })
 
               describe("Yield generation, ongoing terms", function () {
@@ -480,7 +529,7 @@ async function executeCycle(
                   })
 
                   describe("Yield claimed", function () {
-                      it.only("Should not revert", async function () {
+                      it("Should emit an event if there is available yield or revert if not", async function () {
                           const ids = await takaturnDiamond.getTermsId()
                           const termId = ids[0]
 
@@ -488,7 +537,61 @@ async function executeCycle(
 
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                          await takaturnDiamond.claimAvailableYield(termId, participant_1.address)
+                          const yield = await takaturnDiamond.getUserYieldSummary(
+                              participant_1.address,
+                              termId
+                          )
+
+                          const availableYield = yield[3]
+
+                          if (availableYield > 0) {
+                              await expect(
+                                  takaturnDiamond["claimAvailableYield(uint256,address)"](
+                                      termId,
+                                      participant_1.address
+                                  )
+                              )
+                                  .to.emit(takaturnDiamond, "OnYieldClaimed")
+                                  .withArgs(termId, participant_1.address, availableYield)
+                          } else {
+                              await expect(
+                                  takaturnDiamond["claimAvailableYield(uint256,address)"](
+                                      termId,
+                                      participant_1.address
+                                  )
+                              ).to.be.revertedWith("No yield to withdraw")
+                          }
+                      })
+                      it("Should emit an event if there is available yield or revert if not", async function () {
+                          const ids = await takaturnDiamond.getTermsId()
+                          const termId = ids[0]
+
+                          await executeCycle(termId, 0, [], false)
+
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          const yield = await takaturnDiamond.getUserYieldSummary(
+                              participant_1.address,
+                              termId
+                          )
+
+                          const availableYield = yield[3]
+
+                          if (availableYield > 0) {
+                              await expect(
+                                  takaturnDiamondParticipant_1["claimAvailableYield(uint256)"](
+                                      termId
+                                  )
+                              )
+                                  .to.emit(takaturnDiamond, "OnYieldClaimed")
+                                  .withArgs(termId, participant_1.address, availableYield)
+                          } else {
+                              await expect(
+                                  takaturnDiamondParticipant_1["claimAvailableYield(uint256)"](
+                                      termId
+                                  )
+                              ).to.be.revertedWith("No yield to withdraw")
+                          }
                       })
                   })
               })
