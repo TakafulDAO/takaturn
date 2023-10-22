@@ -17,7 +17,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const decimals = networkConfig[chainId]["decimals"]
         const initialPriceEthUsd = networkConfig[chainId]["initialPriceEthUsd"]
 
-        await deploy("MockV3Aggregator", {
+        await deploy("MockEthUsdAggregator", {
             contract: "MockV3Aggregator",
             from: deployer,
             log: true,
@@ -25,6 +25,19 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         })
 
         log("00. MockEthUsdAggregator Deployed!...")
+        log("==========================================================================")
+        log("00. Deploying MockUsdcUsdAggregator...")
+
+        const initialPriceUsdcUsd = networkConfig[chainId]["initialPriceUsdcUsd"]
+
+        await deploy("MockUsdcUsdAggregator", {
+            contract: "MockV3Aggregator",
+            from: deployer,
+            log: true,
+            args: [decimals, initialPriceUsdcUsd],
+        })
+
+        log("00. MockUsdcUsdAggregator Deployed!...")
         log("==========================================================================")
         log("00. Deploying USDC mock...")
 
