@@ -428,10 +428,6 @@ async function executeCycle(
                           FundStates.AcceptingContributions
                       )
 
-                      //   await expect(
-                      //       takaturnDiamondDeployer.closeFundingPeriod(termId)
-                      //   ).to.be.revertedWith("TermOwnable: caller is not the owner")
-
                       await expect(
                           takaturnDiamondParticipant_1.closeFundingPeriod(termId)
                       ).to.be.revertedWith("Still time to contribute")
@@ -447,12 +443,22 @@ async function executeCycle(
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.CycleOngoing)
 
                       const time = await takaturnDiamondDeployer.getRemainingContributionTime(
                           termId
                       )
+
+                      await advanceTime(cycleTime + 1)
+
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      const remainingCycles = await takaturnDiamondDeployer.getRemainingCycles(
+                          termId
+                      )
+
+                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.CycleOngoing)
                       assert.equal(time, 0)
+                      assert.equal(remainingCycles.toNumber(), totalParticipants - 1)
                   })
 
                   it("can have participants autopay at the end of the funding period", async function () {
