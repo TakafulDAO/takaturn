@@ -8,7 +8,8 @@ const {
     TermStates,
     getCollateralStateFromIndex,
     CollateralStates,
-    toWei,
+    getFundStateFromIndex,
+    FundStates,
 } = require("../../../utils/_helpers")
 const {
     totalParticipants,
@@ -62,9 +63,9 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
               participant_12 = accounts[12]
 
               // Deploy contract
-              await deployments.fixture(["takaturn_upgrade"])
+              await deployments.fixture(["mocks"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
-              aggregator = await ethers.getContract("MockV3Aggregator")
+              aggregator = await ethers.getContract("MockEthUsdAggregator")
 
               // Get contract instances
 
@@ -386,8 +387,51 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
 
               // Start term
 
+              // Manipulate Eth price to test the revert
+              await aggregator.setPrice("100000000")
+
+              await expect(takaturnDiamond.startTerm(termId)).to.be.revertedWith(
+                  "Eth prices dropped"
+              )
+
+              // Manipulate Eth price to the original price
+              await aggregator.setPrice("200000000000")
+
               await expect(takaturnDiamond.startTerm(termId))
                   .to.emit(takaturnDiamond, "OnTermStart")
                   .withArgs(termId)
+
+              term = await takaturnDiamond.getTermSummary(termId)
+              collateral = await takaturnDiamond.getCollateralSummary(termId)
+
+              await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                  CollateralStates.CycleOngoing
+              )
+              await expect(getTermStateFromIndex(term.state)).to.equal(TermStates.ActiveTerm)
+
+              let fund = await takaturnDiamond.getFundSummary(termId)
+              let yield = await takaturnDiamond.getYieldSummary(termId)
+
+              expect(fund[0]).to.equal(true)
+              await expect(getFundStateFromIndex(fund[1])).to.equal(
+                  FundStates.AcceptingContributions
+              )
+              expect(fund[2]).to.equal(term.stableTokenAddress)
+              expect(fund[6]).to.equal(1)
+              expect(fund[7]).to.equal(totalParticipants)
+              expect(yield[0]).to.equal(true)
+              assert(yield[2].toString() > 0)
+              expect(yield[2]).to.equal(yield[3])
+              for (let i = 1; i <= totalParticipants; i++) {
+                  expect(fund[3][i - 1]).to.equal(accounts[i].address)
+                  expect(collateral[4][i - 1]).to.equal(accounts[i].address)
+
+                  let fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
+                      accounts[i].address,
+                      termId
+                  )
+                  expect(fundUserSummary[0]).to.equal(true) // isParticipant
+                  expect(fundUserSummary[2]).to.equal(false) // paidThisCycle
+              }
           })
       })
