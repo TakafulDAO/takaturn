@@ -17,8 +17,10 @@ const {
     contributionAmount,
     contributionPeriod,
     registrationPeriod,
+    moneyPot,
 } = require("../utils/test-utils")
 const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
+const { BigNumber } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -40,6 +42,8 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
               participant_10,
               participant_11,
               participant_12
+
+          const contributionAmountWei = BigNumber.from("25000000000000000")
 
           async function payTermContributions(termId) {
               // Participants contribution:
@@ -91,7 +95,11 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
                       }
                   } else {
-                      continue
+                      fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
+                          accounts[i].address,
+                          termId
+                      )
+                      expect(fundUserSummary[2]).to.equal(false) // paidThisCycle
                   }
               }
           }
@@ -161,18 +169,18 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
                   userAddress = accounts[i].address
 
                   if (i == 3) {
-                      const amount = contributionAmount * 2
+                      const amount = moneyPot * 2
                       await usdcWhaleSigner.transfer(userAddress, amount * 10 ** 6)
 
                       await usdc
                           .connect(accounts[i])
                           .approve(takaturnDiamond.address, amount * 10 ** 6)
                   } else {
-                      await usdcWhaleSigner.transfer(userAddress, contributionAmount * 10 ** 6)
+                      await usdcWhaleSigner.transfer(userAddress, moneyPot * 10 ** 6)
 
                       await usdc
                           .connect(accounts[i])
-                          .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                          .approve(takaturnDiamond.address, moneyPot * 10 ** 6)
                   }
               }
           })
@@ -455,6 +463,8 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
                   CollateralStates.Closed
               )
 
+              //******************************************** First cycle *********************************************************/
+
               // Start term
 
               // Manipulate Eth price to test the revert
@@ -523,5 +533,104 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
               )
 
               await advanceTime(contributionPeriod + 1)
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              let defaulter_collateralSummary_before =
+                  await takaturnDiamond.getDepositorCollateralSummary(accounts[8].address, termId)
+
+              const closeFundingPeriodTx = takaturnDiamond.closeFundingPeriod(termId)
+              await Promise.all([
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnPaidContribution")
+                      .withArgs(termId, accounts[10].address, fund[6]),
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnPaidContribution")
+                      .withArgs(termId, accounts[11].address, fund[6]),
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnPaidContribution")
+                      .withArgs(termId, accounts[12].address, fund[6]),
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnParticipantDefaulted")
+                      .withArgs(termId, fund[6], accounts[8].address),
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnCollateralLiquidated")
+                      .withArgs(termId, accounts[8].address, contributionAmountWei),
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnBeneficiaryAwarded")
+                      .withArgs(termId, accounts[fund[6]].address),
+              ])
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              await expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.CycleOngoing)
+
+              let participant_1_fundSummary = await takaturnDiamond.getParticipantFundSummary(
+                  accounts[1].address,
+                  termId
+              )
+
+              let defaulter_collateralSummary_after =
+                  await takaturnDiamond.getDepositorCollateralSummary(accounts[8].address, termId)
+
+              assert.equal(participant_1_fundSummary[1], true)
+              assert.equal(
+                  participant_1_fundSummary[4].toNumber(),
+                  contributionAmount * 10 * 10 ** 6
+              )
+              assert.equal(participant_1_fundSummary[5], false)
+              assert.equal(
+                  defaulter_collateralSummary_before[1].toString(),
+                  defaulter_collateralSummary_after[3].toString()
+              )
+              assert(
+                  defaulter_collateralSummary_before[1].toString() >
+                      defaulter_collateralSummary_after[1].toString()
+              )
+
+              await expect(takaturnDiamond.closeFundingPeriod(termId)).to.be.revertedWith(
+                  "Wrong state"
+              )
+
+              // Check the auto payers
+              for (let i = 10; i <= totalParticipants; i++) {
+                  let fund = await takaturnDiamond.getFundSummary(termId)
+                  if (i != fund[6]) {
+                      let fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
+                          accounts[i].address,
+                          termId
+                      )
+                      expect(fundUserSummary[2]).to.equal(true) // paidThisCycle
+                  }
+              }
+
+              // Start new Cycle
+              await expect(takaturnDiamond.startNewCycle(termId)).to.be.revertedWith(
+                  "Too early to start new cycle"
+              )
+
+              await advanceTime(cycleTime - contributionPeriod + 1)
+
+              //******************************************** Second cycle *********************************************************/
+
+              await takaturnDiamond.startNewCycle(termId)
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  let participantFundSummary = await takaturnDiamond.getParticipantFundSummary(
+                      accounts[i].address,
+                      termId
+                  )
+                  if (i < 10) {
+                      assert.equal(participantFundSummary[2], false) // paidThisCycle
+                  } else {
+                      assert.equal(participantFundSummary[2], true) // paidThisCycle auto payers
+                  }
+              }
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              await expect(getFundStateFromIndex(fund[1])).to.equal(
+                  FundStates.AcceptingContributions
+              )
           })
       })
