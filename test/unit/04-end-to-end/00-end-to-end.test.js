@@ -970,5 +970,32 @@ const { BigNumber } = require("ethers")
                       "OnFrozenMoneyPotLiquidated"
                   ),
               ])
+
+              await advanceTime(cycleTime + 1)
+
+              //******************************************** Eight cycle *********************************************************/
+              await takaturnDiamond.startNewCycle(termId)
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              assert.equal(fund[6], 8)
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  if (i == 4 || i == 8) {
+                      await expect(
+                          takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      ).to.be.revertedWith("Not a participant")
+                  }
+                  if (i == 7 || i > 8) {
+                      await expect(
+                          takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      ).to.be.revertedWith("Participant is exempted this cycle")
+                  }
+                  if (i < 4 || i == 5) {
+                      await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                  }
+              }
+
+              await advanceTime(contributionPeriod + 1)
           })
       })
