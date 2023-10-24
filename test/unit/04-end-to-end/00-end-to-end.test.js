@@ -715,7 +715,7 @@ const { BigNumber } = require("ethers")
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
                       let fund = await takaturnDiamond.getFundSummary(termId)
-                      if (i == fund[6]) {
+                      if (i == fund[6] || i == 7 || i == 8) {
                           continue
                       } else if (i == 3) {
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
@@ -723,20 +723,113 @@ const { BigNumber } = require("ethers")
                           await takaturnDiamond
                               .connect(accounts[i])
                               .payContributionOnBehalfOf(termId, participant_7.address)
-                      } else if (i == 7 || i == 8) {
-                          continue
                       } else {
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
                       }
                   } else {
                       continue
                   }
+              }
 
-                  await advanceTime(cycleTime + 1)
-                  await takaturnDiamond.closeFundingPeriod(termId)
+              await advanceTime(cycleTime + 1)
+              await takaturnDiamond.closeFundingPeriod(termId)
 
-                  //******************************************** Third cycle *********************************************************/
-                  await takaturnDiamond.startNewCycle(termId)
+              //******************************************** Third cycle *********************************************************/
+              await takaturnDiamond.startNewCycle(termId)
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              assert.equal(fund[6], 3)
+
+              await takaturnDiamond.connect(accounts[1]).withdrawCollateral(termId)
+              await takaturnDiamond.connect(accounts[2]).withdrawCollateral(termId)
+
+              yield = await takaturnDiamond.getUserYieldSummary(participant_2.address, termId)
+
+              let availableYield = yield[3]
+
+              if (availableYield > 0) {
+                  await expect(
+                      takaturnDiamond["claimAvailableYield(uint256,address)"](
+                          termId,
+                          participant_2.address
+                      )
+                  )
+                      .to.emit(takaturnDiamond, "OnYieldClaimed")
+                      .withArgs(termId, participant_2.address, availableYield)
+              } else {
+                  await expect(
+                      takaturnDiamond["claimAvailableYield(uint256,address)"](
+                          termId,
+                          participant_2.address
+                      )
+                  ).to.be.revertedWith("No yield to withdraw")
+              }
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  if (i < 10) {
+                      let fund = await takaturnDiamond.getFundSummary(termId)
+                      if (i == fund[6] || i == 1 || i == 7 || i == 8) {
+                          continue
+                      } else if (i == 3) {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+
+                          await takaturnDiamond
+                              .connect(accounts[i])
+                              .payContributionOnBehalfOf(termId, participant_7.address)
+                      } else {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      }
+                  } else {
+                      continue
+                  }
+              }
+
+              await advanceTime(contributionPeriod + 1)
+
+              closeFundingPeriodTx = takaturnDiamond.closeFundingPeriod(termId)
+
+              await Promise.all([
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnParticipantDefaulted")
+                      .withArgs(termId, fund[6], accounts[1].address),
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnCollateralLiquidated")
+                      .withArgs(termId, accounts[1].address, contributionAmountWei),
+              ])
+
+              await advanceTime(cycleTime + 1)
+
+              //******************************************** Fourth cycle *********************************************************/
+              await takaturnDiamond.startNewCycle(termId)
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              assert.equal(fund[6], 4)
+
+              await takaturnDiamond.connect(accounts[1]).withdrawCollateral(termId)
+              await takaturnDiamond.connect(accounts[2]).withdrawCollateral(termId)
+
+              yield = await takaturnDiamond.getUserYieldSummary(participant_2.address, termId)
+
+              availableYield = yield[3]
+
+              if (availableYield > 0) {
+                  await expect(
+                      takaturnDiamond["claimAvailableYield(uint256,address)"](
+                          termId,
+                          participant_2.address
+                      )
+                  )
+                      .to.emit(takaturnDiamond, "OnYieldClaimed")
+                      .withArgs(termId, participant_2.address, availableYield)
+              } else {
+                  await expect(
+                      takaturnDiamond["claimAvailableYield(uint256,address)"](
+                          termId,
+                          participant_2.address
+                      )
+                  ).to.be.revertedWith("No yield to withdraw")
               }
           })
       })
