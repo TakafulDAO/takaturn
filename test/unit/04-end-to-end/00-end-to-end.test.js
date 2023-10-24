@@ -43,67 +43,6 @@ const { BigNumber } = require("ethers")
               participant_11,
               participant_12
 
-          const contributionAmountWei = BigNumber.from("25000000000000000")
-
-          async function payTermContributions(termId) {
-              // Participants contribution:
-              // Beneficiary does not pay
-              // Participant 3 always pays for participant 7
-              // Participants 7 and 8 always defaults
-              // Participant 10, 11, 12 auto pay
-
-              for (let i = 1; i <= totalParticipants; i++) {
-                  if (i < 10) {
-                      let fund = await takaturnDiamond.getFundSummary(termId)
-                      if (i == fund[6]) {
-                          await expect(
-                              takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                          ).to.be.revertedWith("Beneficiary doesn't pay")
-                      } else if (i == 3) {
-                          await expect(takaturnDiamond.connect(accounts[i]).payContribution(termId))
-                              .to.emit(takaturnDiamond, "OnPaidContribution")
-                              .withArgs(termId, accounts[i].address, fund[6])
-
-                          await expect(
-                              takaturnDiamond
-                                  .connect(accounts[i])
-                                  .payContributionOnBehalfOf(termId, participant_7.address)
-                          )
-                              .to.emit(takaturnDiamond, "OnPaidContribution")
-                              .withArgs(termId, participant_7.address, fund[6])
-
-                          fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
-                              accounts[i].address,
-                              termId
-                          )
-                          expect(fundUserSummary[2]).to.equal(true) // paidThisCycle
-                      } else if (i == 7) {
-                          await expect(
-                              takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                          ).to.be.revertedWith("Already paid for cycle")
-
-                          fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
-                              accounts[i].address,
-                              termId
-                          )
-                          expect(fundUserSummary[2]).to.equal(true) // paidThisCycle
-                      } else if (i == 8) {
-                          await expect(
-                              takaturnDiamond.connect(deployer).payContribution(termId)
-                          ).to.be.revertedWith("Not a participant")
-                      } else {
-                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                      }
-                  } else {
-                      fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
-                          accounts[i].address,
-                          termId
-                      )
-                      expect(fundUserSummary[2]).to.equal(false) // paidThisCycle
-                  }
-              }
-          }
-
           beforeEach(async function () {
               // Get the accounts
               accounts = await ethers.getSigners()
@@ -481,6 +420,16 @@ const { BigNumber } = require("ethers")
                   .to.emit(takaturnDiamond, "OnTermStart")
                   .withArgs(termId)
 
+              let remainingContributionTime = await takaturnDiamond.getRemainingContributionTime(
+                  termId
+              )
+
+              assert.equal(remainingContributionTime.toNumber(), contributionPeriod)
+
+              let remainingCycleTime = await takaturnDiamond.getRemainingCycleTime(termId)
+
+              assert.equal(remainingCycleTime.toNumber(), cycleTime)
+
               term = await takaturnDiamond.getTermSummary(termId)
               collateral = await takaturnDiamond.getCollateralSummary(termId)
 
@@ -526,7 +475,62 @@ const { BigNumber } = require("ethers")
                   expect(fundUserSummary[3]).to.equal(true)
               }
 
-              await payTermContributions(termId)
+              // Participants contribution:
+              // Beneficiary does not pay
+              // Participant 3 always pays for participant 7
+              // Participants 7 and 8 always defaults
+              // Participant 10, 11, 12 auto pay
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  if (i < 10) {
+                      let fund = await takaturnDiamond.getFundSummary(termId)
+                      if (i == fund[6]) {
+                          await expect(
+                              takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                          ).to.be.revertedWith("Beneficiary doesn't pay")
+                      } else if (i == 3) {
+                          await expect(takaturnDiamond.connect(accounts[i]).payContribution(termId))
+                              .to.emit(takaturnDiamond, "OnPaidContribution")
+                              .withArgs(termId, accounts[i].address, fund[6])
+
+                          await expect(
+                              takaturnDiamond
+                                  .connect(accounts[i])
+                                  .payContributionOnBehalfOf(termId, participant_7.address)
+                          )
+                              .to.emit(takaturnDiamond, "OnPaidContribution")
+                              .withArgs(termId, participant_7.address, fund[6])
+
+                          fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
+                              accounts[i].address,
+                              termId
+                          )
+                          expect(fundUserSummary[2]).to.equal(true) // paidThisCycle
+                      } else if (i == 7) {
+                          await expect(
+                              takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                          ).to.be.revertedWith("Already paid for cycle")
+
+                          fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
+                              accounts[i].address,
+                              termId
+                          )
+                          expect(fundUserSummary[2]).to.equal(true) // paidThisCycle
+                      } else if (i == 8) {
+                          await expect(
+                              takaturnDiamond.connect(deployer).payContribution(termId)
+                          ).to.be.revertedWith("Not a participant")
+                      } else {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      }
+                  } else {
+                      fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
+                          accounts[i].address,
+                          termId
+                      )
+                      expect(fundUserSummary[2]).to.equal(false) // paidThisCycle
+                  }
+              }
 
               await expect(takaturnDiamond.closeFundingPeriod(termId)).to.be.revertedWith(
                   "Still time to contribute"
@@ -534,12 +538,19 @@ const { BigNumber } = require("ethers")
 
               await advanceTime(contributionPeriod + 1)
 
+              remainingContributionTime = await takaturnDiamond.getRemainingContributionTime(termId)
+
+              assert.equal(remainingContributionTime, 0)
+
               fund = await takaturnDiamond.getFundSummary(termId)
 
               let defaulter_collateralSummary_before =
                   await takaturnDiamond.getDepositorCollateralSummary(accounts[8].address, termId)
 
-              const closeFundingPeriodTx = takaturnDiamond.closeFundingPeriod(termId)
+              let closeFundingPeriodTx = takaturnDiamond.closeFundingPeriod(termId)
+
+              let contributionAmountWei = BigNumber.from("25000000000000000") // ETH = 2000 USD
+
               await Promise.all([
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnPaidContribution")
@@ -570,6 +581,9 @@ const { BigNumber } = require("ethers")
                   termId
               )
 
+              let participant_1_collateralSummary =
+                  await takaturnDiamond.getDepositorCollateralSummary(accounts[1].address, termId)
+
               let defaulter_collateralSummary_after =
                   await takaturnDiamond.getDepositorCollateralSummary(accounts[8].address, termId)
 
@@ -586,6 +600,10 @@ const { BigNumber } = require("ethers")
               assert(
                   defaulter_collateralSummary_before[1].toString() >
                       defaulter_collateralSummary_after[1].toString()
+              )
+              assert.equal(
+                  participant_1_collateralSummary[2].toString(),
+                  contributionAmountWei.toString()
               )
 
               await expect(takaturnDiamond.closeFundingPeriod(termId)).to.be.revertedWith(
@@ -611,9 +629,20 @@ const { BigNumber } = require("ethers")
 
               await advanceTime(cycleTime - contributionPeriod + 1)
 
+              remainingCycleTime = await takaturnDiamond.getRemainingCycleTime(termId)
+
+              assert.equal(remainingCycleTime.toNumber(), 0)
+
               //******************************************** Second cycle *********************************************************/
 
-              await takaturnDiamond.startNewCycle(termId)
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              let startNewCycleTx = takaturnDiamond.startNewCycle(termId)
+              await Promise.all([
+                  expect(startNewCycleTx).to.emit(takaturnDiamond, "OnPaidContribution"),
+                  expect(startNewCycleTx).to.emit(takaturnDiamond, "OnPaidContribution"),
+                  expect(startNewCycleTx).to.emit(takaturnDiamond, "OnPaidContribution"),
+              ])
 
               for (let i = 1; i <= totalParticipants; i++) {
                   let participantFundSummary = await takaturnDiamond.getParticipantFundSummary(
@@ -632,5 +661,82 @@ const { BigNumber } = require("ethers")
               await expect(getFundStateFromIndex(fund[1])).to.equal(
                   FundStates.AcceptingContributions
               )
+              assert.equal(fund[6], 2)
+
+              await expect(
+                  takaturnDiamond.connect(accounts[2]).withdrawFund(termId)
+              ).to.be.revertedWith("You must be a beneficiary")
+
+              let withdrawFundTx = takaturnDiamond.connect(accounts[1]).withdrawFund(termId)
+              await Promise.all([
+                  expect(withdrawFundTx)
+                      .to.emit(takaturnDiamond, "OnFundWithdrawn")
+                      .withArgs(termId, accounts[1].address, contributionAmount * 10 * 10 ** 6),
+                  expect(withdrawFundTx)
+                      .to.emit(takaturnDiamond, "OnReimbursementWithdrawn")
+                      .withArgs(termId, accounts[1].address, contributionAmountWei),
+              ])
+
+              await expect(
+                  takaturnDiamond.connect(accounts[1]).withdrawFund(termId)
+              ).to.be.revertedWith("Nothing to withdraw")
+
+              participant_1_fundSummary = await takaturnDiamond.getParticipantFundSummary(
+                  accounts[1].address,
+                  termId
+              )
+              participant_1_collateralSummary = await takaturnDiamond.getDepositorCollateralSummary(
+                  accounts[1].address,
+                  termId
+              )
+
+              assert.equal(participant_1_fundSummary[4].toNumber(), 0)
+              assert.equal(participant_1_collateralSummary[2].toString(), 0)
+
+              let allowedWithdrawal = await takaturnDiamond.getWithdrawableUserBalance(
+                  termId,
+                  accounts[1].address
+              )
+
+              await expect(takaturnDiamond.connect(accounts[1]).withdrawCollateral(termId))
+                  .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                  .withArgs(termId, accounts[1].address, allowedWithdrawal)
+
+              await expect(
+                  takaturnDiamond.connect(accounts[1]).withdrawCollateral(termId)
+              ).to.be.revertedWith("Withdraw failed")
+
+              // Participants contribution:
+              // Beneficiary does not pay
+              // Participant 3 always pays for participant 7
+              // Participants 7 and 8 always defaults
+              // Participant 10, 11, 12 auto pay
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  if (i < 10) {
+                      let fund = await takaturnDiamond.getFundSummary(termId)
+                      if (i == fund[6]) {
+                          continue
+                      } else if (i == 3) {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+
+                          await takaturnDiamond
+                              .connect(accounts[i])
+                              .payContributionOnBehalfOf(termId, participant_7.address)
+                      } else if (i == 7 || i == 8) {
+                          continue
+                      } else {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      }
+                  } else {
+                      continue
+                  }
+
+                  await advanceTime(cycleTime + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  //******************************************** Third cycle *********************************************************/
+                  await takaturnDiamond.startNewCycle(termId)
+              }
           })
       })
