@@ -925,5 +925,50 @@ const { BigNumber } = require("ethers")
                   expect(closeFundingPeriodTx).to.emit(takaturnDiamond, "OnParticipantDefaulted"),
                   expect(closeFundingPeriodTx).to.emit(takaturnDiamond, "OnCollateralLiquidated"),
               ])
+
+              await advanceTime(cycleTime + 1)
+
+              //******************************************** Seventh cycle *********************************************************/
+              await takaturnDiamond.startNewCycle(termId)
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              assert.equal(fund[6], 7)
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  if (i < 10) {
+                      let fund = await takaturnDiamond.getFundSummary(termId)
+                      if (i == fund[6] || i == 4 || i == 5 || i == 6 || i == 8) {
+                          continue
+                      } else if (i == 3) {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } else {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      }
+                  } else {
+                      continue
+                  }
+              }
+
+              await advanceTime(contributionPeriod + 1)
+
+              await aggregator.setPrice("10000000000")
+
+              closeFundingPeriodTx = takaturnDiamond.closeFundingPeriod(termId)
+
+              await Promise.all([
+                  expect(closeFundingPeriodTx).to.emit(takaturnDiamond, "OnParticipantDefaulted"),
+                  expect(closeFundingPeriodTx).to.emit(takaturnDiamond, "OnCollateralLiquidated"),
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnDefaulterExpelled")
+                      .withArgs(termId, fund[6], participant_4.address),
+                  expect(closeFundingPeriodTx)
+                      .to.emit(takaturnDiamond, "OnDefaulterExpelled")
+                      .withArgs(termId, fund[6], participant_8.address),
+                  expect(closeFundingPeriodTx).to.emit(
+                      takaturnDiamond,
+                      "OnFrozenMoneyPotLiquidated"
+                  ),
+              ])
           })
       })
