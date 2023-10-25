@@ -212,6 +212,8 @@ async function executeCycle(
                   zaynVaultAddress
               )
 
+              await takaturnDiamond.updateYieldProvider("ZaynZap", zaynZapAddress)
+
               // Connect the accounts
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
