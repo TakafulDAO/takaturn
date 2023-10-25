@@ -238,8 +238,6 @@ async function executeCycle(
                       .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
               }
 
-              await takaturnDiamond.updateYieldProvider("ZaynZap", newZaynZapAddress)
-
               await takaturnDiamond.createTerm(
                   totalParticipants,
                   registrationPeriod,

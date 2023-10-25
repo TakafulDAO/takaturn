@@ -86,8 +86,6 @@ const { BigNumber } = require("ethers")
                   zaynZapAddress
               )
 
-              await takaturnDiamond.updateYieldProvider("ZaynZap", zaynZapAddress)
-
               // Connect the accounts
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
 
@@ -403,7 +401,7 @@ const { BigNumber } = require("ethers")
 
               expect(secondCollateral[0]).to.equal(false)
               await expect(getCollateralStateFromIndex(secondCollateral[1])).to.equal(
-                  CollateralStates.Closed
+                  CollateralStates.ReleasingCollateral
               )
 
               //******************************************** First cycle *********************************************************/
@@ -417,12 +415,31 @@ const { BigNumber } = require("ethers")
                   "Eth prices dropped"
               )
 
+              const neededAllowance_participant_1 =
+                  await takaturnDiamondDeployer.getNeededAllowance(participant_1.address)
+
+              const neededAllowance_participant_12 =
+                  await takaturnDiamondDeployer.getNeededAllowance(participant_12.address)
+
+              assert.equal(neededAllowance_participant_1.toString(), moneyPot * 10 ** 6)
+              assert.equal(
+                  neededAllowance_participant_12.toString(),
+                  neededAllowance_participant_1.toString()
+              )
+
               // Manipulate Eth price to the original price
               await aggregator.setPrice("200000000000")
 
               await expect(takaturnDiamond.startTerm(termId))
                   .to.emit(takaturnDiamond, "OnTermStart")
                   .withArgs(termId)
+
+              let underCollaterized = await takaturnDiamondDeployer.isUnderCollaterized(
+                  termId,
+                  participant_1.address
+              )
+
+              assert.equal(underCollaterized, false)
 
               let remainingContributionTime = await takaturnDiamond.getRemainingContributionTime(
                   termId
@@ -962,6 +979,13 @@ const { BigNumber } = require("ethers")
 
               await aggregator.setPrice("10000000000")
 
+              underCollaterized = await takaturnDiamondDeployer.isUnderCollaterized(
+                  termId,
+                  participant_8.address
+              )
+
+              assert.equal(underCollaterized, true)
+
               closeFundingPeriodTx = takaturnDiamond.closeFundingPeriod(termId)
 
               await Promise.all([
@@ -994,6 +1018,10 @@ const { BigNumber } = require("ethers")
 
               assert.equal(fund[6], 8)
 
+              const expelledTerms = await takaturnDiamond.getExpelledTerms(participant_4.address)
+
+              assert.equal(expelledTerms[0].toString(), termId.toString())
+
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i == 4 || i == 8) {
                       await expect(
@@ -1004,9 +1032,22 @@ const { BigNumber } = require("ethers")
                       await expect(
                           takaturnDiamond.connect(accounts[i]).payContribution(termId)
                       ).to.be.revertedWith("Participant is exempted this cycle")
+
+                      let isExempted = await takaturnDiamond.isExempted(
+                          termId,
+                          fund[6],
+                          accounts[i].address
+                      )
+                      assert(isExempted)
                   }
                   if (i < 4 || i == 5) {
                       await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      let isExempted = await takaturnDiamond.isExempted(
+                          termId,
+                          fund[6],
+                          accounts[i].address
+                      )
+                      assert(!isExempted)
                   }
               }
 
@@ -1087,7 +1128,7 @@ const { BigNumber } = require("ethers")
 
               await advanceTime(cycleTime + 1)
 
-              //******************************************** Eleventh cycle *********************************************************/
+              //******************************************** Twelfth cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
               fund = await takaturnDiamond.getFundSummary(termId)

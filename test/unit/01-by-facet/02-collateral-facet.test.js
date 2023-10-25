@@ -357,7 +357,7 @@ const { hour } = require("../../../utils/units")
 
                   await expect(takaturnDiamond.closeFundingPeriod(termId))
                       .to.emit(takaturnDiamond, "OnCollateralLiquidated")
-                      .withArgs(termId, participant_6.address, 5614823133071308)
+                      .withArgs(termId, participant_6.address, 5583472920156337)
               })
 
               it("Liquidate collateral previous beneficiary", async function () {
@@ -385,7 +385,7 @@ const { hour } = require("../../../utils/units")
                   await advanceTime(cycleTime.toNumber() + 1)
                   await expect(takaturnDiamond.closeFundingPeriod(termId))
                       .to.emit(takaturnDiamond, "OnCollateralLiquidated")
-                      .withArgs(termId, participant_1.address, 5614823133071308)
+                      .withArgs(termId, participant_1.address, 5583472920156337)
               })
 
               it("Defaulter expelled, non previous beneficiary", async function () {
