@@ -118,11 +118,14 @@ contract FundFacet is IFund {
                 }
 
                 EnumerableSet.remove(fund._defaulters, p);
-            } else if (!EnumerableSet.contains(fund._defaulters, p)) {
+            } else if (
+                !EnumerableSet.contains(fund._defaulters, p) &&
+                !IGetters(address(this)).wasExpelled(termId, p)
+            ) {
                 // And we make sure that existing defaulters are ignored
                 // If the current beneficiary is an expelled participant, only check previous beneficiaries, that have not been expelled
                 if (IGetters(address(this)).wasExpelled(termId, currentBeneficiary)) {
-                    if (fund.isBeneficiary[p] && !IGetters(address(this)).wasExpelled(termId, p)) {
+                    if (fund.isBeneficiary[p]) {
                         _defaultParticipant(termId, p);
                     }
                 } else {
