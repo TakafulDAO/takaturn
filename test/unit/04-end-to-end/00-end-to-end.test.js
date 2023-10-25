@@ -3,6 +3,7 @@ const { developmentChains, isDevnet, isFork, networkConfig } = require("../../..
 const { network, ethers } = require("hardhat")
 const {
     advanceTime,
+    advanceTimeByDate,
     impersonateAccount,
     getTermStateFromIndex,
     TermStates,
@@ -11,6 +12,7 @@ const {
     getFundStateFromIndex,
     FundStates,
 } = require("../../../utils/_helpers")
+const { day } = require("../../../utils/units")
 const {
     totalParticipants,
     cycleTime,
@@ -84,6 +86,8 @@ const { BigNumber } = require("ethers")
                   zaynZapAddress
               )
 
+              await takaturnDiamond.updateYieldProvider("ZaynZap", zaynZapAddress)
+
               // Connect the accounts
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
 
@@ -124,7 +128,7 @@ const { BigNumber } = require("ethers")
               }
           })
 
-          it.only("End to end test", async function () {
+          it("End to end test", async function () {
               this.timeout(200000)
               // Reverts for create term
               await expect(
@@ -749,6 +753,7 @@ const { BigNumber } = require("ethers")
               let availableYield = yield[3]
 
               if (availableYield > 0) {
+                  //   console.log("availableYield", availableYield.toString())
                   await expect(
                       takaturnDiamond["claimAvailableYield(uint256,address)"](
                           termId,
@@ -758,6 +763,7 @@ const { BigNumber } = require("ethers")
                       .to.emit(takaturnDiamond, "OnYieldClaimed")
                       .withArgs(termId, participant_2.address, availableYield)
               } else {
+                  //   console.log("No yield")
                   await expect(
                       takaturnDiamond["claimAvailableYield(uint256,address)"](
                           termId,
@@ -815,10 +821,12 @@ const { BigNumber } = require("ethers")
               availableYield = yield[3]
 
               if (availableYield > 0) {
+                  //   console.log("availableYield", availableYield.toString())
                   await takaturnDiamond
                       .connect(participant_2)
                       ["claimAvailableYield(uint256)"](termId)
               } else {
+                  //   console.log("No yield")
                   await expect(
                       takaturnDiamond.connect(participant_2)["claimAvailableYield(uint256)"](termId)
                   ).to.be.revertedWith("No yield to withdraw")
@@ -971,6 +979,12 @@ const { BigNumber } = require("ethers")
                   ),
               ])
 
+              let expelled = await takaturnDiamond.wasExpelled(termId, participant_4.address)
+              assert(expelled)
+
+              expelled = await takaturnDiamond.wasExpelled(termId, participant_8.address)
+              assert(expelled)
+
               await advanceTime(cycleTime + 1)
 
               //******************************************** Eight cycle *********************************************************/
@@ -997,5 +1011,127 @@ const { BigNumber } = require("ethers")
               }
 
               await advanceTime(contributionPeriod + 1)
+
+              await takaturnDiamond.closeFundingPeriod(termId)
+
+              await advanceTime(cycleTime + 1)
+
+              //******************************************** Ninth cycle *********************************************************/
+              await takaturnDiamond.startNewCycle(termId)
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              assert.equal(fund[6], 9)
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  if (i < 10) {
+                      if (i == 4 || i == 8 || i == fund[6]) {
+                          continue
+                      }
+                      await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                  }
+              }
+
+              await advanceTime(contributionPeriod + 1)
+
+              await takaturnDiamond.closeFundingPeriod(termId)
+
+              await advanceTime(cycleTime + 1)
+
+              //******************************************** Tenth cycle *********************************************************/
+              await takaturnDiamond.startNewCycle(termId)
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              assert.equal(fund[6], 10)
+
+              await expect(
+                  takaturnDiamond.connect(participant_9).withdrawFund(termId)
+              ).to.be.revertedWith("Need at least 1.1RCC collateral to unfreeze your fund")
+
+              await aggregator.setPrice("9000000000")
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  if (i == 4 || 8 <= i <= 10) {
+                      continue
+                  }
+                  if (i < 10) {
+                      await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                  }
+              }
+
+              await advanceTime(contributionPeriod + 1)
+
+              await takaturnDiamond.closeFundingPeriod(termId)
+
+              await advanceTime(cycleTime + 1)
+
+              //******************************************** Eleventh cycle *********************************************************/
+              await takaturnDiamond.startNewCycle(termId)
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              assert.equal(fund[6], 11)
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  if (i < 5 || i >= 8) {
+                      continue
+                  }
+
+                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+              }
+
+              await advanceTime(contributionPeriod + 1)
+
+              await takaturnDiamond.closeFundingPeriod(termId)
+
+              await advanceTime(cycleTime + 1)
+
+              //******************************************** Eleventh cycle *********************************************************/
+              await takaturnDiamond.startNewCycle(termId)
+
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              assert.equal(fund[6], 12)
+
+              for (let i = 1; i <= totalParticipants; i++) {
+                  if (i < 5 || i >= 8) {
+                      continue
+                  }
+
+                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+              }
+
+              await advanceTime(contributionPeriod + 1)
+
+              await takaturnDiamond.closeFundingPeriod(termId)
+
+              term = await takaturnDiamond.getTermSummary(termId)
+              collateral = await takaturnDiamond.getCollateralSummary(termId)
+              fund = await takaturnDiamond.getFundSummary(termId)
+
+              await expect(getTermStateFromIndex(term.state)).to.equal(TermStates.ClosedTerm)
+              await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                  CollateralStates.ReleasingCollateral
+              )
+              await expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.FundClosed)
+              assert(fund[5] > 0)
+
+              await advanceTime(cycleTime + 1)
+
+              await expect(takaturnDiamond.startNewCycle(termId)).to.be.revertedWith("Wrong state")
+
+              //******************************************** After End *********************************************************/
+
+              await expect(takaturnDiamond.emptyFundAfterEnd(termId)).to.be.revertedWith(
+                  "Can't empty yet"
+              )
+              await expect(takaturnDiamond.emptyCollateralAfterEnd(termId)).to.be.revertedWith(
+                  "Can't empty yet"
+              )
+
+              await advanceTimeByDate(180, day)
+
+              await takaturnDiamond.emptyFundAfterEnd(termId)
           })
       })
