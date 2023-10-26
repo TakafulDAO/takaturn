@@ -248,7 +248,8 @@ contract FundFacet is IFund {
 
         require(
             fund.currentState == LibFundStorage.FundStates.FundClosed ||
-                fund.isBeneficiary[msg.sender],
+                fund.isBeneficiary[msg.sender] ||
+                collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral,
             "You must be a beneficiary"
         );
 
