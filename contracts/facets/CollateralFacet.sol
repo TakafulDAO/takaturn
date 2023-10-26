@@ -165,12 +165,11 @@ contract CollateralFacet is ICollateral {
         if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
             collateral.collateralMembersBank[msg.sender] = 0;
 
-            uint amountToTransfer = userCollateral +
-                _withdrawFromYield(termId, msg.sender, userCollateral, yield);
+            _withdrawFromYield(termId, msg.sender, userCollateral, yield);
 
-            (success, ) = payable(msg.sender).call{value: amountToTransfer}("");
+            (success, ) = payable(msg.sender).call{value: userCollateral}("");
 
-            --collateral.counterMembers; // todo: Is this needed?
+            --collateral.counterMembers;
 
             emit OnCollateralWithdrawal(termId, msg.sender, userCollateral);
         }
@@ -186,9 +185,9 @@ contract CollateralFacet is ICollateral {
                 uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
-                uint amountToTransfer = allowedWithdrawal +
-                    _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
-                (success, ) = payable(msg.sender).call{value: amountToTransfer}("");
+                _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
+
+                (success, ) = payable(msg.sender).call{value: allowedWithdrawal}("");
 
                 emit OnCollateralWithdrawal(termId, msg.sender, allowedWithdrawal);
             }
