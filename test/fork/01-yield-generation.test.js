@@ -1,12 +1,12 @@
 const { assert, expect } = require("chai")
-const { isFork, isMainnet, networkConfig } = require("../../../utils/_networks")
+const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const {
     FundStates,
     getFundStateFromIndex,
     advanceTime,
     impersonateAccount,
-} = require("../../../utils/_helpers")
+} = require("../../utils/_helpers")
 const {
     totalParticipants,
     cycleTime,
@@ -16,7 +16,7 @@ const {
     registrationPeriod,
     getRandomInt,
 } = require("../utils/test-utils")
-const { abi } = require("../../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
+const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
 const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
@@ -146,7 +146,7 @@ async function executeCycle(
 
 !isFork || isMainnet
     ? describe.skip
-    : describe("Yield generation unit tests. Mainnet fork", function () {
+    : describe("Fork Mainnet test. Yield generation tests", function () {
           const chainId = network.config.chainId
 
           let deployer,
@@ -397,7 +397,7 @@ async function executeCycle(
                   ).not.to.be.reverted
               })
           })
-          describe("Yield generation, term creation", function () {
+          describe("Term creation with participants opting in the yield generation", function () {
               it("allows participant to join with yield generation and emit events", async function () {
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
@@ -541,7 +541,7 @@ async function executeCycle(
               })
           })
 
-          describe("Yield generation, ongoing terms", function () {
+          describe("On going terms, with participants opted in yield generation", function () {
               beforeEach(async function () {
                   const ids = await takaturnDiamondDeployer.getTermsId()
                   const termId = ids[0]
@@ -561,6 +561,29 @@ async function executeCycle(
               })
 
               describe("Yield parameters", function () {
+                  it("Probando", async function () {
+                      const ids = await takaturnDiamond.getTermsId()
+                      const termId = ids[0]
+
+                      await executeCycle(termId, 0, [], false)
+                      await executeCycle(termId, 0, [], false)
+                      await executeCycle(termId, 0, [], false)
+                      await executeCycle(termId, 0, [], false)
+                      await executeCycle(termId, 1, [], false)
+
+                      await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                      const yieldDistributionRatio = await takaturnDiamond.yieldDistributionRatio(
+                          termId,
+                          participant_1.address
+                      )
+                      //yieldDistributionRatio = 163141993957703927
+                      //   console.log(yieldDistributionRatio.toString())
+                      assert(yieldDistributionRatio.toString() > 0)
+
+                      const totalYieldGenerated = await takaturnDiamond.totalYieldGenerated(termId)
+                      //   console.log(totalYieldGenerated.toString())
+                  })
                   it("Should return the correct yield parameters", async function () {
                       this.timeout(200000)
                       const ids = await takaturnDiamond.getTermsId()
@@ -637,7 +660,7 @@ async function executeCycle(
                   })
               })
 
-              describe("Yield generation, transaction never expected to revert", function () {
+              describe("Transactions never expected to revert", function () {
                   it("Should not revert when everyone pays and somebody want to withdraw collateral", async function () {
                       const ids = await takaturnDiamond.getTermsId()
                       const termId = ids[0]

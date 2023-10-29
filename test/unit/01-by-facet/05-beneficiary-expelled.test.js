@@ -7,7 +7,7 @@ const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Beneficiaries tests", function () {
+    : describe("Unit tests. Beneficiaries tests", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = BigNumber.from("2") // Create term param

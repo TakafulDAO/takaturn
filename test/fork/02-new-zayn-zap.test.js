@@ -1,12 +1,12 @@
 const { assert, expect } = require("chai")
-const { isFork, isMainnet, networkConfig } = require("../../../utils/_networks")
+const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const {
     FundStates,
     getFundStateFromIndex,
     advanceTime,
     impersonateAccount,
-} = require("../../../utils/_helpers")
+} = require("../../utils/_helpers")
 const {
     totalParticipants,
     cycleTime,
@@ -16,7 +16,7 @@ const {
     registrationPeriod,
     getRandomInt,
 } = require("../utils/test-utils")
-const { abi } = require("../../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
+const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
 const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
