@@ -285,7 +285,6 @@ contract TermFacet is ITerm {
             if (depositor != address(0)) {
                 collateral.isCollateralMember[depositor] = false;
                 collateral.depositors[i] = address(0);
-                --collateral.counterMembers;
             }
 
             unchecked {
