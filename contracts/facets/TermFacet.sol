@@ -283,10 +283,6 @@ contract TermFacet is ITerm {
             address depositor = collateral.depositors[i];
 
             if (depositor != address(0)) {
-                uint amount = collateral.collateralMembersBank[depositor];
-
-                collateral.collateralPaymentBank[depositor] += amount;
-                collateral.collateralMembersBank[depositor] = 0;
                 collateral.isCollateralMember[depositor] = false;
                 collateral.depositors[i] = address(0);
                 --collateral.counterMembers;
