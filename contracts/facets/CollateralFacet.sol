@@ -157,6 +157,8 @@ contract CollateralFacet is ICollateral {
             ._yieldStorage()
             .yields[termId];
 
+        LibTermStorage.Term memory term = LibTermStorage._termStorage().terms[termId];
+
         uint userCollateral = collateral.collateralMembersBank[msg.sender];
         require(userCollateral > 0, "Collateral empty");
 
@@ -165,12 +167,13 @@ contract CollateralFacet is ICollateral {
         if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
             collateral.collateralMembersBank[msg.sender] = 0;
 
-            uint amountToTransfer = userCollateral +
+            if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
                 _withdrawFromYield(termId, msg.sender, userCollateral, yield);
+            }
 
-            (success, ) = payable(msg.sender).call{value: amountToTransfer}("");
+            (success, ) = payable(msg.sender).call{value: userCollateral}("");
 
-            --collateral.counterMembers; // todo: Is this needed?
+            --collateral.counterMembers;
 
             emit OnCollateralWithdrawal(termId, msg.sender, userCollateral);
         }
