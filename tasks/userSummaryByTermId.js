@@ -12,6 +12,10 @@ async function _userSummaryByTermId(taskArguments, hre) {
         taskArguments.userAddress,
         taskArguments.termId
     )
+    const userYieldSummary = await takaturn.getUserYieldSummary(
+        taskArguments.userAddress,
+        taskArguments.termId
+    )
     console.log("")
     console.log("Collateral Summary:")
     console.log(`User is collateral Member: ${userCollateralSummary[0]}`)
@@ -27,6 +31,13 @@ async function _userSummaryByTermId(taskArguments, hre) {
     console.log(`User enabled auto pay: ${userFundSummary[3]}`)
     console.log(`User beneficiaries pool: ${userFundSummary[4]} USDC`)
     console.log(`User poolis frozen: ${userFundSummary[5]}`)
+    console.log("")
+    console.log("Yield Summary:")
+    console.log(`User has opted in yield generation: ${userYieldSummary[0]}`)
+    console.log(`User withdrawn yield: ${userYieldSummary[1]}`)
+    console.log(`User withdrawn collateral: ${userYieldSummary[2]}`)
+    console.log(`User available yield: ${userYieldSummary[3]}`)
+    console.log(`User deposited collateral on yield generation: ${userYieldSummary[4]}`)
     console.log("")
 }
 
