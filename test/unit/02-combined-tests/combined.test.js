@@ -24,7 +24,7 @@ const {
     collateralFundingPeriod,
     registrationPeriod,
     getRandomInt,
-} = require("../utils/test-utils")
+} = require("../../utils/test-utils")
 const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
