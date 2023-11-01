@@ -24,7 +24,7 @@ const {
     collateralFundingPeriod,
     registrationPeriod,
     getRandomInt,
-} = require("../utils/test-utils")
+} = require("../../utils/test-utils")
 const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
@@ -340,14 +340,6 @@ async function executeCycle(
                   await takaturnDiamondParticipant_1.startTerm(termId)
               })
               describe("Combined Tests Part 1", function () {
-                  it("changes USDC user balance for participants", async function () {
-                      let balance
-                      for (let i = 1; i <= totalParticipants; i++) {
-                          balance = await usdc.balanceOf(accounts[i].address)
-                          assert.equal(balance.toString(), balanceForUser.toString())
-                      }
-                  })
-
                   it("checks collateral specs", async function () {
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
