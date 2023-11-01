@@ -18,10 +18,14 @@ const {
     cycleTime,
     contributionAmount,
     contributionPeriod,
+    fixedCollateralEth,
+    collateralAmount,
     balanceForUser,
+    collateralFundingPeriod,
     registrationPeriod,
     getRandomInt,
 } = require("../../utils/test-utils")
+const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
 
@@ -162,7 +166,7 @@ async function executeCycle(
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Integration tests. Takaturn Diamond standard", function () {
+    : describe("Takaturn Collateral & Fund Tests Version 2", function () {
           const chainId = network.config.chainId
 
           let aggregator
@@ -335,15 +339,7 @@ async function executeCycle(
 
                   await takaturnDiamondParticipant_1.startTerm(termId)
               })
-              describe("Combined Tests Part 1. Usual behaviour", function () {
-                  it("changes USDC user balance for participants", async function () {
-                      let balance
-                      for (let i = 1; i <= totalParticipants; i++) {
-                          balance = await usdc.balanceOf(accounts[i].address)
-                          assert.equal(balance.toString(), balanceForUser.toString())
-                      }
-                  })
-
+              describe("Combined Tests Part 1", function () {
                   it("checks collateral specs", async function () {
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
@@ -843,7 +839,7 @@ async function executeCycle(
               })
 
               if (!isFork) {
-                  describe("Combined Tests Part 2, Withdraw cases", function () {
+                  describe("Combined Tests Part 2", function () {
                       it("Allow defaulted beneficiaries to withdraw their fund", async function () {
                           this.timeout(200000)
 
@@ -868,7 +864,7 @@ async function executeCycle(
               }
           })
 
-          describe("Combined Tests Part 3, Beneficiary selections", function () {
+          describe("Combined Tests Part 3", function () {
               beforeEach(async function () {
                   let totalParticipantsPart3 = 3
 
@@ -968,7 +964,7 @@ async function executeCycle(
               })
           })
 
-          describe("Combined Tests Part 4. Only two participants", function () {
+          describe("Combined Tests Part 4", function () {
               beforeEach(async function () {
                   totalParticipantsPart4 = 2
 

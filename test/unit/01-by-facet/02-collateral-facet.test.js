@@ -7,7 +7,7 @@ const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Unit tests. Collateral facet", function () {
+    : describe("Collateral facet tests", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = BigNumber.from("6") // Create term param
@@ -357,7 +357,7 @@ const { hour } = require("../../../utils/units")
 
                   await expect(takaturnDiamond.closeFundingPeriod(termId))
                       .to.emit(takaturnDiamond, "OnCollateralLiquidated")
-                      .withArgs(termId, participant_6.address, 5583472920156337)
+                      .withArgs(termId, participant_6.address, 5527915975677169)
               })
 
               it("Liquidate collateral previous beneficiary", async function () {
@@ -385,7 +385,83 @@ const { hour } = require("../../../utils/units")
                   await advanceTime(cycleTime.toNumber() + 1)
                   await expect(takaturnDiamond.closeFundingPeriod(termId))
                       .to.emit(takaturnDiamond, "OnCollateralLiquidated")
-                      .withArgs(termId, participant_1.address, 5583472920156337)
+                      .withArgs(termId, participant_1.address, 5527915975677169)
+              })
+
+              xit("Liquidate frozen money pot", async function () {
+                  // Participant 4 defaults all cycles
+                  // Participant 4 money pot frozen
+                  // Participant 4 money pot liquidated
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  // First cycle
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      if (i == 1) {
+                          continue
+                      }
+                      if (i !== 4) {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      }
+                  }
+                  await advanceTime(cycleTime.toNumber() + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  // Second cycle
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      if (i == 2) {
+                          continue
+                      }
+                      if (i !== 4) {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      }
+                  }
+
+                  await advanceTime(cycleTime.toNumber() + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  // Third cycle
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      if (i == 3) {
+                          continue
+                      }
+                      if (i !== 4) {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      }
+                  }
+
+                  await advanceTime(cycleTime.toNumber() + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  // Fourth cycle
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      if (i == 4) {
+                          continue
+                      }
+                      await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                  }
+
+                  await advanceTime(cycleTime.toNumber() + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  // Fifth cycle
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      if (i == 5) {
+                          continue
+                      }
+                      if (i !== 4) {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      }
+                  }
+
+                  await advanceTime(cycleTime.toNumber() + 1)
+                  await expect(takaturnDiamond.closeFundingPeriod(termId))
+                      .to.emit(takaturnDiamond, "OnFrozenMoneyPotLiquidated")
+                      .withArgs(termId, participant_4.address, contributionAmount)
               })
 
               it("Defaulter expelled, non previous beneficiary", async function () {

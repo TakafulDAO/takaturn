@@ -17,6 +17,8 @@ const { closeFundingPeriod } = require("./tasks/closeFundingPeriod")
 const { startNewCycle } = require("./tasks/startNewCycle")
 const { termSummary } = require("./tasks/termSummary")
 const { fundSummary } = require("./tasks/fundSummary")
+const { collateralSummary } = require("./tasks/collateralSummary")
+const { yieldSummary } = require("./tasks/yieldSummary")
 const { userSummary } = require("./tasks/userSummary")
 const { userSummaryByTermId } = require("./tasks/userSummaryByTermId")
 
@@ -115,6 +117,18 @@ task("fundSummary", "Prints the fund summary")
         return fundSummary(taskArguments, hre)
     })
 
+task("collateralSummary", "Prints the collateral summary")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return collateralSummary(taskArguments, hre)
+    })
+
+task("yieldSummary", "Prints the yield summary")
+    .addParam("termId", "The term Id to check")
+    .setAction(async (taskArguments, hre) => {
+        return yieldSummary(taskArguments, hre)
+    })
+
 task("userSummary", "Prints the user summary")
     .addParam("userAddress", "The user address to check")
     .setAction(async (taskArguments, hre) => {
@@ -172,7 +186,7 @@ module.exports = {
                 //chainId: 42161,
                 accounts: [DEPLOYER_PK],
                 url: ARBITRUM_MAINNET_RPC_URL,
-                blockNumber: 143971383, // Block to ensure zayn contracts are deployed and trusted sender is set
+                blockNumber: 145856406, // Block to ensure zayn contracts are deployed and trusted sender is set
                 enabled: FORK === "true",
             },
         },
