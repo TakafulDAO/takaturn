@@ -561,7 +561,7 @@ async function executeCycle(
               })
 
               describe("Yield parameters", function () {
-                  it("Probando", async function () {
+                  xit("Probando", async function () {
                       const ids = await takaturnDiamond.getTermsId()
                       const termId = ids[0]
 

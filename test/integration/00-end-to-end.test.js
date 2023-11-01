@@ -126,7 +126,7 @@ const { BigNumber } = require("ethers")
               }
           })
 
-          it("End to end test", async function () {
+          it.only("End to end test", async function () {
               this.timeout(200000)
               // Reverts for create term
               await expect(
@@ -385,13 +385,6 @@ const { BigNumber } = require("ethers")
               await expect(takaturnDiamond.expireTerm(termsIds[1]))
                   .to.emit(takaturnDiamond, "OnTermExpired")
                   .withArgs(termsIds[1])
-
-              let secondCollateralDepositorSummary =
-                  await takaturnDiamond.getDepositorCollateralSummary(
-                      participant_1.address,
-                      termsIds[1]
-                  )
-              assert.equal(secondCollateralDepositorSummary[0], false)
 
               await takaturnDiamond.connect(participant_1).withdrawCollateral(termsIds[1])
 

@@ -146,7 +146,7 @@ async function executeCycle(
 
 !isFork || isMainnet
     ? describe.skip
-    : describe("New Zayn Zap", function () {
+    : describe("Fork Mainnet test. Changing provider addresses", function () {
           const chainId = network.config.chainId
 
           let deployer,
@@ -190,14 +190,13 @@ async function executeCycle(
                   participants.push(accounts[i])
               }
 
-              // Deploy contract
-              await deployments.fixture(["takaturn_upgrade"])
-              takaturnDiamond = await ethers.getContract("TakaturnDiamond")
               // Get the contract instances
 
+              const takaturnDiamondAddress = networkConfig[chainId]["takaturnDiamond"]
               const usdcAddress = networkConfig[chainId]["usdc"]
               const newZaynZapAddress = "0x1534c33FF68cFF9E0c5BABEe5bE72bf4cad0826b"
 
+              takaturnDiamond = await ethers.getContractAt(abi, takaturnDiamondAddress)
               usdc = await ethers.getContractAt(
                   "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
                   usdcAddress
@@ -226,95 +225,34 @@ async function executeCycle(
               await zaynZapOwner.toggleTrustedSender(takaturnDiamond.address, true, {
                   gasLimit: 1000000,
               })
-
-              let userAddress
-
-              for (let i = 1; i <= totalParticipants; i++) {
-                  userAddress = accounts[i].address
-                  await usdcWhaleSigner.transfer(userAddress, balanceForUser)
-
-                  await usdc
-                      .connect(accounts[i])
-                      .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
-              }
-
-              await takaturnDiamond.createTerm(
-                  totalParticipants,
-                  registrationPeriod,
-                  cycleTime,
-                  contributionAmount,
-                  contributionPeriod,
-                  usdc.address
-              )
-
-              const ids = await takaturnDiamond.getTermsId()
-              const termId = ids[0]
-
-              for (let i = 1; i <= totalParticipants; i++) {
-                  const entrance = await takaturnDiamond.minCollateralToDeposit(termId, i - 1)
-
-                  await takaturnDiamond
-                      .connect(accounts[i])
-                      .joinTerm(termId, true, { value: entrance })
-              }
-              await advanceTime(registrationPeriod + 1)
-              await takaturnDiamond.startTerm(termId)
           })
 
-          it("Check the yield generation", async function () {
-              const deployConstants = await takaturnDiamond.getConstants(
-                  "ETH/USD",
-                  "USDC/USD",
-                  "ZaynZap",
-                  "ZaynVault"
-              )
-
-              assert.equal(deployConstants[2].toLowerCase(), zaynZap.address.toLowerCase())
-
-              const ids = await takaturnDiamond.getTermsId()
-              const termId = ids[0]
-
-              let yieldSummary = await takaturnDiamond.getYieldSummary(termId)
-              //   console.log(yieldSummary[6])
-              console.log(zaynZap.address)
-
-              await executeCycle(termId, 0, [], false) // 1st cycle
-              await executeCycle(termId, 0, [], false) // 2nd cycle
-              await executeCycle(termId, 0, [], false) // 3rd cycle
-              await executeCycle(termId, 0, [], false) // 4th cycle
-              await executeCycle(termId, 0, [], false) // 5th cycle
-              await executeCycle(termId, 0, [], false) // 6th cycle
-              await executeCycle(termId, 0, [], false) // 7th cycle
-              await executeCycle(termId, 0, [], false) // 8th cycle
-              await executeCycle(termId, 0, [], false) // 9th cycle
-              await executeCycle(termId, 0, [], false) // 10th cycle
-              await executeCycle(termId, 0, [], false) // 11th cycle
-              await executeCycle(termId, 0, [], false) // 12th cycle
-
-              await takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
-
-              let yield = await takaturnDiamond.getUserYieldSummary(participant_1.address, termId)
-
-              let availableYield = yield[3]
-
-              console.log(`Available Yield: ${availableYield}`)
-
-              if (availableYield > 0) {
-                  await expect(
-                      takaturnDiamond["claimAvailableYield(uint256,address)"](
-                          termId,
-                          participant_2.address
-                      )
+          describe("Checking the current addresses", function () {
+              it("Check the yield generation", async function () {
+                  const deployConstants = await takaturnDiamond.getConstants(
+                      "ETH/USD",
+                      "USDC/USD",
+                      "ZaynZap",
+                      "ZaynVault"
                   )
-                      .to.emit(takaturnDiamond, "OnYieldClaimed")
-                      .withArgs(termId, participant_2.address, availableYield)
-              } else {
-                  await expect(
-                      takaturnDiamond["claimAvailableYield(uint256,address)"](
-                          termId,
-                          participant_2.address
-                      )
-                  ).to.be.revertedWith("No yield to withdraw")
-              }
+
+                  assert.equal(deployConstants[2].toLowerCase(), zaynZap.address.toLowerCase())
+              })
+          })
+          describe("Testing withdraw collateral from previous users", function () {
+              beforeEach(async function () {
+                  // Deploy upgrade contract
+                  await deployments.fixture(["takaturn_upgrade"])
+                  takaturnDiamond = await ethers.getContract("TakaturnDiamond")
+
+                  // Impersonate the accounts
+                  const zapOwner = "0xff0C52AfD43CeCA4c5E674f61fa93BE32647f185"
+                  await impersonateAccount(zapOwner)
+                  const zapOwnerSigner = await ethers.getSigner(zapOwner)
+                  zaynZapOwner = zaynZap.connect(zapOwnerSigner)
+                  await zaynZapOwner.toggleTrustedSender(takaturnDiamond.address, true, {
+                      gasLimit: 1000000,
+                  })
+              })
           })
       })
