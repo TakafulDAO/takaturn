@@ -32,6 +32,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         _claimAvailableYield(termId, user);
     }
 
+    /// @notice This function allows a user to toggle their yield generation
+    /// @dev only allowed before the term starts
+    /// @param termId The term id for which the yield is being claimed
     function toggleOptInYG(uint termId) external {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
@@ -54,6 +57,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         emit OnYGOptInToggled(termId, msg.sender, optIn);
     }
 
+    /// @notice This function allows the owner to update the global variable for new yield provider
+    /// @param providerString The provider string for which the address is being updated
+    /// @param providerAddress The new address of the provider
     function updateYieldProvider(
         string memory providerString,
         address providerAddress
@@ -80,6 +86,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         emit OnYieldClaimed(termId, user, availableYield);
     }
 
+    /// @notice This function allows the owner to disable the yield generation feature in case of emergency
     function toggleYieldLock() external onlyOwner returns (bool) {
         bool newYieldLock = !LibYieldGenerationStorage._yieldLock().yieldLock;
         LibYieldGenerationStorage._yieldLock().yieldLock = newYieldLock;
