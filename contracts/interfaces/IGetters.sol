@@ -214,9 +214,11 @@ interface IGetters {
     /// @return currentTotalDeposit
     /// @return totalShares
     /// @return yieldUsers
+    /// @return vaultAddress
+    /// @return zapAddress
     function getYieldSummary(
         uint termId
-    ) external view returns (bool, uint, uint, uint, uint, address[] memory);
+    ) external view returns (bool, uint, uint, uint, uint, address[] memory, address, address);
 
     function getYieldLockState() external view returns (bool);
 

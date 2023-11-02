@@ -647,9 +647,11 @@ contract GettersFacet is IGetters {
     /// @return currentTotalDeposit
     /// @return totalShares
     /// @return yieldUsers
+    /// @return vaultAddress
+    /// @return zapAddress
     function getYieldSummary(
         uint termId
-    ) external view returns (bool, uint, uint, uint, uint, address[] memory) {
+    ) external view returns (bool, uint, uint, uint, uint, address[] memory, address, address) {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
@@ -659,7 +661,9 @@ contract GettersFacet is IGetters {
             yield.totalDeposit,
             yield.currentTotalDeposit,
             yield.totalShares,
-            yield.yieldUsers
+            yield.yieldUsers,
+            yield.providerAddresses["ZaynVault"],
+            yield.providerAddresses["ZaynZap"]
         );
     }
 
