@@ -277,26 +277,6 @@ contract TermFacet is ITerm {
 
         require(term.state != LibTermStorage.TermStates.ExpiredTerm, "Term already expired");
 
-        uint depositorsArrayLength = collateral.depositors.length;
-
-        for (uint i; i < depositorsArrayLength; ) {
-            address depositor = collateral.depositors[i];
-
-            if (depositor != address(0)) {
-                uint amount = collateral.collateralMembersBank[depositor];
-
-                collateral.collateralPaymentBank[depositor] += amount;
-                collateral.collateralMembersBank[depositor] = 0;
-                collateral.isCollateralMember[depositor] = false;
-                collateral.depositors[i] = address(0);
-                --collateral.counterMembers;
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-
         term.state = LibTermStorage.TermStates.ExpiredTerm;
         collateral.initialized = false;
         collateral.state = LibCollateralStorage.CollateralStates.ReleasingCollateral;

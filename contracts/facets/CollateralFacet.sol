@@ -157,6 +157,8 @@ contract CollateralFacet is ICollateral {
             ._yieldStorage()
             .yields[termId];
 
+        LibTermStorage.Term memory term = LibTermStorage._termStorage().terms[termId];
+
         uint userCollateral = collateral.collateralMembersBank[msg.sender];
         require(userCollateral > 0, "Collateral empty");
 
@@ -165,7 +167,9 @@ contract CollateralFacet is ICollateral {
         if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
             collateral.collateralMembersBank[msg.sender] = 0;
 
-            _withdrawFromYield(termId, msg.sender, userCollateral, yield);
+            if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
+                _withdrawFromYield(termId, msg.sender, userCollateral, yield);
+            }
 
             (success, ) = payable(msg.sender).call{value: userCollateral}("");
 
@@ -185,9 +189,9 @@ contract CollateralFacet is ICollateral {
                 uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
-                _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
-
-                (success, ) = payable(msg.sender).call{value: allowedWithdrawal}("");
+                uint amountToTransfer = allowedWithdrawal +
+                    _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
+                (success, ) = payable(msg.sender).call{value: amountToTransfer}("");
 
                 emit OnCollateralWithdrawal(termId, msg.sender, allowedWithdrawal);
             }
