@@ -200,9 +200,9 @@ contract CollateralFacet is ICollateral {
                 uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
-                uint amountToTransfer = allowedWithdrawal +
-                    _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
-                (success, ) = payable(msg.sender).call{value: amountToTransfer}("");
+                _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
+
+                (success, ) = payable(msg.sender).call{value: allowedWithdrawal}("");
 
                 emit OnCollateralWithdrawal(termId, msg.sender, allowedWithdrawal);
             }
