@@ -165,11 +165,12 @@ contract CollateralFacet is ICollateral {
         require(userCollateral > 0, "Collateral empty");
 
         bool success;
+        bool expelledBeforeBeneficiary = IGetters(address(this)).wasExpelled(termId, msg.sender) &&
+            !fund.isBeneficiary[msg.sender];
         // Withdraw all the user has.
         if (
             collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral ||
-            (IGetters(address(this)).wasExpelled(termId, msg.sender) &&
-                !fund.isBeneficiary[msg.sender])
+            expelledBeforeBeneficiary
         ) {
             // First case: The collateral is released or the user was expelled before being a beneficiary
             collateral.collateralMembersBank[msg.sender] = 0;
