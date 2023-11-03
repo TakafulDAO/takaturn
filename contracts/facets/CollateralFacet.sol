@@ -149,6 +149,8 @@ contract CollateralFacet is ICollateral {
     /// @dev This follows the pull-over-push pattern.
     /// @param termId term id
     function withdrawCollateral(uint termId) external {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
@@ -163,8 +165,13 @@ contract CollateralFacet is ICollateral {
         require(userCollateral > 0, "Collateral empty");
 
         bool success;
-        // Withdraw all the user has
-        if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
+        // Withdraw all the user has.
+        if (
+            collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral ||
+            (IGetters(address(this)).wasExpelled(termId, msg.sender) &&
+                !fund.isBeneficiary[msg.sender])
+        ) {
+            // First case: The collateral is released or the user was expelled before being a beneficiary
             collateral.collateralMembersBank[msg.sender] = 0;
 
             if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
@@ -173,12 +180,15 @@ contract CollateralFacet is ICollateral {
 
             (success, ) = payable(msg.sender).call{value: userCollateral}("");
 
-            --collateral.counterMembers;
+            if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
+                --collateral.counterMembers;
+            }
 
             emit OnCollateralWithdrawal(termId, msg.sender, userCollateral);
         }
         // Or withdraw partially
         else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
+            // Second case: The term is on an ongoing cycle, the user has not been expelled
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
             uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
                 termId
