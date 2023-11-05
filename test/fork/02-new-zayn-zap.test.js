@@ -187,14 +187,21 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
 
                       const yield = await takaturnDiamond.getYieldSummary(termId)
 
-                      const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
-                          termId,
-                          participant_1
-                      )
+                      //   const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
+                      //       termId,
+                      //       participant_1
+                      //   )
 
-                      await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId))
-                          .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                          .withArgs(termId, participant_1, withdrawable)
+                      const withdrawTx = takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                      await Promise.all([
+                          expect(withdrawTx)
+                              .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                              .withArgs(termId, participant_1, "26842520729684912"),
+                          expect(withdrawTx)
+                              .to.emit(takaturnDiamond, "OnYieldClaimed")
+                              .withArgs(termId, participant_1, "26891395531919808"),
+                      ])
 
                       assert.equal(yield[7], zaynZap.address)
                   })

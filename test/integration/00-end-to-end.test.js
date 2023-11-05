@@ -708,14 +708,14 @@ const { BigNumber } = require("ethers")
               assert.equal(participant_1_fundSummary[4].toNumber(), 0)
               assert.equal(participant_1_collateralSummary[2].toString(), 0)
 
-              let allowedWithdrawal = await takaturnDiamond.getWithdrawableUserBalance(
-                  termId,
-                  participant_1.address
-              )
+              //   let allowedWithdrawal = await takaturnDiamond.getWithdrawableUserBalance(
+              //       termId,
+              //       participant_1.address
+              //   )
 
               await expect(takaturnDiamond.connect(participant_1).withdrawCollateral(termId))
                   .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                  .withArgs(termId, participant_1.address, allowedWithdrawal)
+                  .withArgs(termId, participant_1.address, "37500000000000000")
 
               await expect(
                   takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
