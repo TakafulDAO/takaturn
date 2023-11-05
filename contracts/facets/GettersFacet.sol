@@ -595,16 +595,14 @@ contract GettersFacet is IGetters {
             }
         }
 
-        uint currentShares = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(
-            termId
-        );
-        uint totalDeposit = yield.totalDeposit;
-        uint totalShares = yield.totalShares;
+        uint currentSharesPrice = ((
+            IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(termId)
+        ) * (IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).getPricePerFullShare())) /
+            10 ** 18;
+        // uint totalDeposit = yield.totalDeposit;
+        // uint totalShares = yield.totalShares;
 
-        return
-            totalWithdrawnYield +
-            LibYieldGeneration._sharesToEth(currentShares, totalDeposit, totalShares) -
-            yield.currentTotalDeposit;
+        return totalWithdrawnYield + currentSharesPrice - yield.currentTotalDeposit;
     }
 
     /// @notice This function is used to get the total yield generated for a user
