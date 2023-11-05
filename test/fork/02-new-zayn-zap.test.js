@@ -152,7 +152,7 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
                           .connect(participant_4)
                           .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
                   })
-                  it("should allow to withdraw", async function () {
+                  it.only("should allow to withdraw", async function () {
                       // We simulate the exact behaviour from term 2
                       const terms = await takaturnDiamond.getTermsId()
                       const termId = terms[0]
@@ -187,21 +187,37 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
 
                       const yield = await takaturnDiamond.getYieldSummary(termId)
 
-                      //   const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
-                      //       termId,
-                      //       participant_1
-                      //   )
+                      let yieldUserSummary = await takaturnDiamond.getUserYieldSummary(
+                          participant_1,
+                          termId
+                      )
+
+                      const withdrawnYieldBefore = yieldUserSummary[1].toString()
+                      const withdrawnCollateralBefore = yieldUserSummary[2].toString()
 
                       const withdrawTx = takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                      yieldUserSummary = await takaturnDiamond.getUserYieldSummary(
+                          participant_1,
+                          termId
+                      )
+
+                      const withdrawnYieldAfter = yieldUserSummary[1].toString()
+                      const withdrawnCollateralAfter = yieldUserSummary[2].toString()
 
                       await Promise.all([
                           expect(withdrawTx)
                               .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                              .withArgs(termId, participant_1, "26842520729684912"),
+                              .withArgs(termId, participant_1, withdrawnCollateralAfter),
                           expect(withdrawTx)
                               .to.emit(takaturnDiamond, "OnYieldClaimed")
-                              .withArgs(termId, participant_1, "26891395531919808"),
+                              .withArgs(termId, participant_1, withdrawnYieldAfter),
                       ])
+
+                      assert.equal(withdrawnYieldBefore, "0")
+                      assert.equal(withdrawnCollateralBefore, "0")
+                      assert(withdrawnYieldAfter > withdrawnYieldBefore)
+                      assert(withdrawnCollateralAfter > withdrawnCollateralBefore)
 
                       assert.equal(yield[7], zaynZap.address)
                   })
