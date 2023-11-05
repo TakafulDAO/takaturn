@@ -152,7 +152,7 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
                           .connect(participant_4)
                           .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
                   })
-                  it.only("should allow to withdraw", async function () {
+                  it("should allow to withdraw", async function () {
                       // We simulate the exact behaviour from term 2
                       const terms = await takaturnDiamond.getTermsId()
                       const termId = terms[0]
