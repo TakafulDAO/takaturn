@@ -126,9 +126,9 @@ const { BigNumber } = require("ethers")
               }
           })
 
-          it.only("End to end test", async function () {
+          it("End to end test", async function () {
               this.timeout(200000)
-              // Reverts for create term
+              //   Reverts for create term
               await expect(
                   takaturnDiamond.createTerm(
                       totalParticipants,
@@ -496,12 +496,6 @@ const { BigNumber } = require("ethers")
                   expect(fundUserSummary[3]).to.equal(true)
               }
 
-              // Participants contribution:
-              // Beneficiary does not pay
-              // Participant 3 always pays for participant 7
-              // Participants 7 and 8 always defaults
-              // Participant 10, 11, 12 auto pay
-
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
                       let fund = await takaturnDiamond.getFundSummary(termId)
@@ -726,12 +720,6 @@ const { BigNumber } = require("ethers")
               await expect(
                   takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
               ).to.be.revertedWith("Withdraw failed")
-
-              // Participants contribution:
-              // Beneficiary does not pay
-              // Participant 3 always pays for participant 7
-              // Participants 7 and 8 always defaults
-              // Participant 10, 11, 12 auto pay
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
@@ -1134,7 +1122,7 @@ const { BigNumber } = require("ethers")
                   participant_2.address
               )
 
-              console.log("yieldDistributionRatio", yieldDistributionRatio.toString())
+              //   console.log("yieldDistributionRatio", yieldDistributionRatio.toString())
 
               await takaturnDiamond.startNewCycle(termId)
 

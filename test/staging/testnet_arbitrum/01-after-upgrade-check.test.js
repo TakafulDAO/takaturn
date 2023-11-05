@@ -5,7 +5,7 @@ const { getTermStateFromIndex } = require("../../../utils/_helpers")
 
 !isTestnet
     ? describe.skip
-    : describe("Upgrades Term Facet unit tests", function () {
+    : describe("Staging Testnet Test. Upgrades checks", function () {
           let deployer, takaturn
 
           beforeEach(async () => {
