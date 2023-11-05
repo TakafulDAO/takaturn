@@ -290,6 +290,7 @@ contract GettersFacet is IGetters {
         uint termId,
         address user
     ) external view returns (uint allowedWithdrawal) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
@@ -299,8 +300,13 @@ contract GettersFacet is IGetters {
 
         uint userCollateral = collateral.collateralMembersBank[user];
         uint availableYield = yield.availableYield[user];
+        bool expelledBeforeBeneficiary = IGetters(address(this)).wasExpelled(termId, msg.sender) &&
+            !fund.isBeneficiary[msg.sender];
 
-        if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
+        if (
+            collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral ||
+            expelledBeforeBeneficiary
+        ) {
             allowedWithdrawal = userCollateral + availableYield;
         } else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
