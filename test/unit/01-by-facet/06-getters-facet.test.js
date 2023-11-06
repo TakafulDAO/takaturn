@@ -1,9 +1,13 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
-const { advanceTimeByDate, advanceTime, impersonateAccount } = require("../../../utils/_helpers")
+const {
+    advanceTime,
+    impersonateAccount,
+    getCollateralStateFromIndex,
+    CollateralStates,
+} = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
-const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -29,6 +33,7 @@ const { hour } = require("../../../utils/units")
               participant_1 = accounts[1]
               participant_2 = accounts[2]
               participant_3 = accounts[3]
+              participant_4 = accounts[4]
               usdcOwner = accounts[13]
               usdcMasterMinter = accounts[14]
               usdcRegularMinter = accounts[15]
@@ -60,10 +65,7 @@ const { hour } = require("../../../utils/units")
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
               takaturnDiamondParticipant_2 = takaturnDiamond.connect(participant_2)
               takaturnDiamondParticipant_3 = takaturnDiamond.connect(participant_3)
-
-              if (!isFork) {
-                  await advanceTimeByDate(1, hour)
-              }
+              takaturnDiamondParticipant_4 = takaturnDiamond.connect(participant_4)
 
               // Create three terms
               for (let i = 0; i < 3; i++) {
@@ -79,16 +81,15 @@ const { hour } = require("../../../utils/units")
 
               const lastTerm = await takaturnDiamondDeployer.getTermsId()
               const termId = lastTerm[0]
-              for (let i = 0; i < totalParticipants; i++) {
+              for (let i = 1; i <= totalParticipants; i++) {
                   // Get the collateral payment deposit
-                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, i)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      termId,
+                      i - 1
+                  )
                   // Each participant joins the term
-                  await takaturnDiamond
-                      .connect(accounts[i + 1])
-                      .joinTerm(1, false, { value: entrance })
-                  await takaturnDiamond
-                      .connect(accounts[i + 1])
-                      .joinTerm(2, false, { value: entrance })
+                  await takaturnDiamond.connect(accounts[i]).joinTerm(1, false, { value: entrance })
+                  await takaturnDiamond.connect(accounts[i]).joinTerm(2, false, { value: entrance })
               }
 
               await advanceTime(registrationPeriod.toNumber() + 1)
@@ -176,6 +177,32 @@ const { hour } = require("../../../utils/units")
                   )
                   assert(neededNewAllowance.toString() < neededAllowanceAtBeginning.toString())
                   assert.equal(neededNewAllowance.toString(), expectedNewAllowance.toString())
+              })
+          })
+          describe("Withdrawable amount", function () {
+              it.only("There is no withdrawable amount when accepting collateral", async function () {
+                  // The termId 0 is the first term and nobody has joined yet
+                  const termId = 0
+
+                  // Participant 1 joins the term
+                  const entrance = await takaturnDiamond.minCollateralToDeposit(termId, 0)
+
+                  await takaturnDiamondParticipant_1.joinTerm(0, false, { value: entrance })
+
+                  const withdrawable =
+                      await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                          termId,
+                          participant_1.address
+                      )
+
+                  const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
+
+                  await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                      CollateralStates.AcceptingCollateral
+                  )
+                  assert.equal(collateral[4][0], participant_1.address) // The participant 1 is on the collateral depositors array
+
+                  assert.equal(withdrawable.toString(), "0")
               })
           })
       })
