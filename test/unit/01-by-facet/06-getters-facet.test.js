@@ -14,7 +14,7 @@ const { BigNumber } = require("ethers")
     : describe("Getters facet tests", function () {
           const chainId = network.config.chainId
 
-          const totalParticipants = BigNumber.from("3") // Create term param
+          const totalParticipants = BigNumber.from("4") // Create term param
           const cycleTime = BigNumber.from("180") // Create term param
           const contributionAmount = BigNumber.from("10") // Create term param
           const contributionPeriod = BigNumber.from("120") // Create term param
@@ -180,7 +180,7 @@ const { BigNumber } = require("ethers")
               })
           })
           describe("Withdrawable amount", function () {
-              it.only("There is no withdrawable amount when accepting collateral", async function () {
+              it("There is no withdrawable amount when accepting collateral", async function () {
                   // The termId 0 is the first term and nobody has joined yet
                   const termId = 0
 
@@ -203,6 +203,167 @@ const { BigNumber } = require("ethers")
                   assert.equal(collateral[4][0], participant_1.address) // The participant 1 is on the collateral depositors array
 
                   assert.equal(withdrawable.toString(), "0")
+              })
+              describe("When the collateral state is ReleasingCollateral", function () {
+                  it("When the term expires, withdrawable should be equal to locked balance", async function () {
+                      // The termId 0 is the first term and nobody has joined yet
+                      const termId = 0
+
+                      // Participant 1 joins the term
+                      const entrance = await takaturnDiamond.minCollateralToDeposit(termId, 0)
+
+                      await takaturnDiamondParticipant_1.joinTerm(0, false, { value: entrance })
+
+                      await advanceTime(registrationPeriod.toNumber() + 1)
+
+                      await takaturnDiamond.expireTerm(termId)
+
+                      const withdrawable =
+                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                              termId,
+                              participant_1.address
+                          )
+
+                      const collateralParticipantSummary =
+                          await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
+                              participant_1.address,
+                              termId
+                          )
+
+                      const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
+
+                      assert.equal(
+                          collateralParticipantSummary[1].toString(),
+                          collateralParticipantSummary[3].toString()
+                      ) // Collateral members bank and collateral deposited by user are the same
+                      assert.equal(collateralParticipantSummary[2].toString(), "0") // Collateral payment bank is 0
+
+                      await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                          CollateralStates.ReleasingCollateral
+                      )
+
+                      assert.equal(
+                          withdrawable.toString(),
+                          collateralParticipantSummary[1].toString()
+                      )
+                  })
+
+                  it.only("When the term finish, withdrawable should be equal to locked balance", async function () {
+                      // The termId 1 already started on the before each
+                      const termId = 1
+
+                      // First cycle
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          try {
+                              await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                          } catch (error) {}
+                      }
+
+                      advanceTime(cycleTime.toNumber() + 1)
+
+                      await takaturnDiamond.closeFundingPeriod(termId)
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      // Second cycle
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          try {
+                              await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                          } catch (error) {}
+                      }
+
+                      advanceTime(cycleTime.toNumber() + 1)
+
+                      await takaturnDiamond.closeFundingPeriod(termId)
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      // Third cycle
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          try {
+                              await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                          } catch (error) {}
+                      }
+
+                      advanceTime(cycleTime.toNumber() + 1)
+
+                      await takaturnDiamond.closeFundingPeriod(termId)
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      // Fourth and last cycle
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          try {
+                              await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                          } catch (error) {}
+                      }
+
+                      advanceTime(cycleTime.toNumber() + 1)
+
+                      await takaturnDiamond.closeFundingPeriod(termId)
+
+                      const withdrawableParticipant_1 =
+                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                              termId,
+                              participant_1.address
+                          )
+                      const withdrawableParticipant_2 =
+                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                              termId,
+                              participant_1.address
+                          )
+                      const withdrawableParticipant_3 =
+                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                              termId,
+                              participant_1.address
+                          )
+                      const withdrawableParticipant_4 =
+                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                              termId,
+                              participant_1.address
+                          )
+
+                      const collateralParticipant_1_Summary =
+                          await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
+                              participant_1.address,
+                              termId
+                          )
+                      const collateralParticipant_2_Summary =
+                          await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
+                              participant_1.address,
+                              termId
+                          )
+                      const collateralParticipant_3_Summary =
+                          await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
+                              participant_1.address,
+                              termId
+                          )
+                      const collateralParticipant_4_Summary =
+                          await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
+                              participant_1.address,
+                              termId
+                          )
+
+                      const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
+
+                      await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                          CollateralStates.ReleasingCollateral
+                      )
+
+                      assert.equal(
+                          withdrawableParticipant_1.toString(),
+                          collateralParticipant_1_Summary[1].toString()
+                      )
+                      assert.equal(
+                          withdrawableParticipant_2.toString(),
+                          collateralParticipant_2_Summary[1].toString()
+                      )
+                      assert.equal(
+                          withdrawableParticipant_3.toString(),
+                          collateralParticipant_3_Summary[1].toString()
+                      )
+                      assert.equal(
+                          withdrawableParticipant_4.toString(),
+                          collateralParticipant_4_Summary[1].toString()
+                      )
+                  })
               })
           })
       })
