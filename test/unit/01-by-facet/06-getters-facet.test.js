@@ -11,7 +11,7 @@ const { BigNumber } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Getters facet tests", function () {
+    : describe.only("Getters facet tests", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = BigNumber.from("4") // Create term param
@@ -40,26 +40,17 @@ const { BigNumber } = require("ethers")
               usdcLostAndFound = accounts[16]
 
               // Deploy contracts
-              await deployments.fixture(["takaturn_upgrade"])
+              await deployments.fixture(["mocks"])
               takaturnDiamond = await ethers.getContract("TakaturnDiamond")
-              if (isDevnet && !isFork) {
-                  aggregator = await ethers.getContract("MockEthUsdAggregator")
-                  usdc = await ethers.getContract("FiatTokenV2_1")
-              } else {
-                  // Fork
-                  const aggregatorAddress = networkConfig[chainId]["ethUsdPriceFeed"]
-                  const usdcAddress = networkConfig[chainId]["usdc"]
+              aggregator = await ethers.getContract("MockEthUsdAggregator")
 
-                  aggregator = await ethers.getContractAt(
-                      "AggregatorV3Interface",
-                      aggregatorAddress
-                  )
-                  usdc = await ethers.getContractAt(
-                      // "contracts/version-1/mocks/USDC.sol:IERC20"
-                      "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
-                      usdcAddress
-                  )
-              }
+              const usdcAddress = networkConfig[chainId]["usdc"]
+
+              usdc = await ethers.getContractAt(
+                  "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20",
+                  usdcAddress
+              )
+
               // Connect the accounts
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
@@ -98,59 +89,19 @@ const { BigNumber } = require("ethers")
 
               const balanceForUser = contributionAmount * totalParticipants * 10 ** 6
 
-              if (isFork) {
-                  const usdcWhale = networkConfig[chainId]["usdcWhale"]
-                  await impersonateAccount(usdcWhale)
-                  const whale = await ethers.getSigner(usdcWhale)
-                  usdcWhaleSigner = usdc.connect(whale)
+              const usdcWhale = networkConfig[chainId]["usdcWhale"]
+              await impersonateAccount(usdcWhale)
+              const whale = await ethers.getSigner(usdcWhale)
+              usdcWhaleSigner = usdc.connect(whale)
 
-                  let userAddress
-                  for (let i = 1; i <= totalParticipants; i++) {
-                      userAddress = accounts[i].address
-                      await usdcWhaleSigner.transfer(userAddress, balanceForUser)
-
-                      await usdc
-                          .connect(accounts[i])
-                          .approve(takaturnDiamond.address, balanceForUser * 10 ** 6)
-                  }
-              } else {
-                  // Initialize USDC
-                  const tokenName = "USD Coin"
-                  const tokenSymbol = "USDC"
-                  const tokenCurrency = "USD"
-                  const tokenDecimals = 6
+              let userAddress
+              for (let i = 1; i <= totalParticipants; i++) {
+                  userAddress = accounts[i].address
+                  await usdcWhaleSigner.transfer(userAddress, balanceForUser)
 
                   await usdc
-                      .connect(usdcOwner)
-                      .initialize(
-                          tokenName,
-                          tokenSymbol,
-                          tokenCurrency,
-                          tokenDecimals,
-                          usdcMasterMinter.address,
-                          usdcOwner.address,
-                          usdcOwner.address,
-                          usdcOwner.address
-                      )
-
-                  await usdc
-                      .connect(usdcMasterMinter)
-                      .configureMinter(usdcRegularMinter.address, 10000000000000)
-
-                  await usdc.connect(usdcOwner).initializeV2(tokenName)
-
-                  await usdc.connect(usdcOwner).initializeV2_1(usdcLostAndFound.address)
-
-                  for (let i = 1; i <= totalParticipants; i++) {
-                      let depositor = accounts[i]
-
-                      // Mint USDC for depositor
-                      await usdc.connect(usdcRegularMinter).mint(depositor.address, balanceForUser)
-
-                      await usdc
-                          .connect(depositor)
-                          .approve(takaturnDiamond.address, balanceForUser * 10 ** 6)
-                  }
+                      .connect(accounts[i])
+                      .approve(takaturnDiamond.address, balanceForUser * 10 ** 6)
               }
           })
 
@@ -180,29 +131,31 @@ const { BigNumber } = require("ethers")
               })
           })
           describe("Withdrawable amount", function () {
-              it("There is no withdrawable amount when accepting collateral", async function () {
-                  // The termId 0 is the first term and nobody has joined yet
-                  const termId = 0
+              describe("When the collateral state is AcceptingCollateral", function () {
+                  it("There is no withdrawable amount", async function () {
+                      // The termId 0 is the first term and nobody has joined yet
+                      const termId = 0
 
-                  // Participant 1 joins the term
-                  const entrance = await takaturnDiamond.minCollateralToDeposit(termId, 0)
+                      // Participant 1 joins the term
+                      const entrance = await takaturnDiamond.minCollateralToDeposit(termId, 0)
 
-                  await takaturnDiamondParticipant_1.joinTerm(0, false, { value: entrance })
+                      await takaturnDiamondParticipant_1.joinTerm(0, false, { value: entrance })
 
-                  const withdrawable =
-                      await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
-                          termId,
-                          participant_1.address
+                      const withdrawable =
+                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                              termId,
+                              participant_1.address
+                          )
+
+                      const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
+
+                      await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                          CollateralStates.AcceptingCollateral
                       )
+                      assert.equal(collateral[4][0], participant_1.address) // The participant 1 is on the collateral depositors array
 
-                  const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
-
-                  await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
-                      CollateralStates.AcceptingCollateral
-                  )
-                  assert.equal(collateral[4][0], participant_1.address) // The participant 1 is on the collateral depositors array
-
-                  assert.equal(withdrawable.toString(), "0")
+                      assert.equal(withdrawable.toString(), "0")
+                  })
               })
               describe("When the collateral state is ReleasingCollateral", function () {
                   it("When the term expires, withdrawable should be equal to locked balance", async function () {
@@ -248,7 +201,7 @@ const { BigNumber } = require("ethers")
                       )
                   })
 
-                  it.only("When the term finish, withdrawable should be equal to locked balance", async function () {
+                  it("When the term finish, withdrawable should be equal to locked balance", async function () {
                       // The termId 1 already started on the before each
                       const termId = 1
 
