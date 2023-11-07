@@ -348,14 +348,16 @@ contract FundFacet is IFund {
             }
         }
 
-        // Remove participant from participants set..
-        if (EnumerableSet.remove(_fund._participants, beneficiary)) {
-            // ..Then add them to the benificiaries set
-            EnumerableSet.add(_fund._beneficiaries, beneficiary);
-        } // If this if-statement fails, this means we're dealing with a graced defaulter
+        if (!IGetters(address(this)).wasExpelled(_term.termId, beneficiary)) {
+            // Remove participant from participants set..
+            if (EnumerableSet.remove(_fund._participants, beneficiary)) {
+                // ..Then add them to the benificiaries set
+                EnumerableSet.add(_fund._beneficiaries, beneficiary);
+            } // If this if-statement fails, this means we're dealing with a graced defaulter
 
-        // Update the mapping to track who's been beneficiary
-        _fund.isBeneficiary[beneficiary] = true;
+            // Update the mapping to track who's been beneficiary
+            _fund.isBeneficiary[beneficiary] = true;
+        }
 
         // Get the amount of participants that paid this cycle, and add that amount to the beneficiary's pool
         uint paidCount;
@@ -446,17 +448,23 @@ contract FundFacet is IFund {
             ._collateralStorage()
             .collaterals[_term.termId];
 
-        uint remainingCyclesContribution = IGetters(address(this))
-            .getRemainingCyclesContributionWei(_term.termId);
+        bool expelledBeforeBeneficiary = IGetters(address(this)).wasExpelled(_term.termId, _user) &&
+            !_fund.isBeneficiary[_user];
 
-        uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
-
-        if (collateral.collateralMembersBank[_user] < neededCollateral) {
-            _fund.beneficiariesFrozenPool[_user] = true;
-        } else {
+        if (expelledBeforeBeneficiary) {
             _fund.beneficiariesFrozenPool[_user] = false;
-        }
+        } else {
+            uint remainingCyclesContribution = IGetters(address(this))
+                .getRemainingCyclesContributionWei(_term.termId);
 
+            uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
+
+            if (collateral.collateralMembersBank[_user] < neededCollateral) {
+                _fund.beneficiariesFrozenPool[_user] = true;
+            } else {
+                _fund.beneficiariesFrozenPool[_user] = false;
+            }
+        }
         return _fund.beneficiariesFrozenPool[_user];
     }
 }
