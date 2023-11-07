@@ -300,8 +300,8 @@ contract GettersFacet is IGetters {
 
         uint userCollateral = collateral.collateralMembersBank[user];
         uint availableYield = yield.availableYield[user];
-        bool expelledBeforeBeneficiary = IGetters(address(this)).wasExpelled(termId, msg.sender) &&
-            !fund.isBeneficiary[msg.sender];
+        bool expelledBeforeBeneficiary = IGetters(address(this)).wasExpelled(termId, user) &&
+            !fund.isBeneficiary[user];
 
         if (
             collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral ||
