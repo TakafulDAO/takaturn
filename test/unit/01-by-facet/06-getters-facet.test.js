@@ -9,18 +9,36 @@ const {
 } = require("../../../utils/_helpers")
 const { BigNumber } = require("ethers")
 
+const totalParticipants = BigNumber.from("4") // Create term param
+const cycleTime = BigNumber.from("180") // Create term param
+const contributionAmount = BigNumber.from("10") // Create term param
+const contributionPeriod = BigNumber.from("120") // Create term param
+const registrationPeriod = BigNumber.from("120") // Create term param
+
+let takaturnDiamond
+
+async function payTestContribution(termId, defaulterIndex) {
+    for (let i = 1; i <= totalParticipants; i++) {
+        try {
+            if (i != defaulterIndex) {
+                await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+            }
+        } catch (error) {}
+    }
+}
+
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe("Getters facet tests", function () {
           const chainId = network.config.chainId
 
-          const totalParticipants = BigNumber.from("4") // Create term param
-          const cycleTime = BigNumber.from("180") // Create term param
-          const contributionAmount = BigNumber.from("10") // Create term param
-          const contributionPeriod = BigNumber.from("120") // Create term param
-          const registrationPeriod = BigNumber.from("120") // Create term param
+          //   const totalParticipants = BigNumber.from("4") // Create term param
+          //   const cycleTime = BigNumber.from("180") // Create term param
+          //   const contributionAmount = BigNumber.from("10") // Create term param
+          //   const contributionPeriod = BigNumber.from("120") // Create term param
+          //   const registrationPeriod = BigNumber.from("120") // Create term param
 
-          let takaturnDiamond
+          //   let takaturnDiamond
 
           let deployer, participant_1, participant_2, participant_3
 
@@ -318,61 +336,35 @@ const { BigNumber } = require("ethers")
                       )
                   })
               })
-              describe("When the term is on going and somebody is expelled", function () {
-                  it("Expelled before being beneficiary, withdrawable should be equal to locked balance", async function () {
+              describe("When the term is on going and somebody is expelled before being beneficiary", function () {
+                  beforeEach(async () => {
                       const termId = 1
 
-                      // Pay contributions first cycle
-                      for (let i = 1; i <= totalParticipants; i++) {
-                          try {
-                              if (i != 3) {
-                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                              }
-                          } catch (error) {}
-                      }
+                      // Pay contributions first cycle, participant 3 defaults
+                      await payTestContribution(termId, 3)
 
                       // Manipulate ETH price to expel participant 3
                       await aggregator.setPrice("100000000000")
 
                       advanceTime(cycleTime.toNumber() + 1)
 
+                      // Close funding period for first cycle
                       await takaturnDiamond.closeFundingPeriod(termId)
+
+                      // Starts second cycle
                       await takaturnDiamond.startNewCycle(termId)
 
-                      //   Pay contributions second cycle
-                      for (let i = 1; i <= totalParticipants; i++) {
-                          try {
-                              if (i != 3) {
-                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                              }
-                          } catch (error) {}
-                      }
+                      // Pay contributions second cycle, participant 3 defaults
+                      await payTestContribution(termId, 3)
 
                       advanceTime(cycleTime.toNumber() + 1)
 
+                      // Close funding period for second cycle
                       await takaturnDiamond.closeFundingPeriod(termId)
-
-                      await takaturnDiamond.startNewCycle(termId)
-
-                      //   Pay contributions third cycle
-                      for (let i = 1; i <= totalParticipants; i++) {
-                          try {
-                              if (i != 3) {
-                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                              }
-                          } catch (error) {}
-                      }
-
-                      advanceTime(cycleTime.toNumber() + 1)
-
-                      await takaturnDiamond.closeFundingPeriod(termId)
-                      await takaturnDiamond.startNewCycle(termId)
-
-                      const withdrawable =
-                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
-                              termId,
-                              participant_3.address
-                          )
+                      // The participant 3 is expelled here, second cycle, before being beneficiary
+                  })
+                  it("Checks, expelled before being beneficiary", async function () {
+                      const termId = 1
 
                       const expelled = await takaturnDiamond.wasExpelled(
                           termId,
@@ -395,12 +387,193 @@ const { BigNumber } = require("ethers")
                       assert.ok(!participantCollateralSummary[0]) // Not a collateral member
                       assert.ok(!participantFundSummary[0]) // Not a participant
                       assert.ok(!participantFundSummary[1]) // Not a beneficiary
+                  })
+
+                  it("Before cycle expelled one should be beneficiary, withdrawable collateral equal to locked balance", async function () {
+                      const termId = 1
+
+                      const withdrawable =
+                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                              termId,
+                              participant_3.address
+                          )
+
+                      const participantCollateralSummary =
+                          await takaturnDiamond.getDepositorCollateralSummary(
+                              participant_3.address,
+                              termId
+                          )
+
+                      const participantFundSummary =
+                          await takaturnDiamond.getParticipantFundSummary(
+                              participant_3.address,
+                              termId
+                          )
+
+                      // Can withdraw collateral and fund
+                      await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
+                          .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                          .withArgs(termId, participant_3.address, withdrawable)
+
+                      await expect(
+                          takaturnDiamondParticipant_3.withdrawFund(termId)
+                      ).to.be.revertedWith("Have to wait for your turn to be beneficiary")
 
                       // Withdrawable is equal to collateral locked
                       assert.equal(
                           withdrawable.toString(),
                           participantCollateralSummary[1].toString()
                       )
+                  })
+
+                  it("Cycle expelled one should be beneficiary, withdrawable collateral equal to locked balance, withdraw fund allowed", async function () {
+                      const termId = 1
+
+                      // Starts third cycle
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      // Pay contributions third cycle
+                      await payTestContribution(termId, 3)
+
+                      advanceTime(cycleTime.toNumber() + 1)
+
+                      // Close funding period for third cycle
+                      await takaturnDiamond.closeFundingPeriod(termId)
+
+                      const withdrawable =
+                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                              termId,
+                              participant_3.address
+                          )
+
+                      const participantCollateralSummary =
+                          await takaturnDiamond.getDepositorCollateralSummary(
+                              participant_3.address,
+                              termId
+                          )
+
+                      const participantFundSummary =
+                          await takaturnDiamond.getParticipantFundSummary(
+                              participant_3.address,
+                              termId
+                          )
+
+                      // Can withdraw collateral and fund
+                      await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
+                          .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                          .withArgs(termId, participant_3.address, withdrawable)
+
+                      await expect(takaturnDiamondParticipant_3.withdrawFund(termId))
+                          .to.emit(takaturnDiamond, "OnFundWithdrawn")
+                          .withArgs(termId, participant_3.address, participantFundSummary[4])
+
+                      // Withdrawable is equal to collateral locked
+                      assert.equal(
+                          withdrawable.toString(),
+                          participantCollateralSummary[1].toString()
+                      )
+
+                      assert.ok(!participantFundSummary[5]) // Money pot is never frozen if it is expelled before being beneficiary
+                  })
+
+                  describe("Cycle after the one that expelled participant should be beneficiary", function () {
+                      // Have not withdraw collateral nor fund yet
+
+                      beforeEach(async () => {
+                          const termId = 1
+
+                          // Starts third cycle
+                          await takaturnDiamond.startNewCycle(termId)
+
+                          // Pay contributions third cycle
+                          await payTestContribution(termId, 3)
+
+                          advanceTime(cycleTime.toNumber() + 1)
+
+                          // Close funding period for third cycle
+                          await takaturnDiamond.closeFundingPeriod(termId)
+
+                          // Starts fourth and last cycle
+                          await takaturnDiamond.startNewCycle(termId)
+                      })
+                      it("Cycle ongoing, withdrawable collateral equal to locked balance, withdraw fund allowed", async function () {
+                          const termId = 1
+
+                          const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
+                              termId,
+                              participant_3.address
+                          )
+
+                          const participantCollateralSummary =
+                              await takaturnDiamond.getDepositorCollateralSummary(
+                                  participant_3.address,
+                                  termId
+                              )
+
+                          const participantFundSummary =
+                              await takaturnDiamond.getParticipantFundSummary(
+                                  participant_3.address,
+                                  termId
+                              )
+
+                          // Can withdraw collateral and fund
+                          await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
+                              .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                              .withArgs(termId, participant_3.address, withdrawable)
+
+                          await expect(takaturnDiamondParticipant_3.withdrawFund(termId))
+                              .to.emit(takaturnDiamond, "OnFundWithdrawn")
+                              .withArgs(termId, participant_3.address, participantFundSummary[4])
+
+                          // Withdrawable is equal to collateral members bank
+                          assert.equal(
+                              withdrawable.toString(),
+                              participantCollateralSummary[1].toString()
+                          )
+                      })
+                      it("Term ended", async function () {
+                          const termId = 1
+
+                          // Pay contributions fourth cycle
+                          await payTestContribution(termId, 3)
+
+                          await advanceTime(cycleTime.toNumber() + 1)
+
+                          // Close funding period for fourth cycle. Term ended
+                          await takaturnDiamond.closeFundingPeriod(termId)
+
+                          const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
+                              termId,
+                              participant_3.address
+                          )
+
+                          const participantCollateralSummary =
+                              await takaturnDiamond.getDepositorCollateralSummary(
+                                  participant_3.address,
+                                  termId
+                              )
+
+                          const participantFundSummary =
+                              await takaturnDiamond.getParticipantFundSummary(
+                                  participant_3.address,
+                                  termId
+                              )
+
+                          // Can withdraw collateral and fund
+                          await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
+                              .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                              .withArgs(termId, participant_3.address, withdrawable)
+
+                          await expect(takaturnDiamondParticipant_3.withdrawFund(termId))
+                              .to.emit(takaturnDiamond, "OnFundWithdrawn")
+                              .withArgs(termId, participant_3.address, participantFundSummary[4])
+
+                          // Withdrawable is equal to collateral members bank
+                          assert.equal(
+                              withdrawable.toString(),
+                              participantCollateralSummary[1].toString()
+                          )
+                      })
                   })
               })
           })
