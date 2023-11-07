@@ -250,11 +250,36 @@ contract FundFacet is IFund {
         // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
         // any of the past cycles.
 
+        bool expelledBeforeBeneficiary = IGetters(address(this)).wasExpelled(termId, msg.sender) &&
+            !fund.isBeneficiary[msg.sender];
+
         require(
             fund.currentState == LibFundStorage.FundStates.FundClosed ||
-                fund.isBeneficiary[msg.sender],
+                fund.isBeneficiary[msg.sender] ||
+                expelledBeforeBeneficiary,
             "You must be a beneficiary"
         );
+
+        if (expelledBeforeBeneficiary) {
+            uint cycleShouldBeBeneficiary;
+            uint participantsLength = fund.beneficiariesOrder.length;
+
+            for (uint i; i < participantsLength; ) {
+                if (fund.beneficiariesOrder[i] != msg.sender) {
+                    unchecked {
+                        ++i;
+                    }
+
+                    continue;
+                }
+                cycleShouldBeBeneficiary = i + 1;
+                break;
+            }
+            require(
+                cycleShouldBeBeneficiary <= fund.currentCycle,
+                "Have to wait for your turn to be beneficiary"
+            );
+        }
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
         bool hasFrozenPool = fund.beneficiariesFrozenPool[msg.sender];
