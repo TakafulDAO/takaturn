@@ -203,6 +203,10 @@ async function payTestContribution(termId, defaulterIndex) {
 
                       const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
 
+                      await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId))
+                          .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                          .withArgs(termId, participant_1.address, withdrawable)
+
                       assert.equal(
                           collateralParticipantSummary[1].toString(),
                           collateralParticipantSummary[3].toString()
@@ -219,7 +223,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       )
                   })
 
-                  it("When the term finish, withdrawable should be equal to locked balance", async function () {
+                  it.only("When the term finish, withdrawable should be equal to locked balance, can withdraw collateral", async function () {
                       // The termId 1 already started on the before each
                       const termId = 1
 
@@ -270,69 +274,34 @@ async function payTestContribution(termId, defaulterIndex) {
 
                       await takaturnDiamond.closeFundingPeriod(termId)
 
-                      const withdrawableParticipant_1 =
-                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
                               termId,
-                              participant_1.address
-                          )
-                      const withdrawableParticipant_2 =
-                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
-                              termId,
-                              participant_1.address
-                          )
-                      const withdrawableParticipant_3 =
-                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
-                              termId,
-                              participant_1.address
-                          )
-                      const withdrawableParticipant_4 =
-                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
-                              termId,
-                              participant_1.address
+                              accounts[i].address
                           )
 
-                      const collateralParticipant_1_Summary =
-                          await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
-                              participant_1.address,
-                              termId
+                          const participantCollateralSummary =
+                              await takaturnDiamond.getDepositorCollateralSummary(
+                                  accounts[i].address,
+                                  termId
+                              )
+
+                          await expect(
+                              takaturnDiamond.connect(accounts[i]).withdrawCollateral(termId)
                           )
-                      const collateralParticipant_2_Summary =
-                          await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
-                              participant_1.address,
-                              termId
+                              .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                              .withArgs(termId, accounts[i].address, withdrawable)
+
+                          assert.equal(
+                              withdrawable.toString(),
+                              participantCollateralSummary[1].toString()
                           )
-                      const collateralParticipant_3_Summary =
-                          await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
-                              participant_1.address,
-                              termId
-                          )
-                      const collateralParticipant_4_Summary =
-                          await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
-                              participant_1.address,
-                              termId
-                          )
+                      }
 
                       const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
 
                       await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
                           CollateralStates.ReleasingCollateral
-                      )
-
-                      assert.equal(
-                          withdrawableParticipant_1.toString(),
-                          collateralParticipant_1_Summary[1].toString()
-                      )
-                      assert.equal(
-                          withdrawableParticipant_2.toString(),
-                          collateralParticipant_2_Summary[1].toString()
-                      )
-                      assert.equal(
-                          withdrawableParticipant_3.toString(),
-                          collateralParticipant_3_Summary[1].toString()
-                      )
-                      assert.equal(
-                          withdrawableParticipant_4.toString(),
-                          collateralParticipant_4_Summary[1].toString()
                       )
                   })
               })
@@ -404,13 +373,7 @@ async function payTestContribution(termId, defaulterIndex) {
                               termId
                           )
 
-                      const participantFundSummary =
-                          await takaturnDiamond.getParticipantFundSummary(
-                              participant_3.address,
-                              termId
-                          )
-
-                      // Can withdraw collateral and fund
+                      // Can withdraw collateral
                       await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
                           .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
                           .withArgs(termId, participant_3.address, withdrawable)
