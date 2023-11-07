@@ -11,7 +11,7 @@ const { BigNumber } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe.only("Getters facet tests", function () {
+    : describe("Getters facet tests", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = BigNumber.from("4") // Create term param
@@ -315,6 +315,91 @@ const { BigNumber } = require("ethers")
                       assert.equal(
                           withdrawableParticipant_4.toString(),
                           collateralParticipant_4_Summary[1].toString()
+                      )
+                  })
+              })
+              describe("When the term is on going and somebody is expelled", function () {
+                  it("Expelled before being beneficiary, withdrawable should be equal to locked balance", async function () {
+                      const termId = 1
+
+                      // Pay contributions first cycle
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          try {
+                              if (i != 3) {
+                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                              }
+                          } catch (error) {}
+                      }
+
+                      // Manipulate ETH price to expel participant 3
+                      await aggregator.setPrice("100000000000")
+
+                      advanceTime(cycleTime.toNumber() + 1)
+
+                      await takaturnDiamond.closeFundingPeriod(termId)
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      //   Pay contributions second cycle
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          try {
+                              if (i != 3) {
+                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                              }
+                          } catch (error) {}
+                      }
+
+                      advanceTime(cycleTime.toNumber() + 1)
+
+                      await takaturnDiamond.closeFundingPeriod(termId)
+
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      //   Pay contributions third cycle
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          try {
+                              if (i != 3) {
+                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                              }
+                          } catch (error) {}
+                      }
+
+                      advanceTime(cycleTime.toNumber() + 1)
+
+                      await takaturnDiamond.closeFundingPeriod(termId)
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      const withdrawable =
+                          await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
+                              termId,
+                              participant_3.address
+                          )
+
+                      const expelled = await takaturnDiamond.wasExpelled(
+                          termId,
+                          participant_3.address
+                      )
+
+                      const participantCollateralSummary =
+                          await takaturnDiamond.getDepositorCollateralSummary(
+                              participant_3.address,
+                              termId
+                          )
+
+                      const participantFundSummary =
+                          await takaturnDiamond.getParticipantFundSummary(
+                              participant_3.address,
+                              termId
+                          )
+
+                      assert.ok(expelled) // Expelled
+                      assert.ok(!participantCollateralSummary[0]) // Not a collateral member
+                      assert.ok(!participantFundSummary[0]) // Not a participant
+                      assert.ok(!participantFundSummary[1]) // Not a beneficiary
+
+                      // Withdrawable is equal to collateral locked
+                      assert.equal(
+                          withdrawable.toString(),
+                          participantCollateralSummary[1].toString()
                       )
                   })
               })
