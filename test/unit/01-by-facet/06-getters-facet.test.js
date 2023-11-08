@@ -305,7 +305,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       )
                   })
               })
-              describe("When the term is on going and somebody is expelled before being beneficiary", function () {
+              describe("When the term is on going or ended and somebody is expelled before being beneficiary", function () {
                   beforeEach(async () => {
                       const termId = 1
 
