@@ -156,27 +156,28 @@ const { balanceForUser } = require("../utils/test-utils")
 
                       assert(userAPYBefore.toString() > userAPYAfter.toString())
                   })
+                  describe("After some withdraws", function () {
+                      it("Defaulting", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
 
-                  it("After some withdraws", async function () {
-                      const terms = await takaturnDiamond.getTermsId()
-                      const termId = terms[0]
+                          const userAPYBefore = await takaturnDiamond.userAPY(termId, participant_1)
 
-                      const userAPYBefore = await takaturnDiamond.userAPY(termId, participant_1)
+                          await advanceTime(contributionPeriod + 1)
 
-                      await advanceTime(contributionPeriod + 1)
+                          await takaturnDiamond.closeFundingPeriod(termId)
 
-                      await takaturnDiamond.closeFundingPeriod(termId)
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                      await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+                          const userAPYAfter = await takaturnDiamond.userAPY(termId, participant_1)
 
-                      const userAPYAfter = await takaturnDiamond.userAPY(termId, participant_1)
-
-                      assert(userAPYBefore.toString() > userAPYAfter.toString())
+                          assert(userAPYBefore.toString() > userAPYAfter.toString())
+                      })
                   })
               })
 
               describe("Term APY", function () {
-                  it.only("Without any withdraws", async function () {
+                  it("Without any withdraws", async function () {
                       const terms = await takaturnDiamond.getTermsId()
                       const termId = terms[0]
 
@@ -191,21 +192,23 @@ const { balanceForUser } = require("../utils/test-utils")
                       assert(termAPYBefore.toString() > 0)
                       assert(termAPYBefore.toString() < termAPYAfter.toString())
                   })
-                  it("After some withdraws", async function () {
-                      const terms = await takaturnDiamond.getTermsId()
-                      const termId = terms[0]
+                  describe("After some withdraws", function () {
+                      it("Defaulting", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
 
-                      const termAPYBefore = await takaturnDiamond.termAPY(termId)
+                          const termAPYBefore = await takaturnDiamond.termAPY(termId)
 
-                      await advanceTime(contributionPeriod + 1)
+                          await advanceTime(contributionPeriod + 1)
 
-                      await takaturnDiamond.closeFundingPeriod(termId)
+                          await takaturnDiamond.closeFundingPeriod(termId)
 
-                      await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                      const termAPYAfter = await takaturnDiamond.termAPY(termId)
+                          const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                      assert(termAPYBefore.toString() < termAPYAfter.toString())
+                          assert(termAPYBefore.toString() < termAPYAfter.toString())
+                      })
                   })
               })
 
@@ -227,26 +230,28 @@ const { balanceForUser } = require("../utils/test-utils")
                           yieldDistributionRatioAfter.toString()
                       )
                   })
-                  it("After some withdraws", async function () {
-                      const terms = await takaturnDiamond.getTermsId()
-                      const termId = terms[0]
+                  describe("After some withdraws", function () {
+                      it("Defaulting", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
 
-                      const yieldDistributionRatioBefore =
-                          await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
+                          const yieldDistributionRatioBefore =
+                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
 
-                      await advanceTime(contributionPeriod + 1)
+                          await advanceTime(contributionPeriod + 1)
 
-                      await takaturnDiamond.closeFundingPeriod(termId)
+                          await takaturnDiamond.closeFundingPeriod(termId)
 
-                      await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                      const yieldDistributionRatioAfter =
-                          await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
+                          const yieldDistributionRatioAfter =
+                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
 
-                      assert(
-                          yieldDistributionRatioBefore.toString() <
-                              yieldDistributionRatioAfter.toString()
-                      )
+                          assert(
+                              yieldDistributionRatioBefore.toString() <
+                                  yieldDistributionRatioAfter.toString()
+                          )
+                      })
                   })
               })
 
@@ -272,27 +277,28 @@ const { balanceForUser } = require("../utils/test-utils")
                           totalYieldGeneratedAfter.toString()
                       )
                   })
-                  it("After some withdraws", async function () {
-                      const terms = await takaturnDiamond.getTermsId()
-                      const termId = terms[0]
+                  describe("After some withdraws", function () {
+                      it("Defaulting", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
 
-                      const totalYieldGeneratedBefore = await takaturnDiamond.totalYieldGenerated(
-                          termId
-                      )
+                          const totalYieldGeneratedBefore =
+                              await takaturnDiamond.totalYieldGenerated(termId)
 
-                      await advanceTime(contributionPeriod + 1)
+                          await advanceTime(contributionPeriod + 1)
 
-                      await takaturnDiamond.closeFundingPeriod(termId)
+                          await takaturnDiamond.closeFundingPeriod(termId)
 
-                      await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                      const totalYieldGeneratedAfter = await takaturnDiamond.totalYieldGenerated(
-                          termId
-                      )
+                          const totalYieldGeneratedAfter =
+                              await takaturnDiamond.totalYieldGenerated(termId)
 
-                      assert(
-                          totalYieldGeneratedBefore.toString() < totalYieldGeneratedAfter.toString()
-                      )
+                          assert(
+                              totalYieldGeneratedBefore.toString() <
+                                  totalYieldGeneratedAfter.toString()
+                          )
+                      })
                   })
               })
 
@@ -320,29 +326,32 @@ const { balanceForUser } = require("../utils/test-utils")
                           userYieldGeneratedAfter.toString()
                       )
                   })
-                  it("After some withdraws", async function () {
-                      const terms = await takaturnDiamond.getTermsId()
-                      const termId = terms[0]
+                  describe("After some withdraws", function () {
+                      it("Defaulting", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
 
-                      const userYieldGeneratedBefore = await takaturnDiamond.userYieldGenerated(
-                          termId,
-                          participant_1
-                      )
+                          const userYieldGeneratedBefore = await takaturnDiamond.userYieldGenerated(
+                              termId,
+                              participant_1
+                          )
 
-                      await advanceTime(contributionPeriod + 1)
+                          await advanceTime(contributionPeriod + 1)
 
-                      await takaturnDiamond.closeFundingPeriod(termId)
+                          await takaturnDiamond.closeFundingPeriod(termId)
 
-                      await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                      const userYieldGeneratedAfter = await takaturnDiamond.userYieldGenerated(
-                          termId,
-                          participant_1
-                      )
+                          const userYieldGeneratedAfter = await takaturnDiamond.userYieldGenerated(
+                              termId,
+                              participant_1
+                          )
 
-                      assert(
-                          userYieldGeneratedBefore.toString() < userYieldGeneratedAfter.toString()
-                      )
+                          assert(
+                              userYieldGeneratedBefore.toString() <
+                                  userYieldGeneratedAfter.toString()
+                          )
+                      })
                   })
               })
           })
