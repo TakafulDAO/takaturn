@@ -6,7 +6,7 @@ const { balanceForUser } = require("../utils/test-utils")
 
 !isFork || isMainnet
     ? describe.skip
-    : describe.only("Fork Mainnet test. Yield Getters", function () {
+    : describe("Fork Mainnet test. Yield Getters", function () {
           const chainId = network.config.chainId
 
           let takaturnDiamond, usdc, zaynZap
@@ -157,6 +157,28 @@ const { balanceForUser } = require("../utils/test-utils")
                       assert(userAPYBefore.toString() > userAPYAfter.toString())
                   })
                   describe("After some withdraws", function () {
+                      it("Without defaults", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
+
+                          const userAPYBefore = await takaturnDiamond.userAPY(termId, participant_1)
+
+                          for (let i = 0; i < 3; i++) {
+                              try {
+                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                              } catch (error) {}
+                          }
+
+                          await advanceTime(contributionPeriod + 1)
+
+                          await takaturnDiamond.closeFundingPeriod(termId)
+
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          const userAPYAfter = await takaturnDiamond.userAPY(termId, participant_1)
+
+                          assert(userAPYBefore.toString() > userAPYAfter.toString())
+                      })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
@@ -193,6 +215,28 @@ const { balanceForUser } = require("../utils/test-utils")
                       assert(termAPYBefore.toString() < termAPYAfter.toString())
                   })
                   describe("After some withdraws", function () {
+                      it("Without defaults", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
+
+                          const termAPYBefore = await takaturnDiamond.termAPY(termId)
+
+                          for (let i = 0; i < 3; i++) {
+                              try {
+                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                              } catch (error) {}
+                          }
+
+                          await advanceTime(contributionPeriod + 1)
+
+                          await takaturnDiamond.closeFundingPeriod(termId)
+
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          const termAPYAfter = await takaturnDiamond.termAPY(termId)
+
+                          assert(termAPYBefore.toString() < termAPYAfter.toString())
+                      })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
@@ -231,6 +275,33 @@ const { balanceForUser } = require("../utils/test-utils")
                       )
                   })
                   describe("After some withdraws", function () {
+                      it("Without defaults", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
+
+                          const yieldDistributionRatioBefore =
+                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
+
+                          for (let i = 0; i < 3; i++) {
+                              try {
+                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                              } catch (error) {}
+                          }
+
+                          await advanceTime(contributionPeriod + 1)
+
+                          await takaturnDiamond.closeFundingPeriod(termId)
+
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          const yieldDistributionRatioAfter =
+                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
+
+                          assert(
+                              yieldDistributionRatioBefore.toString() <
+                                  yieldDistributionRatioAfter.toString()
+                          )
+                      })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
@@ -278,6 +349,33 @@ const { balanceForUser } = require("../utils/test-utils")
                       )
                   })
                   describe("After some withdraws", function () {
+                      it("Without defaults", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
+
+                          const totalYieldGeneratedBefore =
+                              await takaturnDiamond.totalYieldGenerated(termId)
+
+                          for (let i = 0; i < 3; i++) {
+                              try {
+                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                              } catch (error) {}
+                          }
+
+                          await advanceTime(contributionPeriod + 1)
+
+                          await takaturnDiamond.closeFundingPeriod(termId)
+
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          const totalYieldGeneratedAfter =
+                              await takaturnDiamond.totalYieldGenerated(termId)
+
+                          assert(
+                              totalYieldGeneratedBefore.toString() <
+                                  totalYieldGeneratedAfter.toString()
+                          )
+                      })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
@@ -327,6 +425,37 @@ const { balanceForUser } = require("../utils/test-utils")
                       )
                   })
                   describe("After some withdraws", function () {
+                      it("Without defaults", async function () {
+                          const terms = await takaturnDiamond.getTermsId()
+                          const termId = terms[0]
+
+                          const userYieldGeneratedBefore = await takaturnDiamond.userYieldGenerated(
+                              termId,
+                              participant_1
+                          )
+
+                          for (let i = 0; i < 3; i++) {
+                              try {
+                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                              } catch (error) {}
+                          }
+
+                          await advanceTime(contributionPeriod + 1)
+
+                          await takaturnDiamond.closeFundingPeriod(termId)
+
+                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          const userYieldGeneratedAfter = await takaturnDiamond.userYieldGenerated(
+                              termId,
+                              participant_1
+                          )
+
+                          assert(
+                              userYieldGeneratedBefore.toString() <
+                                  userYieldGeneratedAfter.toString()
+                          )
+                      })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
