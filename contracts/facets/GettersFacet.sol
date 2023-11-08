@@ -601,8 +601,10 @@ contract GettersFacet is IGetters {
         uint pricePerShare = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"])
             .getPricePerFullShare();
 
-        if (termBalance * pricePerShare > yield.currentTotalDeposit) {
-            uint currentSharesPrice = (termBalance * pricePerShare) / 10 ** 18;
+        uint balancePrice = termBalance * pricePerShare;
+
+        if (balancePrice > yield.currentTotalDeposit) {
+            uint currentSharesPrice = (balancePrice) / 10 ** 18;
 
             return totalWithdrawnYield + currentSharesPrice - yield.currentTotalDeposit;
         } else {
