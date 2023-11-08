@@ -555,7 +555,9 @@ contract GettersFacet is IGetters {
 
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
-        return ((totalYieldGenerated(termId) / yield.currentTotalDeposit) * 365 days) / elaspedTime;
+        return
+            (((totalYieldGenerated(termId) * 10 ** 18) / yield.currentTotalDeposit) * 365 days) /
+            elaspedTime;
     }
 
     /// @notice This function is used to get the yield distribution ratio for a user

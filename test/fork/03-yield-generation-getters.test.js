@@ -6,7 +6,7 @@ const { balanceForUser } = require("../utils/test-utils")
 
 !isFork || isMainnet
     ? describe.skip
-    : describe("Fork Mainnet test. Yield Getters", function () {
+    : describe.only("Fork Mainnet test. Yield Getters", function () {
           const chainId = network.config.chainId
 
           let takaturnDiamond, usdc, zaynZap
@@ -176,7 +176,7 @@ const { balanceForUser } = require("../utils/test-utils")
               })
 
               describe("Term APY", function () {
-                  it("Without any withdraws", async function () {
+                  it.only("Without any withdraws", async function () {
                       const terms = await takaturnDiamond.getTermsId()
                       const termId = terms[0]
 
@@ -188,8 +188,8 @@ const { balanceForUser } = require("../utils/test-utils")
 
                       const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                      assert.equal(termAPYBefore.toString(), 0)
-                      assert.equal(termAPYAfter.toString(), 0)
+                      assert(termAPYBefore.toString() > 0)
+                      assert(termAPYBefore.toString() < termAPYAfter.toString())
                   })
                   it("After some withdraws", async function () {
                       const terms = await takaturnDiamond.getTermsId()
