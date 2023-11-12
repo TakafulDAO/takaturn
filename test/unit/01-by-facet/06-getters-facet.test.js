@@ -32,14 +32,6 @@ async function payTestContribution(termId, defaulterIndex) {
     : describe("Unit tests. Getters Facet", function () {
           const chainId = network.config.chainId
 
-          //   const totalParticipants = BigNumber.from("4") // Create term param
-          //   const cycleTime = BigNumber.from("180") // Create term param
-          //   const contributionAmount = BigNumber.from("10") // Create term param
-          //   const contributionPeriod = BigNumber.from("120") // Create term param
-          //   const registrationPeriod = BigNumber.from("120") // Create term param
-
-          //   let takaturnDiamond
-
           let deployer, participant_1, participant_2, participant_3
 
           let takaturnDiamondDeployer, takaturnDiamondParticipant_1
@@ -340,6 +332,12 @@ async function payTestContribution(termId, defaulterIndex) {
                           participant_3.address
                       )
 
+                      const expelledBeforeBeneficiary =
+                          await takaturnDiamond.expelledBeforeBeneficiary(
+                              termId,
+                              participant_3.address
+                          )
+
                       const participantCollateralSummary =
                           await takaturnDiamond.getDepositorCollateralSummary(
                               participant_3.address,
@@ -353,12 +351,13 @@ async function payTestContribution(termId, defaulterIndex) {
                           )
 
                       assert.ok(expelled) // Expelled
+                      assert.ok(expelledBeforeBeneficiary) // Expelled before being beneficiary
                       assert.ok(!participantCollateralSummary[0]) // Not a collateral member
                       assert.ok(!participantFundSummary[0]) // Not a participant
                       assert.ok(!participantFundSummary[1]) // Not a beneficiary
                   })
 
-                  it("Before cycle expelled one should be beneficiary, withdrawable collateral equal to locked balance", async function () {
+                  it("Before cycle expelled one will be beneficiary, withdrawable collateral equal to locked balance", async function () {
                       const termId = 1
 
                       const withdrawable =
@@ -389,7 +388,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       )
                   })
 
-                  it("Cycle expelled one should be beneficiary, withdrawable collateral equal to locked balance, withdraw fund allowed", async function () {
+                  it("Cycle expelled one become beneficiary, withdrawable collateral equal to locked balance, withdraw fund allowed", async function () {
                       const termId = 1
 
                       // Starts third cycle
@@ -421,6 +420,12 @@ async function payTestContribution(termId, defaulterIndex) {
                               termId
                           )
 
+                      const expelledBeforeBeneficiary =
+                          await takaturnDiamond.expelledBeforeBeneficiary(
+                              termId,
+                              participant_3.address
+                          )
+
                       // Can withdraw collateral and fund
                       await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
                           .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
@@ -437,9 +442,11 @@ async function payTestContribution(termId, defaulterIndex) {
                       )
 
                       assert.ok(!participantFundSummary[5]) // Money pot is never frozen if it is expelled before being beneficiary
+                      assert.ok(participantFundSummary[1]) // Become a beneficiary
+                      assert.ok(expelledBeforeBeneficiary) // But it was expelled before being beneficiary
                   })
 
-                  describe("Cycle after the one that expelled participant should be beneficiary", function () {
+                  describe("Cycle after the one that expelled participant become beneficiary", function () {
                       // Have not withdraw collateral nor fund yet
 
                       beforeEach(async () => {
