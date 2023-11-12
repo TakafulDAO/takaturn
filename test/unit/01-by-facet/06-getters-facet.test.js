@@ -1,6 +1,6 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
-const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
+const { developmentChains, networkConfig } = require("../../../utils/_networks")
 const {
     advanceTime,
     impersonateAccount,
@@ -223,7 +223,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       )
                   })
 
-                  it.only("When the term finish, withdrawable should be equal to locked balance, can withdraw collateral", async function () {
+                  it("When the term finish, withdrawable should be equal to locked balance, can withdraw collateral", async function () {
                       // The termId 1 already started on the before each
                       const termId = 1
 
@@ -380,7 +380,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
                       await expect(
                           takaturnDiamondParticipant_3.withdrawFund(termId)
-                      ).to.be.revertedWith("Have to wait for your turn to be beneficiary")
+                      ).to.be.revertedWith("Nothing to withdraw")
 
                       // Withdrawable is equal to collateral locked
                       assert.equal(
