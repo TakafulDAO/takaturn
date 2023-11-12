@@ -378,7 +378,7 @@ contract FundFacet is IFund {
             if (EnumerableSet.remove(_fund._participants, beneficiary)) {
                 // ..Then add them to the benificiaries set
                 EnumerableSet.add(_fund._beneficiaries, beneficiary);
-            } // If this if-statement fails, this means we're dealing with a graced defaulter
+            }
 
             // Update the mapping to track who's been beneficiary
             _fund.isBeneficiary[beneficiary] = true;
