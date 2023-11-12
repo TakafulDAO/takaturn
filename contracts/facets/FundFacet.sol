@@ -250,8 +250,7 @@ contract FundFacet is IFund {
         // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
         // any of the past cycles.
 
-        bool expelledBeforeBeneficiary = IGetters(address(this)).wasExpelled(termId, msg.sender) &&
-            !fund.isBeneficiary[msg.sender];
+        bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
 
         require(
             fund.currentState == LibFundStorage.FundStates.FundClosed ||
@@ -352,16 +351,14 @@ contract FundFacet is IFund {
             }
         }
 
-        if (!IGetters(address(this)).wasExpelled(_term.termId, beneficiary)) {
-            // Remove participant from participants set..
-            if (EnumerableSet.remove(_fund._participants, beneficiary)) {
-                // ..Then add them to the benificiaries set
-                EnumerableSet.add(_fund._beneficiaries, beneficiary);
-            }
-
-            // Update the mapping to track who's been beneficiary
-            _fund.isBeneficiary[beneficiary] = true;
+        // Remove participant from participants set..
+        if (EnumerableSet.remove(_fund._participants, beneficiary)) {
+            // ..Then add them to the benificiaries set
+            EnumerableSet.add(_fund._beneficiaries, beneficiary);
         }
+
+        // Update the mapping to track who's been beneficiary
+        _fund.isBeneficiary[beneficiary] = true;
 
         // Get the amount of participants that paid this cycle, and add that amount to the beneficiary's pool
         uint paidCount;
@@ -404,6 +401,10 @@ contract FundFacet is IFund {
 
         _fund.isParticipant[_expellant] = false;
         collateral.isCollateralMember[_expellant] = false;
+        // If the expellant has not been a beneficiary before, mark them as expelledBeforeBeneficiary
+        if (!_fund.isBeneficiary[_expellant]) {
+            _fund.expelledBeforeBeneficiary[_expellant] = true;
+        }
 
         // Lastly, lower the amount of participants
         --_term.totalParticipants;
@@ -452,8 +453,7 @@ contract FundFacet is IFund {
             ._collateralStorage()
             .collaterals[_term.termId];
 
-        bool expelledBeforeBeneficiary = IGetters(address(this)).wasExpelled(_term.termId, _user) &&
-            !_fund.isBeneficiary[_user];
+        bool expelledBeforeBeneficiary = _fund.expelledBeforeBeneficiary[_user];
 
         if (expelledBeforeBeneficiary) {
             _fund.beneficiariesFrozenPool[_user] = false;
