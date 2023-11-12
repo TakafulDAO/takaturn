@@ -572,7 +572,9 @@ contract GettersFacet is IGetters {
         if (yield.currentTotalDeposit == 0) {
             return 0;
         } else {
-            return (yield.depositedCollateralByUser[user] * 10 ** 18) / yield.currentTotalDeposit;
+            return
+                ((yield.depositedCollateralByUser[user] - yield.withdrawnCollateral[user]) *
+                    10 ** 18) / yield.currentTotalDeposit;
         }
     }
 
