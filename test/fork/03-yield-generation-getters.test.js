@@ -298,7 +298,7 @@ const { balanceForUser } = require("../utils/test-utils")
                               await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
 
                           assert(
-                              yieldDistributionRatioBefore.toString() <
+                              yieldDistributionRatioBefore.toString() >
                                   yieldDistributionRatioAfter.toString()
                           )
                       })
@@ -319,7 +319,7 @@ const { balanceForUser } = require("../utils/test-utils")
                               await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
 
                           assert(
-                              yieldDistributionRatioBefore.toString() <
+                              yieldDistributionRatioBefore.toString() >
                                   yieldDistributionRatioAfter.toString()
                           )
                       })
@@ -452,7 +452,7 @@ const { balanceForUser } = require("../utils/test-utils")
                           )
 
                           assert(
-                              userYieldGeneratedBefore.toString() <
+                              userYieldGeneratedBefore.toString() >
                                   userYieldGeneratedAfter.toString()
                           )
                       })
@@ -477,7 +477,7 @@ const { balanceForUser } = require("../utils/test-utils")
                           )
 
                           assert(
-                              userYieldGeneratedBefore.toString() <
+                              userYieldGeneratedBefore.toString() >
                                   userYieldGeneratedAfter.toString()
                           )
                       })
