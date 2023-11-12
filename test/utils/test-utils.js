@@ -4,6 +4,8 @@ let contributionAmount = 50
 let contributionPeriod = 43200
 let registrationPeriod = 604800
 
+const moneyPot = contributionAmount * totalParticipants
+
 const balanceForUser = 1000 * 10 ** 6
 
 function getRandomInt(max) {
@@ -11,6 +13,7 @@ function getRandomInt(max) {
 }
 
 module.exports = {
+    moneyPot,
     balanceForUser,
     // Term params
     totalParticipants,

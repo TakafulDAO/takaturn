@@ -1,14 +1,14 @@
 const { network } = require("hardhat")
 const { networkConfig } = require("../utils/_networks")
-const { isDevnet, isFork, isZayn } = require("../utils/_networks")
+const { isDevnet, isFork } = require("../utils/_networks")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy, log } = deployments
     const { deployer, usdcOwner } = await getNamedAccounts()
     const chainId = network.config.chainId
 
-    if (isDevnet && !isFork && !isZayn) {
-        // No Fork, No Zayn. Completely on localhost
+    if (isDevnet) {
+        // No Fork. Completely on localhost
         log("==========================================================================")
         log("00. Local network detected! Deploying mocks...")
         log("==========================================================================")
