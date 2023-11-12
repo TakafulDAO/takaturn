@@ -45,6 +45,7 @@ library LibFundStorage {
         EnumerableSet.AddressSet _defaulters; // Both participants and beneficiaries who have defaulted this cycle
         uint expelledParticipants; // Total amount of participants that have been expelled so far
         uint totalAmountOfCycles;
+        mapping(address => bool) expelledBeforeBeneficiary; // Mapping to keep track of who has been expelled before being a beneficiary
     }
 
     struct FundStorage {
