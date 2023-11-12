@@ -29,7 +29,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Getters facet tests", function () {
+    : describe("Unit tests. Getters Facet", function () {
           const chainId = network.config.chainId
 
           //   const totalParticipants = BigNumber.from("4") // Create term param

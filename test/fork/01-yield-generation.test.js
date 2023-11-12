@@ -146,7 +146,7 @@ async function executeCycle(
 
 !isFork || isMainnet
     ? describe.skip
-    : describe("Yield", function () {
+    : describe("Fork Mainnet test. Yield generation tests", function () {
           const chainId = network.config.chainId
 
           let deployer,
