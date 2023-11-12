@@ -187,14 +187,37 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
 
                       const yield = await takaturnDiamond.getYieldSummary(termId)
 
-                      const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
-                          termId,
-                          participant_1
+                      let yieldUserSummary = await takaturnDiamond.getUserYieldSummary(
+                          participant_1,
+                          termId
                       )
 
-                      await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId))
-                          .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                          .withArgs(termId, participant_1, withdrawable)
+                      const withdrawnYieldBefore = yieldUserSummary[1].toString()
+                      const withdrawnCollateralBefore = yieldUserSummary[2].toString()
+
+                      const withdrawTx = takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                      yieldUserSummary = await takaturnDiamond.getUserYieldSummary(
+                          participant_1,
+                          termId
+                      )
+
+                      const withdrawnYieldAfter = yieldUserSummary[1].toString()
+                      const withdrawnCollateralAfter = yieldUserSummary[2].toString()
+
+                      await Promise.all([
+                          expect(withdrawTx)
+                              .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                              .withArgs(termId, participant_1, withdrawnCollateralAfter),
+                          expect(withdrawTx)
+                              .to.emit(takaturnDiamond, "OnYieldClaimed")
+                              .withArgs(termId, participant_1, withdrawnYieldAfter),
+                      ])
+
+                      assert.equal(withdrawnYieldBefore, "0")
+                      assert.equal(withdrawnCollateralBefore, "0")
+                      assert(withdrawnYieldAfter > withdrawnYieldBefore)
+                      assert(withdrawnCollateralAfter > withdrawnCollateralBefore)
 
                       assert.equal(yield[7], zaynZap.address)
                   })

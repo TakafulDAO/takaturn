@@ -4,7 +4,7 @@ const { isMainnet, networkConfig } = require("../../../utils/_networks")
 
 !isMainnet
     ? describe.skip
-    : describe("Initialization staging tests for Arbitrum mainnet", function () {
+    : describe("Staging Mainnet Tests. Initialization", function () {
           const chainId = network.config.chainId
           let deployer, takaturn
 

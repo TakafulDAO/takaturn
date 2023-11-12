@@ -166,7 +166,7 @@ async function executeCycle(
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Takaturn Collateral & Fund Tests Version 2", function () {
+    : describe("Unit Test. Combined Scenarios", function () {
           const chainId = network.config.chainId
 
           let aggregator
@@ -339,7 +339,7 @@ async function executeCycle(
 
                   await takaturnDiamondParticipant_1.startTerm(termId)
               })
-              describe("Combined Tests Part 1", function () {
+              describe("Combined Tests Part 1. Normal Behavior", function () {
                   it("checks collateral specs", async function () {
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
@@ -839,7 +839,7 @@ async function executeCycle(
               })
 
               if (!isFork) {
-                  describe("Combined Tests Part 2", function () {
+                  describe("Combined Tests Part 2. ETH price changes", function () {
                       it("Allow defaulted beneficiaries to withdraw their fund", async function () {
                           this.timeout(200000)
 
@@ -864,7 +864,7 @@ async function executeCycle(
               }
           })
 
-          describe("Combined Tests Part 3", function () {
+          describe("Combined Tests Part 3. Defaulters", function () {
               beforeEach(async function () {
                   let totalParticipantsPart3 = 3
 
@@ -964,7 +964,7 @@ async function executeCycle(
               })
           })
 
-          describe("Combined Tests Part 4", function () {
+          describe("Combined Tests Part 4. Low number of participants", function () {
               beforeEach(async function () {
                   totalParticipantsPart4 = 2
 
