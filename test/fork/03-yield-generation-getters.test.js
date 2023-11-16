@@ -257,71 +257,118 @@ const { balanceForUser } = require("../utils/test-utils")
               })
 
               describe("Yield distribution ratio", function () {
-                  it("Without any withdraws", async function () {
-                      const terms = await takaturnDiamond.getTermsId()
-                      const termId = terms[0]
+                  describe("When there is nothing deposited", function () {
+                      it("Should be 0", async function () {
+                          const termId = 0
 
-                      const yieldDistributionRatioBefore =
-                          await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
+                          // Nobody opted in to yield generation, so current total deposit is 0
+                          await takaturnDiamondParticipant_1.joinTerm(termId, false, {
+                              value: ethers.utils.parseEther("0.19268"),
+                          })
 
-                      await advanceTime(contributionPeriod + 1)
+                          await takaturnDiamondParticipant_2.joinTerm(termId, false, {
+                              value: ethers.utils.parseEther("0.14507"),
+                          })
 
-                      const yieldDistributionRatioAfter =
-                          await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
+                          await takaturnDiamondParticipant_3.joinTerm(termId, false, {
+                              value: ethers.utils.parseEther("0.09518"),
+                          })
 
-                      assert.equal(
-                          yieldDistributionRatioBefore.toString(),
-                          yieldDistributionRatioAfter.toString()
-                      )
+                          await takaturnDiamondParticipant_4.joinTerm(termId, false, {
+                              value: ethers.utils.parseEther("0.04735"),
+                          })
+
+                          await advanceTime(registrationPeriod + 1)
+
+                          await takaturnDiamond.startTerm(termId)
+
+                          const yieldDistributionRatio =
+                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
+
+                          assert.equal(yieldDistributionRatio.toString(), 0)
+                      })
                   })
-                  describe("After some withdraws", function () {
-                      it("Without defaults", async function () {
+                  describe("When there is something deposited", function () {
+                      it("Without any withdraws", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
                           const yieldDistributionRatioBefore =
                               await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
 
-                          for (let i = 0; i < 3; i++) {
-                              try {
-                                  await takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                              } catch (error) {}
-                          }
-
                           await advanceTime(contributionPeriod + 1)
-
-                          await takaturnDiamond.closeFundingPeriod(termId)
-
-                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
                           const yieldDistributionRatioAfter =
                               await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
 
-                          assert(
-                              yieldDistributionRatioBefore.toString() >
-                                  yieldDistributionRatioAfter.toString()
+                          assert.equal(
+                              yieldDistributionRatioBefore.toString(),
+                              yieldDistributionRatioAfter.toString()
                           )
                       })
-                      it("Defaulting", async function () {
-                          const terms = await takaturnDiamond.getTermsId()
-                          const termId = terms[0]
+                      describe("After some withdraws", function () {
+                          it("Without defaults", async function () {
+                              const terms = await takaturnDiamond.getTermsId()
+                              const termId = terms[0]
 
-                          const yieldDistributionRatioBefore =
-                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
+                              const yieldDistributionRatioBefore =
+                                  await takaturnDiamond.yieldDistributionRatio(
+                                      termId,
+                                      participant_1
+                                  )
 
-                          await advanceTime(contributionPeriod + 1)
+                              for (let i = 0; i < 3; i++) {
+                                  try {
+                                      await takaturnDiamond
+                                          .connect(accounts[i])
+                                          .payContribution(termId)
+                                  } catch (error) {}
+                              }
 
-                          await takaturnDiamond.closeFundingPeriod(termId)
+                              await advanceTime(contributionPeriod + 1)
 
-                          await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+                              await takaturnDiamond.closeFundingPeriod(termId)
 
-                          const yieldDistributionRatioAfter =
-                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
+                              await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                          assert(
-                              yieldDistributionRatioBefore.toString() >
-                                  yieldDistributionRatioAfter.toString()
-                          )
+                              const yieldDistributionRatioAfter =
+                                  await takaturnDiamond.yieldDistributionRatio(
+                                      termId,
+                                      participant_1
+                                  )
+
+                              assert(
+                                  yieldDistributionRatioBefore.toString() >
+                                      yieldDistributionRatioAfter.toString()
+                              )
+                          })
+                          it("Defaulting", async function () {
+                              const terms = await takaturnDiamond.getTermsId()
+                              const termId = terms[0]
+
+                              const yieldDistributionRatioBefore =
+                                  await takaturnDiamond.yieldDistributionRatio(
+                                      termId,
+                                      participant_1
+                                  )
+
+                              await advanceTime(contributionPeriod + 1)
+
+                              await takaturnDiamond.closeFundingPeriod(termId)
+
+                              await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                              const yieldDistributionRatioAfter =
+                                  await takaturnDiamond.yieldDistributionRatio(
+                                      termId,
+                                      participant_1
+                                  )
+
+                              assert(
+                                  yieldDistributionRatioBefore.toString() >
+                                      yieldDistributionRatioAfter.toString()
+                              )
+                          })
                       })
                   })
               })
