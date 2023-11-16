@@ -579,7 +579,9 @@ contract GettersFacet is IGetters {
 
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
-        return ((totalYieldGenerated(termId) / yield.currentTotalDeposit) * 365 days) / elaspedTime;
+        return
+            (((totalYieldGenerated(termId) * 10 ** 18) / yield.currentTotalDeposit) * 365 days) /
+            elaspedTime;
     }
 
     /// @notice This function is used to get the yield distribution ratio for a user
@@ -594,7 +596,9 @@ contract GettersFacet is IGetters {
         if (yield.currentTotalDeposit == 0) {
             return 0;
         } else {
-            return (yield.depositedCollateralByUser[user] / yield.currentTotalDeposit) * 10 ** 18;
+            return
+                ((yield.depositedCollateralByUser[user] - yield.withdrawnCollateral[user]) *
+                    10 ** 18) / yield.currentTotalDeposit;
         }
     }
 
@@ -619,16 +623,19 @@ contract GettersFacet is IGetters {
             }
         }
 
-        uint currentShares = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(
+        uint termBalance = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(
             termId
         );
-        uint totalDeposit = yield.totalDeposit;
-        uint totalShares = yield.totalShares;
+        uint pricePerShare = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"])
+            .getPricePerFullShare();
 
-        return
-            totalWithdrawnYield +
-            LibYieldGeneration._sharesToEth(currentShares, totalDeposit, totalShares) -
-            yield.currentTotalDeposit;
+        uint sharesInEth = (termBalance * pricePerShare) / 10 ** 18;
+
+        if (sharesInEth > yield.currentTotalDeposit) {
+            return totalWithdrawnYield + sharesInEth - yield.currentTotalDeposit;
+        } else {
+            return totalWithdrawnYield;
+        }
     }
 
     /// @notice This function is used to get the total yield generated for a user
