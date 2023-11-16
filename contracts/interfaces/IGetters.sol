@@ -175,6 +175,11 @@ interface IGetters {
     /// @return true if the participant is a beneficiary
     function isBeneficiary(uint termId, address beneficiary) external view returns (bool);
 
+    /// @param termId the id of the term
+    /// @param user the address of the participant to check
+    /// @return true if the participant is expelled before being a beneficiary
+    function expelledBeforeBeneficiary(uint termId, address user) external view returns (bool);
+
     // CONVERSION GETTERS
 
     function getToCollateralConversionRate(uint USDAmount) external view returns (uint);
