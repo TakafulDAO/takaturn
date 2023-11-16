@@ -229,6 +229,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       advanceTime(cycleTime.toNumber() + 1)
 
                       await takaturnDiamond.closeFundingPeriod(termId)
+
                       await takaturnDiamond.startNewCycle(termId)
 
                       // Second cycle
@@ -545,6 +546,258 @@ async function payTestContribution(termId, defaulterIndex) {
                           )
                       })
                   })
+              })
+          })
+          describe("User's sets", function () {
+              it("All users are in the participant set when the term start", async function () {
+                  const termId = 1
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      const participantSets = await takaturnDiamond
+                          .connect(accounts[i])
+                          .getUserSet(accounts[i].address, termId)
+
+                      assert.ok(participantSets[0]) // On participant set
+                      assert.ok(!participantSets[1]) // On beneficiary set
+                      assert.ok(!participantSets[2]) // On defaulter set
+                  }
+              })
+
+              it("The beneficiary is set on the beneficiary set", async function () {
+                  const termId = 1
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      try {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } catch (error) {}
+                  }
+
+                  const participant_1_setsBefore = await takaturnDiamond.getUserSet(
+                      participant_1.address,
+                      termId
+                  )
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const participant_1_setsAfter = await takaturnDiamond.getUserSet(
+                      participant_1.address,
+                      termId
+                  )
+
+                  assert.ok(!participant_1_setsBefore[1]) // Not on beneficiary set before closing funding period
+                  assert.ok(participant_1_setsAfter[1]) // On beneficiary set After closing funding period
+              })
+
+              it("The defaulters are set on the defaulters set", async function () {
+                  const termId = 1
+
+                  const participant_2_setsBefore = await takaturnDiamond.getUserSet(
+                      participant_2.address,
+                      termId
+                  )
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const participant_2_setsAfter = await takaturnDiamond.getUserSet(
+                      participant_2.address,
+                      termId
+                  )
+
+                  assert.ok(!participant_2_setsBefore[2]) // Not on defaulter set before closing funding period
+                  assert.ok(participant_2_setsAfter[2]) // On defaulter set after closing funding period
+              })
+
+              it("Previous beneficiaries are set on the defaulters set when defaults", async function () {
+                  const termId = 1
+
+                  // First cycle participant 1 is beneficiary
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      try {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } catch (error) {}
+                  }
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  // Second cycle participant 1 defaults
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  const participant_1_setsBefore = await takaturnDiamond.getUserSet(
+                      participant_1.address,
+                      termId
+                  )
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const participant_1_setsAfter = await takaturnDiamond.getUserSet(
+                      participant_1.address,
+                      termId
+                  )
+                  assert.ok(participant_1_setsBefore[1]) // On beneficiary set before closing funding period
+                  assert.ok(!participant_1_setsBefore[2]) // Not on defaulter set before closing funding period
+
+                  assert.ok(!participant_1_setsAfter[1]) // Not on beneficiary set after closing funding period
+                  assert.ok(participant_1_setsAfter[2]) // On Defaulter after closing funding period
+              })
+
+              it("Previous defaulters, non beneficiaries, are set on the participant set when pays after defaults", async function () {
+                  const termId = 1
+
+                  // First cycle, participant 3 defaults
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  // Second cycle, participant 3 pays
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  const participant_3_setsBefore = await takaturnDiamond.getUserSet(
+                      participant_3.address,
+                      termId
+                  )
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      try {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } catch (error) {}
+                  }
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const participant_3_setsAfter = await takaturnDiamond.getUserSet(
+                      participant_3.address,
+                      termId
+                  )
+                  assert.ok(participant_3_setsBefore[2]) // On defaulters set before closing funding period
+                  assert.ok(!participant_3_setsBefore[0]) // Not on participant set before closing funding period
+
+                  assert.ok(!participant_3_setsAfter[2]) // Not on defaulters set after closing funding period
+                  assert.ok(participant_3_setsAfter[0]) // On participants after closing funding period
+              })
+
+              it("Previous defaulters, already beneficiaries, are set on the beneficiaries set when pays after defaults", async function () {
+                  const termId = 1
+
+                  // First cycle, participant 1 is beneficiary
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      try {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } catch (error) {}
+                  }
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  // Second cycle, participant 1 defaults
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  // Third cycle, participant 1 pays
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  const participant_1_setsBefore = await takaturnDiamond.getUserSet(
+                      participant_1.address,
+                      termId
+                  )
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      try {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } catch (error) {}
+                  }
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const participant_1_setsAfter = await takaturnDiamond.getUserSet(
+                      participant_1.address,
+                      termId
+                  )
+                  assert.ok(participant_1_setsBefore[2]) // On defaulters set before closing funding period
+                  assert.ok(!participant_1_setsBefore[1]) // Not on beneficiaries set before closing funding period
+
+                  assert.ok(!participant_1_setsAfter[2]) // Not on defaulters set after closing funding period
+                  assert.ok(participant_1_setsAfter[1]) // On beneficiaries after closing funding period
+              })
+
+              it("Expelled participants are not in any set", async function () {
+                  const termId = 1
+
+                  await payTestContribution(termId, 3)
+
+                  await aggregator.setPrice("100000000000")
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  await payTestContribution(termId, 3)
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const participant_3_sets = await takaturnDiamond.getUserSet(
+                      participant_3.address,
+                      termId
+                  )
+
+                  assert.ok(!participant_3_sets[0]) // Not on participant set
+                  assert.ok(!participant_3_sets[1]) // Not on beneficiary set
+                  assert.ok(!participant_3_sets[2]) // Not on defaulter set
+              })
+
+              it("Expelled participants are not in any set, even on their beneficiary cycle", async function () {
+                  const termId = 1
+
+                  await payTestContribution(termId, 3)
+
+                  await aggregator.setPrice("100000000000")
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  await payTestContribution(termId, 3)
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  advanceTime(cycleTime.toNumber() + 1)
+
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const participant_3_sets = await takaturnDiamond.getUserSet(
+                      participant_3.address,
+                      termId
+                  )
+
+                  assert.ok(!participant_3_sets[0]) // Not on participant set
+                  assert.ok(!participant_3_sets[1]) // Not on beneficiary set
+                  assert.ok(!participant_3_sets[2]) // Not on defaulter set
               })
           })
       })
