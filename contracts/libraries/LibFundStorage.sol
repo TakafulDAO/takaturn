@@ -8,7 +8,6 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 library LibFundStorage {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint public constant FUND_VERSION = 1;
     bytes32 constant FUND_POSITION = keccak256("diamond.standard.fund");
     bytes32 constant FUND_STORAGE_POSITION = keccak256("diamond.standard.fund.storage");
 

@@ -22,8 +22,6 @@ import {LibFund} from "../libraries/LibFund.sol";
 contract FundFacet is IFund {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint public constant FUND_VERSION = 2; // The version of the contract
-
     event OnFundStateChanged(
         uint indexed termId,
         uint indexed currentCycle,

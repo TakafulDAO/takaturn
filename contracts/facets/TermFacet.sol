@@ -22,8 +22,6 @@ import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 /// @notice This is used to deploy the collateral & fund contracts
 /// @dev v3.0 (Diamond)
 contract TermFacet is ITerm {
-    uint public constant TERM_VERSION = 2;
-
     event OnTermCreated(uint indexed termId, address indexed termOwner);
     event OnCollateralDeposited(uint indexed termId, address indexed user, uint amount);
     event OnTermFilled(uint indexed termId);

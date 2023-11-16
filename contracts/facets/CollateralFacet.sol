@@ -96,7 +96,7 @@ contract CollateralFacet is ICollateral {
                 }
             }
 
-            // Finally, divide the share equally among non-beneficiaries //todo: check if this is still needed
+            // Finally, divide the share equally among non-beneficiaries
             collateralToDistribute = collateralToDistribute / nonBeneficiaryCounter;
             for (uint i; i < nonBeneficiaryCounter; ) {
                 collateral.collateralPaymentBank[nonBeneficiaries[i]] += collateralToDistribute;
@@ -137,7 +137,6 @@ contract CollateralFacet is ICollateral {
                 _fund.isExemptedOnCycle[expellantBeneficiaryCycle].exempted[
                     _nonBeneficiaries[i]
                 ] = true;
-                // TODO: need to test this
                 unchecked {
                     ++i;
                 }
@@ -240,7 +239,6 @@ contract CollateralFacet is ICollateral {
         require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
 
         uint totalToWithdraw;
-        // todo: event for withdrawal
         uint depositorsLength = collateral.depositors.length;
         for (uint i; i < depositorsLength; ) {
             address depositor = collateral.depositors[i];
@@ -274,7 +272,7 @@ contract CollateralFacet is ICollateral {
         LibFundStorage.Fund storage _fund,
         address[] memory _defaulters
     ) internal returns (uint, address[] memory) {
-        // require(_defaulters.length > 0, "No defaulters"); // todo: needed? only call this function when there are defaulters
+        // require(_defaulters.length > 0, "No defaulters");
 
         address[] memory expellants = new address[](_defaulters.length);
         uint expellantsCounter;
