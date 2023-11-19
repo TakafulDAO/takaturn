@@ -33,7 +33,8 @@ const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 
 /******************************************* RPC providers **********************************************/
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
-const ARBITRUM_TESTNET_RPC_URL = process.env.ARBITRUM_TESTNET_RPC_URL
+const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_URL
+const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RPC_URL
 
 /************************************** Networks Scans *************************************************/
 const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY
@@ -201,10 +202,17 @@ module.exports = {
             blockConfirmations: 6,
             timeout: 900000,
         },
-        testnet_arbitrum: {
+        testnet_arbitrum_goerli: {
             chainId: 421613,
             accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
-            url: ARBITRUM_TESTNET_RPC_URL,
+            url: ARBITRUM_TESTNET_GOERLI_RPC_URL,
+            blockConfirmations: 6,
+            timeout: 900000,
+        },
+        testnet_arbitrum_sepolia: {
+            chainId: 421614,
+            accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
+            url: ARBITRUM_TESTNET_SEPOLIA_RPC_URL,
             blockConfirmations: 6,
             timeout: 900000,
         },
@@ -213,6 +221,7 @@ module.exports = {
         apiKey: {
             arbitrumOne: ARBISCAN_API_KEY,
             arbitrumGoerli: ARBISCAN_API_KEY,
+            arbitrumSepolia: ARBISCAN_API_KEY,
         },
     },
     gasReporter: {
@@ -227,23 +236,27 @@ module.exports = {
         deployer: {
             mainnet_arbitrum: DEPLOYER,
 
-            testnet_arbitrum: TESTNET_DEPLOYER,
+            testnet_arbitrum_goerli: TESTNET_DEPLOYER,
+            testnet_arbitrum_sepolia: TESTNET_DEPLOYER,
 
             default: 0,
             localhost: 0,
         },
         participant_1: {
-            testnet_arbitrum: PARTICIPANT_1_ADDRESS,
+            testnet_arbitrum_goerli: PARTICIPANT_1_ADDRESS,
+            testnet_arbitrum_sepolia: PARTICIPANT_1_ADDRESS,
             default: 1,
             localhost: 1,
         },
         participant_2: {
-            testnet_arbitrum: PARTICIPANT_2_ADDRESS,
+            testnet_arbitrum_goerli: PARTICIPANT_2_ADDRESS,
+            testnet_arbitrum_sepolia: PARTICIPANT_2_ADDRESS,
             default: 2,
             localhost: 2,
         },
         participant_3: {
-            testnet_arbitrum: PARTICIPANT_3_ADDRESS,
+            testnet_arbitrum_goerli: PARTICIPANT_3_ADDRESS,
+            testnet_arbitrum_sepolia: PARTICIPANT_3_ADDRESS,
             default: 3,
             localhost: 3,
         },
