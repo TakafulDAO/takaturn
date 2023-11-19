@@ -31,13 +31,6 @@ interface ICollateral {
     /// @param termId The term id
     function releaseCollateral(uint termId) external;
 
-    /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
-    /// @dev This will revert if called during ReleasingCollateral or after
-    /// @param termId The term id
-    /// @param member The user to check for
-    /// @return Bool check if member is below 1.0x of collateralDeposit
-    function isUnderCollaterized(uint termId, address member) external view returns (bool);
-
     /// @notice allow the owner to empty the Collateral after 180 days
     function emptyCollateralAfterEnd(uint termId) external;
 }

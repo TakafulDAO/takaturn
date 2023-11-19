@@ -22,8 +22,6 @@ import {LibFund} from "../libraries/LibFund.sol";
 contract FundFacet is IFund {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint public constant FUND_VERSION = 2; // The version of the contract
-
     event OnFundStateChanged(
         uint indexed termId,
         uint indexed currentCycle,
@@ -118,9 +116,13 @@ contract FundFacet is IFund {
                 }
 
                 EnumerableSet.remove(fund._defaulters, p);
-            } else if (!EnumerableSet.contains(fund._defaulters, p)) {
+            } else if (
+                !EnumerableSet.contains(fund._defaulters, p) &&
+                !IGetters(address(this)).wasExpelled(termId, p)
+            ) {
                 // And we make sure that existing defaulters are ignored
-                // If the current beneficiary is an expelled participant, only check previous beneficiaries
+                // If the current beneficiary is an expelled participant, only check previous beneficiaries,
+                // that have not been expelled
                 if (IGetters(address(this)).wasExpelled(termId, currentBeneficiary)) {
                     if (fund.isBeneficiary[p]) {
                         _defaultParticipant(termId, p);
@@ -246,9 +248,12 @@ contract FundFacet is IFund {
         // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
         // any of the past cycles.
 
+        bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
+
         require(
             fund.currentState == LibFundStorage.FundStates.FundClosed ||
-                fund.isBeneficiary[msg.sender],
+                fund.isBeneficiary[msg.sender] ||
+                expelledBeforeBeneficiary,
             "You must be a beneficiary"
         );
 
@@ -273,14 +278,6 @@ contract FundFacet is IFund {
         if (hasCollateralPool) {
             LibCollateral._withdrawReimbursement(termId, msg.sender);
         }
-    }
-
-    /// @param termId the id of the term
-    /// @param beneficiary the address of the participant to check
-    /// @return true if the participant is a beneficiary
-    function isBeneficiary(uint termId, address beneficiary) external view returns (bool) {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        return fund.isBeneficiary[beneficiary];
     }
 
     /// @notice function to pay the actual contribution for the cycle
@@ -356,7 +353,7 @@ contract FundFacet is IFund {
         if (EnumerableSet.remove(_fund._participants, beneficiary)) {
             // ..Then add them to the benificiaries set
             EnumerableSet.add(_fund._beneficiaries, beneficiary);
-        } // If this if-statement fails, this means we're dealing with a graced defaulter
+        }
 
         // Update the mapping to track who's been beneficiary
         _fund.isBeneficiary[beneficiary] = true;
@@ -396,11 +393,19 @@ contract FundFacet is IFund {
             "Expellant not found"
         );
 
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[_term.termId];
+
         _fund.isParticipant[_expellant] = false;
+        collateral.isCollateralMember[_expellant] = false;
+        // If the expellant has not been a beneficiary before, mark them as expelledBeforeBeneficiary
+        if (!_fund.isBeneficiary[_expellant]) {
+            _fund.expelledBeforeBeneficiary[_expellant] = true;
+        }
 
         // Lastly, lower the amount of participants
         --_term.totalParticipants;
-        // collateral.isCollateralMember[_expellant] = false; // todo: needed? it is set also on whoExpelled
         ++_fund.expelledParticipants;
 
         emit OnDefaulterExpelled(_term.termId, _fund.currentCycle, _expellant);
@@ -446,17 +451,22 @@ contract FundFacet is IFund {
             ._collateralStorage()
             .collaterals[_term.termId];
 
-        uint remainingCyclesContribution = IGetters(address(this))
-            .getRemainingCyclesContributionWei(_term.termId);
+        bool expelledBeforeBeneficiary = _fund.expelledBeforeBeneficiary[_user];
 
-        uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
-
-        if (collateral.collateralMembersBank[_user] < neededCollateral) {
-            _fund.beneficiariesFrozenPool[_user] = true;
-        } else {
+        if (expelledBeforeBeneficiary) {
             _fund.beneficiariesFrozenPool[_user] = false;
-        }
+        } else {
+            uint remainingCyclesContribution = IGetters(address(this))
+                .getRemainingCyclesContributionWei(_term.termId);
 
+            uint neededCollateral = (110 * remainingCyclesContribution) / 100; // 1.1 x RCC
+
+            if (collateral.collateralMembersBank[_user] < neededCollateral) {
+                _fund.beneficiariesFrozenPool[_user] = true;
+            } else {
+                _fund.beneficiariesFrozenPool[_user] = false;
+            }
+        }
         return _fund.beneficiariesFrozenPool[_user];
     }
 }

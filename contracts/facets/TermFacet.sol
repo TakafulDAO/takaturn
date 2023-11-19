@@ -22,8 +22,6 @@ import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 /// @notice This is used to deploy the collateral & fund contracts
 /// @dev v3.0 (Diamond)
 contract TermFacet is ITerm {
-    uint public constant TERM_VERSION = 2;
-
     event OnTermCreated(uint indexed termId, address indexed termOwner);
     event OnCollateralDeposited(uint indexed termId, address indexed user, uint amount);
     event OnTermFilled(uint indexed termId);
@@ -183,7 +181,7 @@ contract TermFacet is ITerm {
         // Need to check each user because they can have different collateral amounts
         for (uint i; i < depositorsArrayLength; ) {
             require(
-                !ICollateral(address(this)).isUnderCollaterized(term.termId, depositors[i]),
+                !LibCollateral._isUnderCollaterized(term.termId, depositors[i]),
                 "Eth prices dropped"
             );
 
@@ -203,6 +201,17 @@ contract TermFacet is ITerm {
                     // If someone opted in, create the yield generator
                     _createYieldGenerator(term, collateral);
                     break;
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+        } else {
+            // If the lock is set to true, before the term starts and after users have joined term
+            // There is a chance that somebody has opted in for yield generation
+            for (uint i; i < depositorsArrayLength; ) {
+                if (yield.hasOptedIn[depositors[i]]) {
+                    yield.hasOptedIn[depositors[i]] = false;
                 }
                 unchecked {
                     ++i;
@@ -266,29 +275,9 @@ contract TermFacet is ITerm {
 
         require(term.state != LibTermStorage.TermStates.ExpiredTerm, "Term already expired");
 
-        uint depositorsArrayLength = collateral.depositors.length;
-
-        for (uint i; i < depositorsArrayLength; ) {
-            address depositor = collateral.depositors[i];
-
-            if (depositor != address(0)) {
-                uint amount = collateral.collateralMembersBank[depositor];
-
-                collateral.collateralPaymentBank[depositor] += amount;
-                collateral.collateralMembersBank[depositor] = 0;
-                collateral.isCollateralMember[depositor] = false;
-                collateral.depositors[i] = address(0);
-                --collateral.counterMembers;
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-
         term.state = LibTermStorage.TermStates.ExpiredTerm;
         collateral.initialized = false;
-        collateral.state = LibCollateralStorage.CollateralStates.Closed;
+        collateral.state = LibCollateralStorage.CollateralStates.ReleasingCollateral;
 
         emit OnTermExpired(_termId);
     }
@@ -303,7 +292,7 @@ contract TermFacet is ITerm {
         LibYieldGenerationStorage.YieldProviders storage yieldProviders = LibYieldGenerationStorage
             ._yieldProviders();
 
-        uint amountDeposited;
+        uint amountToYield;
 
         address[] memory depositors = _collateral.depositors;
         uint depositorsArrayLength = depositors.length;
@@ -311,7 +300,10 @@ contract TermFacet is ITerm {
         for (uint i; i < depositorsArrayLength; ) {
             if (yield.hasOptedIn[depositors[i]]) {
                 yield.yieldUsers.push(depositors[i]);
-                amountDeposited += _collateral.collateralMembersBank[depositors[i]];
+                yield.depositedCollateralByUser[depositors[i]] =
+                    (_collateral.collateralMembersBank[depositors[i]] * 90) /
+                    100;
+                amountToYield += yield.depositedCollateralByUser[depositors[i]];
             }
 
             unchecked {
@@ -319,13 +311,13 @@ contract TermFacet is ITerm {
             }
         }
 
-        if (amountDeposited > 0) {
+        if (amountToYield > 0) {
             yield.startTimeStamp = block.timestamp;
             yield.initialized = true;
             yield.providerAddresses["ZaynZap"] = yieldProviders.providerAddresses["ZaynZap"];
             yield.providerAddresses["ZaynVault"] = yieldProviders.providerAddresses["ZaynVault"];
 
-            LibYieldGeneration._depositYG(_term.termId, amountDeposited);
+            LibYieldGeneration._depositYG(_term.termId, amountToYield);
         }
     }
 }

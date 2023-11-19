@@ -8,7 +8,6 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 library LibFundStorage {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    uint public constant FUND_VERSION = 1;
     bytes32 constant FUND_POSITION = keccak256("diamond.standard.fund");
     bytes32 constant FUND_STORAGE_POSITION = keccak256("diamond.standard.fund.storage");
 
@@ -45,6 +44,7 @@ library LibFundStorage {
         EnumerableSet.AddressSet _defaulters; // Both participants and beneficiaries who have defaulted this cycle
         uint expelledParticipants; // Total amount of participants that have been expelled so far
         uint totalAmountOfCycles;
+        mapping(address => bool) expelledBeforeBeneficiary; // Mapping to keep track of who has been expelled before being a beneficiary
     }
 
     struct FundStorage {

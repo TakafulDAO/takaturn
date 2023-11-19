@@ -4,7 +4,7 @@ const { developmentChains, isDevnet, isFork, networkConfig } = require("../../..
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Initialization unit tests", function () {
+    : describe("Unit tests. Initialization", function () {
           const chainId = network.config.chainId
 
           let takaturnDiamond

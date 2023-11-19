@@ -96,7 +96,7 @@ contract CollateralFacet is ICollateral {
                 }
             }
 
-            // Finally, divide the share equally among non-beneficiaries //todo: check if this is still needed
+            // Finally, divide the share equally among non-beneficiaries
             collateralToDistribute = collateralToDistribute / nonBeneficiaryCounter;
             for (uint i; i < nonBeneficiaryCounter; ) {
                 collateral.collateralPaymentBank[nonBeneficiaries[i]] += collateralToDistribute;
@@ -137,7 +137,6 @@ contract CollateralFacet is ICollateral {
                 _fund.isExemptedOnCycle[expellantBeneficiaryCycle].exempted[
                     _nonBeneficiaries[i]
                 ] = true;
-                // TODO: need to test this
                 unchecked {
                     ++i;
                 }
@@ -149,6 +148,8 @@ contract CollateralFacet is ICollateral {
     /// @dev This follows the pull-over-push pattern.
     /// @param termId term id
     function withdrawCollateral(uint termId) external {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
@@ -157,23 +158,36 @@ contract CollateralFacet is ICollateral {
             ._yieldStorage()
             .yields[termId];
 
+        LibTermStorage.Term memory term = LibTermStorage._termStorage().terms[termId];
+
         uint userCollateral = collateral.collateralMembersBank[msg.sender];
         require(userCollateral > 0, "Collateral empty");
 
         bool success;
-        // Withdraw all the user has
-        if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
+        bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
+        // Withdraw all the user has.
+        if (
+            collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral ||
+            expelledBeforeBeneficiary
+        ) {
+            // First case: The collateral is released or the user was expelled before being a beneficiary
             collateral.collateralMembersBank[msg.sender] = 0;
 
-            _withdrawFromYield(termId, msg.sender, userCollateral, yield);
+            if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
+                _withdrawFromYield(termId, msg.sender, userCollateral, yield);
+            }
+
             (success, ) = payable(msg.sender).call{value: userCollateral}("");
 
-            --collateral.counterMembers; // todo: Is this needed?
+            if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
+                --collateral.counterMembers;
+            }
 
             emit OnCollateralWithdrawal(termId, msg.sender, userCollateral);
         }
         // Or withdraw partially
         else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
+            // Second case: The term is on an ongoing cycle, the user has not been expelled
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
             uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
                 termId
@@ -185,6 +199,7 @@ contract CollateralFacet is ICollateral {
                 collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
                 _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
+
                 (success, ) = payable(msg.sender).call{value: allowedWithdrawal}("");
 
                 emit OnCollateralWithdrawal(termId, msg.sender, allowedWithdrawal);
@@ -202,15 +217,6 @@ contract CollateralFacet is ICollateral {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         require(fund.currentState == LibFundStorage.FundStates.FundClosed, "Wrong state");
         LibCollateral._setState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral);
-    }
-
-    /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
-    /// @dev This will revert if called during ReleasingCollateral or after
-    /// @param termId The term id
-    /// @param member The user to check for
-    /// @return Bool check if member is below 1.0x of collateralDeposit
-    function isUnderCollaterized(uint termId, address member) external view returns (bool) {
-        return _isUnderCollaterized(termId, member);
     }
 
     /// @notice allow the owner to empty the Collateral after 180 days
@@ -233,7 +239,6 @@ contract CollateralFacet is ICollateral {
         require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
 
         uint totalToWithdraw;
-        // todo: event for withdrawal
         uint depositorsLength = collateral.depositors.length;
         for (uint i; i < depositorsLength; ) {
             address depositor = collateral.depositors[i];
@@ -256,32 +261,6 @@ contract CollateralFacet is ICollateral {
         require(success);
     }
 
-    /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
-    /// @dev This will revert if called during ReleasingCollateral or after
-    /// @param _termId The fund id
-    /// @param _member The user to check for
-    /// @return Bool check if member is below 1.0x of collateralDeposit
-    function _isUnderCollaterized(uint _termId, address _member) internal view returns (bool) {
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[_termId];
-
-        uint collateralLimit;
-        uint memberCollateral = collateral.collateralMembersBank[_member];
-
-        if (!LibFundStorage._fundExists(_termId)) {
-            // Only check here when starting the term
-            (, , , collateralLimit, ) = IGetters(address(this)).getDepositorCollateralSummary(
-                _member,
-                _termId
-            );
-        } else {
-            collateralLimit = IGetters(address(this)).getRemainingCyclesContributionWei(_termId);
-        }
-
-        return (memberCollateral < collateralLimit);
-    }
-
     /// @param _collateral Collateral storage
     /// @param _term Term storage
     /// @param _defaulters Defaulters array
@@ -293,7 +272,7 @@ contract CollateralFacet is ICollateral {
         LibFundStorage.Fund storage _fund,
         address[] memory _defaulters
     ) internal returns (uint, address[] memory) {
-        // require(_defaulters.length > 0, "No defaulters"); // todo: needed? only call this function when there are defaulters
+        // require(_defaulters.length > 0, "No defaulters");
 
         address[] memory expellants = new address[](_defaulters.length);
         uint expellantsCounter;
@@ -310,7 +289,7 @@ contract CollateralFacet is ICollateral {
             uint collateralAmount = _collateral.collateralMembersBank[_defaulters[i]];
             if (defaulterState.isBeneficiary) {
                 // Has the user been beneficiary?
-                if (_isUnderCollaterized(_term.termId, _defaulters[i])) {
+                if (LibCollateral._isUnderCollaterized(_term.termId, _defaulters[i])) {
                     // Is the collateral below 1.0 X RCC?
                     if (_fund.beneficiariesFrozenPool[_defaulters[i]]) {
                         // Is the pool currently frozen?
@@ -521,7 +500,13 @@ contract CollateralFacet is ICollateral {
         LibYieldGenerationStorage.YieldGeneration storage _yieldStorage
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
-            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, _amount, _user);
+            uint amountToWithdraw;
+            if (_amount > _yieldStorage.depositedCollateralByUser[_user]) {
+                amountToWithdraw = _yieldStorage.depositedCollateralByUser[_user];
+            } else {
+                amountToWithdraw = _amount;
+            }
+            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, amountToWithdraw, _user);
         } else {
             withdrawnYield = 0;
         }

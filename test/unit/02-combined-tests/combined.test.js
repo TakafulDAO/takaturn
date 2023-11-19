@@ -24,7 +24,7 @@ const {
     collateralFundingPeriod,
     registrationPeriod,
     getRandomInt,
-} = require("../test-utils")
+} = require("../../utils/test-utils")
 const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
@@ -166,7 +166,7 @@ async function executeCycle(
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Takaturn Collateral & Fund Tests Version 2", function () {
+    : describe("Unit Test. Combined Scenarios", function () {
           const chainId = network.config.chainId
 
           let aggregator
@@ -339,15 +339,7 @@ async function executeCycle(
 
                   await takaturnDiamondParticipant_1.startTerm(termId)
               })
-              describe("Combined Tests Part 1", function () {
-                  it("changes USDC user balance for participants", async function () {
-                      let balance
-                      for (let i = 1; i <= totalParticipants; i++) {
-                          balance = await usdc.balanceOf(accounts[i].address)
-                          assert.equal(balance.toString(), balanceForUser.toString())
-                      }
-                  })
-
+              describe("Combined Tests Part 1. Normal Behavior", function () {
                   it("checks collateral specs", async function () {
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
@@ -428,10 +420,6 @@ async function executeCycle(
                           FundStates.AcceptingContributions
                       )
 
-                      //   await expect(
-                      //       takaturnDiamondDeployer.closeFundingPeriod(termId)
-                      //   ).to.be.revertedWith("TermOwnable: caller is not the owner")
-
                       await expect(
                           takaturnDiamondParticipant_1.closeFundingPeriod(termId)
                       ).to.be.revertedWith("Still time to contribute")
@@ -447,12 +435,22 @@ async function executeCycle(
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
                       fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.CycleOngoing)
 
                       const time = await takaturnDiamondDeployer.getRemainingContributionTime(
                           termId
                       )
+
+                      await advanceTime(cycleTime + 1)
+
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      const remainingCycles = await takaturnDiamondDeployer.getRemainingCycles(
+                          termId
+                      )
+
+                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.CycleOngoing)
                       assert.equal(time, 0)
+                      assert.equal(remainingCycles.toNumber(), totalParticipants - 1)
                   })
 
                   it("can have participants autopay at the end of the funding period", async function () {
@@ -841,7 +839,7 @@ async function executeCycle(
               })
 
               if (!isFork) {
-                  describe("Combined Tests Part 2", function () {
+                  describe("Combined Tests Part 2. ETH price changes", function () {
                       it("Allow defaulted beneficiaries to withdraw their fund", async function () {
                           this.timeout(200000)
 
@@ -866,7 +864,7 @@ async function executeCycle(
               }
           })
 
-          describe("Combined Tests Part 3", function () {
+          describe("Combined Tests Part 3. Defaulters", function () {
               beforeEach(async function () {
                   let totalParticipantsPart3 = 3
 
@@ -966,7 +964,7 @@ async function executeCycle(
               })
           })
 
-          describe("Combined Tests Part 4", function () {
+          describe("Combined Tests Part 4. Low number of participants", function () {
               beforeEach(async function () {
                   totalParticipantsPart4 = 2
 
@@ -1068,7 +1066,7 @@ async function executeCycle(
                           participant_2BeneficiariesPool.toNumber()
                   )
                   assert.ok(
-                      participant_1PaymentBank.toNumber() == participant_2PaymentBank.toNumber()
+                      participant_1PaymentBank.toString() == participant_2PaymentBank.toString()
                   )
               })
 

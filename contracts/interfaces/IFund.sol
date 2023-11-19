@@ -36,6 +36,4 @@ interface IFund {
     /// @notice Called by the beneficiary to withdraw the fund
     /// @dev This follows the pull-over-push pattern.
     function withdrawFund(uint termId) external;
-
-    function isBeneficiary(uint termId, address beneficiary) external view returns (bool);
 }

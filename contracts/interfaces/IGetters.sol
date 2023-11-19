@@ -109,6 +109,13 @@ interface IGetters {
         address user
     ) external view returns (uint allowedWithdrawal);
 
+    /// @notice Checks if a user has a collateral below 1.0x of total contribution amount
+    /// @dev This will revert if called during ReleasingCollateral or after
+    /// @param termId The term id
+    /// @param member The user to check for
+    /// @return Bool check if member is below 1.0x of collateralDeposit
+    function isUnderCollaterized(uint termId, address member) external view returns (bool);
+
     // FUND GETTERS
     /// @notice Gets the fund summary of a term
     /// @param termId the id of the term
@@ -163,6 +170,16 @@ interface IGetters {
     /// @return remaining contribution time in seconds
     function getRemainingContributionTime(uint termId) external view returns (uint);
 
+    /// @param termId the id of the term
+    /// @param beneficiary the address of the participant to check
+    /// @return true if the participant is a beneficiary
+    function isBeneficiary(uint termId, address beneficiary) external view returns (bool);
+
+    /// @param termId the id of the term
+    /// @param user the address of the participant to check
+    /// @return true if the participant is expelled before being a beneficiary
+    function expelledBeforeBeneficiary(uint termId, address user) external view returns (bool);
+
     // CONVERSION GETTERS
 
     function getToCollateralConversionRate(uint USDAmount) external view returns (uint);
@@ -173,15 +190,40 @@ interface IGetters {
 
     function userHasoptedInYG(uint termId, address user) external view returns (bool);
 
-    function userAPY(uint termId, address user) external returns (uint256);
+    function userAPY(uint termId, address user) external view returns (uint256);
 
-    function termAPY(uint termId) external returns (uint256);
+    function termAPY(uint termId) external view returns (uint256);
 
     function yieldDistributionRatio(uint termId, address user) external view returns (uint256);
 
-    function totalYieldGenerated(uint termId) external returns (uint);
+    function totalYieldGenerated(uint termId) external view returns (uint);
 
-    function userYieldGenerated(uint termId, address user) external returns (uint);
+    function userYieldGenerated(uint termId, address user) external view returns (uint);
+
+    /// @param user the depositor address
+    /// @param termId the collateral id
+    /// @return hasOptedIn
+    /// @return withdrawnYield
+    /// @return withdrawnCollateral
+    /// @return availableYield
+    /// @return depositedCollateralByUser
+    function getUserYieldSummary(
+        address user,
+        uint termId
+    ) external view returns (bool, uint, uint, uint, uint);
+
+    /// @param termId the collateral id
+    /// @return initialized
+    /// @return startTimeStamp
+    /// @return totalDeposit
+    /// @return currentTotalDeposit
+    /// @return totalShares
+    /// @return yieldUsers
+    /// @return vaultAddress
+    /// @return zapAddress
+    function getYieldSummary(
+        uint termId
+    ) external view returns (bool, uint, uint, uint, uint, address[] memory, address, address);
 
     function getYieldLockState() external view returns (bool);
 

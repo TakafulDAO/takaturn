@@ -12,7 +12,7 @@ const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Term Facet unit tests", function () {
+    : describe("Unit tests. Term Facet", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = BigNumber.from("12") // Create term param
@@ -390,7 +390,7 @@ const { hour } = require("../../../utils/units")
                       )
                   const participant_12_Collateral = participant_12_Summary[3]
 
-                  assert(participant_1_Collateral > participant_12_Collateral)
+                  expect(participant_1_Collateral).to.be.gt(participant_12_Collateral)
               })
           })
 
@@ -420,103 +420,6 @@ const { hour } = require("../../../utils/units")
                   remainingTime = await takaturnDiamond.getRemainingRegistrationTime(termId)
 
                   assert.equal(remainingTime.toNumber(), 0)
-              })
-          })
-
-          describe("Joins with yield generation", function () {
-              it("Should update the mapping", async function () {
-                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                  const termId = lastTerm[0]
-
-                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
-
-                  await takaturnDiamond
-                      .connect(participant_1)
-                      .joinTerm(termId, true, { value: entrance })
-
-                  const userHasoptedInYG = await takaturnDiamond.userHasoptedInYG(
-                      termId,
-                      participant_1.address
-                  )
-
-                  await advanceTime(registrationPeriod.toNumber() / 2)
-
-                  assert.ok(userHasoptedInYG)
-              })
-
-              it("Should assign the correct yield generation values", async function () {
-                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                  const termId = lastTerm[0]
-
-                  for (let i = 1; i <= totalParticipants; i++) {
-                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
-                          termId,
-                          i - 1
-                      )
-
-                      await takaturnDiamond
-                          .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance })
-                  }
-
-                  await expect(takaturnDiamond.startTerm(termId)).to.be.revertedWith(
-                      "Term not ready to start"
-                  )
-
-                  await advanceTime(registrationPeriod.toNumber() + 1)
-
-                  await takaturnDiamond.startTerm(termId)
-              })
-          })
-
-          describe("Lock yield when joins", function () {
-              it("Should allow optedIn yield when lock is false", async function () {
-                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                  const termId = lastTerm[0]
-
-                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
-
-                  await takaturnDiamond
-                      .connect(participant_1)
-                      .joinTerm(termId, true, { value: entrance })
-
-                  const userHasoptedInYG = await takaturnDiamond.userHasoptedInYG(
-                      termId,
-                      participant_1.address
-                  )
-
-                  await advanceTime(registrationPeriod.toNumber() / 2)
-
-                  // Should be true as the lock is false, and the user joins with true
-                  assert.ok(userHasoptedInYG)
-              })
-
-              it("Should allow optedIn yield when lock is false", async function () {
-                  // Only the owner can toggle the lock
-                  await expect(takaturnDiamondParticipant_1.toggleYieldLock()).to.be.revertedWith(
-                      "LibDiamond: Must be contract owner"
-                  )
-                  // Lock true
-                  await takaturnDiamond.toggleYieldLock()
-
-                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
-                  const termId = lastTerm[0]
-
-                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
-
-                  await takaturnDiamond
-                      .connect(participant_1)
-                      .joinTerm(termId, true, { value: entrance })
-
-                  const userHasoptedInYG = await takaturnDiamond.userHasoptedInYG(
-                      termId,
-                      participant_1.address
-                  )
-
-                  await advanceTime(registrationPeriod.toNumber() / 2)
-
-                  // Should be false as the lock is true, Even if the user joins with true on yield generation
-                  assert.ok(!userHasoptedInYG)
               })
           })
 

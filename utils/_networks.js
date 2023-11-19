@@ -23,8 +23,9 @@ const networkConfig = {
         usdcUsdPriceFeed: "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3", // Same as mainnet
         usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // Same as mainnet
         usdcWhale: "0xe68ee8a12c611fd043fb05d65e1548dc1383f2b9", // Same as mainnet
-        zaynfiZap: "0x233349f6d0a6f79758BE5E8f75C51b78D7edD60e",
-        zaynfiVault: "0xE68F590a735Ec00eD292AC9849aFfcC2D8B50aF1",
+        zaynfiZap: "0x1534c33FF68cFF9E0c5BABEe5bE72bf4cad0826b", // Same as mainnet
+        zaynfiVault: "0xE68F590a735Ec00eD292AC9849aFfcC2D8B50aF1", // Same as mainnet
+        takaturnDiamond: "0x00042e3895f5eF16b96bc904B9ACc92509624eA2", // Same as mainnet
     },
     42161: {
         name: "mainnet_arbitrum",
@@ -32,8 +33,9 @@ const networkConfig = {
         usdcUsdPriceFeed: "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
         usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // https://developers.circle.com/developer/docs/supported-chains-and-currencies#native-usdc
         usdcWhale: "0xe68ee8a12c611fd043fb05d65e1548dc1383f2b9",
-        zaynfiZap: "0x233349f6d0a6f79758BE5E8f75C51b78D7edD60e", // https://zaynfi.notion.site/TakaDAO-Zayn-69307edbb64d4830a868e835ac7fb8a7
+        zaynfiZap: "0x1534c33FF68cFF9E0c5BABEe5bE72bf4cad0826b", // https://zaynfi.notion.site/TakaDAO-Zayn-69307edbb64d4830a868e835ac7fb8a7
         zaynfiVault: "0xE68F590a735Ec00eD292AC9849aFfcC2D8B50aF1", // https://zaynfi.notion.site/TakaDAO-Zayn-69307edbb64d4830a868e835ac7fb8a7
+        takaturnDiamond: "0x00042e3895f5eF16b96bc904B9ACc92509624eA2",
     },
     421613: {
         name: "testnet_arbitrum",
@@ -43,6 +45,7 @@ const networkConfig = {
         usdcWhale: "0x6ed0c4addc308bb800096b8daa41de5ae219cd36",
         zaynfiZap: "0xc931962FAF7eC41CcE5672c058080d655193A77E", // https://zaynfi.notion.site/TakaDAO-Zayn-69307edbb64d4830a868e835ac7fb8a7
         zaynfiVault: "0xC8d4424f1c77CD148aD31b852E8a9fbEC3FAE4e4", // https://zaynfi.notion.site/TakaDAO-Zayn-69307edbb64d4830a868e835ac7fb8a7
+        takaturnDiamond: "0x9FBDb4A7E0fe9EA27148Dcd165a61AFEF4fAFf89",
     },
 }
 

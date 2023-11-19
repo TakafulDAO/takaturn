@@ -8,13 +8,13 @@ interface IZaynVaultV2TakaDao {
 
     function withdrawZap(uint256 _shares, uint256 _term) external;
 
-    function want() external pure returns (address);
+    function want() external view returns (address);
 
-    function balance() external pure returns (uint256);
+    function balance() external view returns (uint256);
 
-    function strategy() external pure returns (address);
+    function strategy() external view returns (address);
 
-    function balanceOf(uint256 term) external returns (uint256);
+    function balanceOf(uint256 term) external view returns (uint256);
 
     function getPricePerFullShare() external view returns (uint256);
 }
