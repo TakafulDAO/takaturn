@@ -1,7 +1,7 @@
 require("dotenv").config()
 
 require("@nomiclabs/hardhat-waffle")
-require("@nomiclabs/hardhat-etherscan")
+require("@nomicfoundation/hardhat-verify")
 require("hardhat-deploy")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
@@ -223,6 +223,19 @@ module.exports = {
             arbitrumGoerli: ARBISCAN_API_KEY,
             arbitrumSepolia: ARBISCAN_API_KEY,
         },
+        customChains: [
+            {
+                network: "arbitrumSepolia",
+                chainId: 421614,
+                urls: {
+                    apiURL: "https://api-sepolia.arbiscan.io/api",
+                    browserURL: "https://sepolia.arbiscan.io/",
+                },
+            },
+        ],
+    },
+    sourcify: {
+        enabled: true,
     },
     gasReporter: {
         enabled: GAS_REPORT === "true",
