@@ -38,13 +38,23 @@ const networkConfig = {
         takaturnDiamond: "0x00042e3895f5eF16b96bc904B9ACc92509624eA2",
     },
     421613: {
-        name: "testnet_arbitrum",
+        name: "testnet_arbitrum_goerli",
         ethUsdPriceFeed: "0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
         usdcUsdPriceFeed: "0x1692Bdd32F31b831caAc1b0c9fAF68613682813b", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
-        usdc: "0xfd064A18f3BF249cf1f87FC203E90D8f650f2d63", // https://developers.circle.com/developer/docs/usdc-on-testnet#usdc-on-arbitrum-testnet
+        usdc: "0xfd064A18f3BF249cf1f87FC203E90D8f650f2d63", // https://developers.circle.com/stablecoins/docs/usdc-on-testing-networks
         usdcWhale: "0x6ed0c4addc308bb800096b8daa41de5ae219cd36",
         zaynfiZap: "0xc931962FAF7eC41CcE5672c058080d655193A77E", // https://zaynfi.notion.site/TakaDAO-Zayn-69307edbb64d4830a868e835ac7fb8a7
         zaynfiVault: "0xC8d4424f1c77CD148aD31b852E8a9fbEC3FAE4e4", // https://zaynfi.notion.site/TakaDAO-Zayn-69307edbb64d4830a868e835ac7fb8a7
+        takaturnDiamond: "0x9FBDb4A7E0fe9EA27148Dcd165a61AFEF4fAFf89",
+    },
+    421614: {
+        name: "testnet_arbitrum_sepolia",
+        ethUsdPriceFeed: "0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
+        usdcUsdPriceFeed: "0x0153002d20B96532C639313c2d54c3dA09109309", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
+        usdc: "0xfd064A18f3BF249cf1f87FC203E90D8f650f2d63", // todo: to get
+        usdcWhale: "0x6ed0c4addc308bb800096b8daa41de5ae219cd36",
+        zaynfiZap: "0x10A40F8D76a7A38bef8fF366329D9305D5Cc4986",
+        zaynfiVault: "0x0b9f2C8d7FD305D1C7FE8eb132865d1252F42D37",
         takaturnDiamond: "0x9FBDb4A7E0fe9EA27148Dcd165a61AFEF4fAFf89",
     },
 }
