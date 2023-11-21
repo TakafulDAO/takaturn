@@ -7,7 +7,7 @@ import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.s
 import {LibWithdrawGoerliEth} from "../libraries/LibWithdrawGoerliEth.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
-contract WithdrawGoerliEthFacet {
+contract WithdrawTestEthFacet {
     event OnGoerliEthWithdraw(uint indexed amount, address indexed receiver);
 
     modifier onlyOwner() {
@@ -20,7 +20,7 @@ contract WithdrawGoerliEthFacet {
         _;
     }
 
-    function withdrawGoerliEth() external onlyOwner onlyManager(msg.sender) {
+    function withdrawTestEth() external onlyOwner onlyManager(msg.sender) {
         uint balance = address(this).balance;
         (bool success, ) = payable(msg.sender).call{value: balance}("");
         require(success, "Withdraw failed");
