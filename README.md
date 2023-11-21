@@ -25,7 +25,12 @@ Takaturn operates on Arbitrum.
 Takaturn relies on smart contracts deployed by [Zaynfi](https://zayn.fi/) for Yield Generation.
 * Vault: 0xE68F590a735Ec00eD292AC9849aFfcC2D8B50aF1 
 * Strategy: 0x5da006dEA0B1F132b81370d3F51B721252b7e7bB 
-* Zap V2: 0x1534c33FF68cFF9E0c5BABEe5bE72bf4cad0826b 
+* Zap V2: 0x1534c33FF68cFF9E0c5BABEe5bE72bf4cad0826b
+
+## Version Control 
+To view the testnet and mainnet deployments, check out the tags under this repo. The tag naming convention follows [Semantic Versioning](https://semver.org/)
+* Deployment versions start from v2.0.0 to indicate Takaturn V2.
+* Tags related to testnet start with dev. Ex. dev2.0.0
 
 ## Walkthrough 
 
