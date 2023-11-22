@@ -87,7 +87,8 @@
     "summary:user:sepolia": "yarn hardhat userSummary --network testnet_arbitrum_sepolia --user-address",
     "summary:user:id:mainnet": "yarn hardhat userSummaryByTermId --network mainnet_arbitrum --user-address",
     "summary:user:id:goerli": "yarn hardhat userSummaryByTermId --network testnet_arbitrum_goerli --user-address",
-    "summary:user:id:sepolia": "yarn hardhat userSummaryByTermId --network testnet_arbitrum_sepolia --user-address"
+    "summary:user:id:sepolia": "yarn hardhat userSummaryByTermId --network testnet_arbitrum_sepolia --user-address",
+    "usdcMint:sepolia": "yarn hardhat usdcMint --network testnet_arbitrum_sepolia --user-address"
   },
   "dependencies": {
     "@chainlink/contracts": "^0.6.1",

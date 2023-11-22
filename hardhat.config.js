@@ -21,6 +21,7 @@ const { collateralSummary } = require("./tasks/collateralSummary")
 const { yieldSummary } = require("./tasks/yieldSummary")
 const { userSummary } = require("./tasks/userSummary")
 const { userSummaryByTermId } = require("./tasks/userSummaryByTermId")
+const { usdcMint } = require("./tasks/usdcMint")
 
 /******************************************** Private Keys *********************************************/
 const DEPLOYER_PK = process.env.DEPLOYER_PK
@@ -141,6 +142,12 @@ task("userSummaryByTermId", "Prints the user summary for a term")
     .addParam("termId", "The term Id to check")
     .setAction(async (taskArguments, hre) => {
         return userSummaryByTermId(taskArguments, hre)
+    })
+
+task("usdcMint", "Mint 10000 USDC to user on arbitrum sepolia testnet")
+    .addParam("userAddress", "The user address to check")
+    .setAction(async (taskArguments, hre) => {
+        return usdcMint(taskArguments, hre)
     })
 /***************************************** Config ******************************************************/
 
