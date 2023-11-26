@@ -565,8 +565,8 @@ contract GettersFacet is IGetters {
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
         return
-            ((userYieldGenerated(termId, user) / yield.currentTotalDeposit) * 365 days) /
-            elaspedTime;
+            (((userYieldGenerated(termId, user) * 10 ** 18) / yield.currentTotalDeposit) *
+                365 days) / elaspedTime;
     }
 
     /// @notice This function is used to get a term APY
@@ -647,10 +647,10 @@ contract GettersFacet is IGetters {
             ._yieldStorage()
             .yields[termId];
 
-        return
-            yield.withdrawnYield[user] +
-            totalYieldGenerated(termId) *
-            yieldDistributionRatio(termId, user);
+        uint yieldDistributed = (totalYieldGenerated(termId) *
+            yieldDistributionRatio(termId, user)) / 10 ** 18;
+
+        return yield.withdrawnYield[user] + yieldDistributed;
     }
 
     /// @param user the depositor address
