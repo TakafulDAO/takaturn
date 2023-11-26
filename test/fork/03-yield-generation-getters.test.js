@@ -3,10 +3,11 @@ const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const { impersonateAccount, advanceTime } = require("../../utils/_helpers")
 const { balanceForUser } = require("../utils/test-utils")
+const { erc20UnitsFormat } = require("../../utils/units")
 
 !isFork || isMainnet
     ? describe.skip
-    : describe("Fork Mainnet test. Yield Getters", function () {
+    : describe.only("Fork Mainnet test. Yield Getters", function () {
           const chainId = network.config.chainId
 
           let takaturnDiamond, usdc, zaynZap
@@ -373,7 +374,7 @@ const { balanceForUser } = require("../utils/test-utils")
                   })
               })
 
-              describe("Total yield  generated", function () {
+              describe("Total yield generated", function () {
                   it("Without any withdraws", async function () {
                       const terms = await takaturnDiamond.getTermsId()
                       const termId = terms[0]
@@ -418,6 +419,16 @@ const { balanceForUser } = require("../utils/test-utils")
                           const totalYieldGeneratedAfter =
                               await takaturnDiamond.totalYieldGenerated(termId)
 
+                          const totalYieldGeneratedBeforeFormatted =
+                              erc20UnitsFormat(totalYieldGeneratedBefore)
+
+                          const totalYieldGeneratedAfterFormatted =
+                              erc20UnitsFormat(totalYieldGeneratedAfter)
+
+                          assert(totalYieldGeneratedBeforeFormatted > 0)
+                          assert(totalYieldGeneratedBeforeFormatted < 0.44)
+                          assert(totalYieldGeneratedAfterFormatted < 0.44)
+
                           assert(
                               totalYieldGeneratedBefore.toString() <
                                   totalYieldGeneratedAfter.toString()
@@ -438,6 +449,16 @@ const { balanceForUser } = require("../utils/test-utils")
 
                           const totalYieldGeneratedAfter =
                               await takaturnDiamond.totalYieldGenerated(termId)
+
+                          const totalYieldGeneratedBeforeFormatted =
+                              erc20UnitsFormat(totalYieldGeneratedBefore)
+
+                          const totalYieldGeneratedAfterFormatted =
+                              erc20UnitsFormat(totalYieldGeneratedAfter)
+
+                          assert(totalYieldGeneratedBeforeFormatted > 0)
+                          assert(totalYieldGeneratedBeforeFormatted < 0.44)
+                          assert(totalYieldGeneratedAfterFormatted < 0.44)
 
                           assert(
                               totalYieldGeneratedBefore.toString() <
@@ -498,8 +519,18 @@ const { balanceForUser } = require("../utils/test-utils")
                               participant_1
                           )
 
+                          const userYieldGeneratedBeforeFormatted =
+                              erc20UnitsFormat(userYieldGeneratedBefore)
+
+                          const userYieldGeneratedAfterFormatted =
+                              erc20UnitsFormat(userYieldGeneratedAfter)
+
+                          assert(userYieldGeneratedBeforeFormatted > 0)
+                          assert(userYieldGeneratedBeforeFormatted < 0.18)
+                          assert(userYieldGeneratedAfterFormatted < 0.19)
+
                           assert(
-                              userYieldGeneratedBefore.toString() >
+                              userYieldGeneratedBefore.toString() <
                                   userYieldGeneratedAfter.toString()
                           )
                       })
@@ -523,8 +554,18 @@ const { balanceForUser } = require("../utils/test-utils")
                               participant_1
                           )
 
+                          const userYieldGeneratedBeforeFormatted =
+                              erc20UnitsFormat(userYieldGeneratedBefore)
+
+                          const userYieldGeneratedAfterFormatted =
+                              erc20UnitsFormat(userYieldGeneratedAfter)
+
+                          assert(userYieldGeneratedBeforeFormatted > 0)
+                          assert(userYieldGeneratedBeforeFormatted < 0.18)
+                          assert(userYieldGeneratedAfterFormatted < 0.19)
+
                           assert(
-                              userYieldGeneratedBefore.toString() >
+                              userYieldGeneratedBefore.toString() <
                                   userYieldGeneratedAfter.toString()
                           )
                       })
