@@ -31,6 +31,7 @@
   },
   "scripts": {
     "compile": "yarn hardhat compile",
+    "compile:ci": "yarn hardhat compile --config hardhat-continuous-integration.config.js",
     "test": "yarn hardhat test",
     "test:ci": "yarn hardhat test ./test/integration/00-end-to-end.test.js --config hardhat-continuous-integration.config.js",
     "test:staging:mainnet": "yarn hardhat test --network mainnet_arbitrum",

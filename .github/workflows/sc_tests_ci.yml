@@ -22,7 +22,7 @@ jobs:
         run: yarn install
 
       - name: Compile contracts
-        run: yarn compile
+        run: yarn compile:ci
 
       - name: Run tests
         env:
