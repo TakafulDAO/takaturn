@@ -404,7 +404,7 @@ const { BigNumber } = require("ethers")
                   CollateralStates.ReleasingCollateral
               )
 
-              //******************************************** First cycle *********************************************************/
+              //   //******************************************** First cycle *********************************************************/
 
               // Start term
 
@@ -1117,13 +1117,6 @@ const { BigNumber } = require("ethers")
               await advanceTime(cycleTime + 1)
 
               //******************************************** Twelfth cycle *********************************************************/
-              const yieldDistributionRatio = await takaturnDiamond.yieldDistributionRatio(
-                  termId,
-                  participant_2.address
-              )
-
-              //   console.log("yieldDistributionRatio", yieldDistributionRatio.toString())
-
               await takaturnDiamond.startNewCycle(termId)
 
               fund = await takaturnDiamond.getFundSummary(termId)

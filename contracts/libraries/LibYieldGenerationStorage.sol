@@ -2,7 +2,6 @@
 pragma solidity 0.8.18;
 
 library LibYieldGenerationStorage {
-    uint public constant YIELD_GENERATION_VERSION = 1;
     bytes32 constant YIELD_PROVIDERS_POSITION = keccak256("diamond.standard.yield.providers");
     bytes32 constant YIELD_STORAGE_POSITION = keccak256("diamond.standard.yield.storage");
     bytes32 constant YIELD_LOCK_POSITION = keccak256("diamond.standard.yield.lock");
