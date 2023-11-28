@@ -22,7 +22,7 @@ jobs:
         run: yarn install
 
       - name: Compile contracts
-        run: yarn compile:ci
+        run: yarn hardhat compile --config hardhat-continuous-integration.config.js
 
       - name: Run tests
         env:
