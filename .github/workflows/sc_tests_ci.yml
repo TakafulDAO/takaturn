@@ -3,7 +3,7 @@ name: Run Tests on PR Creation
 on:
   pull_request:
     branches:
-      - dev
+      - main
 jobs:
   test:
     runs-on: ubuntu-latest
