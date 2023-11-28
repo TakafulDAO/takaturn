@@ -31,7 +31,6 @@
   },
   "scripts": {
     "compile": "yarn hardhat compile",
-    "compile:ci": "yarn hardhat compile --config hardhat-continuous-integration.config.js",
     "test": "yarn hardhat test",
     "test:staging:mainnet": "yarn hardhat test --network mainnet_arbitrum",
     "test:staging:goerli": "yarn hardhat test --network testnet_arbitrum",
@@ -42,7 +41,6 @@
     "coverage": "yarn hardhat coverage",
     "n": "yarn hardhat node",
     "deploy": "yarn hardhat deploy",
-    "deploy:ci": "yarn hardhat deploy --network hardhat --tags mocks --config hardhat-continuous-integration.config.js",
     "deploy:local": "yarn hardhat deploy --tags takaturn_deploy",
     "deploy:mainnet": "yarn hardhat deploy --network mainnet_arbitrum --tags takaturn_deploy",
     "deploy:goerli": "yarn hardhat deploy --network testnet_arbitrum --tags takaturn_deploy",
