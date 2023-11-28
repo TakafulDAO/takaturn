@@ -43,6 +43,7 @@
     "coverage": "yarn hardhat coverage",
     "n": "yarn hardhat node",
     "deploy": "yarn hardhat deploy",
+    "deploy:ci": "yarn hardhat deploy --network hardhat --tags mocks --config hardhat-continuous-integration.config.js",
     "deploy:local": "yarn hardhat deploy --tags takaturn_deploy",
     "deploy:mainnet": "yarn hardhat deploy --network mainnet_arbitrum --tags takaturn_deploy",
     "deploy:goerli": "yarn hardhat deploy --network testnet_arbitrum --tags takaturn_deploy",
