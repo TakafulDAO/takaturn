@@ -33,7 +33,7 @@
     "compile": "yarn hardhat compile",
     "compile:ci": "yarn hardhat compile --config hardhat-continuous-integration.config.js",
     "test": "yarn hardhat test",
-    "test:ci": "yarn hardhat test ./test/integration/00-end-to-end.test.js --config hardhat-continuous-integration.config.js",
+    "test:ci": "yarn hardhat test ./test/integration/00-end-to-end.test.js --config hardhat-continuous-integration.config.js --network hardhat",
     "test:staging:mainnet": "yarn hardhat test --network mainnet_arbitrum",
     "test:staging:goerli": "yarn hardhat test --network testnet_arbitrum",
     "contractsInfo": "yarn hardhat run scripts/contractsInfo.js --network testnet_arbitrum",
