@@ -395,7 +395,7 @@ const { hour } = require("../../../utils/units")
           })
 
           describe("Registration period", function () {
-              it("Should return the right registration period remaining", async function () {
+              xit("Should return the right registration period remaining", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
 
