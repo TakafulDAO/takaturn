@@ -45,8 +45,8 @@ jobs:
           TESTNET_DEPLOYER_PK: ${{ secrets.TESTNET_DEPLOYER_PK }}
         run: yarn test ./test/fork/03-yield-generation-getters.test.js --config hardhat-continuous-integration.config.js
 
-      - name: Test end to end
+      - name: Test term facet
         env:
           ARBITRUM_MAINNET_RPC_URL: ${{ secrets.ARBITRUM_MAINNET_RPC_URL }}
           TESTNET_DEPLOYER_PK: ${{ secrets.TESTNET_DEPLOYER_PK }}
-        run: yarn test ./test/integration/00-end-to-end.test.js --config hardhat-continuous-integration.config.js
+        run: yarn test ./test/unit/01-by-facet/01-term-facet.test.js --config hardhat-continuous-integration.config.js
