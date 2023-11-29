@@ -161,7 +161,9 @@ contract CollateralFacet is ICollateral {
         LibTermStorage.Term memory term = LibTermStorage._termStorage().terms[termId];
 
         uint userCollateral = collateral.collateralMembersBank[msg.sender];
-        require(userCollateral > 0, "Collateral empty");
+        if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
+            require(userCollateral > 0, "Collateral empty");
+        }
 
         bool success;
         bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
