@@ -175,10 +175,6 @@ contract CollateralFacet is ICollateral {
 
             if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
                 _withdrawFromYield(termId, msg.sender, userCollateral, yield);
-            } else {
-                // Can withdraw everything
-                userCollateral += collateral.collateralPaymentBank[msg.sender];
-                collateral.collateralPaymentBank[msg.sender] = 0;
             }
 
             (success, ) = payable(msg.sender).call{value: userCollateral}("");
