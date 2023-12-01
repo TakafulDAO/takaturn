@@ -753,7 +753,7 @@ async function executeCycle(
                   })
 
                   // This happens in the 1st cycle
-                  xit("returns remaining cycle time properly", async function () {
+                  it("returns remaining cycle time properly [ @skip-on-ci ]", async function () {
                       //todo: this one sometimes fails. check where to wait
                       this.timeout(200000)
 
@@ -797,7 +797,7 @@ async function executeCycle(
                   })
 
                   // This happens in the 1st cycle
-                  xit("returns remaining contribution time properly", async function () {
+                  it("returns remaining contribution time properly [ @skip-on-ci ]", async function () {
                       //todo: this one sometimes fails. check where to wait
                       this.timeout(200000)
 
