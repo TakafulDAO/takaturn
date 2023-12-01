@@ -66,18 +66,24 @@ library LibYieldGeneration {
         }
     }
 
+    /// @notice Conversion from shares to eth
+    /// @param _termId The term id
+    /// @param _yield The yield generation struct
     function _sharesToEth(
-        uint _currentShares,
-        uint _totalDeposit,
-        uint _totalShares
-    ) internal pure returns (uint) {
-        if (_totalShares == 0) {
-            return 0;
-        } else {
-            return (_currentShares * _totalDeposit) / _totalShares;
-        }
+        uint _termId,
+        LibYieldGenerationStorage.YieldGeneration storage _yield
+    ) internal view returns (uint) {
+        uint termBalance = IZaynVaultV2TakaDao(_yield.providerAddresses["ZaynVault"]).balanceOf(
+            _termId
+        );
+
+        uint pricePerShare = IZaynVaultV2TakaDao(_yield.providerAddresses["ZaynVault"])
+            .getPricePerFullShare();
+
+        return (termBalance * pricePerShare) / 10 ** 18;
     }
 
+    /// @notice Conversion from eth to shares
     function _ethToShares(
         uint _collateralAmount,
         uint _totalShares,
