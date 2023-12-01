@@ -41,7 +41,7 @@ library LibYieldGeneration {
             ._yieldStorage()
             .yields[_termId];
 
-        uint neededShares = _ethToShares(_collateralAmount, yield.totalShares, yield.totalDeposit);
+        uint neededShares = _ethToShares(_collateralAmount, yield);
 
         yield.withdrawnCollateral[_user] += _collateralAmount;
         yield.currentTotalDeposit -= _collateralAmount;
@@ -84,15 +84,15 @@ library LibYieldGeneration {
     }
 
     /// @notice Conversion from eth to shares
+    /// @param _collateralAmount The amount of collateral to withdraw
+    /// @param _yield The yield generation struct
     function _ethToShares(
         uint _collateralAmount,
-        uint _totalShares,
-        uint _totalDeposit
-    ) internal pure returns (uint) {
-        if (_totalDeposit == 0) {
-            return 0;
-        } else {
-            return (_collateralAmount * _totalShares) / _totalDeposit;
-        }
+        LibYieldGenerationStorage.YieldGeneration storage _yield
+    ) internal view returns (uint) {
+        uint pricePerShare = IZaynVaultV2TakaDao(_yield.providerAddresses["ZaynVault"])
+            .getPricePerFullShare();
+
+        return ((_collateralAmount * 10 ** 18) / pricePerShare);
     }
 }
