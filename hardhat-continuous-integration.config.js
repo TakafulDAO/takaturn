@@ -129,5 +129,7 @@ module.exports = {
     },
     mocha: {
         timeout: 300000,
+        grep: "@skip-on-ci", // Find everything with this tag
+        invert: true, // Run the grep's inverse set.
     },
 }
