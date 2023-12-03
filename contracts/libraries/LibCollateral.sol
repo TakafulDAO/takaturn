@@ -28,7 +28,6 @@ library LibCollateral {
     /// @param _termId term id
     /// @param _depositor Address of the depositor
     function _withdrawReimbursement(uint _termId, address _depositor) internal {
-        require(LibFundStorage._fundExists(_termId), "Fund does not exists");
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
