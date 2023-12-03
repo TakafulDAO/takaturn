@@ -194,8 +194,6 @@ interface IGetters {
 
     function termAPY(uint termId) external view returns (uint256);
 
-    function yieldDistributionRatio(uint termId, address user) external view returns (uint256);
-
     function totalYieldGenerated(uint termId) external view returns (uint);
 
     /// @param user the depositor address
