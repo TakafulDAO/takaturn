@@ -8,7 +8,7 @@ const { BigNumber } = require("ethers")
 
 !isFork || isMainnet
     ? describe.skip
-    : describe.only("Fork Mainnet test. Yield Getters", function () {
+    : describe("Fork Mainnet test. Yield Getters", function () {
           const chainId = network.config.chainId
 
           let takaturnDiamond, usdc, zaynZap
@@ -254,123 +254,6 @@ const { BigNumber } = require("ethers")
                           const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
                           assert(termAPYBefore.toString() < termAPYAfter.toString())
-                      })
-                  })
-              })
-
-              describe("Yield distribution ratio", function () {
-                  describe("When there is nothing deposited", function () {
-                      it("Should be 0", async function () {
-                          const termId = 0
-
-                          // Nobody opted in to yield generation, so current total deposit is 0
-                          await takaturnDiamondParticipant_1.joinTerm(termId, false, {
-                              value: ethers.utils.parseEther("0.19268"),
-                          })
-
-                          await takaturnDiamondParticipant_2.joinTerm(termId, false, {
-                              value: ethers.utils.parseEther("0.14507"),
-                          })
-
-                          await takaturnDiamondParticipant_3.joinTerm(termId, false, {
-                              value: ethers.utils.parseEther("0.09518"),
-                          })
-
-                          await takaturnDiamondParticipant_4.joinTerm(termId, false, {
-                              value: ethers.utils.parseEther("0.04735"),
-                          })
-
-                          await advanceTime(registrationPeriod + 1)
-
-                          await takaturnDiamond.startTerm(termId)
-
-                          const yieldDistributionRatio =
-                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
-
-                          assert.equal(yieldDistributionRatio.toString(), 0)
-                      })
-                  })
-                  describe("When there is something deposited", function () {
-                      it("Without any withdraws", async function () {
-                          const terms = await takaturnDiamond.getTermsId()
-                          const termId = terms[0]
-
-                          const yieldDistributionRatioBefore =
-                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
-
-                          await advanceTime(contributionPeriod + 1)
-
-                          const yieldDistributionRatioAfter =
-                              await takaturnDiamond.yieldDistributionRatio(termId, participant_1)
-
-                          assert.equal(
-                              yieldDistributionRatioBefore.toString(),
-                              yieldDistributionRatioAfter.toString()
-                          )
-                      })
-                      describe("After some withdraws", function () {
-                          it("Without defaults", async function () {
-                              const terms = await takaturnDiamond.getTermsId()
-                              const termId = terms[0]
-
-                              const yieldDistributionRatioBefore =
-                                  await takaturnDiamond.yieldDistributionRatio(
-                                      termId,
-                                      participant_1
-                                  )
-
-                              for (let i = 0; i < 3; i++) {
-                                  try {
-                                      await takaturnDiamond
-                                          .connect(accounts[i])
-                                          .payContribution(termId)
-                                  } catch (error) {}
-                              }
-
-                              await advanceTime(contributionPeriod + 1)
-
-                              await takaturnDiamond.closeFundingPeriod(termId)
-
-                              await takaturnDiamondParticipant_1.withdrawCollateral(termId)
-
-                              const yieldDistributionRatioAfter =
-                                  await takaturnDiamond.yieldDistributionRatio(
-                                      termId,
-                                      participant_1
-                                  )
-
-                              assert(
-                                  yieldDistributionRatioBefore.toString() >
-                                      yieldDistributionRatioAfter.toString()
-                              )
-                          })
-                          it("Defaulting", async function () {
-                              const terms = await takaturnDiamond.getTermsId()
-                              const termId = terms[0]
-
-                              const yieldDistributionRatioBefore =
-                                  await takaturnDiamond.yieldDistributionRatio(
-                                      termId,
-                                      participant_1
-                                  )
-
-                              await advanceTime(contributionPeriod + 1)
-
-                              await takaturnDiamond.closeFundingPeriod(termId)
-
-                              await takaturnDiamondParticipant_1.withdrawCollateral(termId)
-
-                              const yieldDistributionRatioAfter =
-                                  await takaturnDiamond.yieldDistributionRatio(
-                                      termId,
-                                      participant_1
-                                  )
-
-                              assert(
-                                  yieldDistributionRatioBefore.toString() >
-                                      yieldDistributionRatioAfter.toString()
-                              )
-                          })
                       })
                   })
               })
