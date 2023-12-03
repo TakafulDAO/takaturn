@@ -198,8 +198,6 @@ interface IGetters {
 
     function totalYieldGenerated(uint termId) external view returns (uint);
 
-    function unwithdrawnUserYieldGenerated(uint termId, address user) external view returns (uint);
-
     /// @param user the depositor address
     /// @param termId the collateral id
     /// @return hasOptedIn

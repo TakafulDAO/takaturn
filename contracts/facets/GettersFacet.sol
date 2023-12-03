@@ -565,7 +565,7 @@ contract GettersFacet is IGetters {
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
         uint userYieldGenerated = yield.withdrawnYield[user] +
-            unwithdrawnUserYieldGenerated(termId, user);
+            _unwithdrawnUserYieldGenerated(termId, user);
 
         return
             (((userYieldGenerated * 10 ** 18) / yield.currentTotalDeposit) * 365 days) /
@@ -667,7 +667,10 @@ contract GettersFacet is IGetters {
     /// @param termId The term id for which the yield is being calculated
     /// @param user The user for which the yield is being calculated
     /// @return The total yield generated for the user
-    function unwithdrawnUserYieldGenerated(uint termId, address user) public view returns (uint) {
+    function _unwithdrawnUserYieldGenerated(
+        uint termId,
+        address user
+    ) internal view returns (uint) {
         uint yieldDistributed = (currentYieldGenerated(termId) *
             yieldDistributionRatio(termId, user)) / 10 ** 18;
 
@@ -690,7 +693,7 @@ contract GettersFacet is IGetters {
             ._yieldStorage()
             .yields[termId];
 
-        uint yieldDistributed = unwithdrawnUserYieldGenerated(termId, user);
+        uint yieldDistributed = _unwithdrawnUserYieldGenerated(termId, user);
 
         return (
             yield.hasOptedIn[user],
