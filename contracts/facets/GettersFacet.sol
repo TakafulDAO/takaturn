@@ -681,20 +681,24 @@ contract GettersFacet is IGetters {
     /// @return withdrawnCollateral
     /// @return availableYield
     /// @return depositedCollateralByUser
+    /// @return yieldDistributed
     function getUserYieldSummary(
         address user,
         uint termId
-    ) external view returns (bool, uint, uint, uint, uint) {
+    ) external view returns (bool, uint, uint, uint, uint, uint) {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
+
+        uint yieldDistributed = unwithdrawnUserYieldGenerated(termId, user);
 
         return (
             yield.hasOptedIn[user],
             yield.withdrawnYield[user],
             yield.withdrawnCollateral[user],
             yield.availableYield[user],
-            yield.depositedCollateralByUser[user]
+            yield.depositedCollateralByUser[user],
+            yieldDistributed
         );
     }
 

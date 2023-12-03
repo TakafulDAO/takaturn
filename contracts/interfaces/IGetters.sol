@@ -207,10 +207,11 @@ interface IGetters {
     /// @return withdrawnCollateral
     /// @return availableYield
     /// @return depositedCollateralByUser
+    /// @return yieldDistributed
     function getUserYieldSummary(
         address user,
         uint termId
-    ) external view returns (bool, uint, uint, uint, uint);
+    ) external view returns (bool, uint, uint, uint, uint, uint);
 
     /// @param termId the collateral id
     /// @return initialized
