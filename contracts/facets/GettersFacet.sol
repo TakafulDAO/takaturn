@@ -567,6 +567,9 @@ contract GettersFacet is IGetters {
 
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
+        uint userYieldGenerated = yield.withdrawnYield[user] +
+            LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
+
         return
             ((userYieldGenerated(termId, user) / collateral.collateralMembersBank[user]) *
                 365 days) / elaspedTime;
@@ -585,24 +588,6 @@ contract GettersFacet is IGetters {
         return
             (((totalYieldGenerated(termId) * 10 ** 18) / yield.currentTotalDeposit) * 365 days) /
             elaspedTime;
-    }
-
-    /// @notice This function is used to get the yield distribution ratio for a user
-    /// @param termId The term id for which the ratio is being calculated
-    /// @param user The user for which the ratio is being calculated
-    /// @return The yield distribution ratio for the user
-    function yieldDistributionRatio(uint termId, address user) public view returns (uint256) {
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
-
-        if (yield.currentTotalDeposit == 0) {
-            return 0;
-        } else {
-            return
-                ((yield.depositedCollateralByUser[user] - yield.withdrawnCollateral[user]) *
-                    10 ** 18) / yield.currentTotalDeposit;
-        }
     }
 
     /// @notice This function is used to get the total yield generated for a term
@@ -641,21 +626,6 @@ contract GettersFacet is IGetters {
         }
     }
 
-    /// @notice This function is used to get the total yield generated for a user
-    /// @param termId The term id for which the yield is being calculated
-    /// @param user The user for which the yield is being calculated
-    /// @return The total yield generated for the user
-    function userYieldGenerated(uint termId, address user) public view returns (uint) {
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
-
-        return
-            yield.withdrawnYield[user] +
-            totalYieldGenerated(termId) *
-            yieldDistributionRatio(termId, user);
-    }
-
     /// @param user the depositor address
     /// @param termId the collateral id
     /// @return hasOptedIn
@@ -663,20 +633,24 @@ contract GettersFacet is IGetters {
     /// @return withdrawnCollateral
     /// @return availableYield
     /// @return depositedCollateralByUser
+    /// @return yieldDistributed
     function getUserYieldSummary(
         address user,
         uint termId
-    ) external view returns (bool, uint, uint, uint, uint) {
+    ) external view returns (bool, uint, uint, uint, uint, uint) {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
+
+        uint yieldDistributed = LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
 
         return (
             yield.hasOptedIn[user],
             yield.withdrawnYield[user],
             yield.withdrawnCollateral[user],
             yield.availableYield[user],
-            yield.depositedCollateralByUser[user]
+            yield.depositedCollateralByUser[user],
+            yieldDistributed
         );
     }
 
