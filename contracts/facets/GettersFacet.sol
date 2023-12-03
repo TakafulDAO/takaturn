@@ -670,7 +670,7 @@ contract GettersFacet is IGetters {
             ._yieldStorage()
             .yields[termId];
 
-        uint yieldDistributed = (totalYieldGenerated(termId) *
+        uint yieldDistributed = (currentYieldGenerated(termId) *
             yieldDistributionRatio(termId, user)) / 10 ** 18;
 
         return yield.withdrawnYield[user] + yieldDistributed;
