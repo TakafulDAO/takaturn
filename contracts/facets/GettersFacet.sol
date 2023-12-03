@@ -611,13 +611,7 @@ contract GettersFacet is IGetters {
             }
         }
 
-        uint termBalance = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(
-            termId
-        );
-        uint pricePerShare = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"])
-            .getPricePerFullShare();
-
-        uint sharesInEth = (termBalance * pricePerShare) / 10 ** 18;
+        uint sharesInEth = LibYieldGeneration._sharesToEth(termId, yield);
 
         if (sharesInEth > yield.currentTotalDeposit) {
             return totalWithdrawnYield + sharesInEth - yield.currentTotalDeposit;
