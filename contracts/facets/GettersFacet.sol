@@ -622,7 +622,6 @@ contract GettersFacet is IGetters {
         } else {
             return 0;
         }
-
     }
 
     /// @notice This function is used to get the total yield generated for a term
@@ -666,14 +665,10 @@ contract GettersFacet is IGetters {
     /// @param user The user for which the yield is being calculated
     /// @return The total yield generated for the user
     function userYieldGenerated(uint termId, address user) public view returns (uint) {
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
-
         uint yieldDistributed = (currentYieldGenerated(termId) *
             yieldDistributionRatio(termId, user)) / 10 ** 18;
 
-        return yield.withdrawnYield[user] + yieldDistributed;
+        return yieldDistributed;
     }
 
     /// @param user the depositor address
