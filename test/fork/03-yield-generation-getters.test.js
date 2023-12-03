@@ -4,6 +4,7 @@ const { network, ethers } = require("hardhat")
 const { impersonateAccount, advanceTime } = require("../../utils/_helpers")
 const { balanceForUser } = require("../utils/test-utils")
 const { erc20UnitsFormat } = require("../../utils/units")
+const { BigNumber } = require("ethers")
 
 !isFork || isMainnet
     ? describe.skip
@@ -473,18 +474,26 @@ const { erc20UnitsFormat } = require("../../utils/units")
                       const terms = await takaturnDiamond.getTermsId()
                       const termId = terms[0]
 
-                      const userYieldGeneratedBefore = await takaturnDiamond.userYieldGenerated(
-                          termId,
-                          participant_1
+                      let userYieldSummary = await takaturnDiamond.getUserYieldSummary(
+                          participant_1,
+                          termId
+                      )
+
+                      const userYieldGeneratedBefore = BigNumber.from(userYieldSummary[1]).add(
+                          BigNumber.from(userYieldSummary[5])
                       )
 
                       await advanceTime(contributionPeriod + 1)
 
                       await takaturnDiamond.closeFundingPeriod(termId)
 
-                      const userYieldGeneratedAfter = await takaturnDiamond.userYieldGenerated(
-                          termId,
-                          participant_1
+                      userYieldSummary = await takaturnDiamond.getUserYieldSummary(
+                          participant_1,
+                          termId
+                      )
+
+                      const userYieldGeneratedAfter = BigNumber.from(userYieldSummary[1]).add(
+                          BigNumber.from(userYieldSummary[5])
                       )
 
                       assert.equal(
@@ -497,9 +506,13 @@ const { erc20UnitsFormat } = require("../../utils/units")
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
-                          const userYieldGeneratedBefore = await takaturnDiamond.userYieldGenerated(
-                              termId,
-                              participant_1
+                          let userYieldSummary = await takaturnDiamond.getUserYieldSummary(
+                              participant_1,
+                              termId
+                          )
+
+                          const userYieldGeneratedBefore = BigNumber.from(userYieldSummary[1]).add(
+                              BigNumber.from(userYieldSummary[5])
                           )
 
                           for (let i = 0; i < 3; i++) {
@@ -514,9 +527,13 @@ const { erc20UnitsFormat } = require("../../utils/units")
 
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                          const userYieldGeneratedAfter = await takaturnDiamond.userYieldGenerated(
-                              termId,
-                              participant_1
+                          userYieldSummary = await takaturnDiamond.getUserYieldSummary(
+                              participant_1,
+                              termId
+                          )
+
+                          const userYieldGeneratedAfter = BigNumber.from(userYieldSummary[1]).add(
+                              BigNumber.from(userYieldSummary[5])
                           )
 
                           const userYieldGeneratedBeforeFormatted =
@@ -525,10 +542,9 @@ const { erc20UnitsFormat } = require("../../utils/units")
                           const userYieldGeneratedAfterFormatted =
                               erc20UnitsFormat(userYieldGeneratedAfter)
 
-                          assert(userYieldGeneratedBeforeFormatted > 0)
+                          assert(userYieldGeneratedBefore > 0)
                           assert(userYieldGeneratedBeforeFormatted < 0.18)
-                          assert(userYieldGeneratedAfterFormatted < 0.19)
-
+                          assert(userYieldGeneratedAfterFormatted < 0.18)
                           assert(
                               userYieldGeneratedBefore.toString() <
                                   userYieldGeneratedAfter.toString()
@@ -538,9 +554,13 @@ const { erc20UnitsFormat } = require("../../utils/units")
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
-                          const userYieldGeneratedBefore = await takaturnDiamond.userYieldGenerated(
-                              termId,
-                              participant_1
+                          let userYieldSummary = await takaturnDiamond.getUserYieldSummary(
+                              participant_1,
+                              termId
+                          )
+
+                          const userYieldGeneratedBefore = BigNumber.from(userYieldSummary[1]).add(
+                              BigNumber.from(userYieldSummary[5])
                           )
 
                           await advanceTime(contributionPeriod + 1)
@@ -549,9 +569,13 @@ const { erc20UnitsFormat } = require("../../utils/units")
 
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                          const userYieldGeneratedAfter = await takaturnDiamond.userYieldGenerated(
-                              termId,
-                              participant_1
+                          userYieldSummary = await takaturnDiamond.getUserYieldSummary(
+                              participant_1,
+                              termId
+                          )
+
+                          const userYieldGeneratedAfter = BigNumber.from(userYieldSummary[1]).add(
+                              BigNumber.from(userYieldSummary[5])
                           )
 
                           const userYieldGeneratedBeforeFormatted =
