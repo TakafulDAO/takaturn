@@ -561,6 +561,9 @@ contract GettersFacet is IGetters {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
 
         uint256 elaspedTime = block.timestamp - yield.startTimeStamp;
 
@@ -568,8 +571,8 @@ contract GettersFacet is IGetters {
             LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
 
         return
-            (((userYieldGenerated * 10 ** 18) / yield.currentTotalDeposit) * 365 days) /
-            elaspedTime;
+            ((userYieldGenerated(termId, user) / collateral.collateralMembersBank[user]) *
+                365 days) / elaspedTime;
     }
 
     /// @notice This function is used to get a term APY

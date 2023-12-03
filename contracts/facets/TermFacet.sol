@@ -276,7 +276,6 @@ contract TermFacet is ITerm {
         require(term.state != LibTermStorage.TermStates.ExpiredTerm, "Term already expired");
 
         term.state = LibTermStorage.TermStates.ExpiredTerm;
-        collateral.initialized = false;
         collateral.state = LibCollateralStorage.CollateralStates.ReleasingCollateral;
 
         emit OnTermExpired(_termId);
