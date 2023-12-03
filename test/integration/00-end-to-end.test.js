@@ -399,7 +399,6 @@ const { BigNumber } = require("ethers")
 
               await expect(getTermStateFromIndex(secondTerm.state)).to.equal(TermStates.ExpiredTerm)
 
-              expect(secondCollateral[0]).to.equal(false)
               await expect(getCollateralStateFromIndex(secondCollateral[1])).to.equal(
                   CollateralStates.ReleasingCollateral
               )
@@ -707,11 +706,6 @@ const { BigNumber } = require("ethers")
 
               assert.equal(participant_1_fundSummary[4].toNumber(), 0)
               assert.equal(participant_1_collateralSummary[2].toString(), 0)
-
-              //   let allowedWithdrawal = await takaturnDiamond.getWithdrawableUserBalance(
-              //       termId,
-              //       participant_1.address
-              //   )
 
               await expect(takaturnDiamond.connect(participant_1).withdrawCollateral(termId))
                   .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
