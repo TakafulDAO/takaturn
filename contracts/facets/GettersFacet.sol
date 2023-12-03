@@ -602,6 +602,29 @@ contract GettersFacet is IGetters {
         }
     }
 
+    /// @notice This function is used to get the current total yield generated for a term
+    /// @param termId The term id for which the yield is being calculated
+    /// @return The total yield generated for the term
+    function currentYieldGenerated(uint termId) public view returns (uint) {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        uint termBalance = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"]).balanceOf(
+            termId
+        );
+        uint pricePerShare = IZaynVaultV2TakaDao(yield.providerAddresses["ZaynVault"])
+            .getPricePerFullShare();
+
+        uint sharesInEth = (termBalance * pricePerShare) / 10 ** 18;
+        if (sharesInEth > yield.currentTotalDeposit) {
+            return sharesInEth - yield.currentTotalDeposit;
+        } else {
+            return 0;
+        }
+
+    }
+
     /// @notice This function is used to get the total yield generated for a term
     /// @param termId The term id for which the yield is being calculated
     /// @return The total yield generated for the term
