@@ -75,6 +75,7 @@ module.exports = {
     namedAccounts: {
         deployer: {
             testnet_arbitrum: TESTNET_DEPLOYER,
+            default: 0,
         },
     },
 }
