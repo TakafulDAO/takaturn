@@ -32,6 +32,12 @@ jobs:
           ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
         run: yarn hardhat compile --config hardhat-continuous-deployment.config.js
 
+      - name: Git config
+        run: git config user.name github-actions && git config user.email github-actions@github.com
+
+      - name: Fetch repository
+        run: git fetch
+
       - name: Deploy contracts
         env:
           ARBITRUM_TESTNET_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_RPC_URL}}
@@ -39,11 +45,10 @@ jobs:
           ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
         run: yarn upgrade:goerli --config hardhat-continuous-deployment.config.js
 
-      - name: Git config
-        run: git config user.name github-actions && git config user.email github-actions@github.com
+
 
       - name: Commit
         run: git add . && git commit -m "Testnet deployments ABIs"
 
       - name: Push new ABIs
-        run: git push
+        run: git push origin
