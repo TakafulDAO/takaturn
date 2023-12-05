@@ -46,7 +46,4 @@ jobs:
         run: git add . && git commit -m "Testnet deployments ABIs"
 
       - name: Push new ABIs
-        run: git push origin
-
-
-      
+        run: git push
