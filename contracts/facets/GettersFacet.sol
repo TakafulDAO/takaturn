@@ -571,7 +571,7 @@ contract GettersFacet is IGetters {
             LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
 
         return
-            ((userYieldGenerated(termId, user) / collateral.collateralMembersBank[user]) *
+            (((userYieldGenerated * 10 ** 18) / collateral.collateralMembersBank[user]) *
                 365 days) / elaspedTime;
     }
 
