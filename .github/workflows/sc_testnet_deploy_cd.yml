@@ -4,13 +4,12 @@ on:
   pull_request:
     branches:
       - TT-1488-CD-deploys-to-Testnet
-  pull_request_review:
-    types: 
-      - submitted
+#   pull_request_review:
+#     types: 
+#       - submitted
 
 jobs:
   build:
-    if: github.event.review.state == 'approved'
     runs-on: ubuntu-latest
 
     steps:
