@@ -194,11 +194,7 @@ interface IGetters {
 
     function termAPY(uint termId) external view returns (uint256);
 
-    function yieldDistributionRatio(uint termId, address user) external view returns (uint256);
-
     function totalYieldGenerated(uint termId) external view returns (uint);
-
-    function userYieldGenerated(uint termId, address user) external view returns (uint);
 
     /// @param user the depositor address
     /// @param termId the collateral id
@@ -207,10 +203,11 @@ interface IGetters {
     /// @return withdrawnCollateral
     /// @return availableYield
     /// @return depositedCollateralByUser
+    /// @return yieldDistributed
     function getUserYieldSummary(
         address user,
         uint termId
-    ) external view returns (bool, uint, uint, uint, uint);
+    ) external view returns (bool, uint, uint, uint, uint, uint);
 
     /// @param termId the collateral id
     /// @return initialized

@@ -245,13 +245,15 @@ contract FundFacet is IFund {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
         // any of the past cycles.
 
         bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
 
         require(
-            fund.currentState == LibFundStorage.FundStates.FundClosed ||
+            term.state == LibTermStorage.TermStates.ExpiredTerm ||
+                fund.currentState == LibFundStorage.FundStates.FundClosed ||
                 fund.isBeneficiary[msg.sender] ||
                 expelledBeforeBeneficiary,
             "You must be a beneficiary"
