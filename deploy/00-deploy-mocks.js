@@ -1,6 +1,6 @@
 const { network } = require("hardhat")
-const { networkConfig } = require("../utils/_networks")
-const { isDevnet, isFork } = require("../utils/_networks")
+const { developmentChains, networkConfig, isTestnet, isDevnet } = require("../utils/_networks")
+const { verify } = require("../scripts/verify")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy, log } = deployments
@@ -57,6 +57,27 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         log("==========================================================================")
         log("00. Mocks Deployed!")
         log("==========================================================================")
+    }
+
+    if (isTestnet && chainId == 421614) {
+        log("00. Deploying USDC mock...")
+        const args = []
+
+        const usdc = await deploy("FiatTokenV2_1", {
+            contract: "FiatTokenV2_1",
+            from: deployer,
+            log: true,
+            args: args,
+        })
+
+        log("00. USDC mock Deployed!...")
+        log("==========================================================================")
+
+        if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
+            log("00. Verifying USDC Mock...")
+            await verify(usdc.address, args)
+            log("00. USDC Verified!")
+        }
     }
 }
 

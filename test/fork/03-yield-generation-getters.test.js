@@ -32,9 +32,9 @@ const { BigNumber } = require("ethers")
               accounts = await ethers.getSigners()
 
               deployer = accounts[0]
-              participant_1 = "0x773D44a5F9FF345440565B26526E7b89c03f5418"
-              participant_2 = "0x92aE5285Ed66cF37B4A7A6F5DD345E2b11be90fd"
-              participant_3 = "0xA253ABb03A060b2C170ead2772D3171Cae484643"
+              participant_1 = accounts[1]
+              participant_2 = accounts[2]
+              participant_3 = accounts[3]
               participant_4 = accounts[4]
               usdcWhale = networkConfig[chainId]["usdcWhale"]
               zapOwner = "0xff0C52AfD43CeCA4c5E674f61fa93BE32647f185"
@@ -57,21 +57,15 @@ const { BigNumber } = require("ethers")
                   newZaynZapAddress
               )
 
-              await impersonateAccount(participant_1)
-              await impersonateAccount(participant_2)
-              await impersonateAccount(participant_3)
               await impersonateAccount(zapOwner)
               await impersonateAccount(usdcWhale)
 
-              participant_1_signer = await ethers.getSigner(participant_1)
-              participant_2_signer = await ethers.getSigner(participant_2)
-              participant_3_signer = await ethers.getSigner(participant_3)
               zapOwnerSigner = await ethers.getSigner(zapOwner)
               whale = await ethers.getSigner(usdcWhale)
 
-              takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1_signer)
-              takaturnDiamondParticipant_2 = takaturnDiamond.connect(participant_2_signer)
-              takaturnDiamondParticipant_3 = takaturnDiamond.connect(participant_3_signer)
+              takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
+              takaturnDiamondParticipant_2 = takaturnDiamond.connect(participant_2)
+              takaturnDiamondParticipant_3 = takaturnDiamond.connect(participant_3)
               takaturnDiamondParticipant_4 = takaturnDiamond.connect(participant_4)
               zaynZapOwner = zaynZap.connect(zapOwnerSigner)
               usdcWhaleSigner = usdc.connect(whale)
@@ -81,22 +75,30 @@ const { BigNumber } = require("ethers")
               })
 
               // Transfer USDC to the participants
-              await usdcWhaleSigner.transfer(participant_1, balanceForUser)
-              await usdcWhaleSigner.transfer(participant_2, balanceForUser)
-              await usdcWhaleSigner.transfer(participant_3, balanceForUser)
-              await usdcWhaleSigner.transfer(participant_4.address, balanceForUser)
+              await usdcWhaleSigner.transfer(participant_1.address, balanceForUser, {
+                  gasLimit: 1000000,
+              })
+              await usdcWhaleSigner.transfer(participant_2.address, balanceForUser, {
+                  gasLimit: 1000000,
+              })
+              await usdcWhaleSigner.transfer(participant_3.address, balanceForUser, {
+                  gasLimit: 1000000,
+              })
+              await usdcWhaleSigner.transfer(participant_4.address, balanceForUser, {
+                  gasLimit: 1000000,
+              })
 
               // Approve the USDC for the diamond
               await usdc
-                  .connect(participant_1_signer)
+                  .connect(participant_1)
                   .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
 
               await usdc
-                  .connect(participant_2_signer)
+                  .connect(participant_2)
                   .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
 
               await usdc
-                  .connect(participant_3_signer)
+                  .connect(participant_3)
                   .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
 
               await usdc
@@ -148,13 +150,19 @@ const { BigNumber } = require("ethers")
                       const terms = await takaturnDiamond.getTermsId()
                       const termId = terms[0]
 
-                      const userAPYBefore = await takaturnDiamond.userAPY(termId, participant_1)
+                      const userAPYBefore = await takaturnDiamond.userAPY(
+                          termId,
+                          participant_1.address
+                      )
 
                       await advanceTime(contributionPeriod + 1)
 
                       await takaturnDiamond.closeFundingPeriod(termId)
 
-                      const userAPYAfter = await takaturnDiamond.userAPY(termId, participant_1)
+                      const userAPYAfter = await takaturnDiamond.userAPY(
+                          termId,
+                          participant_1.address
+                      )
 
                       assert(userAPYBefore.toString() > userAPYAfter.toString())
                   })
@@ -163,7 +171,10 @@ const { BigNumber } = require("ethers")
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
-                          const userAPYBefore = await takaturnDiamond.userAPY(termId, participant_1)
+                          const userAPYBefore = await takaturnDiamond.userAPY(
+                              termId,
+                              participant_1.address
+                          )
 
                           for (let i = 0; i < 3; i++) {
                               try {
@@ -177,7 +188,10 @@ const { BigNumber } = require("ethers")
 
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                          const userAPYAfter = await takaturnDiamond.userAPY(termId, participant_1)
+                          const userAPYAfter = await takaturnDiamond.userAPY(
+                              termId,
+                              participant_1.address
+                          )
 
                           assert(userAPYBefore.toString() > userAPYAfter.toString())
                       })
@@ -185,7 +199,10 @@ const { BigNumber } = require("ethers")
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
-                          const userAPYBefore = await takaturnDiamond.userAPY(termId, participant_1)
+                          const userAPYBefore = await takaturnDiamond.userAPY(
+                              termId,
+                              participant_1.address
+                          )
 
                           await advanceTime(contributionPeriod + 1)
 
@@ -193,7 +210,10 @@ const { BigNumber } = require("ethers")
 
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
-                          const userAPYAfter = await takaturnDiamond.userAPY(termId, participant_1)
+                          const userAPYAfter = await takaturnDiamond.userAPY(
+                              termId,
+                              participant_1.address
+                          )
 
                           assert(userAPYBefore.toString() > userAPYAfter.toString())
                       })
@@ -358,7 +378,7 @@ const { BigNumber } = require("ethers")
                       const termId = terms[0]
 
                       let userYieldSummary = await takaturnDiamond.getUserYieldSummary(
-                          participant_1,
+                          participant_1.address,
                           termId
                       )
 
@@ -371,7 +391,7 @@ const { BigNumber } = require("ethers")
                       await takaturnDiamond.closeFundingPeriod(termId)
 
                       userYieldSummary = await takaturnDiamond.getUserYieldSummary(
-                          participant_1,
+                          participant_1.address,
                           termId
                       )
 
@@ -390,7 +410,7 @@ const { BigNumber } = require("ethers")
                           const termId = terms[0]
 
                           let userYieldSummary = await takaturnDiamond.getUserYieldSummary(
-                              participant_1,
+                              participant_1.address,
                               termId
                           )
 
@@ -411,7 +431,7 @@ const { BigNumber } = require("ethers")
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
                           userYieldSummary = await takaturnDiamond.getUserYieldSummary(
-                              participant_1,
+                              participant_1.address,
                               termId
                           )
 
@@ -427,9 +447,9 @@ const { BigNumber } = require("ethers")
 
                           assert(userYieldGeneratedBefore > 0)
                           assert(userYieldGeneratedBeforeFormatted < 0.18)
-                          assert(userYieldGeneratedAfterFormatted < 0.18)
+                          assert(userYieldGeneratedAfterFormatted < 0.14)
                           assert(
-                              userYieldGeneratedBefore.toString() <
+                              userYieldGeneratedBefore.toString() >
                                   userYieldGeneratedAfter.toString()
                           )
                       })
@@ -438,7 +458,7 @@ const { BigNumber } = require("ethers")
                           const termId = terms[0]
 
                           let userYieldSummary = await takaturnDiamond.getUserYieldSummary(
-                              participant_1,
+                              participant_1.address,
                               termId
                           )
 
@@ -453,7 +473,7 @@ const { BigNumber } = require("ethers")
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
                           userYieldSummary = await takaturnDiamond.getUserYieldSummary(
-                              participant_1,
+                              participant_1.address,
                               termId
                           )
 
@@ -469,10 +489,10 @@ const { BigNumber } = require("ethers")
 
                           assert(userYieldGeneratedBeforeFormatted > 0)
                           assert(userYieldGeneratedBeforeFormatted < 0.18)
-                          assert(userYieldGeneratedAfterFormatted < 0.19)
+                          assert(userYieldGeneratedAfterFormatted < 0.14)
 
                           assert(
-                              userYieldGeneratedBefore.toString() <
+                              userYieldGeneratedBefore.toString() >
                                   userYieldGeneratedAfter.toString()
                           )
                       })

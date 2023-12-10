@@ -111,13 +111,17 @@ const { BigNumber } = require("ethers")
 
                   if (i == 3) {
                       const amount = moneyPot * 2
-                      await usdcWhaleSigner.transfer(userAddress, amount * 10 ** 6)
+                      await usdcWhaleSigner.transfer(userAddress, amount * 10 ** 6, {
+                          gasLimit: 1000000,
+                      })
 
                       await usdc
                           .connect(accounts[i])
                           .approve(takaturnDiamond.address, amount * 10 ** 6)
                   } else {
-                      await usdcWhaleSigner.transfer(userAddress, moneyPot * 10 ** 6)
+                      await usdcWhaleSigner.transfer(userAddress, moneyPot * 10 ** 6, {
+                          gasLimit: 1000000,
+                      })
 
                       await usdc
                           .connect(accounts[i])
