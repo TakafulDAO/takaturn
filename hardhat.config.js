@@ -1,11 +1,13 @@
 require("dotenv").config()
 
-require("@nomiclabs/hardhat-waffle")
 require("@nomicfoundation/hardhat-verify")
 require("hardhat-deploy")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
 require("hardhat-contract-sizer")
+require("@nomicfoundation/hardhat-ethers");
+require("hardhat-deploy-ethers");
+require("@nomicfoundation/hardhat-chai-matchers");
 
 const { joinTerm } = require("./tasks/joinTerm")
 const { startTerm } = require("./tasks/startTerm")
