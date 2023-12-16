@@ -6,7 +6,7 @@ const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe.only("Unit Tests. Collateral Facet", function () {
+    : describe("Unit Tests. Collateral Facet", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = 6 // Create term param
