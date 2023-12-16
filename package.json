@@ -35,7 +35,7 @@
     "test:staging:mainnet": "yarn hardhat test --network mainnet_arbitrum",
     "test:staging:goerli": "yarn hardhat test --network testnet_arbitrum_goerli",
     "test:staging:sepolia": "yarn hardhat test --network testnet_arbitrum_sepolia",
-    "contractsInfo": "yarn hardhat run scripts/contractsInfo.js --network testnet_arbitrum",
+    "contractsInfo": "yarn hardhat run scripts/contractsInfo.js --network",
     "eventSignatures": "yarn hardhat run scripts/eventSignatures.js",
     "eventUrls": "yarn hardhat run scripts/tx-urls.js",
     "slither": "slither . --solc-remaps '@openzeppelin=node_modules/@openzeppelin' --exclude naming-convention,low-level-calls --buidler-ignore-compile",
