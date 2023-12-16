@@ -5,9 +5,9 @@ require("hardhat-deploy")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
 require("hardhat-contract-sizer")
-require("@nomicfoundation/hardhat-ethers");
-require("hardhat-deploy-ethers");
-require("@nomicfoundation/hardhat-chai-matchers");
+require("@nomicfoundation/hardhat-ethers")
+require("hardhat-deploy-ethers")
+require("@nomicfoundation/hardhat-chai-matchers")
 
 const { joinTerm } = require("./tasks/joinTerm")
 const { startTerm } = require("./tasks/startTerm")
@@ -38,9 +38,11 @@ const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
 const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_URL
 const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RPC_URL
+const ETHEREUM_TESTNET_SEPOLIA_RPC_URL = process.env.ETHEREUM_TESTNET_SEPOLIA_RPC_URL
 
 /************************************** Networks Scans *************************************************/
 const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 
 /************************************** Coinmarketcap **************************************************/
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY
@@ -225,12 +227,20 @@ module.exports = {
             blockConfirmations: 6,
             timeout: 900000,
         },
+        testnet_ethereum_sepolia: {
+            chainId: 11155111,
+            accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
+            url: ETHEREUM_TESTNET_SEPOLIA_RPC_URL,
+            blockConfirmations: 6,
+            timeout: 900000,
+        },
     },
     etherscan: {
         apiKey: {
             arbitrumOne: ARBISCAN_API_KEY,
             arbitrumGoerli: ARBISCAN_API_KEY,
             arbitrumSepolia: ARBISCAN_API_KEY,
+            sepolia: ETHERSCAN_API_KEY,
         },
         customChains: [
             {

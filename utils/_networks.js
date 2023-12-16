@@ -51,10 +51,18 @@ const networkConfig = {
         name: "testnet_arbitrum_sepolia",
         ethUsdPriceFeed: "0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
         usdcUsdPriceFeed: "0x0153002d20B96532C639313c2d54c3dA09109309", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
-        usdc: "0x4bBAafE98cAd0C7A3CEb9b564a22b120bfB035d5", // USDC mock. USDC still not on arbitrum sepolia
+        usdc: "0x4bBAafE98cAd0C7A3CEb9b564a22b120bfB035d5",
         usdcWhale: "0x3904F59DF9199e0d6dC3800af9f6794c9D037eb1",
         zaynfiZap: "0x10A40F8D76a7A38bef8fF366329D9305D5Cc4986",
         zaynfiVault: "0x0b9f2C8d7FD305D1C7FE8eb132865d1252F42D37",
+        takaturnDiamond: "0x9FBDb4A7E0fe9EA27148Dcd165a61AFEF4fAFf89",
+    },
+    11155111: {
+        name: "testnet_ethereum_sepolia",
+        ethUsdPriceFeed: "0x694AA1769357215DE4FAC081bf1f309aDC325306", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
+        usdcUsdPriceFeed: "0x0153002d20B96532C639313c2d54c3dA09109309", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
+        zaynfiZap: "0x10A40F8D76a7A38bef8fF366329D9305D5Cc4986", // On this network the only test will be for multisig, so this addres does not matter, it is random
+        zaynfiVault: "0x0b9f2C8d7FD305D1C7FE8eb132865d1252F42D37", // On this network the only test will be for multisig, so this addres does not matter, it is random
         takaturnDiamond: "0x9FBDb4A7E0fe9EA27148Dcd165a61AFEF4fAFf89",
     },
 }
