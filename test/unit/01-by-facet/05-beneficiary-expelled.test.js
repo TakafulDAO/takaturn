@@ -2,7 +2,6 @@ const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
 const { advanceTimeByDate, advanceTime, impersonateAccount } = require("../../../utils/_helpers")
-const { BigNumber } = require("ethers")
 const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
@@ -10,11 +9,11 @@ const { hour } = require("../../../utils/units")
     : describe("Unit tests. Beneficiaries tests", function () {
           const chainId = network.config.chainId
 
-          const totalParticipants = BigNumber.from("2") // Create term param
-          const cycleTime = BigNumber.from("23220") // Create term param
-          const contributionAmount = BigNumber.from("5") // Create term param
-          const contributionPeriod = BigNumber.from("23040") // Create term param
-          const registrationPeriod = BigNumber.from("23040") // Create term param
+          const totalParticipants = 2 // Create term param
+          const cycleTime = 23220 // Create term param
+          const contributionAmount = 5 // Create term param
+          const contributionPeriod = 23040 // Create term param
+          const registrationPeriod = 23040 // Create term param
 
           let takaturnDiamond
 
@@ -72,7 +71,7 @@ const { hour } = require("../../../utils/units")
                   cycleTime,
                   contributionAmount,
                   contributionPeriod,
-                  usdc.address
+                  usdc
               )
 
               const lastTerm = await takaturnDiamondDeployer.getTermsId()
@@ -86,7 +85,7 @@ const { hour } = require("../../../utils/units")
                       .joinTerm(termId, false, { value: entrance })
               }
 
-              await advanceTime(registrationPeriod.toNumber() + 1)
+              await advanceTime(registrationPeriod + 1)
               await takaturnDiamond.startTerm(termId)
 
               const balanceForUser = contributionAmount * totalParticipants * 10 ** 6
@@ -106,7 +105,7 @@ const { hour } = require("../../../utils/units")
 
                       await usdc
                           .connect(accounts[i])
-                          .approve(takaturnDiamond.address, balanceForUser * 10 ** 6)
+                          .approve(takaturnDiamond, balanceForUser * 10 ** 6)
                   }
               } else {
                   // Initialize USDC
@@ -144,7 +143,7 @@ const { hour } = require("../../../utils/units")
 
                       await usdc
                           .connect(depositor)
-                          .approve(takaturnDiamond.address, balanceForUser * 10 ** 6)
+                          .approve(takaturnDiamond, balanceForUser * 10 ** 6)
                   }
               }
           })
@@ -155,7 +154,7 @@ const { hour } = require("../../../utils/units")
                   const termId = lastTerm[0]
 
                   // First cycle ends
-                  await advanceTime(cycleTime.toNumber() + 1)
+                  await advanceTime(cycleTime + 1)
 
                   // Participant 2 consider a defaulter on second cycle
                   await expect(takaturnDiamond.closeFundingPeriod(termId))
@@ -166,7 +165,7 @@ const { hour } = require("../../../utils/units")
                   await takaturnDiamond.startNewCycle(termId)
 
                   // Second cycle ends
-                  await advanceTime(cycleTime.toNumber() + 1)
+                  await advanceTime(cycleTime + 1)
 
                   // Participant 1 consider a defaulter on second cycle
                   await expect(takaturnDiamond.closeFundingPeriod(termId))
@@ -207,7 +206,7 @@ const { hour } = require("../../../utils/units")
                   const termId = lastTerm[0]
 
                   // First cycle ends
-                  await advanceTime(cycleTime.toNumber() + 1)
+                  await advanceTime(cycleTime + 1)
 
                   // Participant 2 consider a defaulter on second cycle
                   await takaturnDiamond.closeFundingPeriod(termId)
@@ -227,7 +226,7 @@ const { hour } = require("../../../utils/units")
                       participant_2_collateralSummary[1] + participant_2_collateralSummary[2]
 
                   // Second cycle ends
-                  await advanceTime(cycleTime.toNumber() + 1)
+                  await advanceTime(cycleTime + 1)
 
                   // Second cycle ends
                   await expect(takaturnDiamond.closeFundingPeriod(termId)).not.to.emit(
