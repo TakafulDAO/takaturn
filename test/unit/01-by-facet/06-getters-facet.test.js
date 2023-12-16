@@ -7,13 +7,12 @@ const {
     getCollateralStateFromIndex,
     CollateralStates,
 } = require("../../../utils/_helpers")
-const { BigNumber } = require("ethers")
 
-const totalParticipants = BigNumber.from("4") // Create term param
-const cycleTime = BigNumber.from("180") // Create term param
-const contributionAmount = BigNumber.from("10") // Create term param
-const contributionPeriod = BigNumber.from("120") // Create term param
-const registrationPeriod = BigNumber.from("120") // Create term param
+const totalParticipants = 4 // Create term param
+const cycleTime = 180 // Create term param
+const contributionAmount = 10 // Create term param
+const contributionPeriod = 120 // Create term param
+const registrationPeriod = 120 // Create term param
 
 let takaturnDiamond
 
@@ -29,7 +28,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Unit tests. Getters Facet", function () {
+    : describe.only("Unit tests. Getters Facet", function () {
           const chainId = network.config.chainId
 
           let deployer, participant_1, participant_2, participant_3
@@ -76,7 +75,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
               }
 
@@ -93,7 +92,7 @@ async function payTestContribution(termId, defaulterIndex) {
                   await takaturnDiamond.connect(accounts[i]).joinTerm(2, false, { value: entrance })
               }
 
-              await advanceTime(registrationPeriod.toNumber() + 1)
+              await advanceTime(registrationPeriod + 1)
               await takaturnDiamond.startTerm(1)
               await takaturnDiamond.startTerm(2)
 
@@ -111,9 +110,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       gasLimit: 1000000,
                   })
 
-                  await usdc
-                      .connect(accounts[i])
-                      .approve(takaturnDiamond.address, balanceForUser * 10 ** 6)
+                  await usdc.connect(accounts[i]).approve(takaturnDiamond, balanceForUser * 10 ** 6)
               }
           })
 
@@ -124,7 +121,7 @@ async function payTestContribution(termId, defaulterIndex) {
                   const expectedAllowanceAtBeginning =
                       contributionAmount * totalParticipants * 2 * 10 ** 6
 
-                  await advanceTime(cycleTime.toNumber() + 1)
+                  await advanceTime(cycleTime + 1)
                   await takaturnDiamond.closeFundingPeriod(1)
                   await takaturnDiamond.startNewCycle(1)
 
@@ -179,7 +176,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
                       await takaturnDiamondParticipant_1.joinTerm(0, false, { value: entrance })
 
-                      await advanceTime(registrationPeriod.toNumber() + 1)
+                      await advanceTime(registrationPeriod + 1)
 
                       await takaturnDiamond.expireTerm(termId)
 
@@ -228,7 +225,7 @@ async function payTestContribution(termId, defaulterIndex) {
                           } catch (error) {}
                       }
 
-                      advanceTime(cycleTime.toNumber() + 1)
+                      advanceTime(cycleTime + 1)
 
                       await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -241,7 +238,7 @@ async function payTestContribution(termId, defaulterIndex) {
                           } catch (error) {}
                       }
 
-                      advanceTime(cycleTime.toNumber() + 1)
+                      advanceTime(cycleTime + 1)
 
                       await takaturnDiamond.closeFundingPeriod(termId)
                       await takaturnDiamond.startNewCycle(termId)
@@ -253,7 +250,7 @@ async function payTestContribution(termId, defaulterIndex) {
                           } catch (error) {}
                       }
 
-                      advanceTime(cycleTime.toNumber() + 1)
+                      advanceTime(cycleTime + 1)
 
                       await takaturnDiamond.closeFundingPeriod(termId)
                       await takaturnDiamond.startNewCycle(termId)
@@ -265,7 +262,7 @@ async function payTestContribution(termId, defaulterIndex) {
                           } catch (error) {}
                       }
 
-                      advanceTime(cycleTime.toNumber() + 1)
+                      advanceTime(cycleTime + 1)
 
                       await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -310,7 +307,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       // Manipulate ETH price to expel participant 3
                       await aggregator.setPrice("100000000000")
 
-                      advanceTime(cycleTime.toNumber() + 1)
+                      advanceTime(cycleTime + 1)
 
                       // Close funding period for first cycle
                       await takaturnDiamond.closeFundingPeriod(termId)
@@ -321,7 +318,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       // Pay contributions second cycle, participant 3 defaults
                       await payTestContribution(termId, 3)
 
-                      advanceTime(cycleTime.toNumber() + 1)
+                      advanceTime(cycleTime + 1)
 
                       // Close funding period for second cycle
                       await takaturnDiamond.closeFundingPeriod(termId)
@@ -400,7 +397,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       // Pay contributions third cycle
                       await payTestContribution(termId, 3)
 
-                      advanceTime(cycleTime.toNumber() + 1)
+                      advanceTime(cycleTime + 1)
 
                       // Close funding period for third cycle
                       await takaturnDiamond.closeFundingPeriod(termId)
@@ -461,7 +458,7 @@ async function payTestContribution(termId, defaulterIndex) {
                           // Pay contributions third cycle
                           await payTestContribution(termId, 3)
 
-                          advanceTime(cycleTime.toNumber() + 1)
+                          advanceTime(cycleTime + 1)
 
                           // Close funding period for third cycle
                           await takaturnDiamond.closeFundingPeriod(termId)
@@ -510,7 +507,7 @@ async function payTestContribution(termId, defaulterIndex) {
                           // Pay contributions fourth cycle
                           await payTestContribution(termId, 3)
 
-                          await advanceTime(cycleTime.toNumber() + 1)
+                          await advanceTime(cycleTime + 1)
 
                           // Close funding period for fourth cycle. Term ended
                           await takaturnDiamond.closeFundingPeriod(termId)
@@ -579,7 +576,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       termId
                   )
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -600,7 +597,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       termId
                   )
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -623,7 +620,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       } catch (error) {}
                   }
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -635,7 +632,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       termId
                   )
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -655,7 +652,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
                   // First cycle, participant 3 defaults
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -673,7 +670,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       } catch (error) {}
                   }
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -698,14 +695,14 @@ async function payTestContribution(termId, defaulterIndex) {
                       } catch (error) {}
                   }
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
                   // Second cycle, participant 1 defaults
                   await takaturnDiamond.startNewCycle(termId)
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -723,7 +720,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       } catch (error) {}
                   }
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -745,7 +742,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
                   await aggregator.setPrice("100000000000")
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -753,7 +750,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
                   await payTestContribution(termId, 3)
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -774,7 +771,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
                   await aggregator.setPrice("100000000000")
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -782,13 +779,13 @@ async function payTestContribution(termId, defaulterIndex) {
 
                   await payTestContribution(termId, 3)
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
                   await takaturnDiamond.startNewCycle(termId)
 
-                  advanceTime(cycleTime.toNumber() + 1)
+                  advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
