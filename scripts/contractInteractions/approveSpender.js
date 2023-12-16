@@ -1,4 +1,3 @@
-const { BigNumber } = require("ethers")
 const { ethers } = require("hardhat")
 
 async function approve() {
@@ -21,7 +20,7 @@ async function approve() {
 
     for (let i = 1; i < accounts.length; i++) {
         console.log(`Participant ${i} approving takaturn contract`)
-        await usdc.connect(accounts[i]).approve(takaturn.address, BigNumber.from(amount).toNumber())
+        await usdc.connect(accounts[i]).approve(takaturn, amount)
     }
 }
 
