@@ -17,7 +17,6 @@ const {
     getRandomInt,
 } = require("../utils/test-utils")
 const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
-const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
 
@@ -249,7 +248,7 @@ async function executeCycle(
 
                       await usdc
                           .connect(accounts[i])
-                          .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                          .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   }
 
                   await takaturnDiamondParticipant_1.createTerm(
@@ -258,7 +257,7 @@ async function executeCycle(
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
               })
 
@@ -440,7 +439,8 @@ async function executeCycle(
                           )
 
                           const collateralFirstDepositTime = collateralParameters[2]
-                          let expectedDeposit = 0
+                          let expectedDeposit = 0n
+
                           for (let i = 1; i <= totalParticipants; i++) {
                               let deposited = await takaturnDiamond.getUserYieldSummary(
                                   accounts[i].address,
@@ -449,9 +449,7 @@ async function executeCycle(
 
                               let depositedByUser = deposited[4]
 
-                              expectedDeposit = BigNumber.from(expectedDeposit).add(
-                                  BigNumber.from(depositedByUser)
-                              )
+                              expectedDeposit = expectedDeposit + depositedByUser
                           }
                           const shares = await zaynVault.balanceOf(termId)
 
@@ -465,7 +463,7 @@ async function executeCycle(
                           assert.ok(yieldInitialized)
                           assert(
                               yieldStartTimestamp.toString() >
-                                  collateralFirstDepositTime + registrationPeriod + 1
+                                  collateralFirstDepositTime + BigInt(registrationPeriod) + 1n
                           )
                           assert.equal(yieldTotalDeposit.toString(), expectedDeposit.toString())
                           assert.equal(
@@ -474,6 +472,7 @@ async function executeCycle(
                           )
                           assert.equal(yieldTotalShares.toString(), shares.toString())
                           assert.equal(yieldUsers.length, totalParticipants)
+
                           for (let i = 0; i < totalParticipants; i++) {
                               assert.equal(yieldUsers[i], accounts[i + 1].address)
                           }
@@ -494,7 +493,7 @@ async function executeCycle(
                                       termId
                                   )
                               let collateralDeposited = collaterlUserSummary[3]
-                              let expectedYieldDeposited = collateralDeposited.mul(90).div(100)
+                              let expectedYieldDeposited = (collateralDeposited * 90n) / 100n
 
                               assert.ok(yieldUser[0])
                               assert.equal(yieldUser[1].toString(), 0)
