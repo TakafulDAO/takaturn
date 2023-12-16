@@ -28,7 +28,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe.only("Unit tests. Getters Facet", function () {
+    : describe("Unit tests. Getters Facet", function () {
           const chainId = network.config.chainId
 
           let deployer, participant_1, participant_2, participant_3
