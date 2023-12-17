@@ -765,14 +765,6 @@ const { BigNumber } = require("ethers")
                   )
                       .to.emit(takaturnDiamond, "OnYieldClaimed")
                       .withArgs(termId, participant_2.address, availableYield)
-              } else {
-                  //   console.log("No yield")
-                  await expect(
-                      takaturnDiamond["claimAvailableYield(uint256,address)"](
-                          termId,
-                          participant_2.address
-                      )
-                  ).to.be.revertedWith("No yield to withdraw")
               }
 
               for (let i = 1; i <= totalParticipants; i++) {
@@ -828,11 +820,6 @@ const { BigNumber } = require("ethers")
                   await takaturnDiamond
                       .connect(participant_2)
                       ["claimAvailableYield(uint256)"](termId)
-              } else {
-                  //   console.log("No yield")
-                  await expect(
-                      takaturnDiamond.connect(participant_2)["claimAvailableYield(uint256)"](termId)
-                  ).to.be.revertedWith("No yield to withdraw")
               }
 
               for (let i = 1; i <= totalParticipants; i++) {
