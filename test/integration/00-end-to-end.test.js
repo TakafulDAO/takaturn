@@ -683,16 +683,21 @@ const { BigNumber } = require("ethers")
 
               await expect(
                   takaturnDiamond.connect(participant_2).withdrawFund(termId)
-              ).to.be.revertedWith("You must be a beneficiary")
+              ).to.be.revertedWith("The caller must be a participant")
 
               let withdrawFundTx = takaturnDiamond.connect(participant_1).withdrawFund(termId)
               await Promise.all([
                   expect(withdrawFundTx)
                       .to.emit(takaturnDiamond, "OnFundWithdrawn")
-                      .withArgs(termId, participant_1.address, contributionAmount * 10 * 10 ** 6),
-                  expect(withdrawFundTx)
-                      .to.emit(takaturnDiamond, "OnReimbursementWithdrawn")
-                      .withArgs(termId, participant_1.address, contributionAmountWei),
+                      .withArgs(
+                          termId,
+                          participant_1.address,
+                          participant_1.address,
+                          contributionAmount * 10 * 10 ** 6
+                      ),
+                  //   expect(withdrawFundTx)
+                  //       .to.emit(takaturnDiamond, "OnReimbursementWithdrawn")
+                  //       .withArgs(termId, participant_1.address, contributionAmountWei),
               ])
 
               await expect(

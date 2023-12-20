@@ -499,7 +499,7 @@ async function executeCycle(
 
                       await expect(
                           takaturnDiamondParticipant_1.withdrawFund(termId)
-                      ).to.be.revertedWith("You must be a beneficiary")
+                      ).to.be.revertedWith("The caller must be a participant")
 
                       await everyonePaysAndCloseCycle(termId)
 

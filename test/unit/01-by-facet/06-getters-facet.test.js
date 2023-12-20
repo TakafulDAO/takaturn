@@ -436,7 +436,12 @@ async function payTestContribution(termId, defaulterIndex) {
 
                       await expect(takaturnDiamondParticipant_3.withdrawFund(termId))
                           .to.emit(takaturnDiamond, "OnFundWithdrawn")
-                          .withArgs(termId, participant_3.address, participantFundSummary[4])
+                          .withArgs(
+                              termId,
+                              participant_3.address,
+                              participant_3.address,
+                              participantFundSummary[4]
+                          )
 
                       // Withdrawable is equal to collateral locked
                       assert.equal(
@@ -496,7 +501,12 @@ async function payTestContribution(termId, defaulterIndex) {
 
                           await expect(takaturnDiamondParticipant_3.withdrawFund(termId))
                               .to.emit(takaturnDiamond, "OnFundWithdrawn")
-                              .withArgs(termId, participant_3.address, participantFundSummary[4])
+                              .withArgs(
+                                  termId,
+                                  participant_3.address,
+                                  participant_3.address,
+                                  participantFundSummary[4]
+                              )
 
                           // Withdrawable is equal to collateral members bank
                           assert.equal(
@@ -539,7 +549,12 @@ async function payTestContribution(termId, defaulterIndex) {
 
                           await expect(takaturnDiamondParticipant_3.withdrawFund(termId))
                               .to.emit(takaturnDiamond, "OnFundWithdrawn")
-                              .withArgs(termId, participant_3.address, participantFundSummary[4])
+                              .withArgs(
+                                  termId,
+                                  participant_3.address,
+                                  participant_3.address,
+                                  participantFundSummary[4]
+                              )
 
                           // Withdrawable is equal to collateral members bank
                           assert.equal(

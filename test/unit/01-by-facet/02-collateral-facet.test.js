@@ -254,7 +254,7 @@ const { hour } = require("../../../utils/units")
 
                   await expect(takaturnDiamondParticipant_1.withdrawFund(termId))
                       .to.emit(takaturnDiamond, "OnFundWithdrawn")
-                      .withArgs(termId, participant_1.address, moneyPot)
+                      .withArgs(termId, participant_1.address, participant_1.address, moneyPot)
 
                   const participant_1_FundSummary = await takaturnDiamond.getParticipantFundSummary(
                       participant_1.address,
