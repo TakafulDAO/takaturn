@@ -246,7 +246,7 @@ contract FundFacet is IFund {
     /// @dev This follows the pull-over-push pattern.
     /// @param termId the id of the term
     function withdrawFund(uint termId) external {
-        _withdrawFund(termId, msg.sender, msg.sender);
+        _withdrawFund(termId, msg.sender);
     }
 
     /// @notice Called by the beneficiary to withdraw the fund
@@ -254,10 +254,10 @@ contract FundFacet is IFund {
     /// @param termId the id of the term
     /// @param receiver the address that will receive the fund
     function withdrawFundOnAnotherWallet(uint termId, address receiver) external {
-        _withdrawFund(termId, msg.sender, receiver);
+        _withdrawFund(termId, receiver);
     }
 
-    function _withdrawFund(uint _termId, address _participant, address _receiver) internal {
+    function _withdrawFund(uint _termId, address _receiver) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
@@ -266,19 +266,19 @@ contract FundFacet is IFund {
         // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
         // any of the past cycles.
 
-        bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[_participant];
+        bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
 
         require(
             term.state == LibTermStorage.TermStates.ExpiredTerm ||
                 fund.currentState == LibFundStorage.FundStates.FundClosed ||
-                fund.isBeneficiary[_participant] ||
+                fund.isBeneficiary[msg.sender] ||
                 expelledBeforeBeneficiary,
             "The caller must be a participant"
         );
 
-        bool hasFundPool = fund.beneficiariesPool[_participant] > 0;
-        bool hasFrozenPool = fund.beneficiariesFrozenPool[_participant];
-        bool hasCollateralPool = collateral.collateralPaymentBank[_participant] > 0;
+        bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
+        bool hasFrozenPool = fund.beneficiariesFrozenPool[msg.sender];
+        bool hasCollateralPool = collateral.collateralPaymentBank[msg.sender] > 0;
 
         require(hasFundPool || hasFrozenPool || hasCollateralPool, "Nothing to withdraw");
 
@@ -286,20 +286,20 @@ contract FundFacet is IFund {
             bool freeze = _freezePot(
                 LibTermStorage._termStorage().terms[_termId],
                 fund,
-                _participant
+                msg.sender
             );
 
             if (fund.currentState != LibFundStorage.FundStates.FundClosed) {
                 require(!freeze, "Need at least 1.1RCC collateral to unfreeze your fund");
             }
 
-            _transferPoolToBeneficiary(_termId, _participant, _receiver);
+            _transferPoolToBeneficiary(_termId, msg.sender, _receiver);
         } else if (hasFundPool) {
-            _transferPoolToBeneficiary(_termId, _participant, _receiver);
+            _transferPoolToBeneficiary(_termId, msg.sender, _receiver);
         }
 
         if (hasCollateralPool) {
-            LibCollateral._withdrawReimbursement(_termId, _participant, _receiver);
+            LibCollateral._withdrawReimbursement(_termId, msg.sender, _receiver);
         }
     }
 
