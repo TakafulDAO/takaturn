@@ -199,7 +199,12 @@ async function payTestContribution(termId, defaulterIndex) {
 
                       await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId))
                           .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                          .withArgs(termId, participant_1.address, withdrawable)
+                          .withArgs(
+                              termId,
+                              participant_1.address,
+                              participant_1.address,
+                              withdrawable
+                          )
 
                       assert.equal(
                           collateralParticipantSummary[1].toString(),
@@ -285,7 +290,12 @@ async function payTestContribution(termId, defaulterIndex) {
                               takaturnDiamond.connect(accounts[i]).withdrawCollateral(termId)
                           )
                               .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                              .withArgs(termId, accounts[i].address, withdrawable)
+                              .withArgs(
+                                  termId,
+                                  accounts[i].address,
+                                  accounts[i].address,
+                                  withdrawable
+                              )
 
                           assert.equal(
                               withdrawable.toString(),
@@ -378,7 +388,12 @@ async function payTestContribution(termId, defaulterIndex) {
                       // Can withdraw collateral
                       await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
                           .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                          .withArgs(termId, participant_3.address, withdrawable)
+                          .withArgs(
+                              termId,
+                              participant_3.address,
+                              participant_3.address,
+                              withdrawable
+                          )
 
                       await expect(
                           takaturnDiamondParticipant_3.withdrawFund(termId)
@@ -432,7 +447,12 @@ async function payTestContribution(termId, defaulterIndex) {
                       // Can withdraw collateral and fund
                       await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
                           .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                          .withArgs(termId, participant_3.address, withdrawable)
+                          .withArgs(
+                              termId,
+                              participant_3.address,
+                              participant_3.address,
+                              withdrawable
+                          )
 
                       await expect(takaturnDiamondParticipant_3.withdrawFund(termId))
                           .to.emit(takaturnDiamond, "OnFundWithdrawn")
@@ -497,7 +517,12 @@ async function payTestContribution(termId, defaulterIndex) {
                           // Can withdraw collateral and fund
                           await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
                               .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                              .withArgs(termId, participant_3.address, withdrawable)
+                              .withArgs(
+                                  termId,
+                                  participant_3.address,
+                                  participant_3.address,
+                                  withdrawable
+                              )
 
                           await expect(takaturnDiamondParticipant_3.withdrawFund(termId))
                               .to.emit(takaturnDiamond, "OnFundWithdrawn")
@@ -545,7 +570,12 @@ async function payTestContribution(termId, defaulterIndex) {
                           // Can withdraw collateral and fund
                           await expect(takaturnDiamondParticipant_3.withdrawCollateral(termId))
                               .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                              .withArgs(termId, participant_3.address, withdrawable)
+                              .withArgs(
+                                  termId,
+                                  participant_3.address,
+                                  participant_3.address,
+                                  withdrawable
+                              )
 
                           await expect(takaturnDiamondParticipant_3.withdrawFund(termId))
                               .to.emit(takaturnDiamond, "OnFundWithdrawn")

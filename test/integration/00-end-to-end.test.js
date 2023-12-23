@@ -718,7 +718,12 @@ const { BigNumber } = require("ethers")
 
               await expect(takaturnDiamond.connect(participant_1).withdrawCollateral(termId))
                   .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                  .withArgs(termId, participant_1.address, "37500000000000000")
+                  .withArgs(
+                      termId,
+                      participant_1.address,
+                      participant_1.address,
+                      "37500000000000000"
+                  )
 
               await expect(
                   takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
@@ -762,22 +767,14 @@ const { BigNumber } = require("ethers")
 
               if (availableYield > 0) {
                   //   console.log("availableYield", availableYield.toString())
-                  await expect(
-                      takaturnDiamond["claimAvailableYield(uint256,address)"](
-                          termId,
-                          participant_2.address
-                      )
-                  )
+                  await expect(takaturnDiamond.claimAvailableYield(termId))
                       .to.emit(takaturnDiamond, "OnYieldClaimed")
                       .withArgs(termId, participant_2.address, availableYield)
               } else {
                   //   console.log("No yield")
-                  await expect(
-                      takaturnDiamond["claimAvailableYield(uint256,address)"](
-                          termId,
-                          participant_2.address
-                      )
-                  ).to.be.revertedWith("No yield to withdraw")
+                  await expect(takaturnDiamond.claimAvailableYield(termId)).to.be.revertedWith(
+                      "No yield to withdraw"
+                  )
               }
 
               for (let i = 1; i <= totalParticipants; i++) {
@@ -830,13 +827,11 @@ const { BigNumber } = require("ethers")
 
               if (availableYield > 0) {
                   //   console.log("availableYield", availableYield.toString())
-                  await takaturnDiamond
-                      .connect(participant_2)
-                      ["claimAvailableYield(uint256)"](termId)
+                  await takaturnDiamond.connect(participant_2).claimAvailableYield(termId)
               } else {
                   //   console.log("No yield")
                   await expect(
-                      takaturnDiamond.connect(participant_2)["claimAvailableYield(uint256)"](termId)
+                      takaturnDiamond.connect(participant_2).claimAvailableYield(termId)
                   ).to.be.revertedWith("No yield to withdraw")
               }
 
