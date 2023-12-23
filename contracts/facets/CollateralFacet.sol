@@ -27,6 +27,7 @@ contract CollateralFacet is ICollateral {
     event OnCollateralWithdrawal(
         uint indexed termId,
         address indexed user,
+        address receiver,
         uint indexed collateralAmount
     );
     event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
@@ -36,6 +37,12 @@ contract CollateralFacet is ICollateral {
         address indexed user,
         uint indexed amount
     );
+    event OnYieldClaimed(
+        uint indexed termId,
+        address indexed user,
+        address receiver,
+        uint indexed amount
+    ); // Emits when a user claims their yield
 
     /// @param termId term id
     /// @param _state collateral state
@@ -148,68 +155,15 @@ contract CollateralFacet is ICollateral {
     /// @dev This follows the pull-over-push pattern.
     /// @param termId term id
     function withdrawCollateral(uint termId) external {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        _withdrawCollateral(termId, msg.sender);
+    }
 
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[termId];
-
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
-
-        LibTermStorage.Term memory term = LibTermStorage._termStorage().terms[termId];
-
-        uint userCollateral = collateral.collateralMembersBank[msg.sender];
-        require(userCollateral > 0, "Collateral empty");
-
-        bool success;
-        bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
-        // Withdraw all the user has.
-        if (
-            collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral ||
-            expelledBeforeBeneficiary
-        ) {
-            // First case: The collateral is released or the user was expelled before being a beneficiary
-            collateral.collateralMembersBank[msg.sender] = 0;
-
-            if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
-                _withdrawFromYield(termId, msg.sender, userCollateral, yield);
-            }
-
-            (success, ) = payable(msg.sender).call{value: userCollateral}("");
-
-            if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
-                --collateral.counterMembers;
-            }
-
-            emit OnCollateralWithdrawal(termId, msg.sender, userCollateral);
-        }
-        // Or withdraw partially
-        else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
-            // Second case: The term is on an ongoing cycle, the user has not been expelled
-            // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
-            uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
-                termId
-            ) * 15) / 10; // 1.5 X RCC in wei
-
-            // Collateral must be higher than 1.5 X RCC
-            if (userCollateral > minRequiredCollateral) {
-                uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
-                collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
-
-                _withdrawFromYield(termId, msg.sender, allowedWithdrawal, yield);
-
-                (success, ) = payable(msg.sender).call{value: allowedWithdrawal}("");
-
-                emit OnCollateralWithdrawal(termId, msg.sender, allowedWithdrawal);
-            }
-        }
-
-        require(success, "Withdraw failed");
-        if (yield.hasOptedIn[msg.sender] && yield.availableYield[msg.sender] > 0) {
-            IYGFacetZaynFi(address(this)).claimAvailableYield(termId, msg.sender);
-        }
+    /// @notice Called by each member after during or at the end of the term to withraw collateral
+    /// @dev This follows the pull-over-push pattern.
+    /// @param termId term id
+    /// @param receiver receiver address
+    function withdrawCollateralToAnotherAddress(uint termId, address receiver) external {
+        _withdrawCollateral(termId, receiver);
     }
 
     /// @param termId term id
@@ -259,6 +213,75 @@ contract CollateralFacet is ICollateral {
 
         (bool success, ) = payable(msg.sender).call{value: totalToWithdraw}("");
         require(success);
+    }
+
+    /// @notice Called by each member after during or at the end of the term to withraw collateral
+    /// @dev This follows the pull-over-push pattern.
+    /// @param _termId term id
+    /// @param _receiver receiver address
+    function _withdrawCollateral(uint _termId, address _receiver) internal {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
+
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[_termId];
+
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[_termId];
+
+        LibTermStorage.Term memory term = LibTermStorage._termStorage().terms[_termId];
+
+        uint userCollateral = collateral.collateralMembersBank[msg.sender];
+        require(userCollateral > 0, "Collateral empty");
+
+        bool success;
+        bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
+        // Withdraw all the user has.
+        if (
+            collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral ||
+            expelledBeforeBeneficiary
+        ) {
+            // First case: The collateral is released or the user was expelled before being a beneficiary
+            collateral.collateralMembersBank[msg.sender] = 0;
+
+            if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
+                _withdrawFromYield(_termId, msg.sender, userCollateral, yield);
+            }
+
+            (success, ) = payable(_receiver).call{value: userCollateral}("");
+
+            if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
+                --collateral.counterMembers;
+            }
+
+            emit OnCollateralWithdrawal(_termId, msg.sender, _receiver, userCollateral);
+        }
+        // Or withdraw partially
+        else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
+            // Second case: The term is on an ongoing cycle, the user has not been expelled
+            // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
+            uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
+                _termId
+            ) * 15) / 10; // 1.5 X RCC in wei
+
+            // Collateral must be higher than 1.5 X RCC
+            if (userCollateral > minRequiredCollateral) {
+                uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
+                collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
+
+                _withdrawFromYield(_termId, msg.sender, allowedWithdrawal, yield);
+
+                (success, ) = payable(_receiver).call{value: allowedWithdrawal}("");
+
+                emit OnCollateralWithdrawal(_termId, msg.sender, _receiver, allowedWithdrawal);
+            }
+        }
+
+        require(success, "Withdraw failed");
+        if (yield.hasOptedIn[msg.sender] && yield.availableYield[msg.sender] > 0) {
+            LibYieldGeneration._claimAvailableYield(_termId, msg.sender, _receiver);
+        }
     }
 
     /// @param _collateral Collateral storage

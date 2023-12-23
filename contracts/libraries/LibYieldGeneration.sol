@@ -7,6 +7,13 @@ import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 
 library LibYieldGeneration {
+    event OnYieldClaimed(
+        uint indexed termId,
+        address indexed user,
+        address receiver,
+        uint indexed amount
+    ); // Emits when a user claims their yield
+
     /// @notice This function is used to deposit collateral for yield generation
     /// @param _termId The term id for which the collateral is being deposited
     /// @param _ethAmount The amount of collateral being deposited
@@ -148,5 +155,21 @@ library LibYieldGeneration {
             _yieldDistributionRatio(termId, user)) / 10 ** 18;
 
         return yieldDistributed;
+    }
+
+    function _claimAvailableYield(uint _termId, address _user, address _receiver) internal {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[_termId];
+
+        uint availableYield = yield.availableYield[_user];
+
+        require(availableYield > 0, "No yield to withdraw");
+
+        yield.availableYield[_user] = 0;
+        (bool success, ) = payable(_receiver).call{value: availableYield}("");
+        require(success);
+
+        emit OnYieldClaimed(_termId, _user, _receiver, availableYield);
     }
 }

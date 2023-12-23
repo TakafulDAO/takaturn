@@ -9,11 +9,6 @@ interface IYGFacetZaynFi {
     /// @param termId The term id for which the yield is being claimed
     function claimAvailableYield(uint termId) external;
 
-    /// @notice This function allows a user to claim the current available yield
-    /// @param termId The term id for which the yield is being claimed
-    /// @param user The user address that is claiming the yield
-    function claimAvailableYield(uint termId, address user) external;
-
     /// @notice This function allows a user to toggle their yield generation
     /// @dev only allowed before the term starts
     /// @param termId The term id for which the yield is being claimed

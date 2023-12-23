@@ -12,7 +12,12 @@ import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
 contract YGFacetZaynFi is IYGFacetZaynFi {
     event OnYGOptInToggled(uint indexed termId, address indexed user, bool indexed optedIn); // Emits when a user succesfully toggles yield generation
-    event OnYieldClaimed(uint indexed termId, address indexed user, uint indexed amount); // Emits when a user claims their yield
+    event OnYieldClaimed(
+        uint indexed termId,
+        address indexed user,
+        address receiver,
+        uint indexed amount
+    ); // Emits when a user claims their yield
 
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
@@ -22,14 +27,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
     /// @notice This function allows a user to claim the current available yield
     /// @param termId The term id for which the yield is being claimed
     function claimAvailableYield(uint termId) external {
-        _claimAvailableYield(termId, msg.sender);
-    }
-
-    /// @notice This function allows a user to claim the current available yield
-    /// @param termId The term id for which the yield is being claimed
-    /// @param user The user address that is claiming the yield
-    function claimAvailableYield(uint termId, address user) external {
-        _claimAvailableYield(termId, user);
+        LibYieldGeneration._claimAvailableYield(termId, msg.sender, msg.sender);
     }
 
     /// @notice This function allows a user to toggle their yield generation
@@ -68,22 +66,6 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             ._yieldProviders();
 
         yieldProvider.providerAddresses[providerString] = providerAddress;
-    }
-
-    function _claimAvailableYield(uint termId, address user) internal {
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
-
-        uint availableYield = yield.availableYield[user];
-
-        require(availableYield > 0, "No yield to withdraw");
-
-        yield.availableYield[user] = 0;
-        (bool success, ) = payable(user).call{value: availableYield}("");
-        require(success);
-
-        emit OnYieldClaimed(termId, user, availableYield);
     }
 
     /// @notice This function allows the owner to disable the yield generation feature in case of emergency
