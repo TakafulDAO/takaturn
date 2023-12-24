@@ -10,7 +10,8 @@ const TESTNET_DEPLOYER_PK = process.env.TESTNET_DEPLOYER_PK
 const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 
 /******************************************* RPC providers **********************************************/
-const ARBITRUM_TESTNET_RPC_URL = process.env.ARBITRUM_TESTNET_RPC_URL
+const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_URL
+const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RPC_URL
 
 /************************************** Networks Scans *************************************************/
 const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY
@@ -50,11 +51,23 @@ module.exports = {
             },
         ],
     },
-    defaultNetwork: "testnet_arbitrum_sepolia",
+    defaultNetwork: "hardhat",
     networks: {
+        hardhat: {
+            chainId: 31337,
+            blockConfirmations: 1,
+            initialBaseFeePerGas: 0,
+        },
+        testnet_arbitrum_goerli: {
+            chainId: 421613,
+            accounts: [TESTNET_DEPLOYER_PK],
+            url: ARBITRUM_TESTNET_GOERLI_RPC_URL,
+            blockConfirmations: 6,
+            timeout: 900000,
+        },
         testnet_arbitrum_sepolia: {
             chainId: 421614,
-            accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
+            accounts: [TESTNET_DEPLOYER_PK],
             url: ARBITRUM_TESTNET_SEPOLIA_RPC_URL,
             blockConfirmations: 6,
             timeout: 900000,
@@ -62,6 +75,7 @@ module.exports = {
     },
     etherscan: {
         apiKey: {
+            arbitrumGoerli: ARBISCAN_API_KEY,
             arbitrumSepolia: ARBISCAN_API_KEY,
         },
         customChains: [
