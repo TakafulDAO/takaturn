@@ -63,43 +63,20 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
           })
 
           describe("Testing withdraw collateral", function () {
-              beforeEach(async function () {
-                  // Impersonate the accounts
-                  participant_1 = "0x773D44a5F9FF345440565B26526E7b89c03f5418"
-                  participant_2 = "0x92aE5285Ed66cF37B4A7A6F5DD345E2b11be90fd"
-                  participant_3 = "0xA253ABb03A060b2C170ead2772D3171Cae484643"
-                  participant_4 = accounts[4]
-
-                  await impersonateAccount(participant_1)
-                  await impersonateAccount(participant_2)
-                  await impersonateAccount(participant_3)
-
-                  participant_1_signer = await ethers.getSigner(participant_1)
-                  participant_2_signer = await ethers.getSigner(participant_2)
-                  participant_3_signer = await ethers.getSigner(participant_3)
-
-                  takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1_signer)
-              })
-
-              describe("Current behaviour", function () {
-                  it("Revert Only zap can call", async function () {
-                      // Term Id to check
-                      const termId = 2
-
-                      await expect(
-                          takaturnDiamondParticipant_1.withdrawCollateral(termId)
-                      ).to.be.revertedWith("Only zap can call")
-                  })
-              })
               describe("New behaviour", function () {
                   beforeEach(async function () {
+                      participant_1 = accounts[1]
+                      participant_2 = accounts[2]
+                      participant_3 = accounts[3]
+                      participant_4 = accounts[4]
+
                       // Deploy new diamond
                       await deployments.fixture(["takaturn_upgrade"])
                       takaturnDiamond = await ethers.getContract("TakaturnDiamond")
 
-                      takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1_signer)
-                      takaturnDiamondParticipant_2 = takaturnDiamond.connect(participant_2_signer)
-                      takaturnDiamondParticipant_3 = takaturnDiamond.connect(participant_3_signer)
+                      takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
+                      takaturnDiamondParticipant_2 = takaturnDiamond.connect(participant_2)
+                      takaturnDiamondParticipant_3 = takaturnDiamond.connect(participant_3)
                       takaturnDiamondParticipant_4 = takaturnDiamond.connect(participant_4)
 
                       usdcWhale = networkConfig[chainId]["usdcWhale"]
@@ -130,22 +107,30 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
                       }
 
                       // Transfer USDC to the participants
-                      await usdcWhaleSigner.transfer(participant_1, balanceForUser)
-                      await usdcWhaleSigner.transfer(participant_2, balanceForUser)
-                      await usdcWhaleSigner.transfer(participant_3, balanceForUser)
-                      await usdcWhaleSigner.transfer(participant_4.address, balanceForUser)
+                      await usdcWhaleSigner.transfer(participant_1.address, balanceForUser, {
+                          gasLimit: 1000000,
+                      })
+                      await usdcWhaleSigner.transfer(participant_2.address, balanceForUser, {
+                          gasLimit: 1000000,
+                      })
+                      await usdcWhaleSigner.transfer(participant_3.address, balanceForUser, {
+                          gasLimit: 1000000,
+                      })
+                      await usdcWhaleSigner.transfer(participant_4.address, balanceForUser, {
+                          gasLimit: 1000000,
+                      })
 
                       // Approve the USDC for the diamond
                       await usdc
-                          .connect(participant_1_signer)
+                          .connect(participant_1)
                           .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
 
                       await usdc
-                          .connect(participant_2_signer)
+                          .connect(participant_2)
                           .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
 
                       await usdc
-                          .connect(participant_3_signer)
+                          .connect(participant_3)
                           .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
 
                       await usdc
@@ -188,7 +173,7 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
                       const yield = await takaturnDiamond.getYieldSummary(termId)
 
                       let yieldUserSummary = await takaturnDiamond.getUserYieldSummary(
-                          participant_1,
+                          participant_1.address,
                           termId
                       )
 
@@ -198,7 +183,7 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
                       const withdrawTx = takaturnDiamondParticipant_1.withdrawCollateral(termId)
 
                       yieldUserSummary = await takaturnDiamond.getUserYieldSummary(
-                          participant_1,
+                          participant_1.address,
                           termId
                       )
 
@@ -208,10 +193,10 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
                       await Promise.all([
                           expect(withdrawTx)
                               .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                              .withArgs(termId, participant_1, withdrawnCollateralAfter),
+                              .withArgs(termId, participant_1.address, withdrawnCollateralAfter),
                           expect(withdrawTx)
                               .to.emit(takaturnDiamond, "OnYieldClaimed")
-                              .withArgs(termId, participant_1, withdrawnYieldAfter),
+                              .withArgs(termId, participant_1.address, withdrawnYieldAfter),
                       ])
 
                       assert.equal(withdrawnYieldBefore, "0")

@@ -242,7 +242,10 @@ async function executeCycle(
 
                   for (let i = 1; i <= totalParticipants; i++) {
                       userAddress = accounts[i].address
-                      await usdcWhaleSigner.transfer(userAddress, balanceForUser)
+
+                      await usdcWhaleSigner.transfer(userAddress, balanceForUser, {
+                          gasLimit: 1000000,
+                      })
 
                       await usdc
                           .connect(accounts[i])
@@ -258,6 +261,7 @@ async function executeCycle(
                       usdc.address
                   )
               })
+
               describe("Yield generation, term creation", function () {
                   it("allows participant to join with yield generation and emit events", async function () {
                       const ids = await takaturnDiamondDeployer.getTermsId()
