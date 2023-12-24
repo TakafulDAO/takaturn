@@ -1,11 +1,8 @@
 name: Testnet deploy after merge to main
 
 on:
-  # TODO remove me before merege
-  push:
-  # TODO uncomment before mereg + test
-  # pull_request_review:
-  #   types: [submitted]
+  pull_request_review:
+    types: [submitted]
 
 env:
   ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
@@ -65,7 +62,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH_REF: "${{ steps.set_branch.outputs.branch }}"
         run: |
-          git config user.email "actions@github"
+          git config user.email "github-actions@github.com"
           git config user.name "Github Actions"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
           git add .
