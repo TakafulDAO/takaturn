@@ -1,12 +1,18 @@
 name: Testnet deploy after merge to main
 
 on:
-  pull_request:
-    branches:
-      - TT-1488-CD-deploys-to-Testnet
-#   pull_request_review:
-#     types: 
-#       - submitted
+  # TODO remove me before merege
+  push:
+  # TODO uncomment before mereg + test
+  # pull_request_review:
+  #   types: [submitted]
+
+env:
+  ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
+  ARBITRUM_TESTNET_GOERLI_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_GOERLI_RPC_URL}}
+  ARBITRUM_TESTNET_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_RPC_URL}}
+  ARBITRUM_TESTNET_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_SEPOLIA_RPC_URL}}
+  TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
 
 jobs:
   build:
@@ -22,23 +28,23 @@ jobs:
           node-version: "17"
           cache: "yarn"
 
+      - name: Determine Branch Name
+        id: set_branch
+        run: |
+          if [[ ${{ github.event_name }} == "pull_request" ]]; then
+            echo "::set-output name=branch::${{ github.head_ref }}"
+          else
+            branch_name=$(echo ${{ github.ref }} | sed 's/refs\/heads\///')
+            echo "::set-output name=branch::$branch_name"
+          fi
+
       - name: Install dependencies
         run: yarn install
 
       - name: Clear cache
-        env:
-          ARBITRUM_TESTNET_GOERLI_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_GOERLI_RPC_URL}}
-          ARBITRUM_TESTNET_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_SEPOLIA_RPC_URL}}
-          TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
-          ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
         run: yarn hardhat clean --config hardhat-continuous-deployment.config.js
 
       - name: Compile contracts
-        env:
-          ARBITRUM_TESTNET_GOERLI_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_GOERLI_RPC_URL}}
-          ARBITRUM_TESTNET_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_SEPOLIA_RPC_URL}}
-          TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
-          ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
         run: yarn hardhat compile --config hardhat-continuous-deployment.config.js
 
       - name: Git config
@@ -48,21 +54,13 @@ jobs:
         run: git fetch
 
       - name: Deploy contracts on Arbitrum Goerli
-        env:
-          ARBITRUM_TESTNET_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_RPC_URL}}
-          TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
-          ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
         run: yarn upgrade:goerli --config hardhat-continuous-deployment.config.js
 
       - name: Deploy contracts on Arbitrum Sepolia
-        env:
-          ARBITRUM_TESTNET_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_RPC_URL}}
-          TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
-          ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
         run: yarn upgrade:sepolia --config hardhat-continuous-deployment.config.js
 
       - name: Commit
-        run: git add . && git commit -m "Testnet deployments ABIs"
-
-      - name: Push new ABIs
-        run: git push origin ${{github.ref}}
+        run: |
+          git add .
+          git commit -m "ci(deployments): upgrade ABIs"
+          git push origin "${{ steps.set_branch.outputs.branch }}"
