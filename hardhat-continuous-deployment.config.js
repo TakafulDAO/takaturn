@@ -61,14 +61,16 @@ module.exports = {
         testnet_arbitrum_goerli: {
             chainId: 421613,
             accounts: [TESTNET_DEPLOYER_PK],
-            url: ARBITRUM_TESTNET_GOERLI_RPC_URL,
+            // url: ARBITRUM_TESTNET_GOERLI_RPC_URL,
+            url: "https://arb-goerli.g.alchemy.com/v2/4djh3pLoqn0MghlSIeqtvS1cXsAa8p0_",
             blockConfirmations: 6,
             timeout: 900000,
         },
         testnet_arbitrum_sepolia: {
             chainId: 421614,
             accounts: [TESTNET_DEPLOYER_PK],
-            url: ARBITRUM_TESTNET_SEPOLIA_RPC_URL,
+            // url: ARBITRUM_TESTNET_SEPOLIA_RPC_URL,
+            url: "https://arb-sepolia.g.alchemy.com/v2/Gh3UdljkTKjqkM9z9Evh3wQmRDluqlB-",
             blockConfirmations: 6,
             timeout: 900000,
         },
