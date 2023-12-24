@@ -60,7 +60,13 @@ jobs:
         run: yarn upgrade:sepolia --config hardhat-continuous-deployment.config.js
 
       - name: Commit
+        env:
+          COMMIT_MSG: "ci(deployments): upgrade ABIs"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_REF: "${{ steps.set_branch.outputs.branch }}"
         run: |
-          git add .
-          git commit -m "ci(deployments): upgrade ABIs"
-          git push origin "${{ steps.set_branch.outputs.branch }}"
+          git config user.email "actions@github"
+          git config user.name "Github Actions"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          git push origin
+          git diff --quiet && git diff --staged --quiet || (git commit -m "${COMMIT_MSG}"; git push origin HEAD:${BRANCH_REF})
