@@ -88,7 +88,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
                 "TermFacet",
                 "GettersFacet",
                 "YGFacetZaynFi",
-                "WithdrawGoerliEthFacet",
+                "WithdrawTestEthFacet",
             ],
             execute: {
                 contract: "DiamondInit",
@@ -98,7 +98,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             waitConfirmations: waitBlockConfirmations,
         })
 
-        withdrawGoerliEthFacet = await deployments.get("WithdrawGoerliEthFacet") // This facet is never deployed on mainnet
+        withdrawTestEthFacet = await deployments.get("WithdrawTestEthFacet") // This facet is never deployed on mainnet
     }
 
     collateralFacet = await deployments.get("CollateralFacet")
@@ -152,9 +152,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             log("==========================================================================")
         }
         if (isTestnet) {
-            log("01. Verifying Withdraw Goerli Eth Facet...")
-            await verify(withdrawGoerliEthFacet.address, args)
-            log("01. Withdraw Goerli Eth Facet Verified!")
+            log("01. Verifying Withdraw Test Eth Facet...")
+            await verify(withdrawTestEthFacet.address, args)
+            log("01. Withdraw Test Eth Facet Verified!")
         }
         log("==========================================================================")
     }

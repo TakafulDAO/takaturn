@@ -100,7 +100,9 @@ const { hour } = require("../../../utils/units")
                   let userAddress
                   for (let i = 1; i <= totalParticipants; i++) {
                       userAddress = accounts[i].address
-                      await usdcWhaleSigner.transfer(userAddress, balanceForUser)
+                      await usdcWhaleSigner.transfer(userAddress, balanceForUser, {
+                          gasLimit: 1000000,
+                      })
 
                       await usdc
                           .connect(accounts[i])
