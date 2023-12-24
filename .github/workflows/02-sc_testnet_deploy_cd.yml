@@ -14,6 +14,8 @@ env:
   ARBITRUM_TESTNET_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_SEPOLIA_RPC_URL}}
   TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
 
+permissions: write-all
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -47,9 +49,6 @@ jobs:
       - name: Compile contracts
         run: yarn hardhat compile --config hardhat-continuous-deployment.config.js
 
-      - name: Git config
-        run: git config user.name github-actions && git config user.email github-actions@github.com
-
       - name: Fetch repository
         run: git fetch
 
@@ -59,7 +58,7 @@ jobs:
       - name: Deploy contracts on Arbitrum Sepolia
         run: yarn upgrade:sepolia --config hardhat-continuous-deployment.config.js
 
-      - name: Commit
+      - name: Commit ABIs
         env:
           COMMIT_MSG: "ci(deployments): upgrade ABIs"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
