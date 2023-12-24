@@ -14,7 +14,8 @@ env:
   ARBITRUM_TESTNET_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_SEPOLIA_RPC_URL}}
   TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
 
-permissions: write-all
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -67,5 +68,5 @@ jobs:
           git config user.email "actions@github"
           git config user.name "Github Actions"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-          git push origin
+          git add .
           git diff --quiet && git diff --staged --quiet || (git commit -m "${COMMIT_MSG}"; git push origin HEAD:${BRANCH_REF})
