@@ -1,4 +1,4 @@
-name: Testnet deploy after merge to main
+name: Upgrade ABIs
 
 on:
   pull_request_review:
