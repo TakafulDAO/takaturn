@@ -50,21 +50,33 @@ module.exports = {
             },
         ],
     },
-    defaultNetwork: "cd_checks",
+    defaultNetwork: "testnet_arbitrum_sepolia",
     networks: {
-        cd_checks: {
-            chainId: 421613,
-            accounts: [TESTNET_DEPLOYER_PK],
-            url: ARBITRUM_TESTNET_RPC_URL,
+        testnet_arbitrum_sepolia: {
+            chainId: 421614,
+            accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
+            url: ARBITRUM_TESTNET_SEPOLIA_RPC_URL,
             blockConfirmations: 6,
             timeout: 900000,
         },
     },
     etherscan: {
         apiKey: {
-            arbitrumOne: ARBISCAN_API_KEY,
-            arbitrumGoerli: ARBISCAN_API_KEY,
+            arbitrumSepolia: ARBISCAN_API_KEY,
         },
+        customChains: [
+            {
+                network: "arbitrumSepolia",
+                chainId: 421614,
+                urls: {
+                    apiURL: "https://api-sepolia.arbiscan.io/api",
+                    browserURL: "https://sepolia.arbiscan.io/",
+                },
+            },
+        ],
+    },
+    sourcify: {
+        enabled: true,
     },
     namedAccounts: {
         deployer: {

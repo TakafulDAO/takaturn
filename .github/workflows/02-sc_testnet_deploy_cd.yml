@@ -49,7 +49,7 @@ jobs:
           ARBITRUM_TESTNET_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_RPC_URL}}
           TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
           ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
-        run: yarn hardhat deploy --tags takaturn_upgrade --network cd_checks --config hardhat-continuous-deployment.config.js
+        run: yarn upgrade:sepolia --config hardhat-continuous-deployment.config.js
 
       - name: Commit
         run: git add . && git commit -m "Testnet deployments ABIs"
