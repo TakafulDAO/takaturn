@@ -50,14 +50,9 @@ module.exports = {
             },
         ],
     },
-    defaultNetwork: "hardhat",
+    defaultNetwork: "cd_checks",
     networks: {
-        hardhat: {
-            chainId: 31337,
-            blockConfirmations: 1,
-            initialBaseFeePerGas: 0,
-        },
-        testnet_arbitrum: {
+        cd_checks: {
             chainId: 421613,
             accounts: [TESTNET_DEPLOYER_PK],
             url: ARBITRUM_TESTNET_RPC_URL,
