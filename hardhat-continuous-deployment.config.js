@@ -1,7 +1,6 @@
 require("dotenv").config()
 
-require("@nomiclabs/hardhat-waffle")
-require("@nomiclabs/hardhat-etherscan")
+require("@nomicfoundation/hardhat-verify")
 require("hardhat-deploy")
 
 /******************************************** Private Keys *********************************************/
