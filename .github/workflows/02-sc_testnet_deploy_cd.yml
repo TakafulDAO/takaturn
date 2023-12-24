@@ -47,7 +47,14 @@ jobs:
       - name: Fetch repository
         run: git fetch
 
-      - name: Deploy contracts
+      - name: Deploy contracts on Arbitrum Goerli
+        env:
+          ARBITRUM_TESTNET_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_RPC_URL}}
+          TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
+          ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
+        run: yarn upgrade:goerli --config hardhat-continuous-deployment.config.js
+
+      - name: Deploy contracts on Arbitrum Sepolia
         env:
           ARBITRUM_TESTNET_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_RPC_URL}}
           TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
