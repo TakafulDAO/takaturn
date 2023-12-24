@@ -31,7 +31,7 @@ jobs:
           ARBITRUM_TESTNET_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_TESTNET_SEPOLIA_RPC_URL}}
           TESTNET_DEPLOYER_PK: ${{secrets.TESTNET_DEPLOYER_PK}}
           ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
-        run: yarn hardhat clean --config hardhat-continuous-integration.config.js
+        run: yarn hardhat clean --config hardhat-continuous-deployment.config.js
 
       - name: Compile contracts
         env:
