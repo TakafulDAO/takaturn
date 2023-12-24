@@ -1,7 +1,6 @@
 require("dotenv").config()
 
-require("@nomiclabs/hardhat-waffle")
-require("@nomiclabs/hardhat-etherscan")
+require("@nomicfoundation/hardhat-verify")
 require("hardhat-deploy")
 
 /******************************************** Private Keys *********************************************/
@@ -11,7 +10,8 @@ const TESTNET_DEPLOYER_PK = process.env.TESTNET_DEPLOYER_PK
 const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 
 /******************************************* RPC providers **********************************************/
-const ARBITRUM_TESTNET_RPC_URL = process.env.ARBITRUM_TESTNET_RPC_URL
+const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_URL
+const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RPC_URL
 
 /************************************** Networks Scans *************************************************/
 const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY
@@ -58,19 +58,41 @@ module.exports = {
             blockConfirmations: 1,
             initialBaseFeePerGas: 0,
         },
-        testnet_arbitrum: {
+        testnet_arbitrum_goerli: {
             chainId: 421613,
             accounts: [TESTNET_DEPLOYER_PK],
-            url: ARBITRUM_TESTNET_RPC_URL,
+            // url: ARBITRUM_TESTNET_GOERLI_RPC_URL,
+            url: "https://arb-goerli.g.alchemy.com/v2/4djh3pLoqn0MghlSIeqtvS1cXsAa8p0_",
+            blockConfirmations: 6,
+            timeout: 900000,
+        },
+        testnet_arbitrum_sepolia: {
+            chainId: 421614,
+            accounts: [TESTNET_DEPLOYER_PK],
+            // url: ARBITRUM_TESTNET_SEPOLIA_RPC_URL,
+            url: "https://arb-sepolia.g.alchemy.com/v2/Gh3UdljkTKjqkM9z9Evh3wQmRDluqlB-",
             blockConfirmations: 6,
             timeout: 900000,
         },
     },
     etherscan: {
         apiKey: {
-            arbitrumOne: ARBISCAN_API_KEY,
             arbitrumGoerli: ARBISCAN_API_KEY,
+            arbitrumSepolia: ARBISCAN_API_KEY,
         },
+        customChains: [
+            {
+                network: "arbitrumSepolia",
+                chainId: 421614,
+                urls: {
+                    apiURL: "https://api-sepolia.arbiscan.io/api",
+                    browserURL: "https://sepolia.arbiscan.io/",
+                },
+            },
+        ],
+    },
+    sourcify: {
+        enabled: true,
     },
     namedAccounts: {
         deployer: {
