@@ -21,8 +21,7 @@ const {
     registrationPeriod,
     moneyPot,
 } = require("../utils/test-utils")
-const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
-const { BigNumber } = require("ethers")
+const { BigNumber, ZeroAddress } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -186,7 +185,7 @@ const { BigNumber } = require("ethers")
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      ZERO_ADDRESS
+                      ZeroAddress
                   )
               ).to.be.revertedWith("Invalid inputs")
               // Create term
