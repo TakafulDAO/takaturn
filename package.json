@@ -7,6 +7,15 @@
     "npm": "please-use-yarn",
     "yarn": ">= 1.22"
   },
+  "dependencies": {
+    "@chainlink/contracts": "^0.6.1",
+    "crypto": "^1.0.1",
+    "erc-20-abi": "^1.0.0",
+    "exceljs": "^4.3.0",
+    "hardhat-helpers": "^0.1.51",
+    "hardhat-tracer": "^2.5.0",
+    "xlsx": "^0.18.5"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
@@ -14,7 +23,6 @@
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@openzeppelin/contracts": "^4.9.2",
-    "@openzeppelin/test-helpers": "0.5.16",
     "chai": "^4.3.7",
     "dotenv": "^16.3.1",
     "ethereum-waffle": "^4.0.10",
@@ -31,26 +39,30 @@
   },
   "scripts": {
     "compile": "yarn hardhat compile",
+    "n": "yarn hardhat node",
+    "slither": "slither . --solc-remaps '@openzeppelin=node_modules/@openzeppelin' --exclude naming-convention,low-level-calls --buidler-ignore-compile",
+    "format": "yarn prettier --write .",
     "test": "yarn hardhat test",
     "test:staging:mainnet": "yarn hardhat test --network mainnet_arbitrum",
     "test:staging:goerli": "yarn hardhat test --network testnet_arbitrum_goerli",
     "test:staging:sepolia": "yarn hardhat test --network testnet_arbitrum_sepolia",
+    "coverage": "yarn hardhat coverage",
     "contractsInfo": "yarn hardhat run scripts/contractsInfo.js --network",
     "eventSignatures": "yarn hardhat run scripts/eventSignatures.js",
     "eventUrls": "yarn hardhat run scripts/tx-urls.js",
-    "slither": "slither . --solc-remaps '@openzeppelin=node_modules/@openzeppelin' --exclude naming-convention,low-level-calls --buidler-ignore-compile",
-    "coverage": "yarn hardhat coverage",
-    "n": "yarn hardhat node",
     "deploy": "yarn hardhat deploy",
     "deploy:local": "yarn hardhat deploy --tags takaturn_deploy",
     "deploy:mainnet": "yarn hardhat deploy --network mainnet_arbitrum --tags takaturn_deploy",
     "deploy:goerli": "yarn hardhat deploy --network testnet_arbitrum_goerli --tags takaturn_deploy",
     "deploy:sepolia": "yarn hardhat deploy --network testnet_arbitrum_sepolia --tags takaturn_deploy",
+    "deploy:mainnet:multisig": "yarn hardhat deploy --network mainnet_arbitrum --tags multisig",
+    "deploy:goerli:multisig": "yarn hardhat deploy --network testnet_arbitrum_goerli --tags multisig",
     "upgrade:local": "yarn hardhat deploy --tags takaturn_upgrade",
     "upgrade:mainnet": "yarn hardhat deploy --network mainnet_arbitrum --tags takaturn_upgrade",
     "upgrade:goerli": "yarn hardhat deploy --network testnet_arbitrum_goerli --tags takaturn_upgrade",
     "upgrade:sepolia": "yarn hardhat deploy --network testnet_arbitrum_sepolia --tags takaturn_upgrade",
-    "format": "yarn prettier --write .",
+    "deploy:sepolia:multisig": "yarn hardhat deploy --network testnet_arbitrum_sepolia --tags multisig",
+    "upgrade:mainnet:multisig": "yarn hardhat deploy --network mainnet_arbitrum --tags multisig",
     "create:term:goerli": "yarn hardhat run scripts/contractInteractions/createTerm.js --network testnet_arbitrum_goerli",
     "create:term:sepolia": "yarn hardhat run scripts/contractInteractions/createTerm.js --network testnet_arbitrum_sepolia",
     "join:term:goerli": "yarn hardhat joinTerm --network testnet_arbitrum_goerli --term-id",
@@ -88,15 +100,7 @@
     "summary:user:id:mainnet": "yarn hardhat userSummaryByTermId --network mainnet_arbitrum --user-address",
     "summary:user:id:goerli": "yarn hardhat userSummaryByTermId --network testnet_arbitrum_goerli --user-address",
     "summary:user:id:sepolia": "yarn hardhat userSummaryByTermId --network testnet_arbitrum_sepolia --user-address",
-    "usdcMint:sepolia": "yarn hardhat usdcMint --network testnet_arbitrum_sepolia --user-address"
-  },
-  "dependencies": {
-    "@chainlink/contracts": "^0.6.1",
-    "crypto": "^1.0.1",
-    "erc-20-abi": "^1.0.0",
-    "exceljs": "^4.3.0",
-    "hardhat-helpers": "^0.1.51",
-    "hardhat-tracer": "^2.5.0",
-    "xlsx": "^0.18.5"
+    "usdcMint:sepolia": "yarn hardhat usdcMint --network testnet_arbitrum_sepolia --user-address",
+    "test:multisig": "yarn hardhat deploy --network testnet_ethereum_sepolia --tags multisig"
   }
 }
