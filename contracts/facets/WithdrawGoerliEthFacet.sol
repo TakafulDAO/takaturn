@@ -38,4 +38,8 @@ contract WithdrawTestEthFacet {
         bool success = fund.stableToken.transfer(msg.sender, balance);
         require(success, "Transfer failed");
     }
+
+    function testUpgradeOnMultisig() external pure returns (string memory) {
+        return "Upgrade on multisig [take 3]";
+    }
 }

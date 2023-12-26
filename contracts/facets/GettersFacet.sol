@@ -680,26 +680,26 @@ contract GettersFacet is IGetters {
         return LibYieldGenerationStorage._yieldLock().yieldLock;
     }
 
-    // /// @notice This function return the current constant values for oracles and yield providers
-    // /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
-    // /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"
-    // /// @param zapAddress The name of the zap address. Example: "ZaynZap"
-    // /// @param vaultAddress The name of the vault address. Example: "ZaynVault"
-    // function getConstants(
-    //     string memory firstAggregator,
-    //     string memory secondAggregator,
-    //     string memory zapAddress,
-    //     string memory vaultAddress
-    // ) external view returns (address, address, address, address) {
-    //     LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
-    //     LibYieldGenerationStorage.YieldProviders storage yieldProvider = LibYieldGenerationStorage
-    //         ._yieldProviders();
+    /// @notice This function return the current constant values for oracles and yield providers
+    /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
+    /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"
+    /// @param zapAddress The name of the zap address. Example: "ZaynZap"
+    /// @param vaultAddress The name of the vault address. Example: "ZaynVault"
+    function getConstants(
+        string memory firstAggregator,
+        string memory secondAggregator,
+        string memory zapAddress,
+        string memory vaultAddress
+    ) external view returns (address, address, address, address) {
+        LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
+        LibYieldGenerationStorage.YieldProviders storage yieldProvider = LibYieldGenerationStorage
+            ._yieldProviders();
 
-    //     return (
-    //         termConsts.aggregatorsAddresses[firstAggregator],
-    //         termConsts.aggregatorsAddresses[secondAggregator],
-    //         yieldProvider.providerAddresses[zapAddress],
-    //         yieldProvider.providerAddresses[vaultAddress]
-    //     );
-    // }
+        return (
+            termConsts.aggregatorsAddresses[firstAggregator],
+            termConsts.aggregatorsAddresses[secondAggregator],
+            yieldProvider.providerAddresses[zapAddress],
+            yieldProvider.providerAddresses[vaultAddress]
+        );
+    }
 }
