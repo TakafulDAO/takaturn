@@ -34,6 +34,9 @@ const TESTNET_DEPLOYER_PK = process.env.TESTNET_DEPLOYER_PK
 const DEPLOYER = process.env.DEPLOYER_ADDRESS
 const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 
+/******************************************** Diamond Owner address *****************************************/
+const DIAMOND_OWNER = process.env.DIAMOND_OWNER
+
 /******************************************* RPC providers **********************************************/
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
 const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_URL
@@ -270,6 +273,7 @@ module.exports = {
 
             testnet_arbitrum_goerli: TESTNET_DEPLOYER,
             testnet_arbitrum_sepolia: TESTNET_DEPLOYER,
+            testnet_ethereum_sepolia: TESTNET_DEPLOYER,
 
             default: 0,
             localhost: 0,
@@ -344,6 +348,16 @@ module.exports = {
         usdcLostAndFound: {
             default: 16,
             localhost: 16,
+        },
+        diamondOwner: {
+            mainnet_arbitrum: DIAMOND_OWNER,
+
+            testnet_arbitrum_goerli: DIAMOND_OWNER,
+            testnet_arbitrum_sepolia: DIAMOND_OWNER,
+            testnet_ethereum_sepolia: DIAMOND_OWNER,
+
+            default: 17,
+            localhost: 17,
         },
     },
     mocha: {
