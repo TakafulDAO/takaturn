@@ -40,6 +40,6 @@ contract WithdrawTestEthFacet {
     }
 
     function testUpgradeOnMultisig() external pure returns (string memory) {
-        return "Change the owner";
+        return "Test multisig upgrade [take 3]";
     }
 }
