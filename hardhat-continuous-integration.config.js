@@ -1,8 +1,9 @@
 require("dotenv").config()
 
 require("hardhat-deploy")
-require("@nomicfoundation/hardhat-ethers");
-require("hardhat-deploy-ethers");
+require("@nomicfoundation/hardhat-ethers")
+require("hardhat-deploy-ethers")
+require("@nomicfoundation/hardhat-chai-matchers")
 
 /******************************************** Private Keys *********************************************/
 const TESTNET_DEPLOYER_PK = process.env.TESTNET_DEPLOYER_PK
