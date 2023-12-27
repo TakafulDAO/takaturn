@@ -50,9 +50,6 @@ jobs:
       - name: Fetch repository
         run: git fetch
 
-      - name: Deploy contracts on Arbitrum Goerli
-        run: yarn upgrade:goerli --config hardhat-continuous-deployment.config.js
-
       - name: Deploy contracts on Arbitrum Sepolia
         run: yarn upgrade:sepolia --config hardhat-continuous-deployment.config.js
 
