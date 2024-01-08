@@ -26,8 +26,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
     /// @notice This function allows a user to claim the current available yield
     /// @param termId The term id for which the yield is being claimed
-    function claimAvailableYield(uint termId) external {
-        LibYieldGeneration._claimAvailableYield(termId, msg.sender, msg.sender);
+    /// @param receiver The address of the user who will receive the yield
+    function claimAvailableYield(uint termId, address receiver) external {
+        LibYieldGeneration._claimAvailableYield(termId, msg.sender, receiver);
     }
 
     /// @notice This function allows a user to toggle their yield generation
