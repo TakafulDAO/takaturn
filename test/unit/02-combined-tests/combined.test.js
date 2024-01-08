@@ -550,10 +550,15 @@ async function executeCycle(
 
                       currentBalance = await ethers.provider.getBalance(participant_1.address)
 
-                      await expect(takaturnDiamondParticipant_1.withdrawFund(termId)).to.emit(
-                          takaturnDiamond,
-                          "OnFundWithdrawn"
-                      )
+                      const withdrawFundTx = takaturnDiamondParticipant_1.withdrawFund(termId)
+
+                      await Promise.all([
+                          expect(withdrawFundTx).to.emit(takaturnDiamond, "OnFundWithdrawn"),
+                          expect(withdrawFundTx).to.emit(
+                              takaturnDiamond,
+                              "OnReimbursementWithdrawn"
+                          ),
+                      ])
 
                       newBalance = await ethers.provider.getBalance(participant_1.address)
 

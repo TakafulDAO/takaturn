@@ -695,9 +695,14 @@ const { BigNumber } = require("ethers")
                           participant_1.address,
                           contributionAmount * 10 * 10 ** 6
                       ),
-                  //   expect(withdrawFundTx)
-                  //       .to.emit(takaturnDiamond, "OnReimbursementWithdrawn")
-                  //       .withArgs(termId, participant_1.address, contributionAmountWei),
+                  expect(withdrawFundTx)
+                      .to.emit(takaturnDiamond, "OnReimbursementWithdrawn")
+                      .withArgs(
+                          termId,
+                          participant_1.address,
+                          participant_1.address,
+                          contributionAmountWei
+                      ),
               ])
 
               await expect(
