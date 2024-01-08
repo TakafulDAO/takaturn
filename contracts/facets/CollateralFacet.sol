@@ -30,7 +30,12 @@ contract CollateralFacet is ICollateral {
         address receiver,
         uint indexed collateralAmount
     );
-    event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
+    event OnReimbursementWithdrawn(
+        uint indexed termId,
+        address indexed participant,
+        address receiver,
+        uint indexed amount
+    );
     event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
     event OnFrozenMoneyPotLiquidated(
         uint indexed termId,
