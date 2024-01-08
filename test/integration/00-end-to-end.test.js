@@ -772,14 +772,20 @@ const { BigNumber } = require("ethers")
 
               if (availableYield > 0) {
                   //   console.log("availableYield", availableYield.toString())
-                  await expect(takaturnDiamond.claimAvailableYield(termId))
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_2)
+                          .claimAvailableYield(termId, participant_2.address)
+                  )
                       .to.emit(takaturnDiamond, "OnYieldClaimed")
                       .withArgs(termId, participant_2.address, availableYield)
               } else {
                   //   console.log("No yield")
-                  await expect(takaturnDiamond.claimAvailableYield(termId)).to.be.revertedWith(
-                      "No yield to withdraw"
-                  )
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_2)
+                          .claimAvailableYield(termId, participant_2.address)
+                  ).to.be.revertedWith("No yield to withdraw")
               }
 
               for (let i = 1; i <= totalParticipants; i++) {
@@ -832,11 +838,15 @@ const { BigNumber } = require("ethers")
 
               if (availableYield > 0) {
                   //   console.log("availableYield", availableYield.toString())
-                  await takaturnDiamond.connect(participant_2).claimAvailableYield(termId)
+                  await takaturnDiamond
+                      .connect(participant_2)
+                      .claimAvailableYield(termId, participant2.address)
               } else {
                   //   console.log("No yield")
                   await expect(
-                      takaturnDiamond.connect(participant_2).claimAvailableYield(termId)
+                      takaturnDiamond
+                          .connect(participant_2)
+                          .claimAvailableYield(termId, participant_2.address)
                   ).to.be.revertedWith("No yield to withdraw")
               }
 
