@@ -168,6 +168,25 @@ contract CollateralFacet is ICollateral {
     /// @param termId term id
     /// @param receiver receiver address
     function withdrawCollateralToAnotherAddress(uint termId, address receiver) external {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+
+        address[] memory participants = fund.beneficiariesOrder;
+        uint participantsLength = participants.length;
+        bool canCall;
+
+        for (uint i; i < participantsLength; ) {
+            if (participants[i] == msg.sender) {
+                canCall = true;
+                break;
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        require(canCall, "The caller must be a participant");
+
         _withdrawCollateral(termId, receiver);
     }
 

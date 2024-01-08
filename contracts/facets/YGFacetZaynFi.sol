@@ -27,7 +27,27 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
     /// @notice This function allows a user to claim the current available yield
     /// @param termId The term id for which the yield is being claimed
     /// @param receiver The address of the user who will receive the yield
+    /// @dev for emergency use only, in case the claimed yield is not sent to the user when withdrawing the collateral
     function claimAvailableYield(uint termId, address receiver) external {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+
+        address[] memory participants = fund.beneficiariesOrder;
+        uint participantsLength = participants.length;
+        bool canCall;
+
+        for (uint i; i < participantsLength; ) {
+            if (participants[i] == msg.sender) {
+                canCall = true;
+                break;
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        require(canCall, "The caller must be a participant");
+
         LibYieldGeneration._claimAvailableYield(termId, msg.sender, receiver);
     }
 
