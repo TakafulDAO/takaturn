@@ -21,8 +21,7 @@ const {
     registrationPeriod,
     moneyPot,
 } = require("../utils/test-utils")
-const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants")
-const { BigNumber } = require("ethers")
+const { BigNumber, ZeroAddress } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -101,7 +100,7 @@ const { BigNumber } = require("ethers")
               zaynZapOwner = zaynZap.connect(zapOwnerSigner)
               usdcWhaleSigner = usdc.connect(whale)
 
-              await zaynZapOwner.toggleTrustedSender(takaturnDiamond.address, true, {
+              await zaynZapOwner.toggleTrustedSender(takaturnDiamond, true, {
                   gasLimit: 1000000,
               })
 
@@ -115,17 +114,13 @@ const { BigNumber } = require("ethers")
                           gasLimit: 1000000,
                       })
 
-                      await usdc
-                          .connect(accounts[i])
-                          .approve(takaturnDiamond.address, amount * 10 ** 6)
+                      await usdc.connect(accounts[i]).approve(takaturnDiamond, amount * 10 ** 6)
                   } else {
                       await usdcWhaleSigner.transfer(userAddress, moneyPot * 10 ** 6, {
                           gasLimit: 1000000,
                       })
 
-                      await usdc
-                          .connect(accounts[i])
-                          .approve(takaturnDiamond.address, moneyPot * 10 ** 6)
+                      await usdc.connect(accounts[i]).approve(takaturnDiamond, moneyPot * 10 ** 6)
                   }
               }
           })
@@ -140,7 +135,7 @@ const { BigNumber } = require("ethers")
                       0,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
               ).to.be.revertedWith("Invalid inputs")
               await expect(
@@ -150,7 +145,7 @@ const { BigNumber } = require("ethers")
                       cycleTime,
                       0,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
               ).to.be.revertedWith("Invalid inputs")
               await expect(
@@ -160,7 +155,7 @@ const { BigNumber } = require("ethers")
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
               ).to.be.revertedWith("Invalid inputs")
               await expect(
@@ -170,7 +165,7 @@ const { BigNumber } = require("ethers")
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
               ).to.be.revertedWith("Invalid inputs")
               await expect(
@@ -180,7 +175,7 @@ const { BigNumber } = require("ethers")
                       cycleTime,
                       contributionAmount,
                       0,
-                      usdc.address
+                      usdc
                   )
               ).to.be.revertedWith("Invalid inputs")
               await expect(
@@ -190,7 +185,7 @@ const { BigNumber } = require("ethers")
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      ZERO_ADDRESS
+                      ZeroAddress
                   )
               ).to.be.revertedWith("Invalid inputs")
               // Create term
@@ -201,7 +196,7 @@ const { BigNumber } = require("ethers")
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
               )
                   .to.emit(takaturnDiamond, "OnTermCreated")
@@ -223,7 +218,7 @@ const { BigNumber } = require("ethers")
               expect(term.cycleTime).to.equal(cycleTime)
               expect(term.contributionAmount).to.equal(contributionAmount)
               expect(term.contributionPeriod).to.equal(contributionPeriod)
-              expect(term.stableTokenAddress).to.equal(usdc.address)
+              expect(term.stableTokenAddress).to.equal(usdc.target)
 
               expect(collateral[0]).to.equal(true)
               await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
@@ -355,7 +350,7 @@ const { BigNumber } = require("ethers")
                   cycleTime,
                   contributionAmount,
                   contributionPeriod,
-                  usdc.address
+                  usdc
               )
 
               let secondEntrance = await takaturnDiamondDeployer.minCollateralToDeposit(
@@ -448,11 +443,11 @@ const { BigNumber } = require("ethers")
                   termId
               )
 
-              assert.equal(remainingContributionTime.toNumber(), contributionPeriod)
+              assert.equal(remainingContributionTime, contributionPeriod)
 
               let remainingCycleTime = await takaturnDiamond.getRemainingCycleTime(termId)
 
-              assert.equal(remainingCycleTime.toNumber(), cycleTime)
+              assert.equal(remainingCycleTime, cycleTime)
 
               term = await takaturnDiamond.getTermSummary(termId)
               collateral = await takaturnDiamond.getCollateralSummary(termId)
@@ -567,7 +562,7 @@ const { BigNumber } = require("ethers")
 
               let closeFundingPeriodTx = takaturnDiamond.closeFundingPeriod(termId)
 
-              let contributionAmountWei = BigNumber.from("25000000000000000") // ETH = 2000 USD
+              let contributionAmountWei = 25000000000000000n // ETH = 2000 USD
 
               await Promise.all([
                   expect(closeFundingPeriodTx)
@@ -606,10 +601,7 @@ const { BigNumber } = require("ethers")
                   await takaturnDiamond.getDepositorCollateralSummary(participant_8.address, termId)
 
               assert.equal(participant_1_fundSummary[1], true)
-              assert.equal(
-                  participant_1_fundSummary[4].toNumber(),
-                  contributionAmount * 10 * 10 ** 6
-              )
+              assert.equal(participant_1_fundSummary[4], contributionAmount * 10 * 10 ** 6)
               assert.equal(participant_1_fundSummary[5], false)
               assert.equal(
                   defaulter_collateralSummary_before[1].toString(),
@@ -649,7 +641,7 @@ const { BigNumber } = require("ethers")
 
               remainingCycleTime = await takaturnDiamond.getRemainingCycleTime(termId)
 
-              assert.equal(remainingCycleTime.toNumber(), 0)
+              assert.equal(remainingCycleTime, 0)
 
               //******************************************** Second cycle *********************************************************/
 
@@ -718,7 +710,7 @@ const { BigNumber } = require("ethers")
                   termId
               )
 
-              assert.equal(participant_1_fundSummary[4].toNumber(), 0)
+              assert.equal(participant_1_fundSummary[4], 0)
               assert.equal(participant_1_collateralSummary[2].toString(), 0)
 
               await expect(takaturnDiamond.connect(participant_1).withdrawCollateral(termId))

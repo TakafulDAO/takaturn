@@ -8,7 +8,7 @@ import {LibWithdrawGoerliEth} from "../libraries/LibWithdrawGoerliEth.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
 contract WithdrawTestEthFacet {
-    event OnGoerliEthWithdraw(uint indexed amount, address indexed receiver);
+    event OnTestEthWithdraw(uint indexed amount, address indexed receiver);
 
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
@@ -24,7 +24,7 @@ contract WithdrawTestEthFacet {
         uint balance = address(this).balance;
         (bool success, ) = payable(msg.sender).call{value: balance}("");
         require(success, "Withdraw failed");
-        emit OnGoerliEthWithdraw(balance, msg.sender);
+        emit OnTestEthWithdraw(balance, msg.sender);
     }
 
     function addTrustedAddress(address newManager) external onlyOwner onlyManager(msg.sender) {
@@ -37,5 +37,9 @@ contract WithdrawTestEthFacet {
         uint balance = fund.stableToken.balanceOf(address(this));
         bool success = fund.stableToken.transfer(msg.sender, balance);
         require(success, "Transfer failed");
+    }
+
+    function testUpgradeOnMultisig() external pure returns (string memory) {
+        return "Test multisig upgrade [demo]";
     }
 }

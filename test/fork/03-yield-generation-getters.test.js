@@ -70,7 +70,7 @@ const { BigNumber } = require("ethers")
               zaynZapOwner = zaynZap.connect(zapOwnerSigner)
               usdcWhaleSigner = usdc.connect(whale)
 
-              await zaynZapOwner.toggleTrustedSender(takaturnDiamond.address, true, {
+              await zaynZapOwner.toggleTrustedSender(takaturnDiamond, true, {
                   gasLimit: 1000000,
               })
 
@@ -91,19 +91,19 @@ const { BigNumber } = require("ethers")
               // Approve the USDC for the diamond
               await usdc
                   .connect(participant_1)
-                  .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                  .approve(takaturnDiamond, contributionAmount * 10 ** 6)
 
               await usdc
                   .connect(participant_2)
-                  .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                  .approve(takaturnDiamond, contributionAmount * 10 ** 6)
 
               await usdc
                   .connect(participant_3)
-                  .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                  .approve(takaturnDiamond, contributionAmount * 10 ** 6)
 
               await usdc
                   .connect(participant_4)
-                  .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                  .approve(takaturnDiamond, contributionAmount * 10 ** 6)
 
               for (let i = 0; i < 3; i++) {
                   await takaturnDiamond.createTerm(
@@ -112,7 +112,7 @@ const { BigNumber } = require("ethers")
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
               }
               // We simulate the exact behaviour from term 2
@@ -120,19 +120,19 @@ const { BigNumber } = require("ethers")
               const termId = terms[0]
 
               await takaturnDiamondParticipant_1.joinTerm(termId, true, {
-                  value: ethers.utils.parseEther("0.19268"),
+                  value: ethers.parseEther("0.19268"),
               })
 
               await takaturnDiamondParticipant_2.joinTerm(termId, true, {
-                  value: ethers.utils.parseEther("0.14507"),
+                  value: ethers.parseEther("0.14507"),
               })
 
               await takaturnDiamondParticipant_3.joinTerm(termId, true, {
-                  value: ethers.utils.parseEther("0.09518"),
+                  value: ethers.parseEther("0.09518"),
               })
 
               await takaturnDiamondParticipant_4.joinTerm(termId, true, {
-                  value: ethers.utils.parseEther("0.04735"),
+                  value: ethers.parseEther("0.04735"),
               })
 
               await advanceTime(registrationPeriod + 1)
@@ -382,9 +382,7 @@ const { BigNumber } = require("ethers")
                           termId
                       )
 
-                      const userYieldGeneratedBefore = BigNumber.from(userYieldSummary[1]).add(
-                          BigNumber.from(userYieldSummary[5])
-                      )
+                      const userYieldGeneratedBefore = userYieldSummary[1] + userYieldSummary[5]
 
                       await advanceTime(contributionPeriod + 1)
 
@@ -395,9 +393,7 @@ const { BigNumber } = require("ethers")
                           termId
                       )
 
-                      const userYieldGeneratedAfter = BigNumber.from(userYieldSummary[1]).add(
-                          BigNumber.from(userYieldSummary[5])
-                      )
+                      const userYieldGeneratedAfter = userYieldSummary[1] + userYieldSummary[5]
 
                       assert.equal(
                           userYieldGeneratedBefore.toString(),
@@ -414,9 +410,7 @@ const { BigNumber } = require("ethers")
                               termId
                           )
 
-                          const userYieldGeneratedBefore = BigNumber.from(userYieldSummary[1]).add(
-                              BigNumber.from(userYieldSummary[5])
-                          )
+                          const userYieldGeneratedBefore = userYieldSummary[1] + userYieldSummary[5]
 
                           for (let i = 0; i < 3; i++) {
                               try {
@@ -435,9 +429,7 @@ const { BigNumber } = require("ethers")
                               termId
                           )
 
-                          const userYieldGeneratedAfter = BigNumber.from(userYieldSummary[1]).add(
-                              BigNumber.from(userYieldSummary[5])
-                          )
+                          const userYieldGeneratedAfter = userYieldSummary[1] + userYieldSummary[5]
 
                           const userYieldGeneratedBeforeFormatted =
                               erc20UnitsFormat(userYieldGeneratedBefore)
@@ -462,9 +454,7 @@ const { BigNumber } = require("ethers")
                               termId
                           )
 
-                          const userYieldGeneratedBefore = BigNumber.from(userYieldSummary[1]).add(
-                              BigNumber.from(userYieldSummary[5])
-                          )
+                          const userYieldGeneratedBefore = userYieldSummary[1] + userYieldSummary[5]
 
                           await advanceTime(contributionPeriod + 1)
 
@@ -477,9 +467,7 @@ const { BigNumber } = require("ethers")
                               termId
                           )
 
-                          const userYieldGeneratedAfter = BigNumber.from(userYieldSummary[1]).add(
-                              BigNumber.from(userYieldSummary[5])
-                          )
+                          const userYieldGeneratedAfter = userYieldSummary[1] + userYieldSummary[5]
 
                           const userYieldGeneratedBeforeFormatted =
                               erc20UnitsFormat(userYieldGeneratedBefore)

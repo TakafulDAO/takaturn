@@ -1,11 +1,13 @@
 require("dotenv").config()
 
-require("@nomiclabs/hardhat-waffle")
 require("@nomicfoundation/hardhat-verify")
 require("hardhat-deploy")
 require("solidity-coverage")
 require("hardhat-gas-reporter")
 require("hardhat-contract-sizer")
+require("@nomicfoundation/hardhat-ethers")
+require("hardhat-deploy-ethers")
+require("@nomicfoundation/hardhat-chai-matchers")
 
 const { joinTerm } = require("./tasks/joinTerm")
 const { startTerm } = require("./tasks/startTerm")
@@ -32,13 +34,18 @@ const TESTNET_DEPLOYER_PK = process.env.TESTNET_DEPLOYER_PK
 const DEPLOYER = process.env.DEPLOYER_ADDRESS
 const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 
+/******************************************** Diamond Owner address *****************************************/
+const DIAMOND_OWNER = process.env.DIAMOND_OWNER
+
 /******************************************* RPC providers **********************************************/
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
 const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_URL
 const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RPC_URL
+const ETHEREUM_TESTNET_SEPOLIA_RPC_URL = process.env.ETHEREUM_TESTNET_SEPOLIA_RPC_URL
 
 /************************************** Networks Scans *************************************************/
 const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 
 /************************************** Coinmarketcap **************************************************/
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY
@@ -52,11 +59,11 @@ const SIZE = process.env.SIZE
 // Only used for front-end testing
 const PARTICIPANT_1_PK = "aa590ecfed7e88085c93a68877d57bed40c16c6bae04da1274beb7091b668f0f"
 const PARTICIPANT_2_PK = "7d5e0d884a76313732fab7485890d7f5bf88ea32620800637fab35966c2d7409"
-const PARTICIPANT_3_PK = "7d5e0d884a76313732fab7485890d7f5bf88ea32620800637fab35966c2d7409"
+const PARTICIPANT_3_PK = "cf96b1d20ddbaff23c0abada26d28c63dc99c93b75f5a5e698f94e16de51b9f5"
 
 const PARTICIPANT_1_ADDRESS = "0x5ab2d59849a91484ab35312121e8a47a494d1622"
 const PARTICIPANT_2_ADDRESS = "0xd26235AF7919C81470481fF4436B5465B0bbF6F2"
-const PARTICIPANT_3_ADDRESS = "0x73FA3916DEeE2316876A0d88E763C6D6566c50D0"
+const PARTICIPANT_3_ADDRESS = "0x55296ae1c0114A4C20E333571b1DbD40939C80A3"
 
 /***************************************** Tasks ******************************************************/
 task("joinTerm", "Join the term")
@@ -223,12 +230,20 @@ module.exports = {
             blockConfirmations: 6,
             timeout: 900000,
         },
+        testnet_ethereum_sepolia: {
+            chainId: 11155111,
+            accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
+            url: ETHEREUM_TESTNET_SEPOLIA_RPC_URL,
+            blockConfirmations: 6,
+            timeout: 900000,
+        },
     },
     etherscan: {
         apiKey: {
             arbitrumOne: ARBISCAN_API_KEY,
             arbitrumGoerli: ARBISCAN_API_KEY,
             arbitrumSepolia: ARBISCAN_API_KEY,
+            sepolia: ETHERSCAN_API_KEY,
         },
         customChains: [
             {
@@ -258,6 +273,7 @@ module.exports = {
 
             testnet_arbitrum_goerli: TESTNET_DEPLOYER,
             testnet_arbitrum_sepolia: TESTNET_DEPLOYER,
+            testnet_ethereum_sepolia: TESTNET_DEPLOYER,
 
             default: 0,
             localhost: 0,
@@ -332,6 +348,16 @@ module.exports = {
         usdcLostAndFound: {
             default: 16,
             localhost: 16,
+        },
+        diamondOwner: {
+            mainnet_arbitrum: DIAMOND_OWNER,
+
+            testnet_arbitrum_goerli: DIAMOND_OWNER,
+            testnet_arbitrum_sepolia: DIAMOND_OWNER,
+            testnet_ethereum_sepolia: DIAMOND_OWNER,
+
+            default: 17,
+            localhost: 17,
         },
     },
     mocha: {

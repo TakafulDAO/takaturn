@@ -2,7 +2,6 @@ const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
 const { advanceTimeByDate, advanceTime, impersonateAccount } = require("../../../utils/_helpers")
-const { BigNumber } = require("ethers")
 const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
@@ -10,11 +9,11 @@ const { hour } = require("../../../utils/units")
     : describe("Unit tests. Fund Facet", function () {
           const chainId = network.config.chainId
 
-          const totalParticipants = BigNumber.from("3") // Create term param
-          const cycleTime = BigNumber.from("180") // Create term param
-          const contributionAmount = BigNumber.from("10") // Create term param
-          const contributionPeriod = BigNumber.from("120") // Create term param
-          const registrationPeriod = BigNumber.from("120") // Create term param
+          const totalParticipants = 3 // Create term param
+          const cycleTime = 180 // Create term param
+          const contributionAmount = 10 // Create term param
+          const contributionPeriod = 120 // Create term param
+          const registrationPeriod = 120 // Create term param
 
           let takaturnDiamond
 
@@ -68,7 +67,7 @@ const { hour } = require("../../../utils/units")
                   cycleTime,
                   contributionAmount,
                   contributionPeriod,
-                  usdc.address
+                  usdc
               )
 
               const lastTerm = await takaturnDiamondDeployer.getTermsId()
@@ -82,7 +81,7 @@ const { hour } = require("../../../utils/units")
                       .joinTerm(termId, false, { value: entrance })
               }
 
-              await advanceTime(registrationPeriod.toNumber() + 1)
+              await advanceTime(registrationPeriod + 1)
               await takaturnDiamond.startTerm(termId)
 
               const balanceForUser = contributionAmount * totalParticipants * 10 ** 6
@@ -102,7 +101,7 @@ const { hour } = require("../../../utils/units")
 
                       await usdc
                           .connect(accounts[i])
-                          .approve(takaturnDiamond.address, balanceForUser * 10 ** 6)
+                          .approve(takaturnDiamond, balanceForUser * 10 ** 6)
                   }
               } else {
                   // Initialize USDC
@@ -140,7 +139,7 @@ const { hour } = require("../../../utils/units")
 
                       await usdc
                           .connect(depositor)
-                          .approve(takaturnDiamond.address, balanceForUser * 10 ** 6)
+                          .approve(takaturnDiamond, balanceForUser * 10 ** 6)
                   }
               }
           })
@@ -165,7 +164,7 @@ const { hour } = require("../../../utils/units")
                       }
                   }
 
-                  await advanceTime(cycleTime.toNumber() + 1)
+                  await advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 
@@ -175,7 +174,7 @@ const { hour } = require("../../../utils/units")
 
                   await expect(
                       takaturnDiamondParticipant_1.withdrawFund(termId)
-                  ).to.be.revertedWith("InsufficientBalance")
+                  ).to.be.revertedWithCustomError(takaturnDiamond, "InsufficientBalance")
               })
           })
 
@@ -205,7 +204,7 @@ const { hour } = require("../../../utils/units")
                       }
                   }
 
-                  await advanceTime(cycleTime.toNumber() + 1)
+                  await advanceTime(cycleTime + 1)
 
                   await takaturnDiamond.closeFundingPeriod(termId)
 

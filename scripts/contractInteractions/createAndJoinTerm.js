@@ -39,7 +39,7 @@ async function createAndJoinTerm() {
 
     console.log("Joining term...")
 
-    for (let i = 1; i < accounts.length; i++) {
+    for (let i = 1; i < 4; i++) {
         console.log(`Participant ${i} joining term ${termParams.termId}...`)
         const entrance = await takaturn.minCollateralToDeposit(termParams.termId, i - 1)
 

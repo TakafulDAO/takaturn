@@ -1,4 +1,4 @@
-const { parseUnits, formatUnits } = require("ethers/lib/utils")
+const { parseUnits, formatUnits } = require("ethers")
 
 const now = Math.floor(Date.now() / 1000)
 const minute = 60

@@ -1,5 +1,3 @@
-const { BigNumber } = require("ethers")
-
 async function _joinTerm(taskArguments, hre) {
     let accounts
 

@@ -68,8 +68,8 @@ const impersonateAccount = async (account) => {
     })
 }
 
-const toWei = (num) => String(ethers.utils.parseEther(String(num)))
-const fromWei = (num) => Number(ethers.utils.formatEther(num))
+const toWei = (num) => String(ethers.parseEther(String(num)))
+const fromWei = (num) => Number(ethers.formatEther(num))
 
 module.exports = {
     CollateralStates,

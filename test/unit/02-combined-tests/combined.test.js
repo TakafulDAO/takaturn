@@ -76,7 +76,7 @@ async function executeCycle(
             try {
                 await usdc
                     .connect(accounts[i])
-                    .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                    .approve(takaturnDiamond, contributionAmount * 10 ** 6)
 
                 await takaturnDiamond.connect(accounts[i]).payContribution(termId)
                 paidAmount++
@@ -261,7 +261,7 @@ async function executeCycle(
 
                       await usdc
                           .connect(accounts[i])
-                          .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                          .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   }
               } else {
                   // Initialize USDC
@@ -299,7 +299,7 @@ async function executeCycle(
 
                       await usdc
                           .connect(depositor)
-                          .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                          .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   }
               }
           })
@@ -319,7 +319,7 @@ async function executeCycle(
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
 
                   // Get the correct term id
@@ -372,7 +372,7 @@ async function executeCycle(
                       ).to.be.revertedWith("Beneficiary doesn't pay")
 
                       for (let i = 2; i <= totalParticipants; i++) {
-                          let takaturnBalanceBefore = await usdc.balanceOf(takaturnDiamond.address)
+                          let takaturnBalanceBefore = await usdc.balanceOf(takaturnDiamond)
                           let participantBalanceBefore = await usdc.balanceOf(accounts[i].address)
 
                           await expect(
@@ -383,7 +383,7 @@ async function executeCycle(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
                           ).to.be.revertedWith("Already paid for cycle")
 
-                          let takaturnBalanceAfter = await usdc.balanceOf(takaturnDiamond.address)
+                          let takaturnBalanceAfter = await usdc.balanceOf(takaturnDiamond)
                           let participantBalanceAfter = await usdc.balanceOf(accounts[i].address)
 
                           let depositorSummary =
@@ -393,18 +393,16 @@ async function executeCycle(
                               )
 
                           assert.equal(depositorSummary[2], true)
-                          assert(takaturnBalanceAfter.toNumber() > takaturnBalanceBefore.toNumber())
-                          assert(
-                              participantBalanceBefore.toNumber() >
-                                  participantBalanceAfter.toNumber()
-                          )
+                          assert(takaturnBalanceAfter > takaturnBalanceBefore)
+                          assert(participantBalanceBefore > participantBalanceAfter)
+
                           assert.equal(
                               takaturnBalanceAfter - takaturnBalanceBefore,
-                              contributionAmount * 10 ** 6
+                              contributionAmount * 10n ** 6n
                           )
                           assert.equal(
                               participantBalanceBefore - participantBalanceAfter,
-                              contributionAmount * 10 ** 6
+                              contributionAmount * 10n ** 6n
                           )
                       }
                   })
@@ -452,7 +450,7 @@ async function executeCycle(
 
                       expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.CycleOngoing)
                       assert.equal(time, 0)
-                      assert.equal(remainingCycles.toNumber(), totalParticipants - 1)
+                      assert.equal(remainingCycles, totalParticipants - 1)
                   })
 
                   it("can have participants autopay at the end of the funding period", async function () {
@@ -669,7 +667,7 @@ async function executeCycle(
 
                       await executeCycle(termId, 6, [], false)
 
-                      const takaturnBalanceBefore = await usdc.balanceOf(takaturnDiamond.address)
+                      const takaturnBalanceBefore = await usdc.balanceOf(takaturnDiamond)
 
                       for (let i = 1; i <= totalParticipants; i++) {
                           try {
@@ -680,7 +678,7 @@ async function executeCycle(
                           }
                       }
 
-                      const takaturnBalanceAfter = await usdc.balanceOf(takaturnDiamond.address)
+                      const takaturnBalanceAfter = await usdc.balanceOf(takaturnDiamond)
 
                       assert(takaturnBalanceBefore > takaturnBalanceAfter)
                   })
@@ -700,7 +698,7 @@ async function executeCycle(
                           for (let j = 1; j <= totalParticipants; j++) {
                               await usdc
                                   .connect(accounts[j])
-                                  .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                                  .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                           }
                       }
 
@@ -750,7 +748,7 @@ async function executeCycle(
                           takaturnDiamondParticipant_1.emptyFundAfterEnd(termId)
                       ).to.be.revertedWith("Can't empty yet")
 
-                      balance = await usdc.balanceOf(takaturnDiamond.address)
+                      balance = await usdc.balanceOf(takaturnDiamond)
                       assert.ok(balance > 0)
 
                       // Close remaining cycles
@@ -767,7 +765,7 @@ async function executeCycle(
                           takaturnDiamondParticipant_1.emptyFundAfterEnd(termId)
                       ).to.be.revertedWith("Can't empty yet")
 
-                      balance = await usdc.balanceOf(takaturnDiamond.address)
+                      balance = await usdc.balanceOf(takaturnDiamond)
                       assert.ok(balance > 0)
 
                       // Artifically increase time to skip the long wait of 180 days
@@ -778,7 +776,7 @@ async function executeCycle(
                           await takaturnDiamondParticipant_1.emptyFundAfterEnd(termId)
                       } catch (e) {}
 
-                      balance = await usdc.balanceOf(takaturnDiamond.address)
+                      balance = await usdc.balanceOf(takaturnDiamond)
                       assert.ok(balance == 0)
                   })
 
@@ -791,22 +789,22 @@ async function executeCycle(
                       const termId = lastTerm[0]
 
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let fundStart = fund[4].toNumber()
-                      let currentCycle = fund[6].toNumber()
+                      let fundStart = fund[4]
+                      let currentCycle = fund[6]
 
                       let currentRemainingCycleTime =
                           await takaturnDiamondDeployer.getRemainingCycleTime(termId)
 
                       //console.log(cycleTime * currentCycle + fundStart)
 
-                      assert.ok(cycleTime == currentRemainingCycleTime.toNumber())
+                      assert.ok(cycleTime == currentRemainingCycleTime)
                       // Artifically increase time to skip the wait
                       await advanceTime(contributionPeriod + 1)
 
                       let newRemainingCycleTime =
                           await takaturnDiamondDeployer.getRemainingCycleTime(termId)
 
-                      // console.log("new remaning cycle time:", newRemainingCycleTime.toNumber())
+                      // console.log("new remaning cycle time:", newRemainingCycleTime)
 
                       assert.ok(
                           currentRemainingCycleTime - newRemainingCycleTime ==
@@ -814,7 +812,8 @@ async function executeCycle(
                       )
 
                       assert.ok(
-                          cycleTime * currentCycle + fundStart - currentRemainingCycleTime > 0
+                          BigInt(cycleTime) * currentCycle + fundStart - currentRemainingCycleTime >
+                              0
                       )
                       // Artifically increase time to skip the wait
                       await advanceTime(cycleTime + 1)
@@ -835,28 +834,28 @@ async function executeCycle(
                       const termId = lastTerm[0]
 
                       let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let fundStart = fund[4].toNumber()
-                      let currentCycle = fund[6].toNumber()
+                      let fundStart = fund[4]
+                      let currentCycle = fund[6]
 
-                      let contributionEndTimestamp = parseInt(
-                          cycleTime * (currentCycle - 1) + fundStart + contributionPeriod
-                      )
+                      let contributionEndTimestamp =
+                          BigInt(cycleTime) * (currentCycle - 1n) +
+                          fundStart +
+                          BigInt(contributionPeriod)
+
                       let currentRemainingContributionTime =
                           await takaturnDiamondDeployer.getRemainingContributionTime(termId)
 
                       //   console.log("answer", fundStart + currentRemainingContributionTime)
                       assert.ok(
-                          fundStart + currentRemainingContributionTime.toNumber() ==
-                              contributionEndTimestamp
+                          fundStart + currentRemainingContributionTime == contributionEndTimestamp
                       )
-
                       // Artifically increase time to skip the wait
                       await advanceTime(contributionPeriod * 0.5)
 
                       let newRemainingContributionTime =
                           await takaturnDiamondDeployer.getRemainingContributionTime(termId)
 
-                      assert.ok(newRemainingContributionTime.toNumber() == contributionPeriod * 0.5)
+                      assert.ok(newRemainingContributionTime == contributionPeriod * 0.5)
 
                       // Artifically increase time to skip the wait
                       await advanceTime(contributionPeriod)
@@ -906,7 +905,7 @@ async function executeCycle(
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
 
                   // Get the correct term id
@@ -921,7 +920,7 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance + 1 })
+                          .joinTerm(termId, false, { value: entrance + 1n })
                   }
 
                   await advanceTime(registrationPeriod + 1)
@@ -1006,7 +1005,7 @@ async function executeCycle(
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
 
                   // Get the correct term id
@@ -1038,7 +1037,7 @@ async function executeCycle(
                   // First participant pays, second doesn't
                   await usdc
                       .connect(participant_1)
-                      .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                      .approve(takaturnDiamond, contributionAmount * 10 ** 6)
 
                   await expect(
                       takaturnDiamond.connect(participant_1).payContribution(termId)
@@ -1054,7 +1053,7 @@ async function executeCycle(
                   // Second participant pays, first doesn't
                   await usdc
                       .connect(participant_2)
-                      .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                      .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   await expect(
                       takaturnDiamond.connect(participant_2).payContribution(termId)
                   ).to.be.revertedWith("Beneficiary doesn't pay")
@@ -1091,10 +1090,7 @@ async function executeCycle(
                       )
                   let participant_2PaymentBank = participant_2CollateralSummary[2]
 
-                  assert.ok(
-                      participant_1BeneficiariesPool.toNumber() ==
-                          participant_2BeneficiariesPool.toNumber()
-                  )
+                  assert.ok(participant_1BeneficiariesPool == participant_2BeneficiariesPool)
                   assert.ok(
                       participant_1PaymentBank.toString() == participant_2PaymentBank.toString()
                   )
@@ -1108,7 +1104,7 @@ async function executeCycle(
                   // First participant pays, second doesn't
                   await usdc
                       .connect(participant_2)
-                      .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                      .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   await takaturnDiamond.connect(participant_2).payContribution(termId)
 
                   // Artifically increase time to skip the wait
@@ -1120,7 +1116,7 @@ async function executeCycle(
                   // First participant pays, second doesn't
                   await usdc
                       .connect(participant_1)
-                      .approve(takaturnDiamond.address, contributionAmount * 10 ** 6)
+                      .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   await takaturnDiamond.connect(participant_1).payContribution(termId)
 
                   // Artifically increase time to skip the wait
@@ -1155,13 +1151,8 @@ async function executeCycle(
                       )
                   let participant_2PaymentBank = participant_2CollateralSummary[2]
 
-                  assert.ok(
-                      participant_1BeneficiariesPool.toNumber() ==
-                          participant_2BeneficiariesPool.toNumber()
-                  )
-                  assert.ok(
-                      participant_1PaymentBank.toNumber() == participant_2PaymentBank.toNumber()
-                  )
+                  assert.ok(participant_1BeneficiariesPool == participant_2BeneficiariesPool)
+                  assert.ok(participant_1PaymentBank == participant_2PaymentBank)
               })
           })
       })

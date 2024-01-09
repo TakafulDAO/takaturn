@@ -15,31 +15,31 @@ async function contractsInfo() {
     console.log("Takaturn Diamond Contract addresses")
     console.log("====================")
 
-    console.log(`Takaturn Proxy:             ${takaturn.address}`)
+    console.log(`Takaturn Proxy:             ${takaturn.target}`)
     console.log("===========================")
 
-    console.log(`Collateral Facet:           ${collateralFacet.address}`)
+    console.log(`Collateral Facet:           ${collateralFacet.target}`)
     console.log("===========================")
 
-    console.log(`Fund Facet:                 ${fundFacet.address}`)
+    console.log(`Fund Facet:                 ${fundFacet.target}`)
     console.log("===========================")
 
-    console.log(`Getters Facet:              ${gettersFacet.address}`)
+    console.log(`Getters Facet:              ${gettersFacet.target}`)
     console.log("===========================")
 
-    console.log(`Term Facet:                 ${termFacet.address}`)
+    console.log(`Term Facet:                 ${termFacet.target}`)
     console.log("===========================")
 
-    console.log(`Yield Facet:                ${ygFacet.address}`)
+    console.log(`Yield Facet:                ${ygFacet.target}`)
     console.log("===========================")
 
-    console.log(`Diamond Cut Facet:          ${diamondCutFacet.address}`)
+    console.log(`Diamond Cut Facet:          ${diamondCutFacet.target}`)
     console.log("===========================")
 
-    console.log(`Diamond Ownership Facet:    ${diamondOwnershipFacet.address}`)
+    console.log(`Diamond Ownership Facet:    ${diamondOwnershipFacet.target}`)
     console.log("===========================")
 
-    console.log(`Diamond Louper Facet:       ${diamondLoupeFacet.address}`)
+    console.log(`Diamond Louper Facet:       ${diamondLoupeFacet.target}`)
     console.log("===========================")
 }
 

@@ -7,7 +7,6 @@ const {
     getTermStateFromIndex,
     TermStates,
 } = require("../../../utils/_helpers")
-const { BigNumber } = require("ethers")
 const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
@@ -15,11 +14,11 @@ const { hour } = require("../../../utils/units")
     : describe("Unit tests. Term Facet", function () {
           const chainId = network.config.chainId
 
-          const totalParticipants = BigNumber.from("12") // Create term param
-          const cycleTime = BigNumber.from("60") // Create term param
-          const contributionAmount = BigNumber.from("100") // Create term param
-          const contributionPeriod = BigNumber.from("20") // Create term param
-          const registrationPeriod = BigNumber.from("6000") // Create term param
+          const totalParticipants = 12 // Create term param
+          const cycleTime = 60 // Create term param
+          const contributionAmount = 100 // Create term param
+          const contributionPeriod = 20 // Create term param
+          const registrationPeriod = 6000 // Create term param
 
           let takaturnDiamond
 
@@ -96,7 +95,7 @@ const { hour } = require("../../../utils/units")
                   cycleTime,
                   contributionAmount,
                   contributionPeriod,
-                  usdc.address
+                  usdc
               )
           })
 
@@ -131,8 +130,7 @@ const { hour } = require("../../../utils/units")
                           .joinTerm(termId, false, { value: entrance })
                   }
 
-                  await advanceTime(registrationPeriod.toNumber() + 1)
-
+                  await advanceTime(registrationPeriod + 1)
                   await takaturnDiamond.startTerm(termId)
 
                   const term = await takaturnDiamondDeployer.getTermSummary(termId)
@@ -146,7 +144,7 @@ const { hour } = require("../../../utils/units")
               it("Should allow autoPay", async function () {
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
-                  const wrongTermId = termId + 1
+                  const wrongTermId = termId + 1n
 
                   // Get the collateral payment deposit
                   const term = await takaturnDiamondDeployer.getTermSummary(termId)
@@ -199,7 +197,7 @@ const { hour } = require("../../../utils/units")
                       cycleTime,
                       contributionAmount,
                       contributionPeriod,
-                      usdc.address
+                      usdc
                   )
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
@@ -218,13 +216,13 @@ const { hour } = require("../../../utils/units")
                       .connect(participant_2)
                       .joinTerm(termId, false, { value: entrance })
 
-                  await advanceTime(registrationPeriod.toNumber() + 1)
+                  await advanceTime(registrationPeriod + 1)
                   await takaturnDiamond.startTerm(termId)
-                  await advanceTime(cycleTime.toNumber() + 1)
+                  await advanceTime(cycleTime + 1)
                   await takaturnDiamond.closeFundingPeriod(termId)
                   await takaturnDiamond.startNewCycle(termId)
 
-                  await advanceTime(cycleTime.toNumber() + 1)
+                  await advanceTime(cycleTime + 1)
                   await takaturnDiamond.closeFundingPeriod(termId)
 
                   await expect(
@@ -247,7 +245,7 @@ const { hour } = require("../../../utils/units")
                           cycleTime,
                           contributionAmount,
                           contributionPeriod,
-                          usdc.address
+                          usdc
                       )
                   }
 
@@ -270,10 +268,7 @@ const { hour } = require("../../../utils/units")
                       ).to.emit(takaturnDiamond, "OnCollateralDeposited")
 
                       const participantSummary =
-                          await takaturnDiamond.getDepositorCollateralSummary(
-                              participant_1.address,
-                              termId
-                          )
+                          await takaturnDiamond.getDepositorCollateralSummary(participant_1, termId)
 
                       const isCollateralMember = participantSummary[0]
 
@@ -290,7 +285,7 @@ const { hour } = require("../../../utils/units")
                           cycleTime,
                           contributionAmount,
                           contributionPeriod,
-                          usdc.address
+                          usdc
                       )
                   }
 
@@ -318,7 +313,7 @@ const { hour } = require("../../../utils/units")
                   }
 
                   // Start the term 3
-                  await advanceTime(registrationPeriod.toNumber() + 1)
+                  await advanceTime(registrationPeriod + 1)
 
                   await takaturnDiamond.startTerm(3)
 
@@ -360,7 +355,7 @@ const { hour } = require("../../../utils/units")
                           i - 1
                       )
 
-                      const failedEntrance = BigNumber.from(entrance).sub(1)
+                      const failedEntrance = entrance - 1n
 
                       // Each participant fail to join the term with less than the min collateral
 
@@ -409,17 +404,17 @@ const { hour } = require("../../../utils/units")
                       .connect(participant_1)
                       .joinTerm(termId, false, { value: entrance })
 
-                  await advanceTime(registrationPeriod.toNumber() / 2)
+                  await advanceTime(registrationPeriod / 2)
 
                   let remainingTime = await takaturnDiamond.getRemainingRegistrationTime(termId)
 
-                  assert.equal(remainingTime.toNumber(), registrationPeriod.toNumber() / 2)
+                  assert.equal(remainingTime, registrationPeriod / 2)
 
-                  await advanceTime(registrationPeriod.toNumber() + 1)
+                  await advanceTime(registrationPeriod + 1)
 
                   remainingTime = await takaturnDiamond.getRemainingRegistrationTime(termId)
 
-                  assert.equal(remainingTime.toNumber(), 0)
+                  assert.equal(remainingTime, 0)
               })
           })
 
@@ -448,7 +443,7 @@ const { hour } = require("../../../utils/units")
                           .joinTerm(termId, false, { value: entrance })
                   }
 
-                  await advanceTime(registrationPeriod.toNumber() + 1)
+                  await advanceTime(registrationPeriod + 1)
 
                   await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
                       "All spots are filled, can't expire"
@@ -463,7 +458,7 @@ const { hour } = require("../../../utils/units")
 
                   await takaturnDiamondParticipant_1.joinTerm(termId, false, { value: entrance })
 
-                  await advanceTime(registrationPeriod.toNumber() + 1)
+                  await advanceTime(registrationPeriod + 1)
 
                   await expect(takaturnDiamond.expireTerm(termId)).to.not.be.reverted
 
