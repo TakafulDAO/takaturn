@@ -7,12 +7,8 @@ import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 interface IYGFacetZaynFi {
     /// @notice This function allows a user to claim the current available yield
     /// @param termId The term id for which the yield is being claimed
-    function claimAvailableYield(uint termId) external;
-
-    /// @notice This function allows a user to claim the current available yield
-    /// @param termId The term id for which the yield is being claimed
-    /// @param user The user address that is claiming the yield
-    function claimAvailableYield(uint termId, address user) external;
+    /// @param receiver The address of the user who will receive the yield
+    function claimAvailableYield(uint termId, address receiver) external;
 
     /// @notice This function allows a user to toggle their yield generation
     /// @dev only allowed before the term starts

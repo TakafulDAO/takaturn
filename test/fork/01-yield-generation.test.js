@@ -532,7 +532,7 @@ async function executeCycle(
                   })
 
                   describe("Yield claimed", function () {
-                      it("Should emit an event if there is available yield or revert if not", async function () {
+                      it("Should emit an event if there is available yield", async function () {
                           const ids = await takaturnDiamond.getTermsId()
                           const termId = ids[0]
 
@@ -556,16 +556,9 @@ async function executeCycle(
                               )
                                   .to.emit(takaturnDiamond, "OnYieldClaimed")
                                   .withArgs(termId, participant_1.address, availableYield)
-                          } else {
-                              await expect(
-                                  takaturnDiamond["claimAvailableYield(uint256,address)"](
-                                      termId,
-                                      participant_1.address
-                                  )
-                              ).to.be.revertedWith("No yield to withdraw")
                           }
                       })
-                      it("Should emit an event if there is available yield or revert if not", async function () {
+                      it("Should emit an event if there is available yield", async function () {
                           const ids = await takaturnDiamond.getTermsId()
                           const termId = ids[0]
 
@@ -588,12 +581,6 @@ async function executeCycle(
                               )
                                   .to.emit(takaturnDiamond, "OnYieldClaimed")
                                   .withArgs(termId, participant_1.address, availableYield)
-                          } else {
-                              await expect(
-                                  takaturnDiamondParticipant_1["claimAvailableYield(uint256)"](
-                                      termId
-                                  )
-                              ).to.be.revertedWith("No yield to withdraw")
                           }
                       })
                   })

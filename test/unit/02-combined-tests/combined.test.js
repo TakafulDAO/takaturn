@@ -497,14 +497,37 @@ async function executeCycle(
 
                       await expect(
                           takaturnDiamondParticipant_1.withdrawFund(termId)
-                      ).to.be.revertedWith("You must be a beneficiary")
+                      ).to.be.revertedWith("The caller must be a participant")
 
                       await everyonePaysAndCloseCycle(termId)
 
-                      await expect(takaturnDiamondParticipant_1.withdrawFund(termId)).to.emit(
-                          takaturnDiamond,
-                          "OnFundWithdrawn"
+                      await expect(takaturnDiamondParticipant_1.withdrawFund(termId))
+                          .to.emit(takaturnDiamond, "OnFundWithdrawn")
+                          .withArgs(termId, participant_1.address, participant_1.address, 550000000)
+                  })
+
+                  // This happens in the 1st cycle
+                  it("allows the beneficiary to claim the fund to a different address", async function () {
+                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                      const termId = lastTerm[0]
+
+                      await expect(
+                          takaturnDiamondParticipant_1.withdrawFundOnAnotherWallet(
+                              termId,
+                              deployer.address
+                          )
+                      ).to.be.revertedWith("The caller must be a participant")
+
+                      await everyonePaysAndCloseCycle(termId)
+
+                      await expect(
+                          takaturnDiamondParticipant_1.withdrawFundOnAnotherWallet(
+                              termId,
+                              deployer.address
+                          )
                       )
+                          .to.emit(takaturnDiamond, "OnFundWithdrawn")
+                          .withArgs(termId, participant_1.address, deployer.address, 550000000)
                   })
 
                   // This happens in the 1st cycle
@@ -525,10 +548,15 @@ async function executeCycle(
 
                       currentBalance = await ethers.provider.getBalance(participant_1.address)
 
-                      await expect(takaturnDiamondParticipant_1.withdrawFund(termId)).to.emit(
-                          takaturnDiamond,
-                          "OnFundWithdrawn"
-                      )
+                      const withdrawFundTx = takaturnDiamondParticipant_1.withdrawFund(termId)
+
+                      await Promise.all([
+                          expect(withdrawFundTx).to.emit(takaturnDiamond, "OnFundWithdrawn"),
+                          expect(withdrawFundTx).to.emit(
+                              takaturnDiamond,
+                              "OnReimbursementWithdrawn"
+                          ),
+                      ])
 
                       newBalance = await ethers.provider.getBalance(participant_1.address)
 

@@ -60,10 +60,6 @@ const { hour } = require("../../../utils/units")
               takaturnDiamondParticipant_2 = takaturnDiamond.connect(participant_2)
               takaturnDiamondParticipant_3 = takaturnDiamond.connect(participant_3)
 
-              if (!isFork) {
-                  await advanceTimeByDate(1, hour)
-              }
-
               // Create the first term
               await takaturnDiamondParticipant_1.createTerm(
                   totalParticipants,
