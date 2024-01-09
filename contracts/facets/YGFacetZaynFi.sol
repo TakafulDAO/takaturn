@@ -21,15 +21,17 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
     /// @notice This function allows a user to claim the current available yield
     /// @param termId The term id for which the yield is being claimed
-    function claimAvailableYield(uint termId) external {
-        _claimAvailableYield(termId, msg.sender);
+    /// @return claimed Returns true if the yield was claimed successfully
+    function claimAvailableYield(uint termId) external returns (bool claimed) {
+        claimed = _claimAvailableYield(termId, msg.sender);
     }
 
     /// @notice This function allows a user to claim the current available yield
     /// @param termId The term id for which the yield is being claimed
     /// @param user The user address that is claiming the yield
-    function claimAvailableYield(uint termId, address user) external {
-        _claimAvailableYield(termId, user);
+    /// @return claimed Returns true if the yield was claimed successfully
+    function claimAvailableYield(uint termId, address user) external returns (bool claimed) {
+        claimed = _claimAvailableYield(termId, user);
     }
 
     /// @notice This function allows a user to toggle their yield generation
@@ -43,6 +45,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             ._collateralStorage()
             .collaterals[termId];
 
+        require(!LibYieldGenerationStorage._yieldLock().yieldLock, "Yield locked");
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
             "Too late to change YG opt in"
@@ -70,20 +73,22 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         yieldProvider.providerAddresses[providerString] = providerAddress;
     }
 
-    function _claimAvailableYield(uint termId, address user) internal {
+    function _claimAvailableYield(uint termId, address user) internal returns (bool) {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
 
         uint availableYield = yield.availableYield[user];
 
-        require(availableYield > 0, "No yield to withdraw");
+        if (availableYield == 0) return false;
 
         yield.availableYield[user] = 0;
         (bool success, ) = payable(user).call{value: availableYield}("");
         require(success);
 
         emit OnYieldClaimed(termId, user, availableYield);
+
+        return true;
     }
 
     /// @notice This function allows the owner to disable the yield generation feature in case of emergency
