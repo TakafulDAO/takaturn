@@ -12,7 +12,12 @@ import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
 contract YGFacetZaynFi is IYGFacetZaynFi {
     event OnYGOptInToggled(uint indexed termId, address indexed user, bool indexed optedIn); // Emits when a user succesfully toggles yield generation
-    event OnYieldClaimed(uint indexed termId, address indexed user, uint indexed amount); // Emits when a user claims their yield
+    event OnYieldClaimed(
+        uint indexed termId,
+        address indexed user,
+        address receiver,
+        uint indexed amount
+    ); // Emits when a user claims their yield
 
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
@@ -21,17 +26,29 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
     /// @notice This function allows a user to claim the current available yield
     /// @param termId The term id for which the yield is being claimed
-    /// @return claimed Returns true if the yield was claimed successfully
-    function claimAvailableYield(uint termId) external returns (bool claimed) {
-        claimed = _claimAvailableYield(termId, msg.sender);
-    }
+    /// @param receiver The address of the user who will receive the yield
+    /// @dev for emergency use only, in case the claimed yield is not sent to the user when withdrawing the collateral
+    function claimAvailableYield(uint termId, address receiver) external {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-    /// @notice This function allows a user to claim the current available yield
-    /// @param termId The term id for which the yield is being claimed
-    /// @param user The user address that is claiming the yield
-    /// @return claimed Returns true if the yield was claimed successfully
-    function claimAvailableYield(uint termId, address user) external returns (bool claimed) {
-        claimed = _claimAvailableYield(termId, user);
+        address[] memory participants = fund.beneficiariesOrder;
+        uint participantsLength = participants.length;
+        bool canCall;
+
+        for (uint i; i < participantsLength; ) {
+            if (participants[i] == msg.sender) {
+                canCall = true;
+                break;
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        require(canCall, "The caller must be a participant");
+
+        LibYieldGeneration._claimAvailableYield(termId, msg.sender, receiver);
     }
 
     /// @notice This function allows a user to toggle their yield generation
@@ -45,7 +62,6 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             ._collateralStorage()
             .collaterals[termId];
 
-        require(!LibYieldGenerationStorage._yieldLock().yieldLock, "Yield locked");
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
             "Too late to change YG opt in"
@@ -71,24 +87,6 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             ._yieldProviders();
 
         yieldProvider.providerAddresses[providerString] = providerAddress;
-    }
-
-    function _claimAvailableYield(uint termId, address user) internal returns (bool) {
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
-
-        uint availableYield = yield.availableYield[user];
-
-        if (availableYield == 0) return false;
-
-        yield.availableYield[user] = 0;
-        (bool success, ) = payable(user).call{value: availableYield}("");
-        require(success);
-
-        emit OnYieldClaimed(termId, user, availableYield);
-
-        return true;
     }
 
     /// @notice This function allows the owner to disable the yield generation feature in case of emergency

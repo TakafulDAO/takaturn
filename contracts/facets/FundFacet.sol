@@ -29,7 +29,12 @@ contract FundFacet is IFund {
     ); // Emits when state has updated
     event OnPaidContribution(uint indexed termId, address indexed payer, uint indexed currentCycle); // Emits when participant pays the contribution
     event OnBeneficiaryAwarded(uint indexed termId, address indexed beneficiary); // Emits when beneficiary is selected for this cycle
-    event OnFundWithdrawn(uint indexed termId, address indexed claimant, uint indexed amount); // Emits when a chosen beneficiary claims their fund
+    event OnFundWithdrawn(
+        uint indexed termId,
+        address indexed participant,
+        address receiver,
+        uint indexed amount
+    ); // Emits when a chosen beneficiary claims their fund
     event OnParticipantDefaulted(
         uint indexed termId,
         uint indexed currentCycle,
@@ -241,11 +246,23 @@ contract FundFacet is IFund {
     /// @dev This follows the pull-over-push pattern.
     /// @param termId the id of the term
     function withdrawFund(uint termId) external {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        _withdrawFund(termId, msg.sender);
+    }
+
+    /// @notice Called by the beneficiary to withdraw the fund
+    /// @dev This follows the pull-over-push pattern.
+    /// @param termId the id of the term
+    /// @param receiver the address that will receive the fund
+    function withdrawFundOnAnotherWallet(uint termId, address receiver) external {
+        _withdrawFund(termId, receiver);
+    }
+
+    function _withdrawFund(uint _termId, address _receiver) internal {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
-            .collaterals[termId];
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+            .collaterals[_termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
         // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
         // any of the past cycles.
 
@@ -256,7 +273,7 @@ contract FundFacet is IFund {
                 fund.currentState == LibFundStorage.FundStates.FundClosed ||
                 fund.isBeneficiary[msg.sender] ||
                 expelledBeforeBeneficiary,
-            "You must be a beneficiary"
+            "The caller must be a participant"
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
@@ -266,19 +283,23 @@ contract FundFacet is IFund {
         require(hasFundPool || hasFrozenPool || hasCollateralPool, "Nothing to withdraw");
 
         if (hasFrozenPool) {
-            bool freeze = _freezePot(LibTermStorage._termStorage().terms[termId], fund, msg.sender);
+            bool freeze = _freezePot(
+                LibTermStorage._termStorage().terms[_termId],
+                fund,
+                msg.sender
+            );
 
             if (fund.currentState != LibFundStorage.FundStates.FundClosed) {
                 require(!freeze, "Need at least 1.1RCC collateral to unfreeze your fund");
             }
 
-            _transferPoolToBeneficiary(termId, msg.sender);
+            _transferPoolToBeneficiary(_termId, msg.sender, _receiver);
         } else if (hasFundPool) {
-            _transferPoolToBeneficiary(termId, msg.sender);
+            _transferPoolToBeneficiary(_termId, msg.sender, _receiver);
         }
 
         if (hasCollateralPool) {
-            LibCollateral._withdrawReimbursement(termId, msg.sender);
+            LibCollateral._withdrawReimbursement(_termId, msg.sender, _receiver);
         }
     }
 
@@ -426,21 +447,25 @@ contract FundFacet is IFund {
 
     /// @notice Internal function to transfer the pool to the beneficiary
     /// @param _termId The id of the term
-    /// @param _beneficiary The address of the beneficiary
-    function _transferPoolToBeneficiary(uint _termId, address _beneficiary) internal {
+    /// @param _receiver The address of the beneficiary
+    function _transferPoolToBeneficiary(
+        uint _termId,
+        address _participant,
+        address _receiver
+    ) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
 
         // Get the amount this beneficiary can withdraw
-        uint transferAmount = fund.beneficiariesPool[_beneficiary];
+        uint transferAmount = fund.beneficiariesPool[_participant];
         uint contractBalance = fund.stableToken.balanceOf(address(this));
         if (contractBalance < transferAmount) {
             revert InsufficientBalance({available: contractBalance, required: transferAmount});
         } else {
-            fund.beneficiariesPool[_beneficiary] = 0;
-            bool success = fund.stableToken.transfer(_beneficiary, transferAmount);
+            fund.beneficiariesPool[_participant] = 0;
+            bool success = fund.stableToken.transfer(_receiver, transferAmount);
             require(success, "Transfer failed");
         }
-        emit OnFundWithdrawn(_termId, _beneficiary, transferAmount);
+        emit OnFundWithdrawn(_termId, _participant, _receiver, transferAmount);
     }
 
     /// @notice Internal function to freeze the pot for the beneficiary

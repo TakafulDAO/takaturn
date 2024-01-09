@@ -12,7 +12,12 @@ library LibCollateral {
         LibCollateralStorage.CollateralStates indexed oldState,
         LibCollateralStorage.CollateralStates indexed newState
     );
-    event OnReimbursementWithdrawn(uint indexed termId, address indexed user, uint indexed amount);
+    event OnReimbursementWithdrawn(
+        uint indexed termId,
+        address indexed participant,
+        address receiver,
+        uint indexed amount
+    );
 
     /// @param _termId term id
     /// @param _newState collateral state
@@ -26,20 +31,24 @@ library LibCollateral {
     }
 
     /// @param _termId term id
-    /// @param _depositor Address of the depositor
-    function _withdrawReimbursement(uint _termId, address _depositor) internal {
+    /// @param _participant Address of the depositor
+    function _withdrawReimbursement(
+        uint _termId,
+        address _participant,
+        address _receiver
+    ) internal {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
 
-        uint amount = collateral.collateralPaymentBank[_depositor];
+        uint amount = collateral.collateralPaymentBank[_participant];
         require(amount > 0, "Nothing to claim");
-        collateral.collateralPaymentBank[_depositor] = 0;
+        collateral.collateralPaymentBank[_participant] = 0;
 
-        (bool success, ) = payable(_depositor).call{value: amount}("");
+        (bool success, ) = payable(_receiver).call{value: amount}("");
         require(success);
 
-        emit OnReimbursementWithdrawn(_termId, _depositor, amount);
+        emit OnReimbursementWithdrawn(_termId, _participant, _receiver, amount);
     }
 
     /// @notice Checks if a user has a collateral below 1.0x of total contribution amount

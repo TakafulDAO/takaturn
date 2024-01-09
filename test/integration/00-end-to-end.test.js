@@ -683,16 +683,26 @@ const { BigNumber } = require("ethers")
 
               await expect(
                   takaturnDiamond.connect(participant_2).withdrawFund(termId)
-              ).to.be.revertedWith("You must be a beneficiary")
+              ).to.be.revertedWith("The caller must be a participant")
 
               let withdrawFundTx = takaturnDiamond.connect(participant_1).withdrawFund(termId)
               await Promise.all([
                   expect(withdrawFundTx)
                       .to.emit(takaturnDiamond, "OnFundWithdrawn")
-                      .withArgs(termId, participant_1.address, contributionAmount * 10 * 10 ** 6),
+                      .withArgs(
+                          termId,
+                          participant_1.address,
+                          participant_1.address,
+                          contributionAmount * 10 * 10 ** 6
+                      ),
                   expect(withdrawFundTx)
                       .to.emit(takaturnDiamond, "OnReimbursementWithdrawn")
-                      .withArgs(termId, participant_1.address, contributionAmountWei),
+                      .withArgs(
+                          termId,
+                          participant_1.address,
+                          participant_1.address,
+                          contributionAmountWei
+                      ),
               ])
 
               await expect(
@@ -713,7 +723,12 @@ const { BigNumber } = require("ethers")
 
               await expect(takaturnDiamond.connect(participant_1).withdrawCollateral(termId))
                   .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                  .withArgs(termId, participant_1.address, "37500000000000000")
+                  .withArgs(
+                      termId,
+                      participant_1.address,
+                      participant_1.address,
+                      "37500000000000000"
+                  )
 
               await expect(
                   takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
@@ -758,13 +773,19 @@ const { BigNumber } = require("ethers")
               if (availableYield > 0) {
                   //   console.log("availableYield", availableYield.toString())
                   await expect(
-                      takaturnDiamond["claimAvailableYield(uint256,address)"](
-                          termId,
-                          participant_2.address
-                      )
+                      takaturnDiamond
+                          .connect(participant_2)
+                          .claimAvailableYield(termId, participant_2.address)
                   )
                       .to.emit(takaturnDiamond, "OnYieldClaimed")
                       .withArgs(termId, participant_2.address, availableYield)
+              } else {
+                  //   console.log("No yield")
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_2)
+                          .claimAvailableYield(termId, participant_2.address)
+                  ).to.be.revertedWith("No yield to withdraw")
               }
 
               for (let i = 1; i <= totalParticipants; i++) {
@@ -819,7 +840,14 @@ const { BigNumber } = require("ethers")
                   //   console.log("availableYield", availableYield.toString())
                   await takaturnDiamond
                       .connect(participant_2)
-                      ["claimAvailableYield(uint256)"](termId)
+                      .claimAvailableYield(termId, participant2.address)
+              } else {
+                  //   console.log("No yield")
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_2)
+                          .claimAvailableYield(termId, participant_2.address)
+                  ).to.be.revertedWith("No yield to withdraw")
               }
 
               for (let i = 1; i <= totalParticipants; i++) {

@@ -193,10 +193,20 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
                       await Promise.all([
                           expect(withdrawTx)
                               .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                              .withArgs(termId, participant_1.address, withdrawnCollateralAfter),
+                              .withArgs(
+                                  termId,
+                                  participant_1.address,
+                                  participant_1.address,
+                                  withdrawnCollateralAfter
+                              ),
                           expect(withdrawTx)
                               .to.emit(takaturnDiamond, "OnYieldClaimed")
-                              .withArgs(termId, participant_1.address, withdrawnYieldAfter),
+                              .withArgs(
+                                  termId,
+                                  participant_1.address,
+                                  participant_1.address,
+                                  withdrawnYieldAfter
+                              ),
                       ])
 
                       assert.equal(withdrawnYieldBefore, "0")
