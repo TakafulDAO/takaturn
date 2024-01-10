@@ -6,6 +6,7 @@ const isMemnet = hre.network.name === "hardhat"
 
 const isMainnet = hre.network.name.startsWith("mainnet_")
 const isTestnet = hre.network.name.startsWith("testnet_")
+const isInternal = hre.network.name.startsWith("takadao_")
 
 const isDevnet = isLocalhost || isMemnet
 const isRealChain = !isLocalhost && !isMemnet
@@ -65,6 +66,19 @@ const networkConfig = {
         zaynfiVault: "0x0b9f2C8d7FD305D1C7FE8eb132865d1252F42D37", // On this network the only test will be for multisig, so this addres does not matter, it is random
         takaturnDiamond: "0x0844015efCA9839FCf29De89977698e2ec977b2f",
     },
+    92898932: {
+        name: "takadao_private",
+        decimals: "8",
+        initialPriceEthUsd: "200000000000", // 2000 USD
+        initialPriceUsdcUsd: "100000000", // 1 USD
+        ethUsdPriceFeed: "", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
+        usdcUsdPriceFeed: "", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
+        usdc: "",
+        usdcWhale: "",
+        zaynfiZap: "",
+        zaynfiVault: "",
+        takaturnDiamond: "",
+    },
 }
 
 const developmentChains = ["hardhat", "localhost"]
@@ -77,6 +91,7 @@ module.exports = {
     isMainnet,
     isTestnet,
     isDevnet,
+    isInternal,
     isRealChain,
     isProtocolChain,
     networkConfig,

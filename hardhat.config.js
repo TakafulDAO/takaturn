@@ -237,6 +237,13 @@ module.exports = {
             blockConfirmations: 6,
             timeout: 900000,
         },
+        takadao_private: {
+            chainId: 92898932,
+            accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
+            url: "http://54.89.232.123/",
+            blockConfirmations: 6,
+            timeout: 900000,
+        },
     },
     etherscan: {
         apiKey: {
