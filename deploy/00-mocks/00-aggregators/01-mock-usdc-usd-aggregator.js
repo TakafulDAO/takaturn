@@ -1,11 +1,11 @@
 const { network } = require("hardhat")
-const { networkConfig, isDevnet } = require("../../../utils/_networks")
+const { networkConfig, isDevnet, isInternal } = require("../../../utils/_networks")
 const { deploySimpleContract } = require("../../../utils/deployTx")
 
 module.exports = async ({ deployments }) => {
     const { log } = deployments
     const chainId = network.config.chainId
-    if (isDevnet) {
+    if (isDevnet || isInternal) {
         // No Fork. Completely on localhost
         log("==========================================================================")
         log("00.00.01. Local network detected! Deploying mocks...")
@@ -24,4 +24,11 @@ module.exports = async ({ deployments }) => {
     }
 }
 
-module.exports.tags = ["all", "mocks", "aggregator", "takaturn_deploy", "takaturn_upgrade"]
+module.exports.tags = [
+    "all",
+    "takadao",
+    "mocks",
+    "aggregator",
+    "takaturn_deploy",
+    "takaturn_upgrade",
+]

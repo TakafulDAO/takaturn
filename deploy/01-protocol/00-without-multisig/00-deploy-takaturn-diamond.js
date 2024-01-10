@@ -162,4 +162,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 }
 
-module.exports.tags = ["all", "diamond", "takaturn_deploy", "takaturn_upgrade"]
+module.exports.tags = ["all", "takadao", "diamond", "takaturn_deploy", "takaturn_upgrade"]
