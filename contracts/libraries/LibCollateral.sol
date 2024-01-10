@@ -37,6 +37,7 @@ library LibCollateral {
         address _participant,
         address _receiver
     ) internal {
+        require(LibFundStorage._fundExists(_termId), "Fund does not exists");
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
