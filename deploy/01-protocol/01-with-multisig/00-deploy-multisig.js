@@ -2,21 +2,19 @@ const { network } = require("hardhat")
 const {
     networkConfig,
     developmentChains,
-    VERIFICATION_BLOCK_CONFIRMATIONS,
     isMainnet,
     isTestnet,
-} = require("../utils/_networks")
-const { verify } = require("../scripts/verify")
+} = require("../../../utils/_networks")
+const { verify } = require("../../../scripts/verify")
 const { writeFileSync } = require("fs")
 const path = require("path")
+const { getRawTransaction } = require("../../../utils/deployTx")
 
-module.exports = async ({ getNamedAccounts, deployments }) => {
-    const { diamond, log, catchUnknownSigner } = deployments
-    const { deployer, diamondOwner } = await getNamedAccounts()
+module.exports = async ({ deployments }) => {
+    const { log } = deployments
+
     const chainId = network.config.chainId
-    const waitBlockConfirmations = developmentChains.includes(network.name)
-        ? 1
-        : VERIFICATION_BLOCK_CONFIRMATIONS
+
     let ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress
     let zaynfiZapAddress, zaynfiVaultAddress
 
@@ -25,7 +23,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
     zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
 
+    log("==========================================================================")
+    log("01.01.00. Deploying facets")
+    log("01.01.00. Creating raw transaction for proposal on multisig...")
+
+    const diamondName = "TakaturnDiamond"
     const args = []
+    const initContract = "DiamondInit"
+    const initMethod = "init"
     const initArgs = [
         ethUsdPriceFeedAddress,
         usdcUsdPriceFeedAddress,
@@ -34,64 +39,44 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         false,
     ]
 
-    log("==========================================================================")
-
-    log("04. Deploying facets")
-    log("04. Creating raw transaction for proposal on multisig...")
-
-    let txData
-
     if (isMainnet) {
-        rawProposal = await catchUnknownSigner(
-            diamond.deploy("TakaturnDiamond", {
-                from: deployer,
-                owner: diamondOwner,
-                args: args,
-                log: false,
-                facets: [
-                    "CollateralFacet",
-                    "FundFacet",
-                    "TermFacet",
-                    "GettersFacet",
-                    "YGFacetZaynFi",
-                ],
-                execute: {
-                    contract: "DiamondInit",
-                    methodName: "init",
-                    args: initArgs,
-                },
-                waitConfirmations: waitBlockConfirmations,
-            })
+        const facets = [
+            "CollateralFacet",
+            "FundFacet",
+            "TermFacet",
+            "GettersFacet",
+            "YGFacetZaynFi",
+        ]
+
+        rawProposal = await getRawTransaction(
+            diamondName,
+            args,
+            facets,
+            initContract,
+            initMethod,
+            initArgs
         )
     } else {
-        rawProposal = await catchUnknownSigner(
-            diamond.deploy("TakaturnDiamond", {
-                from: deployer,
-                owner: diamondOwner,
-                args: args,
-                log: false,
-                facets: [
-                    "CollateralFacet",
-                    "FundFacet",
-                    "TermFacet",
-                    "GettersFacet",
-                    "YGFacetZaynFi",
-                    "WithdrawTestEthFacet",
-                ],
-                execute: {
-                    contract: "DiamondInit",
-                    methodName: "init",
-                    args: initArgs,
-                },
-                waitConfirmations: waitBlockConfirmations,
-            })
-        )
+        const facets = [
+            "CollateralFacet",
+            "FundFacet",
+            "TermFacet",
+            "GettersFacet",
+            "YGFacetZaynFi",
+        ]
 
+        rawProposal = await getRawTransaction(
+            diamondName,
+            args,
+            facets,
+            initContract,
+            initMethod,
+            initArgs
+        )
         withdrawTestEthFacet = await deployments.get("WithdrawTestEthFacet") // This facet is never deployed on mainnet
     }
-
-    log("04. Facets deployed")
-    log("04. Raw transaction created")
+    log("01.01.00. Facets deployed")
+    log("01.01.00. Raw transaction created")
     log("==========================================================================")
 
     takaturnDiamondUpgrade = await deployments.get("TakaturnDiamond")
@@ -149,9 +134,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         }
         log("==========================================================================")
     }
-
     log("==========================================================================")
-
     if (rawProposal === null) {
         log("There is nothing to upgrade")
     } else {
@@ -162,7 +145,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             flag: "a",
         })
     }
-
     log("==========================================================================")
     log("==========================================================================")
 }
