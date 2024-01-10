@@ -71,13 +71,13 @@ const networkConfig = {
         decimals: "8",
         initialPriceEthUsd: "200000000000", // 2000 USD
         initialPriceUsdcUsd: "100000000", // 1 USD
-        ethUsdPriceFeed: "", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
-        usdcUsdPriceFeed: "", // https://docs.chain.link/data-feeds/price-feeds/addresses?network=arbitrum
-        usdc: "",
+        ethUsdPriceFeed: "0xCb3be877155E381dAE99dFCd56d8b6c752082b1F", // Mock contract
+        usdcUsdPriceFeed: "0x0b9f2C8d7FD305D1C7FE8eb132865d1252F42D37", // Mock contract
+        usdc: "0xb382Db307dAa7aa536864e28578D6A75ecB6967b", // Mock contract
         usdcWhale: "",
-        zaynfiZap: "",
-        zaynfiVault: "",
-        takaturnDiamond: "",
+        zaynfiZap: "0x348bB65F560608AD6E6416Ee350A5D8d84aB9e92", // Mock contract
+        zaynfiVault: "0xd12b5EB920615B37Fe0E4194a449FfeCD2CE18d2", // Mock contract
+        takaturnDiamond: "0x5DAfD0c46427CEe67Bab5E580cDd1302C833Bd69",
     },
 }
 
