@@ -21,4 +21,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 }
 
-module.exports.tags = ["all", "takadao", "mocks", "token", "takaturn_deploy", "takaturn_upgrade"]
+module.exports.tags = [
+    "all",
+    "takadao_mocks",
+    "mocks",
+    "token",
+    "takaturn_deploy",
+    "takaturn_upgrade",
+]

@@ -26,7 +26,7 @@ module.exports = async ({ deployments }) => {
 
 module.exports.tags = [
     "all",
-    "takadao",
+    "takadao_mocks",
     "mocks",
     "aggregator",
     "takaturn_deploy",

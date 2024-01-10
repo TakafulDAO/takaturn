@@ -6,6 +6,7 @@ const {
     isTestnet,
     isDevnet,
     isFork,
+    isInternal,
 } = require("../../../utils/_networks")
 const { verify } = require("../../../scripts/verify")
 const { deployUpgradeDiamond } = require("../../../utils/deployTx")
@@ -36,7 +37,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         withdrawTestEthFacet
 
     log("01.00.00. Deploying Takaturn Diamond...")
-    if (isMainnet || isTestnet || isFork) {
+    if (isMainnet || isTestnet || isFork || isInternal) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
         usdcUsdPriceFeedAddress = networkConfig[chainId]["usdcUsdPriceFeed"]
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
@@ -145,7 +146,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("01.00.00. Diamond Deployed!")
     log("==========================================================================")
-    if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
+    if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY && !isInternal) {
         log("01.00.00. Verifying Diamond...")
         for (let i = 0; i < contractAddresses.length; i++) {
             log(`01.00.00. Verifying "${contractNames[i]}"...`)
@@ -162,4 +163,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 }
 
-module.exports.tags = ["all", "takadao", "diamond", "takaturn_deploy", "takaturn_upgrade"]
+module.exports.tags = ["all", "takadao_main", "diamond", "takaturn_deploy", "takaturn_upgrade"]
