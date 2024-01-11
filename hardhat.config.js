@@ -39,6 +39,7 @@ const DIAMOND_OWNER = process.env.DIAMOND_OWNER
 
 /******************************************* RPC providers **********************************************/
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
+const TAKADAO_RPC_URL = process.env.TAKADAO_RPC_URL
 const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_URL
 const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RPC_URL
 const ETHEREUM_TESTNET_SEPOLIA_RPC_URL = process.env.ETHEREUM_TESTNET_SEPOLIA_RPC_URL
@@ -249,7 +250,7 @@ module.exports = {
         takadao_private: {
             chainId: 92898932,
             accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
-            url: "http://54.89.232.123/",
+            url: TAKADAO_RPC_URL,
             blockConfirmations: 6,
             timeout: 900000,
         },
