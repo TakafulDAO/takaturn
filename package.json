@@ -44,6 +44,7 @@
     "format": "yarn prettier --write .",
     "test": "yarn hardhat test",
     "test:staging:mainnet": "yarn hardhat test --network mainnet_arbitrum",
+    "test:staging:takadao": "yarn hardhat test --network takadao_private --grep @private-network",
     "test:staging:goerli": "yarn hardhat test --network testnet_arbitrum_goerli",
     "test:staging:sepolia": "yarn hardhat test --network testnet_arbitrum_sepolia",
     "coverage": "yarn hardhat coverage",

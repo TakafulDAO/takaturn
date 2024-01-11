@@ -298,18 +298,24 @@ module.exports = {
         participant_1: {
             testnet_arbitrum_goerli: PARTICIPANT_1_ADDRESS,
             testnet_arbitrum_sepolia: PARTICIPANT_1_ADDRESS,
+            takadao_private: PARTICIPANT_1_ADDRESS,
+
             default: 1,
             localhost: 1,
         },
         participant_2: {
             testnet_arbitrum_goerli: PARTICIPANT_2_ADDRESS,
             testnet_arbitrum_sepolia: PARTICIPANT_2_ADDRESS,
+            takadao_private: PARTICIPANT_2_ADDRESS,
+
             default: 2,
             localhost: 2,
         },
         participant_3: {
             testnet_arbitrum_goerli: PARTICIPANT_3_ADDRESS,
             testnet_arbitrum_sepolia: PARTICIPANT_3_ADDRESS,
+            takadao_private: PARTICIPANT_3_ADDRESS,
+
             default: 3,
             localhost: 3,
         },
