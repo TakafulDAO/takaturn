@@ -4,7 +4,7 @@ const { isInternal, networkConfig } = require("../../../utils/_networks")
 
 !isInternal
     ? describe.skip
-    : describe("Staging Private Network Tests. Initialization [ @private-network ]", function () {
+    : describe("Staging Private Network Tests. Initialization [ @initialization ]", function () {
           const chainId = network.config.chainId
           let deployer, takaturn
 
