@@ -1,12 +1,12 @@
 const { network } = require("hardhat")
-const { developmentChains, isTestnet } = require("../../../utils/_networks")
+const { developmentChains, isTestnet, isDevnet } = require("../../../utils/_networks")
 const { verify } = require("../../../scripts/verify")
 const { deploySimpleContract } = require("../../../utils/deployTx")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { log } = deployments
     const chainId = network.config.chainId
-    if (isTestnet && chainId == 421614) {
+    if ((isTestnet && chainId == 421614) || isDevnet) {
         log("00.01.01. Deploying USDC mock...")
         const contractName = "FiatTokenV2_1"
 
