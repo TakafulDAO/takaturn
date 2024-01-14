@@ -25,9 +25,9 @@ const { usdcUnits, erc20Units } = require("../../../utils/units")
               await usdc.connect(participant_2).approve(takaturn, amount)
               await usdc.connect(participant_3).approve(takaturn, amount)
 
-              //   await usdc.mintUSDC(participant_1, amount)
-              //   await usdc.mintUSDC(participant_2, amount)
-              //   await usdc.mintUSDC(participant_3, amount)
+              await usdc.mintUSDC(participant_1, amount)
+              await usdc.mintUSDC(participant_2, amount)
+              await usdc.mintUSDC(participant_3, amount)
           })
 
           it("Should allow the users to pay the contribution", async function () {

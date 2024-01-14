@@ -71,13 +71,13 @@ const networkConfig = {
         decimals: "8",
         initialPriceEthUsd: "200000000000", // 2000 USD
         initialPriceUsdcUsd: "100000000", // 1 USD
-        ethUsdPriceFeed: "0xCb3be877155E381dAE99dFCd56d8b6c752082b1F", // Mock contract
-        usdcUsdPriceFeed: "0x0b9f2C8d7FD305D1C7FE8eb132865d1252F42D37", // Mock contract
-        usdc: "0xb382Db307dAa7aa536864e28578D6A75ecB6967b", // Mock contract
+        ethUsdPriceFeed: "0x934aa086ad83600d7EF3Fa1704B7631D8ff822A9", // Mock contract
+        usdcUsdPriceFeed: "0x2fDE315f37170a9a8A687B00c8dC15EAbb96FB3E", // Mock contract
+        usdc: "0xCb3be877155E381dAE99dFCd56d8b6c752082b1F", // Mock contract
         usdcWhale: "",
-        zaynfiZap: "0x348bB65F560608AD6E6416Ee350A5D8d84aB9e92", // Mock contract
-        zaynfiVault: "0xd12b5EB920615B37Fe0E4194a449FfeCD2CE18d2", // Mock contract
-        takaturnDiamond: "0x5DAfD0c46427CEe67Bab5E580cDd1302C833Bd69",
+        zaynfiZap: "0xa520D1B134fF05953Be740E56E81d99Bb471F39e", // Mock contract
+        zaynfiVault: "0x10A40F8D76a7A38bef8fF366329D9305D5Cc4986", // Mock contract
+        takaturnDiamond: "0xA22dA2f2e6556028984784C0B1d599F673bc1c01",
     },
 }
 

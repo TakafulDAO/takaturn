@@ -56,31 +56,31 @@ const { usdcUnits, erc20Units } = require("../../../utils/units")
 
               const participants = [participant_1, participant_2, participant_3]
 
-              //   const deposit = erc20Units("1")
+              const deposit = erc20Units("1")
 
-              //   await deployer.sendTransaction({
-              //       to: participant_1,
-              //       value: deposit,
-              //   })
+              await deployer.sendTransaction({
+                  to: participant_1,
+                  value: deposit,
+              })
 
-              //   await deployer.sendTransaction({
-              //       to: participant_2,
-              //       value: deposit, // Sends exactly 1.0 ether
-              //   })
+              await deployer.sendTransaction({
+                  to: participant_2,
+                  value: deposit, // Sends exactly 1.0 ether
+              })
 
-              //   await deployer.sendTransaction({
-              //       to: participant_3,
-              //       value: deposit, // Sends exactly 1.0 ether
-              //   })
+              await deployer.sendTransaction({
+                  to: participant_3,
+                  value: deposit, // Sends exactly 1.0 ether
+              })
 
               // Participants join
               for (let i = 0; i < participants.length; i++) {
                   //   console.log(`Participant ${i + 1} joining`)
-                  let entrance = await takaturn.minCollateralToDeposit(termId, i)
+                  //   let entrance = await takaturn.minCollateralToDeposit(termId, i)
 
                   let joinTermTx = await takaturn
                       .connect(participants[i])
-                      .joinTerm(termId, true, { value: entrance, gasLimit: 1000000 })
+                      .joinTerm(termId, true, { value: deposit, gasLimit: 1000000 })
 
                   const receipt = await joinTermTx.wait()
 
