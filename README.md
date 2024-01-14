@@ -72,6 +72,15 @@ There are some scripts set on the package.json file. Check them out
 3. Deploy
     + `yarn deploy`. Run all deploy scripts on local
     + Check every script for deploy on the desired network
+    + To deploy on private networks:
+        + Add the rpc to the .env
+        + Run `yarn deploy:takadao:mocks`
+        + Take the addresses of the recently deployed contracts from the deployments directory
+        + Paste this addresses on the directory ~utils/_networks.js in the corresponding chain id
+        + Run `yarn deploy:takadao`
+        + Take the address of the recently deployed diamond from the deployments directory
+        + Paste this address on the _networks file in the corresponding chain id
+        + Now the staging tests can be made
 
 ## Contribute 
 Contribute by creating a gas optimization or no risk issue through github issues. 
