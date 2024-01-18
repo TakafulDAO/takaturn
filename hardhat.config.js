@@ -8,6 +8,7 @@ require("hardhat-contract-sizer")
 require("@nomicfoundation/hardhat-ethers")
 require("hardhat-deploy-ethers")
 require("@nomicfoundation/hardhat-chai-matchers")
+require("@openzeppelin/hardhat-upgrades")
 
 const { joinTerm } = require("./tasks/joinTerm")
 const { startTerm } = require("./tasks/startTerm")
@@ -35,7 +36,8 @@ const DEPLOYER = process.env.DEPLOYER_ADDRESS
 const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 
 /******************************************** Diamond Owner address *****************************************/
-const DIAMOND_OWNER = process.env.DIAMOND_OWNER
+const DIAMOND_MAINNET_OWNER = process.env.DIAMOND_MAINNET_OWNER
+const DIAMOND_SEPOLIA_OWNER = process.env.DIAMOND_SEPOLIA_OWNER
 
 /******************************************* RPC providers **********************************************/
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
@@ -350,11 +352,9 @@ module.exports = {
             localhost: 16,
         },
         diamondOwner: {
-            mainnet_arbitrum: DIAMOND_OWNER,
+            mainnet_arbitrum: DIAMOND_MAINNET_OWNER,
 
-            testnet_arbitrum_goerli: DIAMOND_OWNER,
-            testnet_arbitrum_sepolia: DIAMOND_OWNER,
-            testnet_ethereum_sepolia: DIAMOND_OWNER,
+            testnet_ethereum_sepolia: DIAMOND_SEPOLIA_OWNER,
 
             default: 17,
             localhost: 17,
@@ -367,5 +367,9 @@ module.exports = {
         alphaSort: true,
         runOnCompile: SIZE === "true",
         outputFile: "contracts-size-report.txt",
+    },
+    defender: {
+        apiKey: process.env.DEFENDER_TESTNET_KEY,
+        apiSecret: process.env.DEFENDER_TESTNET_SECRET,
     },
 }

@@ -11,6 +11,9 @@ const isDevnet = isLocalhost || isMemnet
 const isRealChain = !isLocalhost && !isMemnet
 const isProtocolChain = isMemnet || isFork || isLocalhost || isMainnet || isTestnet
 
+const mainnetMultisig = process.env.DIAMOND_MAINNET_OWNER
+const testnetMultisig = process.env.DIAMOND_SEPOLIA_OWNER
+
 const networkConfig = {
     31337: {
         name: "hardhat",
@@ -36,6 +39,10 @@ const networkConfig = {
         zaynfiZap: "0x1534c33FF68cFF9E0c5BABEe5bE72bf4cad0826b", // https://zaynfi.notion.site/TakaDAO-Zayn-69307edbb64d4830a868e835ac7fb8a7
         zaynfiVault: "0xE68F590a735Ec00eD292AC9849aFfcC2D8B50aF1", // https://zaynfi.notion.site/TakaDAO-Zayn-69307edbb64d4830a868e835ac7fb8a7
         takaturnDiamond: "0x00042e3895f5eF16b96bc904B9ACc92509624eA2",
+        multisigContract: mainnetMultisig,
+        defenderId: "arbitrum one",
+        defenderKey: process.env.DEFENDER_MAINNET_KEY,
+        defenderSecret: process.env.DEFENDER_MAINNET_SECRET,
     },
     421613: {
         name: "testnet_arbitrum_goerli",
@@ -64,6 +71,10 @@ const networkConfig = {
         zaynfiZap: "0x10A40F8D76a7A38bef8fF366329D9305D5Cc4986", // On this network the only test will be for multisig, so this addres does not matter, it is random
         zaynfiVault: "0x0b9f2C8d7FD305D1C7FE8eb132865d1252F42D37", // On this network the only test will be for multisig, so this addres does not matter, it is random
         takaturnDiamond: "0x0844015efCA9839FCf29De89977698e2ec977b2f",
+        multisigContract: testnetMultisig,
+        defenderId: "sepolia",
+        defenderKey: process.env.DEFENDER_MAINNET_KEY,
+        defenderSecret: process.env.DEFENDER_MAINNET_SECRET,
     },
 }
 
