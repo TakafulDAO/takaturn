@@ -23,6 +23,8 @@
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@openzeppelin/contracts": "^4.9.2",
+    "@openzeppelin/defender-admin-client": "^1.54.1",
+    "@openzeppelin/hardhat-upgrades": "^3.0.2",
     "chai": "^4.3.7",
     "dotenv": "^16.3.1",
     "ethereum-waffle": "^4.0.10",
@@ -101,6 +103,7 @@
     "summary:user:id:goerli": "yarn hardhat userSummaryByTermId --network testnet_arbitrum_goerli --user-address",
     "summary:user:id:sepolia": "yarn hardhat userSummaryByTermId --network testnet_arbitrum_sepolia --user-address",
     "usdcMint:sepolia": "yarn hardhat usdcMint --network testnet_arbitrum_sepolia --user-address",
-    "test:multisig": "yarn hardhat deploy --network testnet_ethereum_sepolia --tags multisig"
+    "test:multisig": "yarn hardhat deploy --network testnet_ethereum_sepolia --tags multisig",
+    "test:defender": "yarn hardhat deploy --network testnet_ethereum_sepolia --tags defender"
   }
 }
