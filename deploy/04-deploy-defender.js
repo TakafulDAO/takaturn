@@ -10,6 +10,7 @@ const { verify } = require("../scripts/verify")
 const { writeFileSync } = require("fs")
 const path = require("path")
 const { AdminClient } = require("@openzeppelin/defender-admin-client")
+const { takaturnABI } = require("../utils/takaturnABI")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
     const { diamond, log, catchUnknownSigner } = deployments
@@ -124,6 +125,20 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log("==========================================================================")
     log("04. Creating the proposal proposal...")
+
+    // Decode raw transaction
+
+    if (rawProposal === null) {
+        log("There is nothing to upgrade")
+    } else {
+        const iface = new ethers.Interface(takaturnABI)
+        let decodedData = iface.parseTransaction({
+            data: rawProposal.data,
+            value: rawProposal.value,
+        })
+
+        log(decodedData)
+    }
 }
 
 module.exports.tags = ["defender"]
