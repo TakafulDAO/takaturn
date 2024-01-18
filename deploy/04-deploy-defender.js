@@ -49,9 +49,60 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         false,
     ]
 
-    log("==========================================================================")
-
     log("04. Deploying facets")
+
+    if (isMainnet) {
+        rawProposal = await catchUnknownSigner(
+            diamond.deploy("TakaturnDiamond", {
+                from: deployer,
+                owner: diamondOwner,
+                args: args,
+                log: false,
+                facets: [
+                    "CollateralFacet",
+                    "FundFacet",
+                    "TermFacet",
+                    "GettersFacet",
+                    "YGFacetZaynFi",
+                ],
+                execute: {
+                    contract: "DiamondInit",
+                    methodName: "init",
+                    args: initArgs,
+                },
+                waitConfirmations: waitBlockConfirmations,
+            })
+        )
+    } else {
+        rawProposal = await catchUnknownSigner(
+            diamond.deploy("TakaturnDiamond", {
+                from: deployer,
+                owner: diamondOwner,
+                args: args,
+                log: false,
+                facets: [
+                    "CollateralFacet",
+                    "FundFacet",
+                    "TermFacet",
+                    "GettersFacet",
+                    "YGFacetZaynFi",
+                    "WithdrawTestEthFacet",
+                ],
+                execute: {
+                    contract: "DiamondInit",
+                    methodName: "init",
+                    args: initArgs,
+                },
+                waitConfirmations: waitBlockConfirmations,
+            })
+        )
+
+        withdrawTestEthFacet = await deployments.get("WithdrawTestEthFacet") // This facet is never deployed on mainnet
+    }
+
+    log("04. Facets deployed")
+
+    log("==========================================================================")
 
     // Configuration
     log("04. Configurating the openzeppelin defender client")
@@ -71,6 +122,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         apiSecret: defenderSecret,
     })
 
+    log("==========================================================================")
     log("04. Creating the proposal proposal...")
 }
 
