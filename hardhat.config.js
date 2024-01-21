@@ -369,7 +369,7 @@ module.exports = {
         outputFile: "contracts-size-report.txt",
     },
     defender: {
-        apiKey: process.env.DEFENDER_TESTNET_KEY,
-        apiSecret: process.env.DEFENDER_TESTNET_SECRET,
+        apiKey: process.env.DEFENDER_SEPOLIA_KEY,
+        apiSecret: process.env.DEFENDER_SEPOLIA_SECRET,
     },
 }
