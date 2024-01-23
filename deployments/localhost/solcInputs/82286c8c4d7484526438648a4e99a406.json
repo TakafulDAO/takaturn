@@ -1,0 +1,38 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ninterface AggregatorV3Interface {\n  function decimals() external view returns (uint8);\n\n  function description() external view returns (string memory);\n\n  function version() external view returns (uint256);\n\n  function getRoundData(uint80 _roundId)\n    external\n    view\n    returns (\n      uint80 roundId,\n      int256 answer,\n      uint256 startedAt,\n      uint256 updatedAt,\n      uint80 answeredInRound\n    );\n\n  function latestRoundData()\n    external\n    view\n    returns (\n      uint80 roundId,\n      int256 answer,\n      uint256 startedAt,\n      uint256 updatedAt,\n      uint80 answeredInRound\n    );\n}\n"
+    },
+    "contracts/mocks/MockV3Aggregator.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\r\n\r\npragma solidity 0.8.18;\r\n\r\nimport {AggregatorV3Interface} from \"@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol\";\r\n\r\ncontract MockV3Aggregator is AggregatorV3Interface {\r\n    int256 price;\r\n    uint8 numDecimals;\r\n    uint256 age;\r\n\r\n    constructor(uint8 _numDecimals, int256 _price) {\r\n        price = _price;\r\n        numDecimals = _numDecimals;\r\n        age = 30;\r\n    }\r\n\r\n    function decimals() external view override returns (uint8) {\r\n        return numDecimals;\r\n    }\r\n\r\n    function description() external pure override returns (string memory) {\r\n        return \"Mock Chainlink Oracle Feed\";\r\n    }\r\n\r\n    function version() external pure override returns (uint256) {\r\n        return 1;\r\n    }\r\n\r\n    function setPrice(int256 _price) public {\r\n        price = _price;\r\n    }\r\n\r\n    function setDecimals(uint8 _decimals) public {\r\n        numDecimals = _decimals;\r\n    }\r\n\r\n    function setAge(uint256 _age) public {\r\n        age = _age;\r\n    }\r\n\r\n    // getRoundData and latestRoundData should both raise \"No data present\"\r\n    // if they do not have data to report, instead of returning unset values\r\n    // which could be misinterpreted as actual reported values.\r\n    function getRoundData(\r\n        uint80 _roundId\r\n    )\r\n        external\r\n        view\r\n        override\r\n        returns (\r\n            uint80 roundId,\r\n            int256 answer,\r\n            uint256 startedAt,\r\n            uint256 updatedAt,\r\n            uint80 answeredInRound\r\n        )\r\n    {\r\n        roundId = _roundId;\r\n        answer = price;\r\n        startedAt = block.timestamp - age;\r\n        updatedAt = block.timestamp - age;\r\n        answeredInRound = 0;\r\n    }\r\n\r\n    function latestRoundData()\r\n        external\r\n        view\r\n        override\r\n        returns (\r\n            uint80 roundId,\r\n            int256 answer,\r\n            uint256 startedAt,\r\n            uint256 updatedAt,\r\n            uint80 answeredInRound\r\n        )\r\n    {\r\n        roundId = 0;\r\n        answer = price;\r\n        startedAt = block.timestamp - age;\r\n        updatedAt = block.timestamp - age;\r\n        answeredInRound = 0;\r\n    }\r\n}\r\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}
