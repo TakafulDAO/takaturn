@@ -293,6 +293,7 @@ contract GettersFacet is IGetters {
         uint termId,
         address user
     ) external view returns (uint allowedWithdrawal) {
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
@@ -311,8 +312,22 @@ contract GettersFacet is IGetters {
         ) {
             allowedWithdrawal = userCollateral + availableYield;
         } else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
-            // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
-            uint minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
+            // uint minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
+
+            uint minRequiredCollateral;
+
+            // Check if the user has paid this cycle
+            if (!fund.paidThisCycle[user]) {
+                // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
+                minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
+            } else {
+                uint remainingCycles = fund.totalAmountOfCycles - fund.currentCycle;
+                uint contributionAmountWei = getToCollateralConversionRate(
+                    term.contributionAmount * 10 ** 18
+                );
+
+                minRequiredCollateral = remainingCycles * contributionAmountWei;
+            }
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
