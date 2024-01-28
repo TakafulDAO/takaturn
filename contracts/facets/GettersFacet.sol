@@ -325,7 +325,7 @@ contract GettersFacet is IGetters {
                     term.contributionAmount * 10 ** 18
                 );
 
-                minRequiredCollateral = remainingCycles * contributionAmountWei;
+                minRequiredCollateral = (remainingCycles * contributionAmountWei * 15) / 10; // 1.5 times of what the user needs to pay for the remaining cycles
             }
 
             // Collateral must be higher than 1.5 X RCC
