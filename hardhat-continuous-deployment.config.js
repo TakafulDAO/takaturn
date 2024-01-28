@@ -62,7 +62,6 @@ module.exports = {
             chainId: 421614,
             accounts: [TESTNET_DEPLOYER_PK],
             url: ARBITRUM_TESTNET_SEPOLIA_RPC_URL,
-            // url: "https://arb-sepolia.g.alchemy.com/v2/Gh3UdljkTKjqkM9z9Evh3wQmRDluqlB-",
             blockConfirmations: 6,
             timeout: 900000,
         },
