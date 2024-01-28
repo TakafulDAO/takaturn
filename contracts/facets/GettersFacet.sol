@@ -312,8 +312,6 @@ contract GettersFacet is IGetters {
         ) {
             allowedWithdrawal = userCollateral + availableYield;
         } else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
-            // uint minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
-
             uint minRequiredCollateral;
 
             // Check if the user has paid this cycle
@@ -321,6 +319,7 @@ contract GettersFacet is IGetters {
                 // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
                 minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
             } else {
+                // If the user have paid this cycle, we need to check his remaining cycles and get the contribution amount for those
                 uint remainingCycles = fund.totalAmountOfCycles - fund.currentCycle;
                 uint contributionAmountWei = getToCollateralConversionRate(
                     term.contributionAmount * 10 ** 18
