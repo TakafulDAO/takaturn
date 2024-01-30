@@ -48,7 +48,7 @@ library LibYieldGeneration {
             ._yieldStorage()
             .yields[_termId];
 
-        uint neededShares = _ethToShares(_collateralAmount, yield);
+        uint neededShares = _neededShares(_collateralAmount, yield);
 
         yield.withdrawnCollateral[_user] += _collateralAmount;
         yield.currentTotalDeposit -= _collateralAmount;
@@ -93,7 +93,7 @@ library LibYieldGeneration {
     /// @notice Conversion from eth to shares
     /// @param _collateralAmount The amount of collateral to withdraw
     /// @param _yield The yield generation struct
-    function _ethToShares(
+    function _neededShares(
         uint _collateralAmount,
         LibYieldGenerationStorage.YieldGeneration storage _yield
     ) internal view returns (uint) {
