@@ -4,6 +4,7 @@ const { network, ethers } = require("hardhat")
 const { impersonateAccount, advanceTime } = require("../../utils/_helpers")
 const { balanceForUser, registrationPeriod } = require("../utils/test-utils")
 const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
+const { erc20Units } = require("../../utils/units")
 
 !isFork || isMainnet
     ? describe.skip
@@ -14,38 +15,21 @@ const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
           let takaturnDiamond
 
           // Accounts
-          let deployer_signer,
-              participant_1_signer,
-              participant_2_signer,
-              participant_3_signer,
-              participant_4_signer
+          let deployer_signer, participantSigner
 
-          let deployer,
-              takaturnParticipant_1,
-              takaturnParticipant_2,
-              takaturnParticipant_3,
-              takaturnParticipant_4
+          let deployer, takaturnParticipant_2
 
           // Variables from the term to check
           const termId = 2
 
-          const participant_1_address = "0x773D44a5F9FF345440565B26526E7b89c03f5418"
-          const participant_2_address = "0x92aE5285Ed66cF37B4A7A6F5DD345E2b11be90fd"
-          const participant_3_address = "0xA253ABb03A060b2C170ead2772D3171Cae484643"
-          const participant_4_address = "0xA8d00383fE40A161020B53b2a741047150a88599"
+          const participantAddress = "0x92aE5285Ed66cF37B4A7A6F5DD345E2b11be90fd" // Subject of study
 
           beforeEach(async function () {
               // Impersonate the accounts
-              await impersonateAccount(participant_1_address)
-              await impersonateAccount(participant_2_address)
-              await impersonateAccount(participant_3_address)
-              await impersonateAccount(participant_4_address)
+              await impersonateAccount(participantAddress)
 
               // Get the signer
-              participant_1_signer = await ethers.getSigner(participant_1_address)
-              participant_2_signer = await ethers.getSigner(participant_2_address)
-              participant_3_signer = await ethers.getSigner(participant_3_address)
-              participant_4_signer = await ethers.getSigner(participant_4_address)
+              participantSigner = await ethers.getSigner(participantAddress)
 
               // Get the contract instances
               const takaturnDiamondAddress = networkConfig[chainId]["takaturnDiamond"]
@@ -53,13 +37,31 @@ const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
               takaturnDiamond = await ethers.getContractAt(abi, takaturnDiamondAddress)
 
               // Connect the signers
-              takaturnParticipant_1 = takaturnDiamond.connect(participant_1_signer)
-              takaturnParticipant_2 = takaturnDiamond.connect(participant_2_signer)
-              takaturnParticipant_3 = takaturnDiamond.connect(participant_3_signer)
-              takaturnParticipant_4 = takaturnDiamond.connect(participant_4_signer)
+              takaturnParticipant_2 = takaturnDiamond.connect(participantSigner)
           })
 
           describe("Checking current values", function () {
-              it("Prints values", async function () {})
+              it("Prints values", async function () {
+                  const collateralParticipantSummary =
+                      await takaturnDiamond.getDepositorCollateralSummary(
+                          participantAddress,
+                          termId
+                      )
+
+                  const yieldParticipantSummary = await takaturnDiamond.getUserYieldSummary(
+                      participantAddress,
+                      termId
+                  )
+
+                  const yieldSummary = await takaturnDiamond.getYieldSummary(termId)
+
+                  console.log(`Participant members bank: ${collateralParticipantSummary[1]}`)
+                  console.log(`Yield deposited by participant ${yieldParticipantSummary[4]}`)
+                  console.log(`Yield to be withdrawn by participant ${yieldParticipantSummary[5]}`)
+                  console.log(`Total yield deposited by term ${yieldSummary[2]}`)
+                  console.log(`Total shares for term ${yieldSummary[4]}`)
+
+                  assert.equal(yieldParticipantSummary[5], 2950246554592115) // Value reported by user
+              })
           })
       })
