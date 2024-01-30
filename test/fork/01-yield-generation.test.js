@@ -16,7 +16,7 @@ const {
     registrationPeriod,
     getRandomInt,
 } = require("../utils/test-utils")
-const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
+const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
 
 let takaturnDiamond, usdc
 
