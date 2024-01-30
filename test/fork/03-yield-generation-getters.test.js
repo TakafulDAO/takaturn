@@ -70,6 +70,11 @@ const { BigNumber } = require("ethers")
               zaynZapOwner = zaynZap.connect(zapOwnerSigner)
               usdcWhaleSigner = usdc.connect(whale)
 
+              await deployer.sendTransaction({
+                  to: zapOwner,
+                  value: ethers.parseEther("1"),
+              })
+
               await zaynZapOwner.toggleTrustedSender(takaturnDiamond, true, {
                   gasLimit: 1000000,
               })
@@ -193,7 +198,7 @@ const { BigNumber } = require("ethers")
                               participant_1.address
                           )
 
-                          assert(userAPYBefore.toString() > userAPYAfter.toString())
+                          assert(userAPYBefore > userAPYAfter)
                       })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
@@ -215,7 +220,7 @@ const { BigNumber } = require("ethers")
                               participant_1.address
                           )
 
-                          assert(userAPYBefore.toString() > userAPYAfter.toString())
+                          assert(userAPYBefore > userAPYAfter)
                       })
                   })
               })
@@ -233,8 +238,8 @@ const { BigNumber } = require("ethers")
 
                       const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                      assert(termAPYBefore.toString() > 0)
-                      assert(termAPYBefore.toString() < termAPYAfter.toString())
+                      assert(termAPYBefore > 0)
+                      assert(termAPYBefore < termAPYAfter)
                   })
                   describe("After some withdraws", function () {
                       it("Without defaults", async function () {
@@ -257,7 +262,7 @@ const { BigNumber } = require("ethers")
 
                           const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                          assert(termAPYBefore.toString() < termAPYAfter.toString())
+                          assert(termAPYBefore < termAPYAfter)
                       })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
@@ -273,7 +278,7 @@ const { BigNumber } = require("ethers")
 
                           const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                          assert(termAPYBefore.toString() < termAPYAfter.toString())
+                          assert(termAPYBefore < termAPYAfter)
                       })
                   })
               })
@@ -474,9 +479,6 @@ const { BigNumber } = require("ethers")
 
                           const userYieldGeneratedAfterFormatted =
                               erc20UnitsFormat(userYieldGeneratedAfter)
-
-                          console.log(userYieldGeneratedBeforeFormatted)
-                          console.log(userYieldGeneratedAfterFormatted)
 
                           assert(userYieldGeneratedBeforeFormatted > 0)
                           assert(userYieldGeneratedBeforeFormatted < 0.1743)

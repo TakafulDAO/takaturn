@@ -91,6 +91,11 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
                       zaynZapOwner = zaynZap.connect(zapOwnerSigner)
                       usdcWhaleSigner = usdc.connect(whale)
 
+                      await deployer.sendTransaction({
+                          to: zapOwner,
+                          value: ethers.parseEther("1"),
+                      })
+
                       await zaynZapOwner.toggleTrustedSender(takaturnDiamond, true, {
                           gasLimit: 1000000,
                       })
