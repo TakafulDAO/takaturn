@@ -97,9 +97,7 @@ library LibYieldGeneration {
         uint _collateralAmount,
         LibYieldGenerationStorage.YieldGeneration storage _yield
     ) internal view returns (uint) {
-        return
-            (((_collateralAmount * 10 ** 18) / _yield.totalDeposit) * _yield.totalShares) /
-            10 ** 18;
+        return ((_collateralAmount * _yield.totalShares) / _yield.totalDeposit);
     }
 
     /// @notice This function is used to get the current total yield generated for a term
