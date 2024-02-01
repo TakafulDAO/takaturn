@@ -34,7 +34,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
               await upgradeDiamond()
           })
 
-          it.only("Correct yield calculation", async function () {
+          it("Correct yield calculation", async function () {
               const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
                   term,
                   participantAddress
@@ -43,8 +43,8 @@ const { erc20UnitsFormat } = require("../../utils/units")
                   participantAddress,
                   term
               )
-              console.log(`Yield to be withdrawn by participant ${yieldParticipantSummary[5]}`)
-              console.log(`Withdrawable: ${withdrawable}`)
+              //   console.log(`Yield to be withdrawn by participant ${yieldParticipantSummary[5]}`)
+              //   console.log(`Withdrawable: ${withdrawable}`)
 
               const withdrawTx = await takaturnParticipant.withdrawCollateral(term)
               await Promise.all([
@@ -59,6 +59,6 @@ const { erc20UnitsFormat } = require("../../utils/units")
                   participantAddress,
                   term
               )
-              console.log(`Yield to be withdrawn by participant ${yieldParticipantSummary[5]}`)
+              //   console.log(`Yield to be withdrawn by participant ${yieldParticipantSummary[5]}`)
           })
       })
