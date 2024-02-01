@@ -99,6 +99,7 @@ library LibYieldGeneration {
         uint _totalShares,
         uint _totalDeposit
     ) internal pure returns (uint) {
+        if (_totalDeposit == 0) return 0;
         return ((_collateralAmount * _totalShares) / _totalDeposit);
     }
 
