@@ -98,7 +98,7 @@ library LibYieldGeneration {
         uint _collateralAmount,
         uint _totalShares,
         uint _totalDeposit
-    ) internal view returns (uint) {
+    ) internal pure returns (uint) {
         return ((_collateralAmount * _totalShares) / _totalDeposit);
     }
 
