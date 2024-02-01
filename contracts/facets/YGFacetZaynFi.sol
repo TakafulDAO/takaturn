@@ -2,6 +2,9 @@
 
 pragma solidity 0.8.18;
 
+import {IZaynZapV2TakaDAO} from "../interfaces/IZaynZapV2TakaDAO.sol";
+import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
+
 import {IYGFacetZaynFi} from "../interfaces/IYGFacetZaynFi.sol";
 
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
@@ -118,5 +121,111 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         );
 
         yield.providerAddresses[providerString] = providerAddress;
+    }
+
+    /// @notice To be used in case of emergency, when yield got stuck in the vault
+    /// @notice The position of each array is used as a set in the calculation
+    /// @param termIds The term ids for which the yield is being rescued
+    /// @param originalWithdrawals The original ETH withdrawal amounts of each bad transaction
+    /// @param originalShares The original calculated shares amounts of each bad transaction
+    /// @param users The users to be reimbursed
+    function rescueStuckYields(uint[] memory termIds, uint[] memory originalWithdrawals, uint[] memory originalShares, address[] memory users) external onlyOwner payable {
+        // Start with validating the lengths of the arrays
+        uint length = termIds.length;
+        require(length == originalWithdrawals.length && length == originalShares.length && length == users.length, "Arrays don't match");
+
+        uint usedValue = 0; // Used to keep track of the lost ETH stored back into zaynfi
+
+        // Start looping through each combination
+        for (uint i; i < length; ) {
+            uint termId = termIds[i];
+            address user = users[i];
+
+            LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+                ._yieldStorage()
+                .yields[termId];
+
+            // Make sure user is part of this term and has enabled yield generation
+            require(yield.hasOptedIn[user], "User not part of yield generation");
+
+            // Zaynfi's addresses
+            address vaultAddress = yield.providerAddresses["ZaynVault"];
+            address zapAddress = yield.providerAddresses["ZaynZap"];
+
+            // Calculate what each user is owed
+            int reimbursement = _calculateReimbursement(originalWithdrawals[i], originalShares[i], yield);
+
+            if (reimbursement > 0) {
+                // Reimbursement is positive, this means the user withdrew less shares than he was supposed to
+                uint neededShares = uint(reimbursement);
+
+                // Code copied from _withdrawYG, get the amount of shares back and give it to the user
+                uint withdrawnYield = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+                    vaultAddress,
+                    neededShares,
+                    termId
+                );
+
+                yield.withdrawnYield[user] += withdrawnYield;
+                yield.availableYield[user] += withdrawnYield;
+
+                // Claim the yield right away and send it to the user
+                LibYieldGeneration._claimAvailableYield(termId, user, user);
+                
+            } else if (reimbursement < 0) {
+                // When there is a negative reimbursement, we compensate the pool by adding back the exact amount of shares that were lost
+                uint neededShares = uint(reimbursement * -1);
+
+                // Calculate the amount of eth we need to deposit to get the desired shares
+                uint pricePerShare = IZaynVaultV2TakaDao(vaultAddress)
+                    .getPricePerFullShare();
+
+                uint neededEth = neededShares * pricePerShare;
+                uint sharesBefore = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+
+                // Make sure we have enough eth
+                require(neededEth + usedValue <= msg.value, "Not enough ETH value sent");
+
+                // Deposit the amount of shares we lost
+                IZaynZapV2TakaDAO(zapAddress).zapInEth{value: neededEth}(
+                    vaultAddress,
+                    termId
+                );
+
+                // Increment the used value so far
+                usedValue += neededEth;
+
+                // Validate the amount of shares deposited
+                uint sharesAfter = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+                require(neededShares == (sharesAfter - sharesBefore), "Invalid amount of shares deposited");
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Reimburse the leftover eth that the msg.sender sent
+        if (usedValue < msg.value) {
+            (bool success, ) = payable(msg.sender).call{value: msg.value - usedValue}("");
+            require(success);
+        }
+    }
+
+    /// @notice To be used in case of emergency, when yield got stuck in the vault
+    /// @notice The position of each array is used as a set in the calculation
+    /// @param originalWithdrawal The original ETH withdrawal amount
+    /// @param originalShares The original calculated shares amount
+    /// @param yield the reference to the yield
+    function _calculateReimbursement(uint originalWithdrawal, uint originalShares, LibYieldGenerationStorage.YieldGeneration storage yield) internal view returns (int)  {
+        uint correctedShares = originalWithdrawal * yield.totalShares / yield.totalDeposit;
+
+        if (correctedShares > originalShares) {
+            return int(correctedShares - originalShares);
+        } else if (correctedShares < originalShares) {
+            return int(originalShares - correctedShares) * -1;
+        }
+
+        return 0;
     }
 }
