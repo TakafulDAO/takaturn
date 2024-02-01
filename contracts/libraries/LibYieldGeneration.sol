@@ -48,7 +48,7 @@ library LibYieldGeneration {
             ._yieldStorage()
             .yields[_termId];
 
-        uint neededShares = _neededShares(_collateralAmount, yield);
+        uint neededShares = _neededShares(_collateralAmount, yield.totalShares, yield.totalDeposit);
 
         yield.withdrawnCollateral[_user] += _collateralAmount;
         yield.currentTotalDeposit -= _collateralAmount;
@@ -92,12 +92,14 @@ library LibYieldGeneration {
 
     /// @notice Conversion from eth to shares
     /// @param _collateralAmount The amount of collateral to withdraw
-    /// @param _yield The yield generation struct
+    /// @param _totalShares The total shares in the yield from the term
+    /// @param _totalDeposit The total deposit in the yield from the term
     function _neededShares(
         uint _collateralAmount,
-        LibYieldGenerationStorage.YieldGeneration storage _yield
+        uint _totalShares,
+        uint _totalDeposit
     ) internal view returns (uint) {
-        return ((_collateralAmount * _yield.totalShares) / _yield.totalDeposit);
+        return ((_collateralAmount * _totalShares) / _totalDeposit);
     }
 
     /// @notice This function is used to get the current total yield generated for a term
