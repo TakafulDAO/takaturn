@@ -21,7 +21,7 @@ const {
     registrationPeriod,
     moneyPot,
 } = require("../utils/test-utils")
-const { BigNumber, ZeroAddress } = require("ethers")
+const { ZeroAddress } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip

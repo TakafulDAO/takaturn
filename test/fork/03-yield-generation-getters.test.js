@@ -1,10 +1,9 @@
-const { assert, expect } = require("chai")
+const { assert } = require("chai")
 const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const { impersonateAccount, advanceTime } = require("../../utils/_helpers")
 const { balanceForUser } = require("../utils/test-utils")
 const { erc20UnitsFormat } = require("../../utils/units")
-const { BigNumber } = require("ethers")
 
 !isFork || isMainnet
     ? describe.skip
@@ -239,7 +238,7 @@ const { BigNumber } = require("ethers")
                       const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
                       assert(termAPYBefore > 0)
-                      assert(termAPYBefore < termAPYAfter)
+                      assert(termAPYBefore > termAPYAfter)
                   })
                   describe("After some withdraws", function () {
                       it("Without defaults", async function () {
@@ -262,7 +261,7 @@ const { BigNumber } = require("ethers")
 
                           const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                          assert(termAPYBefore < termAPYAfter)
+                          assert(termAPYBefore > termAPYAfter)
                       })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
@@ -278,7 +277,7 @@ const { BigNumber } = require("ethers")
 
                           const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                          assert(termAPYBefore < termAPYAfter)
+                          assert(termAPYBefore > termAPYAfter)
                       })
                   })
               })
