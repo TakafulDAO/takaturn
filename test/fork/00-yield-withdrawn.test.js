@@ -35,30 +35,50 @@ const { erc20UnitsFormat } = require("../../utils/units")
           })
 
           it("Correct yield calculation", async function () {
-              const withdrawable = await takaturnDiamond.getWithdrawableUserBalance(
+              const withdrawableBefore = await takaturnDiamond.getWithdrawableUserBalance(
                   term,
                   participantAddress
               )
-              let yieldParticipantSummary = await takaturnDiamond.getUserYieldSummary(
+              const yieldParticipantSummaryBefore = await takaturnDiamond.getUserYieldSummary(
                   participantAddress,
                   term
               )
-              //   console.log(`Yield to be withdrawn by participant ${yieldParticipantSummary[5]}`)
-              //   console.log(`Withdrawable: ${withdrawable}`)
+              const participantBalanceBefore = await ethers.provider.getBalance(participantAddress)
+
+              //   console.log(
+              //       `Yield to be withdrawn by participant ${yieldParticipantSummaryBefore[5]}`
+              //   )
+              //   console.log(`Withdrawable: ${withdrawableBefore}`)
 
               const withdrawTx = await takaturnParticipant.withdrawCollateral(term)
               await Promise.all([
                   expect(withdrawTx)
                       .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
-                      .withArgs(term, participantAddress, participantAddress, withdrawable),
+                      .withArgs(term, participantAddress, participantAddress, withdrawableBefore),
                   expect(withdrawTx)
                       .to.emit(takaturnDiamond, "OnYieldClaimed")
-                      .withArgs(term, participantAddress, participantAddress, 2559347141517344),
+                      .withArgs(term, participantAddress, participantAddress, 3394213108906536),
               ])
-              yieldParticipantSummary = await takaturnDiamond.getUserYieldSummary(
+
+              const withdrawableAfter = await takaturnDiamond.getWithdrawableUserBalance(
+                  term,
+                  participantAddress
+              )
+              const yieldParticipantSummaryAfter = await takaturnDiamond.getUserYieldSummary(
                   participantAddress,
                   term
               )
-              //   console.log(`Yield to be withdrawn by participant ${yieldParticipantSummary[5]}`)
+              const participantBalanceAfter = await ethers.provider.getBalance(participantAddress)
+
+              //   console.log(`Yield to be withdrawn by participant ${yieldParticipantSummaryAfter[5]}`)
+
+              assert.equal(withdrawableAfter, 0)
+              assert.equal(yieldParticipantSummaryAfter[5], 0)
+
+              assert(withdrawableBefore > withdrawableAfter)
+              assert(yieldParticipantSummaryBefore[5] > yieldParticipantSummaryAfter[5])
+
+              assert(participantBalanceBefore < participantBalanceAfter)
+              assert(participantBalanceAfter > participantBalanceBefore + withdrawableBefore)
           })
       })
