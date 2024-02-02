@@ -53,7 +53,7 @@ module.exports = {
                 //chainId: 42161,
                 accounts: [TESTNET_DEPLOYER_PK],
                 url: ARBITRUM_MAINNET_RPC_URL,
-                blockNumber: 171651050,
+                blockNumber: 175144195,
                 enabled: true,
             },
         },

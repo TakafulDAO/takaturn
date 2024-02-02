@@ -203,7 +203,6 @@ module.exports = {
                 accounts: [DEPLOYER_PK],
                 url: ARBITRUM_MAINNET_RPC_URL,
                 blockNumber: 175144195,
-                // blockNumber: 171651050,
                 enabled: FORK === "true",
             },
         },
