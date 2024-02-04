@@ -429,14 +429,39 @@ contract GettersFacet is IGetters {
         uint termId
     ) external view returns (bool, bool, bool, bool, uint, bool) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+
+        bool isMoneyPotFrozen = _checkFrozenMoneyPot(participant, termId);
+
         return (
             fund.isParticipant[participant],
             fund.isBeneficiary[participant],
             fund.paidThisCycle[participant],
             fund.autoPayEnabled[participant],
             fund.beneficiariesPool[participant],
-            fund.beneficiariesFrozenPool[participant]
+            isMoneyPotFrozen
         );
+    }
+
+    function _checkFrozenMoneyPot(
+        address _participant,
+        uint _termId
+    ) internal view returns (bool _isMoneyPotFrozen) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[_termId];
+
+        if (fund.expelledBeforeBeneficiary[_participant]) {
+            _isMoneyPotFrozen = false;
+        } else {
+            uint neededCollateral = (110 * getRemainingCyclesContributionWei(_termId)) / 100; // 1.1 x RCC
+
+            if (collateral.collateralMembersBank[_participant] < neededCollateral) {
+                _isMoneyPotFrozen = true;
+            } else {
+                _isMoneyPotFrozen = false;
+            }
+        }
     }
 
     /// @notice function to get cycle information of a specific participant
