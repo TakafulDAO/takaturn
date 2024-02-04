@@ -180,7 +180,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 uint pricePerShare = IZaynVaultV2TakaDao(vaultAddress)
                     .getPricePerFullShare();
 
-                uint neededEth = neededShares * pricePerShare;
+                uint neededEth = (neededShares * pricePerShare) / 10 ** 18;
                 uint sharesBefore = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
 
                 // Make sure we have enough eth
