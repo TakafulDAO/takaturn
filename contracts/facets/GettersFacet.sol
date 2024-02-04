@@ -293,6 +293,7 @@ contract GettersFacet is IGetters {
         uint termId,
         address user
     ) external view returns (uint allowedWithdrawal) {
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
@@ -311,8 +312,21 @@ contract GettersFacet is IGetters {
         ) {
             allowedWithdrawal = userCollateral + availableYield;
         } else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
-            // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
-            uint minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
+            uint minRequiredCollateral;
+
+            // Check if the user has paid this cycle
+            if (!fund.paidThisCycle[user]) {
+                // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
+                minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
+            } else {
+                // If the user have paid this cycle, we need to check his remaining cycles and get the contribution amount for those
+                uint remainingCycles = fund.totalAmountOfCycles - fund.currentCycle;
+                uint contributionAmountWei = getToCollateralConversionRate(
+                    term.contributionAmount * 10 ** 18
+                );
+
+                minRequiredCollateral = (remainingCycles * contributionAmountWei * 15) / 10; // 1.5 times of what the user needs to pay for the remaining cycles
+            }
 
             // Collateral must be higher than 1.5 X RCC
             if (userCollateral > minRequiredCollateral) {
@@ -415,14 +429,39 @@ contract GettersFacet is IGetters {
         uint termId
     ) external view returns (bool, bool, bool, bool, uint, bool) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+
+        bool isMoneyPotFrozen = _checkFrozenMoneyPot(participant, termId);
+
         return (
             fund.isParticipant[participant],
             fund.isBeneficiary[participant],
             fund.paidThisCycle[participant],
             fund.autoPayEnabled[participant],
             fund.beneficiariesPool[participant],
-            fund.beneficiariesFrozenPool[participant]
+            isMoneyPotFrozen
         );
+    }
+
+    function _checkFrozenMoneyPot(
+        address _participant,
+        uint _termId
+    ) internal view returns (bool _isMoneyPotFrozen) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[_termId];
+
+        if (fund.expelledBeforeBeneficiary[_participant]) {
+            _isMoneyPotFrozen = false;
+        } else {
+            uint neededCollateral = (110 * getRemainingCyclesContributionWei(_termId)) / 100; // 1.1 x RCC
+
+            if (collateral.collateralMembersBank[_participant] < neededCollateral) {
+                _isMoneyPotFrozen = true;
+            } else {
+                _isMoneyPotFrozen = false;
+            }
+        }
     }
 
     /// @notice function to get cycle information of a specific participant

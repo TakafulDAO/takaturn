@@ -724,7 +724,7 @@ const { BigNumber, ZeroAddress } = require("ethers")
 
               await expect(
                   takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
-              ).to.be.revertedWith("Withdraw failed")
+              ).to.be.revertedWith("Nothing to withdraw")
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
