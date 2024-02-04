@@ -213,6 +213,46 @@ const { hour } = require("../../../utils/units")
                           assert.ok(!underCollateralized)
                           assert.equal(currentBeneficiary, participant_1.address)
                       })
+
+                      it("Should be able to withdraw (partially) more if has already payed for the cycle", async function () {
+                          const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                          const termId = lastTerm[0]
+
+                          // Advance time to the second cycle
+
+                          await advanceTime(cycleTime + 1)
+
+                          await takaturnDiamond.closeFundingPeriod(termId)
+
+                          await takaturnDiamond.startNewCycle(termId)
+
+                          const withdrawableBefore =
+                              await takaturnDiamond.getWithdrawableUserBalance(
+                                  termId,
+                                  participant_1.address
+                              )
+
+                          // Pay the contribution for the second cycle
+
+                          await takaturnDiamondParticipant_1.payContribution(termId)
+
+                          const withdrawableAfter =
+                              await takaturnDiamond.getWithdrawableUserBalance(
+                                  termId,
+                                  participant_1.address
+                              )
+
+                          await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId))
+                              .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
+                              .withArgs(
+                                  termId,
+                                  participant_1.address,
+                                  participant_1.address,
+                                  withdrawableAfter
+                              )
+
+                          assert(withdrawableBefore < withdrawableAfter)
+                      })
                   })
                   describe("Withdraw to another account", function () {
                       it("Should withdraw to a different adress", async function () {
