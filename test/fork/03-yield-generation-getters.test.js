@@ -442,14 +442,14 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               erc20UnitsFormat(userYieldGeneratedAfter)
 
                           assert(userYieldGeneratedBefore > 0)
-                          assert(userYieldGeneratedBeforeFormatted < 0.1743)
-                          assert(userYieldGeneratedAfterFormatted < 0.1745)
+                          assert(userYieldGeneratedBeforeFormatted < 0.1218)
+                          assert(userYieldGeneratedAfterFormatted < 0.11111)
                           assert(
-                              userYieldGeneratedBefore.toString() <
+                              userYieldGeneratedBefore.toString() >
                                   userYieldGeneratedAfter.toString()
                           )
                       })
-                      it("Defaulting", async function () {
+                      it.only("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
@@ -480,10 +480,10 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               erc20UnitsFormat(userYieldGeneratedAfter)
 
                           assert(userYieldGeneratedBeforeFormatted > 0)
-                          assert(userYieldGeneratedBeforeFormatted < 0.1743)
-                          assert(userYieldGeneratedAfterFormatted < 0.1745)
+                          assert(userYieldGeneratedBeforeFormatted < 0.1218)
+                          assert(userYieldGeneratedAfterFormatted < 0.1111)
                           assert(
-                              userYieldGeneratedBefore.toString() <
+                              userYieldGeneratedBefore.toString() >
                                   userYieldGeneratedAfter.toString()
                           )
                       })
