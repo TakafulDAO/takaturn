@@ -300,7 +300,7 @@ contract TermFacet is ITerm {
             if (yield.hasOptedIn[depositors[i]]) {
                 yield.yieldUsers.push(depositors[i]);
                 yield.depositedCollateralByUser[depositors[i]] =
-                    (_collateral.collateralMembersBank[depositors[i]] * 90) /
+                    (_collateral.collateralMembersBank[depositors[i]] * 98) /
                     100;
                 amountToYield += yield.depositedCollateralByUser[depositors[i]];
             }
