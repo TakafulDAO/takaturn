@@ -3,8 +3,7 @@ const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const { impersonateAccount } = require("../../utils/_helpers")
 const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
-const { upgradeDiamond } = require("../utils/upgrade-diamond")
-const { erc20UnitsFormat } = require("../../utils/units")
+const { updateFacetsBytecode } = require("../utils/update-facets-bytecode")
 
 !isFork || isMainnet
     ? describe.skip
@@ -31,7 +30,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
 
               takaturnParticipant = takaturnDiamond.connect(participantSigner)
 
-              await upgradeDiamond()
+              await updateFacetsBytecode()
           })
 
           it.only("Correct yield calculation", async function () {

@@ -1,10 +1,10 @@
-const { network } = require("hardhat")
-const { networkConfig, isDevnet } = require("../utils/_networks")
+const { isDevnet } = require("../utils/_networks")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
-    const { deploy, log } = deployments
+    // This script is to be used on tests
+    // It deploy new facets to get their bytecode to be used on the tests
+    const { deploy } = deployments
     const { deployer } = await getNamedAccounts()
-    const chainId = network.config.chainId
 
     if (isDevnet) {
         await deploy("CollateralFacet", {
@@ -44,4 +44,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 }
 
-module.exports.tags = ["test-yield"]
+module.exports.tags = ["facets"]
