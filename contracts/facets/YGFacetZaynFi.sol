@@ -192,7 +192,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 // Calculate the amount of eth we need to deposit to get the desired shares
                 uint pricePerShare = IZaynVaultV2TakaDao(vaultAddress).getPricePerFullShare();
 
-                uint neededEth = (neededShares * pricePerShare) / 10 ** 18;
+                uint neededEth = (15 * neededShares * pricePerShare) / 10 ** 19; // We ask for 150% of the shares we need to compensate for the slippage
                 uint sharesBefore = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
 
                 // Make sure we have enough eth
@@ -206,10 +206,18 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
                 // Validate the amount of shares deposited
                 uint sharesAfter = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
-                require(
-                    neededShares == (sharesAfter - sharesBefore),
-                    "Invalid amount of shares deposited"
+
+                // If we deposited more shares than we needed, we withdraw the extra shares and send them back to the caller
+                uint withdrawExtraShares = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+                    vaultAddress,
+                    sharesAfter - sharesBefore - neededShares,
+                    termId
                 );
+
+                (bool successWithdrawExtraShares, ) = payable(msg.sender).call{
+                    value: withdrawExtraShares
+                }("");
+                require(successWithdrawExtraShares, "Failed to send extra shares back");
             }
 
             unchecked {
@@ -220,7 +228,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         // Reimburse the leftover eth that the msg.sender sent
         if (usedValue < msg.value) {
             (bool success, ) = payable(msg.sender).call{value: msg.value - usedValue}("");
-            require(success);
+            require(success, "Failed to send leftover ETH back");
         }
     }
 
