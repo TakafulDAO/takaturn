@@ -1,0 +1,74 @@
+{
+  "address": "0x87C590778B35381A631824e835298286dd63f160",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_aggregatorAddressEthUsd",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_aggregatorAddressUsdUsdc",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_zapAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_vaultAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "_yieldLock",
+          "type": "bool"
+        }
+      ],
+      "name": "init",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x508fb255376d68cc3df23170c6d92f9e4524940a6f2724f4c27aaeac07a40ffb",
+  "receipt": {
+    "to": null,
+    "from": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "contractAddress": "0x87C590778B35381A631824e835298286dd63f160",
+    "transactionIndex": 0,
+    "gasUsed": "179177",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xa7b02d53f71d5865198c26b67ba3da80515d051e64a5bc0cb05b2105e25fb785",
+    "transactionHash": "0x508fb255376d68cc3df23170c6d92f9e4524940a6f2724f4c27aaeac07a40ffb",
+    "logs": [],
+    "blockNumber": 175144211,
+    "cumulativeGasUsed": "179177",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "numDeployments": 1,
+  "solcInputHash": "d25be983011165319fdf8e1b2c569254",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.18+commit.87f61d96\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_aggregatorAddressEthUsd\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_aggregatorAddressUsdUsdc\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_zapAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_vaultAddress\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_yieldLock\",\"type\":\"bool\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/mocks/FakeInit.sol\":\"FakeInit\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/libraries/LibTermStorage.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nlibrary LibTermStorage {\\r\\n    bytes32 constant TERM_CONSTS_POSITION = keccak256(\\\"diamond.standard.term.consts\\\");\\r\\n    bytes32 constant TERM_STORAGE_POSITION = keccak256(\\\"diamond.standard.term.storage\\\");\\r\\n\\r\\n    enum TermStates {\\r\\n        InitializingTerm,\\r\\n        ActiveTerm,\\r\\n        ExpiredTerm,\\r\\n        ClosedTerm\\r\\n    }\\r\\n\\r\\n    struct TermConsts {\\r\\n        mapping(string => address) aggregatorsAddresses; // \\\"ETH/USD\\\" => address , \\\"USDC/USD\\\" => address\\r\\n    }\\r\\n\\r\\n    struct Term {\\r\\n        bool initialized;\\r\\n        TermStates state;\\r\\n        address termOwner;\\r\\n        uint creationTime;\\r\\n        uint termId;\\r\\n        uint registrationPeriod; // Time for registration (seconds)\\r\\n        uint totalParticipants; // Max number of participants\\r\\n        uint cycleTime; // Time for single cycle (seconds)\\r\\n        uint contributionAmount; // Amount user must pay per cycle (USD)\\r\\n        uint contributionPeriod; // The portion of cycle user must make payment\\r\\n        address stableTokenAddress;\\r\\n    }\\r\\n\\r\\n    struct TermStorage {\\r\\n        uint nextTermId;\\r\\n        mapping(uint => Term) terms; // termId => Term struct\\r\\n        mapping(address => uint[]) participantToTermId; // userAddress => [termId1, termId2, ...]\\r\\n    }\\r\\n\\r\\n    function _termExists(uint termId) internal view returns (bool) {\\r\\n        return _termStorage().terms[termId].initialized;\\r\\n    }\\r\\n\\r\\n    function _termConsts() internal pure returns (TermConsts storage termConsts) {\\r\\n        bytes32 position = TERM_CONSTS_POSITION;\\r\\n        assembly {\\r\\n            termConsts.slot := position\\r\\n        }\\r\\n    }\\r\\n\\r\\n    function _termStorage() internal pure returns (TermStorage storage termStorage) {\\r\\n        bytes32 position = TERM_STORAGE_POSITION;\\r\\n        assembly {\\r\\n            termStorage.slot := position\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0x8d12e51a175c821d32aa12da41bf3158a8aa1ec0a377232800cd6cfd21e81a2b\",\"license\":\"MIT\"},\"contracts/libraries/LibYieldGenerationStorage.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nlibrary LibYieldGenerationStorage {\\r\\n    bytes32 constant YIELD_PROVIDERS_POSITION = keccak256(\\\"diamond.standard.yield.providers\\\");\\r\\n    bytes32 constant YIELD_STORAGE_POSITION = keccak256(\\\"diamond.standard.yield.storage\\\");\\r\\n    bytes32 constant YIELD_LOCK_POSITION = keccak256(\\\"diamond.standard.yield.lock\\\");\\r\\n\\r\\n    enum YGProviders {\\r\\n        InHouse,\\r\\n        ZaynFi\\r\\n    }\\r\\n\\r\\n    struct YieldLock {\\r\\n        bool yieldLock;\\r\\n    }\\r\\n\\r\\n    // Both index 0 are reserved for ZaynFi\\r\\n    struct YieldProviders {\\r\\n        mapping(string => address) providerAddresses;\\r\\n    }\\r\\n\\r\\n    struct YieldGeneration {\\r\\n        bool initialized;\\r\\n        YGProviders provider;\\r\\n        mapping(string => address) providerAddresses;\\r\\n        uint startTimeStamp;\\r\\n        uint totalDeposit;\\r\\n        uint currentTotalDeposit;\\r\\n        uint totalShares;\\r\\n        address[] yieldUsers;\\r\\n        mapping(address => bool) hasOptedIn;\\r\\n        mapping(address => uint256) withdrawnYield;\\r\\n        mapping(address => uint256) withdrawnCollateral;\\r\\n        mapping(address => uint256) availableYield;\\r\\n        mapping(address => uint256) depositedCollateralByUser;\\r\\n    }\\r\\n\\r\\n    struct YieldStorage {\\r\\n        mapping(uint => YieldGeneration) yields; // termId => YieldGeneration struct\\r\\n    }\\r\\n\\r\\n    function _yieldExists(uint termId) internal view returns (bool) {\\r\\n        return _yieldStorage().yields[termId].initialized;\\r\\n    }\\r\\n\\r\\n    function _yieldLock() internal pure returns (YieldLock storage yieldLock) {\\r\\n        bytes32 position = YIELD_LOCK_POSITION;\\r\\n        assembly {\\r\\n            yieldLock.slot := position\\r\\n        }\\r\\n    }\\r\\n\\r\\n    function _yieldProviders() internal pure returns (YieldProviders storage yieldProviders) {\\r\\n        bytes32 position = YIELD_PROVIDERS_POSITION;\\r\\n        assembly {\\r\\n            yieldProviders.slot := position\\r\\n        }\\r\\n    }\\r\\n\\r\\n    function _yieldStorage() internal pure returns (YieldStorage storage yieldStorage) {\\r\\n        bytes32 position = YIELD_STORAGE_POSITION;\\r\\n        assembly {\\r\\n            yieldStorage.slot := position\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0xaeed5248c171a073c6cdf849d6bc3d840a5f9d5d6ef514b462c06f83c886a042\",\"license\":\"MIT\"},\"contracts/mocks/FakeInit.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\r\\n\\r\\npragma solidity 0.8.18;\\r\\n\\r\\nimport {LibTermStorage} from \\\"../libraries/LibTermStorage.sol\\\";\\r\\nimport {LibYieldGenerationStorage} from \\\"../libraries/LibYieldGenerationStorage.sol\\\";\\r\\n\\r\\ncontract FakeInit {\\r\\n    function init(\\r\\n        address _aggregatorAddressEthUsd,\\r\\n        address _aggregatorAddressUsdUsdc,\\r\\n        address _zapAddress, // Zaynfi Zap address\\r\\n        address _vaultAddress, // Zaynfi Vault address\\r\\n        bool _yieldLock\\r\\n    ) external {\\r\\n        LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();\\r\\n        LibYieldGenerationStorage.YieldProviders storage yieldProvider = LibYieldGenerationStorage\\r\\n            ._yieldProviders();\\r\\n\\r\\n        termConsts.aggregatorsAddresses[\\\"ETH/USD\\\"] = _aggregatorAddressEthUsd;\\r\\n        termConsts.aggregatorsAddresses[\\\"USDC/USD\\\"] = _aggregatorAddressUsdUsdc;\\r\\n\\r\\n        yieldProvider.providerAddresses[\\\"ZaynZap\\\"] = _zapAddress;\\r\\n        yieldProvider.providerAddresses[\\\"ZaynVault\\\"] = _vaultAddress;\\r\\n\\r\\n        LibYieldGenerationStorage._yieldLock().yieldLock = _yieldLock;\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0x1fd5dbe363ccd6db6f3182b1a276a58292af05b0c23c5af9552a2dfe02325600\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50610246806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80639ff6ec0a14610030575b600080fd5b61018461003e3660046101a2565b60408051661155120bd554d160ca1b81527f138fa7b895cc6132bd44317f3510a9c38821e93ca223f9fdc532527c01963ec460078083018290528351928390036027908101842080546001600160a01b038c81166001600160a01b031992831617909255671554d110cbd554d160c21b865260088601859052865195869003602801862080548c84169083161790556605a61796e5a61760cc1b86527ff27a5986330dc78d016d8604ee1a040d5a789fbaa2d0c27f5dfded4b616b8977938601849052865195869003909201852080548a83169084161790556816985e5b95985d5b1d60ba1b8552600985018390529451938490036029019093208054948716949093169390931790915590827f7c039906f7f8ca11e01b6987a88513563589699678f7d2a6c8447f44d69375f3805460ff191691151591909117905550505050505050565b005b80356001600160a01b038116811461019d57600080fd5b919050565b600080600080600060a086880312156101ba57600080fd5b6101c386610186565b94506101d160208701610186565b93506101df60408701610186565b92506101ed60608701610186565b91506080860135801515811461020257600080fd5b80915050929550929590935056fea2646970667358221220869a72d95dc4bb6fece05473448ac4d06436ac9cd25327a2e9ff6f9493d35f6f64736f6c63430008120033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061002b5760003560e01c80639ff6ec0a14610030575b600080fd5b61018461003e3660046101a2565b60408051661155120bd554d160ca1b81527f138fa7b895cc6132bd44317f3510a9c38821e93ca223f9fdc532527c01963ec460078083018290528351928390036027908101842080546001600160a01b038c81166001600160a01b031992831617909255671554d110cbd554d160c21b865260088601859052865195869003602801862080548c84169083161790556605a61796e5a61760cc1b86527ff27a5986330dc78d016d8604ee1a040d5a789fbaa2d0c27f5dfded4b616b8977938601849052865195869003909201852080548a83169084161790556816985e5b95985d5b1d60ba1b8552600985018390529451938490036029019093208054948716949093169390931790915590827f7c039906f7f8ca11e01b6987a88513563589699678f7d2a6c8447f44d69375f3805460ff191691151591909117905550505050505050565b005b80356001600160a01b038116811461019d57600080fd5b919050565b600080600080600060a086880312156101ba57600080fd5b6101c386610186565b94506101d160208701610186565b93506101df60408701610186565b92506101ed60608701610186565b91506080860135801515811461020257600080fd5b80915050929550929590935056fea2646970667358221220869a72d95dc4bb6fece05473448ac4d06436ac9cd25327a2e9ff6f9493d35f6f64736f6c63430008120033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}
