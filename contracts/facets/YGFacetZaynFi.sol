@@ -198,6 +198,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 // Make sure we have enough eth
                 require(neededEth + usedValue <= msg.value, "Not enough ETH value sent");
 
+                // Update the current total deposit to avoid underflows
+                yield.currentTotalDeposit += neededEth;
+
                 // Deposit the amount of shares we lost
                 IZaynZapV2TakaDAO(zapAddress).zapInEth{value: neededEth}(vaultAddress, termId);
 
