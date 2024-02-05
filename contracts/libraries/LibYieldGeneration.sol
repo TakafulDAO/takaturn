@@ -139,7 +139,7 @@ library LibYieldGeneration {
         } else {
             return
                 ((yield.depositedCollateralByUser[_user] - yield.withdrawnCollateral[_user]) *
-                    10 ** 18) / yield.currentTotalDeposit;
+                    10 ** 18) / yield.totalDeposit;
         }
     }
 

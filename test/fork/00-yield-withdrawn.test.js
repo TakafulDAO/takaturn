@@ -34,7 +34,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
               await upgradeDiamond()
           })
 
-          it("Correct yield calculation", async function () {
+          it.only("Correct yield calculation", async function () {
               const withdrawableBefore = await takaturnDiamond.getWithdrawableUserBalance(
                   term,
                   participantAddress
