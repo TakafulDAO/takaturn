@@ -21,6 +21,14 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         address receiver,
         uint indexed amount
     ); // Emits when a user claims their yield
+    event OnYieldReimbursed(uint indexed termId, address indexed user, uint indexed amount);
+    event OnYieldCompensated(uint indexed termId, address indexed user, uint indexed amount);
+    event OnWithdrawnBalanceRestored(
+        uint indexed termId,
+        address indexed user,
+        uint indexed amount
+    );
+    event OnYieldTermUpdated(uint indexed termId);
 
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
@@ -185,6 +193,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
                 // Claim the yield right away and send it to the user
                 LibYieldGeneration._claimAvailableYield(termId, user, user);
+
+                emit OnYieldReimbursed(termId, user, withdrawnYield);
             } else if (reimbursement < 0) {
                 // When there is a negative reimbursement, we compensate the pool by adding back the exact amount of shares that were lost
                 uint neededShares = uint(reimbursement * -1);
@@ -216,6 +226,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
                 // Give the extra eth back to msg.sender
                 usedValue -= withdrawnExtraEth;
+
+                emit OnYieldCompensated(termId, user, neededEth);
             }
 
             unchecked {
@@ -238,8 +250,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         for (uint i; i < termIds.length; ) {
             uint termId = termIds[i];
             LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
+                ._yieldStorage()
+                .yields[termId];
 
             // Zaynfi's addresses
             address vaultAddress = yield.providerAddresses["ZaynVault"];
@@ -259,6 +271,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
                     // Restore the withdrawnCollateral amount of the user to what it's supposed to be
                     yield.withdrawnCollateral[user] = deposit;
+
+                    emit OnWithdrawnBalanceRestored(termId, user, deposit);
                 }
 
                 unchecked {
@@ -273,7 +287,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             yield.currentTotalDeposit += withdrawnTooMuch;
 
             // We calculate the current shares we actually need in total for this term
-            uint neededShares = (yield.currentTotalDeposit * yield.totalShares) / yield.totalDeposit;
+            uint neededShares = (yield.currentTotalDeposit * yield.totalShares) /
+                yield.totalDeposit;
 
             // withdrawnTooMuch was withdrawn back to the smart contract, we must send it back to the yield vault
             IZaynZapV2TakaDAO(zapAddress).zapInEth{value: withdrawnTooMuch}(vaultAddress, termId);
@@ -281,12 +296,12 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             // Get the shares after
             uint sharesAfter = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
 
-            require (sharesAfter <= neededShares, "Too many shares for deposit!");
+            require(sharesAfter <= neededShares, "Too many shares for deposit!");
             if (neededShares > sharesAfter) {
                 // If we still need more shares (which is most likely the case), we compensate by putting the missing amount into the vault
                 // Calculate the amount of eth we need to deposit to get the desired shares
                 uint pricePerShare = IZaynVaultV2TakaDao(vaultAddress).getPricePerFullShare();
-                
+
                 uint neededEth = (15 * (neededShares - sharesAfter) * pricePerShare) / 10 ** 19; // We ask for 150% of the shares we need to compensate for the slippage
 
                 // Make sure we have enough eth
@@ -315,6 +330,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             unchecked {
                 ++i;
             }
+
+            emit OnYieldTermUpdated(termId);
         }
 
         // Reimburse the leftover eth that the msg.sender sent
