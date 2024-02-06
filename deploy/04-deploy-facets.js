@@ -41,7 +41,21 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             log: true,
             args: [],
         })
+
+        await deploy("MockDiamondCutFacet", {
+            contract: "MockDiamondCutFacet",
+            from: deployer,
+            log: true,
+            args: [],
+        })
+
+        await deploy("FakeInit", {
+            contract: "FakeInit",
+            from: deployer,
+            log: true,
+            args: [],
+        })
     }
 }
 
-module.exports.tags = ["facets"]
+module.exports.tags = ["facets", "diamondCut"]
