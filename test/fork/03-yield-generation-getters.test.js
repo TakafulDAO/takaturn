@@ -449,7 +449,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                                   userYieldGeneratedAfter.toString()
                           )
                       })
-                      it.only("Defaulting", async function () {
+                      it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
