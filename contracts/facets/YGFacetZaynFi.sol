@@ -198,9 +198,6 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 // Make sure we have enough eth
                 require(neededEth + usedValue <= msg.value, "Not enough ETH value sent");
 
-                // Update the current total deposit to avoid underflows
-                yield.currentTotalDeposit += neededEth;
-
                 // Deposit the amount of shares we lost
                 IZaynZapV2TakaDAO(zapAddress).zapInEth{value: neededEth}(vaultAddress, termId);
 
@@ -211,16 +208,14 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 uint sharesAfter = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
 
                 // If we deposited more shares than we needed, we withdraw the extra shares and send them back to the caller
-                uint withdrawExtraShares = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+                uint withdrawnExtraEth = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
                     vaultAddress,
                     sharesAfter - sharesBefore - neededShares,
                     termId
                 );
 
-                (bool successWithdrawExtraShares, ) = payable(msg.sender).call{
-                    value: withdrawExtraShares
-                }("");
-                require(successWithdrawExtraShares, "Failed to send extra shares back");
+                // Give the extra eth back to msg.sender
+                usedValue -= withdrawnExtraEth;
             }
 
             unchecked {
