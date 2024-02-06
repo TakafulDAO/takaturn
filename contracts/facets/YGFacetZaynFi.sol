@@ -234,7 +234,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
     /// @param termIds The term ids for which the yield balance is to be restored
     function restoreYieldBalance(uint[] memory termIds) external payable onlyOwner {
         uint usedValue = 0; // Used to keep track of the lost ETH stored back into zaynfi
-        // Start looping through each combination
+        // Start looping through each term id
         for (uint i; i < termIds.length; ) {
             uint termId = termIds[i];
             LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
@@ -283,7 +283,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
             require (sharesAfter <= neededShares, "Too many shares for deposit!");
             if (neededShares > sharesAfter) {
-                // If we need more shares (which is most likely the case), we compensate by putting some into the vault
+                // If we still need more shares (which is most likely the case), we compensate by putting the missing amount into the vault
                 // Calculate the amount of eth we need to deposit to get the desired shares
                 uint pricePerShare = IZaynVaultV2TakaDao(vaultAddress).getPricePerFullShare();
                 
