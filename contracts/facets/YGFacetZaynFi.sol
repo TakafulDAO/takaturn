@@ -230,6 +230,100 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         }
     }
 
+    /// @notice To be used in case of emergency, when the user has withdrawn too much eth from yield into the smart contract
+    /// @param termIds The term ids for which the yield balance is to be restored
+    function restoreYieldBalance(uint[] memory termIds) external payable onlyOwner {
+        uint usedValue = 0; // Used to keep track of the lost ETH stored back into zaynfi
+        // Start looping through each combination
+        for (uint i; i < termIds.length; ) {
+            uint termId = termIds[i];
+            LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+            // Zaynfi's addresses
+            address vaultAddress = yield.providerAddresses["ZaynVault"];
+            address zapAddress = yield.providerAddresses["ZaynZap"];
+
+            // Deal with the case where the user has withdrawn too much eth from yield
+            // The user did not actually withdraw more ETH to his wallet, just that it was withdrawn back to the smart contract
+            // So no ETH was lost
+            address[] memory users = yield.yieldUsers;
+            uint withdrawnTooMuch;
+            for (uint j; j < users.length; ) {
+                address user = users[j];
+                uint withdraw = yield.withdrawnCollateral[user];
+                uint deposit = yield.depositedCollateralByUser[user];
+                if (withdraw > deposit) {
+                    withdrawnTooMuch += (withdraw - deposit);
+
+                    // Restore the withdrawnCollateral amount of the user to what it's supposed to be
+                    yield.withdrawnCollateral[user] = deposit;
+                }
+
+                unchecked {
+                    ++j;
+                }
+            }
+
+            // Safety check but most likely the case
+            require(withdrawnTooMuch > 0, "termId does not have too much withdrawn ETH");
+
+            // Restore currentTotalDeposit to what it's supposed to be
+            yield.currentTotalDeposit += withdrawnTooMuch;
+
+            // We calculate the current shares we actually need in total for this term
+            uint neededShares = (yield.currentTotalDeposit * yield.totalShares) / yield.totalDeposit;
+
+            // withdrawnTooMuch was withdrawn back to the smart contract, we must send it back to the yield vault
+            IZaynZapV2TakaDAO(zapAddress).zapInEth{value: withdrawnTooMuch}(vaultAddress, termId);
+
+            // Get the shares after
+            uint sharesAfter = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+
+            require (sharesAfter <= neededShares, "Too many shares for deposit!");
+            if (neededShares > sharesAfter) {
+                // If we need more shares (which is most likely the case), we compensate by putting some into the vault
+                // Calculate the amount of eth we need to deposit to get the desired shares
+                uint pricePerShare = IZaynVaultV2TakaDao(vaultAddress).getPricePerFullShare();
+                
+                uint neededEth = (15 * (neededShares - sharesAfter) * pricePerShare) / 10 ** 19; // We ask for 150% of the shares we need to compensate for the slippage
+
+                // Make sure we have enough eth
+                require(neededEth + usedValue <= msg.value, "Not enough ETH value sent");
+
+                // Deposit the amount of shares we lost
+                IZaynZapV2TakaDAO(zapAddress).zapInEth{value: neededEth}(vaultAddress, termId);
+
+                // Increment the used value so far
+                usedValue += neededEth;
+
+                // Validate the amount of shares deposited
+                sharesAfter = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+
+                // If we deposited more shares than we needed, we withdraw the extra shares and send them back to the caller
+                uint withdrawnExtraEth = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+                    vaultAddress,
+                    sharesAfter - neededShares,
+                    termId
+                );
+
+                // Give the extra eth back to msg.sender
+                usedValue -= withdrawnExtraEth;
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Reimburse the leftover eth that the msg.sender sent
+        if (usedValue < msg.value) {
+            (bool success, ) = payable(msg.sender).call{value: msg.value - usedValue}("");
+            require(success, "Failed to send leftover ETH back");
+        }
+    }
+
     /// @notice To be used in case of emergency, when yield got stuck in the vault
     /// @notice The position of each array is used as a set in the calculation
     /// @param originalWithdrawal The original ETH withdrawal amount
