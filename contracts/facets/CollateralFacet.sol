@@ -543,7 +543,7 @@ contract CollateralFacet is ICollateral {
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
             uint amountToWithdraw;
-            if (_amount > _yieldStorage.depositedCollateralByUser[_user]) {
+            if (_amount > (_yieldStorage.depositedCollateralByUser[_user] - _yieldStorage.withdrawnCollateral[_user])) {
                 amountToWithdraw = _yieldStorage.depositedCollateralByUser[_user];
             } else {
                 amountToWithdraw = _amount;
