@@ -28,7 +28,11 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         address indexed user,
         uint indexed amount
     );
-    event OnYieldTermUpdated(uint indexed termId);
+    event OnYieldTermUpdated(
+        uint indexed termId,
+        uint indexed amountRestored,
+        uint indexed amountCompensated
+    );
 
     modifier onlyOwner() {
         LibDiamond.enforceIsContractOwner();
@@ -227,7 +231,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 // Give the extra eth back to msg.sender
                 usedValue -= withdrawnExtraEth;
 
-                emit OnYieldCompensated(termId, user, neededEth);
+                emit OnYieldCompensated(termId, user, (neededEth - withdrawnExtraEth));
             }
 
             unchecked {
@@ -338,13 +342,13 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
                 // Give the extra eth back to msg.sender
                 usedValue -= withdrawnExtraEth;
+
+                emit OnYieldTermUpdated(termId, withdrawnTooMuch, (neededEth - withdrawnExtraEth));
             }
 
             unchecked {
                 ++i;
             }
-
-            emit OnYieldTermUpdated(termId);
         }
 
         // Reimburse the leftover eth that the msg.sender sent
