@@ -48,23 +48,10 @@ library LibYieldGeneration {
             ._yieldStorage()
             .yields[_termId];
 
-        uint _collateralToWithdraw;
+        uint neededShares = _neededShares(_collateralAmount, yield.totalShares, yield.totalDeposit);
 
-        if (_collateralAmount > yield.currentTotalDeposit) {
-            _collateralToWithdraw = yield.currentTotalDeposit;
-        } else {
-            _collateralToWithdraw = _collateralAmount;
-        }
-
-        uint neededShares = _neededShares(
-            _collateralToWithdraw,
-            yield.totalShares,
-            yield.totalDeposit
-        );
-
-        yield.withdrawnCollateral[_user] += _collateralToWithdraw;
-
-        yield.currentTotalDeposit -= _collateralToWithdraw;
+        yield.withdrawnCollateral[_user] += _collateralAmount;
+        yield.currentTotalDeposit -= _collateralAmount;
 
         address zapAddress = yield.providerAddresses["ZaynZap"];
         address vaultAddress = yield.providerAddresses["ZaynVault"];
@@ -78,7 +65,7 @@ library LibYieldGeneration {
         if (withdrawnAmount < _collateralAmount) {
             return 0;
         } else {
-            uint withdrawnYield = withdrawnAmount - _collateralToWithdraw;
+            uint withdrawnYield = withdrawnAmount - _collateralAmount;
             yield.withdrawnYield[_user] += withdrawnYield;
             yield.availableYield[_user] += withdrawnYield;
 
