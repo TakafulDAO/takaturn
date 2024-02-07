@@ -253,6 +253,13 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 ._yieldStorage()
                 .yields[termId];
 
+            if (!yield.initialized) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
+
             // Zaynfi's addresses
             address vaultAddress = yield.providerAddresses["ZaynVault"];
             address zapAddress = yield.providerAddresses["ZaynZap"];
@@ -262,10 +269,12 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             // So no ETH was lost
             address[] memory users = yield.yieldUsers;
             uint withdrawnTooMuch;
+
             for (uint j; j < users.length; ) {
                 address user = users[j];
                 uint withdraw = yield.withdrawnCollateral[user];
                 uint deposit = yield.depositedCollateralByUser[user];
+
                 if (withdraw > deposit) {
                     withdrawnTooMuch += (withdraw - deposit);
 
@@ -281,8 +290,12 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             }
 
             // Safety check but most likely the case
-            require(withdrawnTooMuch > 0, "termId does not have too much withdrawn ETH");
-
+            if (withdrawnTooMuch == 0) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
             // Restore currentTotalDeposit to what it's supposed to be
             yield.currentTotalDeposit += withdrawnTooMuch;
 
@@ -296,7 +309,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             // Get the shares after
             uint sharesAfter = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
 
-            require(sharesAfter <= neededShares, "Too many shares for deposit!");
+            // require(sharesAfter <= neededShares, "Too many shares for deposit!");
             if (neededShares > sharesAfter) {
                 // If we still need more shares (which is most likely the case), we compensate by putting the missing amount into the vault
                 // Calculate the amount of eth we need to deposit to get the desired shares
