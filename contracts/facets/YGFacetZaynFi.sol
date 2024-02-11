@@ -228,6 +228,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                     termId
                 );
 
+                uint sharesFinal = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+                require(neededShares == (sharesFinal - sharesBefore), "Final share balance incorrect");
+
                 // Give the extra eth back to msg.sender
                 usedValue -= withdrawnExtraEth;
 
@@ -245,6 +248,79 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             require(success, "Failed to send leftover ETH back");
         }
     }
+
+    
+    /// @notice To be used in case of emergency, when there are more shares deposited than expected
+    /// @param termIds The term ids for which the yield balance is to be restored
+    function reimburseExtraYield(uint[] memory termIds) external onlyOwner {
+        for (uint i; i < termIds.length; ) {
+            uint termId = termIds[i];
+            LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+                ._yieldStorage()
+                .yields[termId];
+
+            if (!yield.initialized) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
+
+            // Zaynfi's addresses
+            address vaultAddress = yield.providerAddresses["ZaynVault"];
+            address zapAddress = yield.providerAddresses["ZaynZap"];
+
+            uint neededShares = (yield.currentTotalDeposit * yield.totalShares) /
+                yield.totalDeposit;
+            uint actualShares = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+
+            if (!(actualShares > neededShares)) {
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
+
+            address[] memory users = yield.yieldUsers;
+            uint reimbursed;
+            for (uint j; j < users.length; ) {
+                address user = users[j];
+                uint toWithdraw;
+                // Prevent rounding errors and make sure everything is withdrawn. This is done at the last user.
+                if (j + 1 == users.length) {
+                    toWithdraw = actualShares - neededShares - reimbursed;
+                } else {
+                    // Distribute the extra shares based on the yield distribution ratio
+                    toWithdraw = (actualShares - neededShares) * yield.depositedCollateralByUser[user] / yield.totalDeposit;
+                    reimbursed += toWithdraw;
+                }
+                
+                // ZapOut the user's portion
+                uint withdrawnYield = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+                    vaultAddress,
+                    toWithdraw,
+                    termId
+                );
+
+                yield.withdrawnYield[user] += withdrawnYield;
+                yield.availableYield[user] += withdrawnYield;
+
+                // Claim the yield right away and send it to the user
+                LibYieldGeneration._claimAvailableYield(termId, user, user);
+                    
+                emit OnYieldCompensated(termId, user, withdrawnYield);
+
+                unchecked {
+                    ++j;
+                }
+            }
+            
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
 
     /// @notice To be used in case of emergency, when the user has withdrawn too much eth from yield into the smart contract
     /// @param termIds The term ids for which the yield balance is to be restored
@@ -267,6 +343,12 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             // Zaynfi's addresses
             address vaultAddress = yield.providerAddresses["ZaynVault"];
             address zapAddress = yield.providerAddresses["ZaynZap"];
+
+            // Validate currentTotalDeposit to match the expected shares
+            uint neededShares = (yield.currentTotalDeposit * yield.totalShares) /
+                yield.totalDeposit;
+
+            require(neededShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId), "currentTotalDeposit does not match needed shares!");
 
             // Deal with the case where the user has withdrawn too much eth from yield
             // The user did not actually withdraw more ETH to his wallet, just that it was withdrawn back to the smart contract
@@ -300,26 +382,25 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 }
                 continue;
             }
+
             // Restore currentTotalDeposit to what it's supposed to be
             yield.currentTotalDeposit += withdrawnTooMuch;
 
             // We calculate the current shares we actually need in total for this term
-            uint neededShares = (yield.currentTotalDeposit * yield.totalShares) /
+            neededShares = (yield.currentTotalDeposit * yield.totalShares) /
                 yield.totalDeposit;
 
             // withdrawnTooMuch was withdrawn back to the smart contract, we must send it back to the yield vault
             IZaynZapV2TakaDAO(zapAddress).zapInEth{value: withdrawnTooMuch}(vaultAddress, termId);
 
             // Get the shares after
-            uint sharesAfter = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
-
-            // require(sharesAfter <= neededShares, "Too many shares for deposit!");
-            if (neededShares > sharesAfter) {
+            uint sharesBalance = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+            if (neededShares > sharesBalance) {
                 // If we still need more shares (which is most likely the case), we compensate by putting the missing amount into the vault
                 // Calculate the amount of eth we need to deposit to get the desired shares
                 uint pricePerShare = IZaynVaultV2TakaDao(vaultAddress).getPricePerFullShare();
 
-                uint neededEth = (15 * (neededShares - sharesAfter) * pricePerShare) / 10 ** 19; // We ask for 150% of the shares we need to compensate for the slippage
+                uint neededEth = (15 * (neededShares - sharesBalance) * pricePerShare) / 10 ** 19; // We ask for 150% of the shares we need to compensate for the slippage
 
                 // Make sure we have enough eth
                 require(neededEth + usedValue <= msg.value, "Not enough ETH value sent");
@@ -331,20 +412,53 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 usedValue += neededEth;
 
                 // Validate the amount of shares deposited
-                sharesAfter = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+                sharesBalance = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
 
                 // If we deposited more shares than we needed, we withdraw the extra shares and send them back to the caller
                 uint withdrawnExtraEth = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
                     vaultAddress,
-                    sharesAfter - neededShares,
+                    sharesBalance - neededShares,
                     termId
                 );
+
+                require(neededShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId), "Final share balance incorrect");
 
                 // Give the extra eth back to msg.sender
                 usedValue -= withdrawnExtraEth;
 
                 emit OnYieldTermUpdated(termId, withdrawnTooMuch, (neededEth - withdrawnExtraEth));
+            } else if (sharesBalance > neededShares) {
+                // If we deposited more shares than we needed, we withdraw the extra shares and send them back to the caller
+                IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+                    vaultAddress,
+                    sharesBalance - neededShares,
+                    termId
+                );
+
+                emit OnYieldTermUpdated(termId, withdrawnTooMuch, 0);
             }
+
+            // Some sanity checks
+            uint currentTotalDeposit;
+            for (uint j; j < users.length; ) {
+                address user = users[j];
+                uint withdraw = yield.withdrawnCollateral[user];
+                uint deposit = yield.depositedCollateralByUser[user];
+                require(deposit >= withdraw, "Withdraw greater than deposit");
+
+                currentTotalDeposit += yield.depositedCollateralByUser[user] - yield.withdrawnCollateral[user];
+
+                unchecked {
+                    ++j;
+                }
+            }
+
+            require(yield.currentTotalDeposit == currentTotalDeposit, "currentTotalDeposit invalid");
+
+            uint currentShares = currentTotalDeposit * yield.totalShares / yield.totalDeposit;
+
+            require(currentShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId), "Shares invalid");
+
 
             unchecked {
                 ++i;
