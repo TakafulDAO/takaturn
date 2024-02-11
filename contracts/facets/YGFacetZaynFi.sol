@@ -252,7 +252,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
     
     /// @notice To be used in case of emergency, when there are more shares deposited than expected
     /// @param termIds The term ids for which the yield balance is to be restored
-    function reimburseExtraYield(uint[] memory termIds) external onlyOwner {
+    function reimburseExtraYield(uint[] memory termIds) external payable onlyOwner {
+        uint usedValue = 0; // Used to keep track of the lost ETH stored back into zaynfi
         for (uint i; i < termIds.length; ) {
             uint termId = termIds[i];
             LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
@@ -274,7 +275,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 yield.totalDeposit;
             uint actualShares = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
 
-            if (!(actualShares > neededShares)) {
+            if (actualShares == neededShares) {
                 unchecked {
                     ++i;
                 }
@@ -283,9 +284,34 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
             address[] memory users = yield.yieldUsers;
             uint reimbursed;
+            uint withdrawnYield;
+
+            // Super small values are removed
+            if ((actualShares - neededShares) < 10000000 ) {
+                // ZapIn some ETH to withdraw the last few shares
+                IZaynZapV2TakaDAO(zapAddress).zapInEth{value: 10000000 }(vaultAddress, termId);
+                usedValue += 10000000;
+                withdrawnYield = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+                    vaultAddress,
+                    IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId) - neededShares,
+                    termId
+                );
+                // Send back to msg.sender because there is no profit here
+                usedValue -= withdrawnYield;
+ 
+                require(neededShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId), "Shares target not reached!");
+
+                unchecked {
+                    ++i;
+                }
+                continue;
+            }
+            
             for (uint j; j < users.length; ) {
                 address user = users[j];
+
                 uint toWithdraw;
+
                 // Prevent rounding errors and make sure everything is withdrawn. This is done at the last user.
                 if (j + 1 == users.length) {
                     toWithdraw = actualShares - neededShares - reimbursed;
@@ -294,9 +320,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                     toWithdraw = (actualShares - neededShares) * yield.depositedCollateralByUser[user] / yield.totalDeposit;
                     reimbursed += toWithdraw;
                 }
-                
+
                 // ZapOut the user's portion
-                uint withdrawnYield = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
+                withdrawnYield = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
                     vaultAddress,
                     toWithdraw,
                     termId
@@ -309,15 +335,23 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 LibYieldGeneration._claimAvailableYield(termId, user, user);
                     
                 emit OnYieldCompensated(termId, user, withdrawnYield);
-
+                
                 unchecked {
                     ++j;
                 }
             }
+
+            require(neededShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId), "Shares target not reached!");
             
             unchecked {
                 ++i;
             }
+        }
+        
+        // Reimburse the leftover eth that the msg.sender sent
+        if (usedValue < msg.value) {
+            (bool success, ) = payable(msg.sender).call{value: msg.value - usedValue}("");
+            require(success, "Failed to send leftover ETH back");
         }
     }
 
@@ -358,6 +392,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
             for (uint j; j < users.length; ) {
                 address user = users[j];
+
                 uint withdraw = yield.withdrawnCollateral[user];
                 uint deposit = yield.depositedCollateralByUser[user];
 
@@ -369,6 +404,8 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
                     emit OnWithdrawnBalanceRestored(termId, user, deposit);
                 }
+
+
 
                 unchecked {
                     ++j;
