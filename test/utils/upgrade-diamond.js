@@ -67,7 +67,7 @@ async function upgradeDiamond() {
             1,
             ["0xf6a40d2a", "0x27ff9f35", "0xc8eeb578", "0xefbb9761", "0x83da1d76"],
         ],
-        [newYGFacetZaynFi.target, 0, ["0x83de6e99", "0xf741e19e"]],
+        [newYGFacetZaynFi.target, 0, ["0x9253c073", "0x83de6e99", "0xf741e19e"]],
     ]
 
     const init = diamondInitAddress
