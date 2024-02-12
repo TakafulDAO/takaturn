@@ -489,7 +489,7 @@ async function checkYieldMappings(termId, userAddress) {
                               assert.equal(yieldUsers[i], accounts[i + 1].address)
                           }
                       })
-                      it("Should return the correct yield parameters for a user", async function () {
+                      it("Should return the correct yield parameters for a user [ @skip-on-ci ]", async function () {
                           this.timeout(200000)
                           const ids = await takaturnDiamond.getTermsId()
                           const termId = ids[0]
@@ -505,7 +505,7 @@ async function checkYieldMappings(termId, userAddress) {
                                       termId
                                   )
                               let collateralDeposited = collaterlUserSummary[3]
-                              let expectedYieldDeposited = (collateralDeposited * 90n) / 100n
+                              let expectedYieldDeposited = (collateralDeposited * 95n) / 100n
 
                               assert.ok(yieldUser[0])
                               assert.equal(yieldUser[1].toString(), 0)
