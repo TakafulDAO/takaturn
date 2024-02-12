@@ -48,13 +48,22 @@ library LibYieldGeneration {
             ._yieldStorage()
             .yields[_termId];
 
-        uint neededShares = _neededShares(_collateralAmount, yield.totalShares, yield.totalDeposit);
+        uint neededShares;
 
         yield.withdrawnCollateral[_user] += _collateralAmount;
         yield.currentTotalDeposit -= _collateralAmount;
 
         address zapAddress = yield.providerAddresses["ZaynZap"];
         address vaultAddress = yield.providerAddresses["ZaynVault"];
+
+        uint sharesBalance = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+
+        // Prevent rounding errors
+        if ((sharesBalance - neededShares) < 100) {
+            neededShares = sharesBalance;
+        } else {
+            neededShares = _neededShares(_collateralAmount, yield.totalShares, yield.totalDeposit);
+        }
 
         uint withdrawnAmount = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
             vaultAddress,
