@@ -287,10 +287,10 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             uint withdrawnYield;
 
             // Super small values are removed
-            if ((actualShares - neededShares) < 10000000 ) {
+            if ((actualShares - neededShares) < 100000 ) {
                 // ZapIn some ETH to withdraw the last few shares
-                IZaynZapV2TakaDAO(zapAddress).zapInEth{value: 10000000 }(vaultAddress, termId);
-                usedValue += 10000000;
+                IZaynZapV2TakaDAO(zapAddress).zapInEth{value: 100000 }(vaultAddress, termId);
+                usedValue += 100000;
                 withdrawnYield = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
                     vaultAddress,
                     IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId) - neededShares,
@@ -404,8 +404,6 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
                     emit OnWithdrawnBalanceRestored(termId, user, deposit);
                 }
-
-
 
                 unchecked {
                     ++j;
