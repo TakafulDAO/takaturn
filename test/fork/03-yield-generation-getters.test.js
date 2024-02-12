@@ -1,10 +1,9 @@
-const { assert, expect } = require("chai")
+const { assert } = require("chai")
 const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const { impersonateAccount, advanceTime } = require("../../utils/_helpers")
 const { balanceForUser } = require("../utils/test-utils")
 const { erc20UnitsFormat } = require("../../utils/units")
-const { BigNumber } = require("ethers")
 
 !isFork || isMainnet
     ? describe.skip
@@ -69,6 +68,11 @@ const { BigNumber } = require("ethers")
               takaturnDiamondParticipant_4 = takaturnDiamond.connect(participant_4)
               zaynZapOwner = zaynZap.connect(zapOwnerSigner)
               usdcWhaleSigner = usdc.connect(whale)
+
+              await deployer.sendTransaction({
+                  to: zapOwner,
+                  value: ethers.parseEther("1"),
+              })
 
               await zaynZapOwner.toggleTrustedSender(takaturnDiamond, true, {
                   gasLimit: 1000000,
@@ -193,7 +197,7 @@ const { BigNumber } = require("ethers")
                               participant_1.address
                           )
 
-                          assert(userAPYBefore.toString() > userAPYAfter.toString())
+                          assert(userAPYBefore > userAPYAfter)
                       })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
@@ -215,7 +219,7 @@ const { BigNumber } = require("ethers")
                               participant_1.address
                           )
 
-                          assert(userAPYBefore.toString() > userAPYAfter.toString())
+                          assert(userAPYBefore > userAPYAfter)
                       })
                   })
               })
@@ -233,8 +237,8 @@ const { BigNumber } = require("ethers")
 
                       const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                      assert(termAPYBefore.toString() > 0)
-                      assert(termAPYBefore.toString() < termAPYAfter.toString())
+                      assert(termAPYBefore > 0)
+                      assert(termAPYBefore > termAPYAfter)
                   })
                   describe("After some withdraws", function () {
                       it("Without defaults", async function () {
@@ -257,7 +261,7 @@ const { BigNumber } = require("ethers")
 
                           const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                          assert(termAPYBefore.toString() < termAPYAfter.toString())
+                          assert(termAPYBefore > termAPYAfter)
                       })
                       it("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
@@ -273,7 +277,7 @@ const { BigNumber } = require("ethers")
 
                           const termAPYAfter = await takaturnDiamond.termAPY(termId)
 
-                          assert(termAPYBefore.toString() < termAPYAfter.toString())
+                          assert(termAPYBefore > termAPYAfter)
                       })
                   })
               })
@@ -438,8 +442,8 @@ const { BigNumber } = require("ethers")
                               erc20UnitsFormat(userYieldGeneratedAfter)
 
                           assert(userYieldGeneratedBefore > 0)
-                          assert(userYieldGeneratedBeforeFormatted < 0.18)
-                          assert(userYieldGeneratedAfterFormatted < 0.14)
+                          assert(userYieldGeneratedBeforeFormatted < 0.1218)
+                          assert(userYieldGeneratedAfterFormatted < 0.11111)
                           assert(
                               userYieldGeneratedBefore.toString() >
                                   userYieldGeneratedAfter.toString()
@@ -476,9 +480,8 @@ const { BigNumber } = require("ethers")
                               erc20UnitsFormat(userYieldGeneratedAfter)
 
                           assert(userYieldGeneratedBeforeFormatted > 0)
-                          assert(userYieldGeneratedBeforeFormatted < 0.18)
-                          assert(userYieldGeneratedAfterFormatted < 0.14)
-
+                          assert(userYieldGeneratedBeforeFormatted < 0.1218)
+                          assert(userYieldGeneratedAfterFormatted < 0.1111)
                           assert(
                               userYieldGeneratedBefore.toString() >
                                   userYieldGeneratedAfter.toString()

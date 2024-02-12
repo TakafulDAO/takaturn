@@ -542,13 +542,11 @@ contract CollateralFacet is ICollateral {
         LibYieldGenerationStorage.YieldGeneration storage _yieldStorage
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
-            uint amountToWithdraw;
-            if (_amount > _yieldStorage.depositedCollateralByUser[_user]) {
-                amountToWithdraw = _yieldStorage.depositedCollateralByUser[_user];
-            } else {
-                amountToWithdraw = _amount;
+            uint availableWithdraw = _yieldStorage.depositedCollateralByUser[_user] - _yieldStorage.withdrawnCollateral[_user];
+            if (availableWithdraw > _amount) {
+                availableWithdraw = _amount;
             }
-            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, amountToWithdraw, _user);
+            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, availableWithdraw, _user);
         } else {
             withdrawnYield = 0;
         }
