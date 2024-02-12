@@ -16,7 +16,7 @@ const {
     registrationPeriod,
     getRandomInt,
 } = require("../utils/test-utils")
-const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
+const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
 
 let takaturnDiamond, usdc
 
@@ -141,6 +141,18 @@ async function executeCycle(
     } else {
         assert.ok(newCycleStarted)
     }
+}
+
+async function checkYieldMappings(termId, userAddress) {
+    let userYieldSummary = await takaturnDiamond.getUserYieldSummary(userAddress, termId)
+    if (!userYieldSummary[0]) {
+        return
+    }
+
+    const withdrawnCollateral = userYieldSummary[2]
+    const depositedCollateralByUser = userYieldSummary[4]
+
+    assert(withdrawnCollateral <= depositedCollateralByUser)
 }
 
 !isFork || isMainnet
@@ -516,6 +528,8 @@ async function executeCycle(
 
                           await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId)).not
                               .to.be.reverted
+
+                          await checkYieldMappings(termId, participant_1.address)
                       })
 
                       it("Should not revert when there are defaulters and finish funding period", async function () {
@@ -539,6 +553,8 @@ async function executeCycle(
                           await executeCycle(termId, 0, [], false)
 
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          await checkYieldMappings(termId, participant_1.address)
 
                           const yield = await takaturnDiamond.getUserYieldSummary(
                               participant_1.address,
@@ -565,6 +581,8 @@ async function executeCycle(
                           await executeCycle(termId, 0, [], false)
 
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          await checkYieldMappings(termId, participant_1.address)
 
                           const yield = await takaturnDiamond.getUserYieldSummary(
                               participant_1.address,

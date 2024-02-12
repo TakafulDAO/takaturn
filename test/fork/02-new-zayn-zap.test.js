@@ -2,8 +2,8 @@ const { assert, expect } = require("chai")
 const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const { impersonateAccount, advanceTime } = require("../../utils/_helpers")
-const { balanceForUser, registrationPeriod } = require("../utils/test-utils")
-const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
+const { balanceForUser } = require("../utils/test-utils")
+const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
 
 !isFork || isMainnet
     ? describe.skip
@@ -90,6 +90,11 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
 
                       zaynZapOwner = zaynZap.connect(zapOwnerSigner)
                       usdcWhaleSigner = usdc.connect(whale)
+
+                      await deployer.sendTransaction({
+                          to: zapOwner,
+                          value: ethers.parseEther("1"),
+                      })
 
                       await zaynZapOwner.toggleTrustedSender(takaturnDiamond, true, {
                           gasLimit: 1000000,
