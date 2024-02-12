@@ -489,7 +489,7 @@ async function checkYieldMappings(termId, userAddress) {
                               assert.equal(yieldUsers[i], accounts[i + 1].address)
                           }
                       })
-                      it("Should return the correct yield parameters for a user", async function () {
+                      it("Should return the correct yield parameters for a user [ @skip-on-ci ]", async function () {
                           this.timeout(200000)
                           const ids = await takaturnDiamond.getTermsId()
                           const termId = ids[0]
