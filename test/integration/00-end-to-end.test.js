@@ -21,7 +21,7 @@ const {
     registrationPeriod,
     moneyPot,
 } = require("../utils/test-utils")
-const { ZeroAddress } = require("ethers")
+const { BigNumber, ZeroAddress } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -99,11 +99,6 @@ const { ZeroAddress } = require("ethers")
 
               zaynZapOwner = zaynZap.connect(zapOwnerSigner)
               usdcWhaleSigner = usdc.connect(whale)
-
-              await deployer.sendTransaction({
-                  to: zapOwner,
-                  value: ethers.parseEther("1"),
-              })
 
               await zaynZapOwner.toggleTrustedSender(takaturnDiamond, true, {
                   gasLimit: 1000000,

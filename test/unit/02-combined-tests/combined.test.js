@@ -11,17 +11,21 @@ const {
     getCollateralStateFromIndex,
     CollateralStates,
 } = require("../../../utils/_helpers")
-const { day } = require("../../../utils/units")
+const { hour, day } = require("../../../utils/units")
 
 const {
     totalParticipants,
     cycleTime,
     contributionAmount,
     contributionPeriod,
+    fixedCollateralEth,
+    collateralAmount,
     balanceForUser,
+    collateralFundingPeriod,
     registrationPeriod,
     getRandomInt,
 } = require("../../utils/test-utils")
+const { BigNumber } = require("ethers")
 
 let takaturnDiamond, usdc
 

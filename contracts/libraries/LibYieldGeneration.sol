@@ -48,26 +48,13 @@ library LibYieldGeneration {
             ._yieldStorage()
             .yields[_termId];
 
-        uint neededShares = _neededShares(_collateralAmount, yield.totalShares, yield.totalDeposit);
+        uint neededShares = _ethToShares(_collateralAmount, yield);
 
         yield.withdrawnCollateral[_user] += _collateralAmount;
         yield.currentTotalDeposit -= _collateralAmount;
 
         address zapAddress = yield.providerAddresses["ZaynZap"];
         address vaultAddress = yield.providerAddresses["ZaynVault"];
-
-        uint sharesBalance = IZaynVaultV2TakaDao(vaultAddress).balanceOf(_termId);
-
-        // Prevent rounding errors
-        if (neededShares > sharesBalance) {
-            if (neededShares - sharesBalance < 10000) {
-                neededShares = sharesBalance;
-            }
-        } else {
-            if (sharesBalance - neededShares < 10000) {
-                neededShares = sharesBalance;
-            }
-        }
 
         uint withdrawnAmount = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
             vaultAddress,
@@ -105,15 +92,15 @@ library LibYieldGeneration {
 
     /// @notice Conversion from eth to shares
     /// @param _collateralAmount The amount of collateral to withdraw
-    /// @param _totalShares The total shares in the yield from the term
-    /// @param _totalDeposit The total deposit in the yield from the term
-    function _neededShares(
+    /// @param _yield The yield generation struct
+    function _ethToShares(
         uint _collateralAmount,
-        uint _totalShares,
-        uint _totalDeposit
-    ) internal pure returns (uint) {
-        if (_totalDeposit == 0) return 0;
-        return ((_collateralAmount * _totalShares) / _totalDeposit);
+        LibYieldGenerationStorage.YieldGeneration storage _yield
+    ) internal view returns (uint) {
+        uint pricePerShare = IZaynVaultV2TakaDao(_yield.providerAddresses["ZaynVault"])
+            .getPricePerFullShare();
+
+        return ((_collateralAmount * 10 ** 18) / pricePerShare);
     }
 
     /// @notice This function is used to get the current total yield generated for a term
@@ -152,7 +139,7 @@ library LibYieldGeneration {
         } else {
             return
                 ((yield.depositedCollateralByUser[_user] - yield.withdrawnCollateral[_user]) *
-                    10 ** 18) / yield.totalDeposit;
+                    10 ** 18) / yield.currentTotalDeposit;
         }
     }
 
