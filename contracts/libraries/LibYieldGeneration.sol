@@ -56,7 +56,7 @@ library LibYieldGeneration {
         address zapAddress = yield.providerAddresses["ZaynZap"];
         address vaultAddress = yield.providerAddresses["ZaynVault"];
 
-        uint sharesBalance = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+        uint sharesBalance = IZaynVaultV2TakaDao(vaultAddress).balanceOf(_termId);
 
         // Prevent rounding errors
         if ((sharesBalance - neededShares) < 100) {
