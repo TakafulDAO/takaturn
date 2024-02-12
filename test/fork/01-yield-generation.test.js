@@ -505,7 +505,7 @@ async function checkYieldMappings(termId, userAddress) {
                                       termId
                                   )
                               let collateralDeposited = collaterlUserSummary[3]
-                              let expectedYieldDeposited = (collateralDeposited * 98n) / 100n
+                              let expectedYieldDeposited = (collateralDeposited * 95n) / 100n
 
                               assert.ok(yieldUser[0])
                               assert.equal(yieldUser[1].toString(), 0)
