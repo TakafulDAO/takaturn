@@ -59,10 +59,14 @@ library LibYieldGeneration {
         uint sharesBalance = IZaynVaultV2TakaDao(vaultAddress).balanceOf(_termId);
 
         // Prevent rounding errors
-        if (neededShares > sharesBalance && (neededShares - sharesBalance) < 10000) {
-            neededShares = sharesBalance;
-        } else if ((sharesBalance - neededShares) < 10000) {
-            neededShares = sharesBalance;
+        if (neededShares > sharesBalance) {
+            if (neededShares - sharesBalance < 10000) {
+                neededShares = sharesBalance;
+            }
+        } else {
+            if (sharesBalance - neededShares < 10000) {
+                neededShares = sharesBalance;
+            }
         }
 
         uint withdrawnAmount = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
