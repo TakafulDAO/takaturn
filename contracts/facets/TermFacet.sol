@@ -51,6 +51,10 @@ contract TermFacet is ITerm {
         _joinTerm(termId, optYield);
     }
 
+    function joinTermByPosiition(uint termId, bool optYield, uint position) external payable {
+        _joinTermByPosition(termId, optYield, position);
+    }
+
     function startTerm(uint termId) external {
         _startTerm(termId);
     }
@@ -134,6 +138,62 @@ contract TermFacet is ITerm {
         collateral.collateralMembersBank[msg.sender] += msg.value;
         collateral.isCollateralMember[msg.sender] = true;
         collateral.depositors[memberIndex] = msg.sender;
+        collateral.counterMembers++;
+        collateral.collateralDepositByUser[msg.sender] += msg.value;
+
+        termStorage.participantToTermId[msg.sender].push(_termId);
+
+        // If the lock is false, I accept the opt in
+        if (!LibYieldGenerationStorage._yieldLock().yieldLock) {
+            yield.hasOptedIn[msg.sender] = _optYield;
+        } else {
+            // If the lock is true, opt in is always false
+            yield.hasOptedIn[msg.sender] = false;
+        }
+
+        emit OnCollateralDeposited(_termId, msg.sender, msg.value);
+
+        if (collateral.counterMembers == 1) {
+            collateral.firstDepositTime = block.timestamp;
+        }
+
+        // If all the spots are filled, change the collateral
+        if (collateral.counterMembers == term.totalParticipants) {
+            emit OnTermFilled(_termId);
+        }
+    }
+
+    function _joinTermByPosition(uint _termId, bool _optYield, uint _position) internal {
+        LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
+        LibTermStorage.Term memory term = termStorage.terms[_termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[_termId];
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[_termId];
+
+        require(LibTermStorage._termExists(_termId), "Term doesn't exist");
+
+        require(
+            collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
+            "Closed"
+        );
+
+        require(collateral.counterMembers < term.totalParticipants, "No space");
+
+        require(!collateral.isCollateralMember[msg.sender], "Reentry");
+
+        require(_position < term.totalParticipants - 1, "Invalid position");
+
+        require(collateral.depositors[_position] == address(0), "Position already taken");
+
+        uint minAmount = IGetters(address(this)).minCollateralToDeposit(_termId, _position);
+        require(msg.value >= minAmount, "Eth payment too low");
+
+        collateral.collateralMembersBank[msg.sender] += msg.value;
+        collateral.isCollateralMember[msg.sender] = true;
+        collateral.depositors[_position] = msg.sender;
         collateral.counterMembers++;
         collateral.collateralDepositByUser[msg.sender] += msg.value;
 
