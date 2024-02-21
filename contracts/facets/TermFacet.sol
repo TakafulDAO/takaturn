@@ -51,7 +51,7 @@ contract TermFacet is ITerm {
         _joinTerm(termId, optYield);
     }
 
-    function joinTermByPosiition(uint termId, bool optYield, uint position) external payable {
+    function joinTermByPosition(uint termId, bool optYield, uint position) external payable {
         _joinTermByPosition(termId, optYield, position);
     }
 
