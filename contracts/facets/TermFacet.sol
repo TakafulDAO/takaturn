@@ -132,6 +132,8 @@ contract TermFacet is ITerm {
 
         uint memberIndex = collateral.counterMembers;
 
+        require(collateral.depositors[memberIndex] == address(0), "Position already taken");
+
         uint minAmount = IGetters(address(this)).minCollateralToDeposit(_termId, memberIndex);
         require(msg.value >= minAmount, "Eth payment too low");
 
