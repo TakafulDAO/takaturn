@@ -311,6 +311,52 @@ const { hour } = require("../../../utils/units")
 
                   expect(participant_1_Collateral).to.be.gt(participant_12_Collateral)
               })
+
+              it("Should join a term selecting the position", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+                  const position = 7
+
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
+                      position
+                  )
+
+                  // Join
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTermByPosition(termId, false, position, { value: entrance })
+
+                  const participantFundSummary =
+                      await takaturnDiamondParticipant_1.getParticipantFundSummary(
+                          participant_1.address,
+                          termId
+                      )
+
+                  const participantCollateralSummary =
+                      await takaturnDiamondParticipant_1.getDepositorCollateralSummary(
+                          participant_1.address,
+                          termId
+                      )
+
+                  const collateralSummary = await takaturnDiamond.getCollateralSummary(termId)
+
+                  const isParticipant = participantFundSummary[0]
+                  const isCollateralMember = participantCollateralSummary[0]
+                  const collateralDepositors = collateralSummary[4]
+
+                  assert.ok(!isParticipant)
+                  assert.ok(isCollateralMember)
+                  for (let i = 0; i < totalParticipants; i++) {
+                      if (i === position) {
+                          assert.equal(collateralDepositors[i], participant_1.address)
+                      } else {
+                          assert.equal(collateralDepositors[i], ethers.ZeroAddress)
+                      }
+                  }
+              })
           })
 
           describe("AutoPay", function () {
