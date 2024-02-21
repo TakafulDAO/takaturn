@@ -44,6 +44,45 @@ contract GettersFacet is IGetters {
         }
     }
 
+    ///@notice Gets the remaining positions in a term and the corresponding security amount
+    ///@param termId the term id
+    function getAvailablePositionsAndSecurityAmount(
+        uint termId
+    ) external view returns (uint[] memory, uint[] memory) {
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+        uint[] memory availablePositions = new uint[](collateral.depositors.length);
+
+        uint availablePositionsCounter;
+        uint depositorsLength = collateral.depositors.length;
+
+        for (uint i; i < depositorsLength; ) {
+            if (collateral.depositors[i] == address(0)) {
+                availablePositions[availablePositionsCounter] = i;
+                unchecked {
+                    ++availablePositionsCounter;
+                }
+            }
+            unchecked {
+                ++i;
+            }
+        }
+
+        uint[] memory availablePositionsArray = new uint[](availablePositionsCounter);
+        uint[] memory securityAmountArray = new uint[](availablePositionsCounter);
+
+        for (uint i; i < availablePositionsCounter; ) {
+            availablePositionsArray[i] = availablePositions[i];
+            securityAmountArray[i] = minCollateralToDeposit(termId, availablePositions[i]);
+            unchecked {
+                ++i;
+            }
+        }
+
+        return (availablePositionsArray, securityAmountArray);
+    }
+
     /// @param termId the term id
     /// @return the term struct
     function getTermSummary(uint termId) external view returns (LibTermStorage.Term memory) {
@@ -273,7 +312,7 @@ contract GettersFacet is IGetters {
     function minCollateralToDeposit(
         uint termId,
         uint depositorIndex
-    ) external view returns (uint amount) {
+    ) public view returns (uint amount) {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
         require(depositorIndex < term.totalParticipants, "Index out of bounds");
