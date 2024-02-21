@@ -11,7 +11,7 @@ const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe.only("Unit tests. Term Facet", function () {
+    : describe("Unit tests. Term Facet", function () {
           const chainId = network.config.chainId
 
           const totalParticipants = 12 // Create term param
@@ -356,6 +356,46 @@ const { hour } = require("../../../utils/units")
                           assert.equal(collateralDepositors[i], ethers.ZeroAddress)
                       }
                   }
+              })
+
+              it("Should get available positions", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+                  const position = 7n
+
+                  let positionsAndDeposits =
+                      await takaturnDiamond.getAvailablePositionsAndSecurityAmount(termId)
+
+                  const availablePositionsBefore = positionsAndDeposits[0]
+
+                  const positionIndex = availablePositionsBefore.indexOf(position)
+                  const entrance = positionsAndDeposits[1][positionIndex]
+
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_1)
+                          .joinTermByPosition(termId, false, position, {
+                              value: positionsAndDeposits[1][positionIndex + 1],
+                          })
+                  ).to.be.revertedWith("Eth payment too low")
+
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .joinTermByPosition(termId, false, position, { value: entrance })
+
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_12)
+                          .joinTermByPosition(termId, false, position, { value: entrance })
+                  ).to.be.revertedWith("Position already taken")
+
+                  positionsAndDeposits =
+                      await takaturnDiamond.getAvailablePositionsAndSecurityAmount(termId)
+
+                  const availablePositionsAfter = positionsAndDeposits[0]
+
+                  assert.ok(availablePositionsBefore.includes(position))
+                  assert.ok(!availablePositionsAfter.includes(position))
               })
           })
 
