@@ -106,7 +106,7 @@ const { hour } = require("../../../utils/units")
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   }
 
                   await advanceTime(registrationPeriod + 1)
@@ -136,12 +136,12 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_1)
-                          .joinTerm(wrongTermId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](wrongTermId, false, { value: entrance })
                   ).to.be.revertedWith("Term doesn't exist")
 
                   await takaturnDiamond
                       .connect(participant_1)
-                      .joinTerm(termId, false, { value: entrance })
+                      ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
 
                   const participantFundSummary =
                       await takaturnDiamondParticipant_1.getParticipantFundSummary(
@@ -190,7 +190,7 @@ const { hour } = require("../../../utils/units")
                       await expect(
                           takaturnDiamond
                               .connect(participant_1)
-                              .joinTerm(termId, false, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                       ).to.emit(takaturnDiamond, "OnCollateralDeposited")
 
                       const participantSummary =
@@ -228,14 +228,14 @@ const { hour } = require("../../../utils/units")
 
                       await takaturnDiamond
                           .connect(participant_1)
-                          .joinTerm(termId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   }
 
                   // Everyone joins term 3
                   for (let i = 2; i <= totalParticipants; i++) {
                       await takaturnDiamond
                           .connect(accounts[i + 1])
-                          .joinTerm(3, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](3, false, { value: entrance })
                   }
 
                   // Start the term 3
@@ -286,13 +286,13 @@ const { hour } = require("../../../utils/units")
                       await expect(
                           takaturnDiamond
                               .connect(accounts[i])
-                              .joinTerm(termId, false, { value: failedEntrance })
+                              ["joinTerm(uint256,bool)"](termId, false, { value: failedEntrance })
                       ).to.be.revertedWith("Eth payment too low")
 
                       await expect(
                           takaturnDiamond
                               .connect(accounts[i])
-                              .joinTerm(termId, false, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                       ).not.to.be.reverted
                   }
 
@@ -327,7 +327,9 @@ const { hour } = require("../../../utils/units")
                   // Join
                   await takaturnDiamond
                       .connect(participant_1)
-                      .joinTermByPosition(termId, false, position, { value: entrance })
+                      ["joinTerm(uint256,bool,uint256)"](termId, false, position, {
+                          value: entrance,
+                      })
 
                   const participantFundSummary =
                       await takaturnDiamondParticipant_1.getParticipantFundSummary(
@@ -374,19 +376,23 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_1)
-                          .joinTermByPosition(termId, false, position, {
+                          ["joinTerm(uint256,bool,uint256)"](termId, false, position, {
                               value: positionsAndDeposits[1][positionIndex + 1],
                           })
                   ).to.be.revertedWith("Eth payment too low")
 
                   await takaturnDiamond
                       .connect(participant_1)
-                      .joinTermByPosition(termId, false, position, { value: entrance })
+                      ["joinTerm(uint256,bool,uint256)"](termId, false, position, {
+                          value: entrance,
+                      })
 
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          .joinTermByPosition(termId, false, position, { value: entrance })
+                          ["joinTerm(uint256,bool,uint256)"](termId, false, position, {
+                              value: entrance,
+                          })
                   ).to.be.revertedWith("Position already taken")
 
                   positionsAndDeposits =
@@ -419,7 +425,7 @@ const { hour } = require("../../../utils/units")
 
                   await takaturnDiamond
                       .connect(participant_1)
-                      .joinTerm(termId, false, { value: entrance })
+                      ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
 
                   await expect(takaturnDiamond.connect(participant_1).toggleAutoPay(termId)).not.to
                       .be.reverted
@@ -464,10 +470,10 @@ const { hour } = require("../../../utils/units")
 
                   await takaturnDiamond
                       .connect(participant_1)
-                      .joinTerm(termId, false, { value: entrance })
+                      ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   await takaturnDiamond
                       .connect(participant_2)
-                      .joinTerm(termId, false, { value: entrance })
+                      ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
 
                   await advanceTime(registrationPeriod + 1)
                   await takaturnDiamond.startTerm(termId)
@@ -501,7 +507,7 @@ const { hour } = require("../../../utils/units")
 
                   await takaturnDiamond
                       .connect(participant_1)
-                      .joinTerm(termId, false, { value: entrance })
+                      ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
 
                   await advanceTime(registrationPeriod / 2)
 
@@ -539,7 +545,7 @@ const { hour } = require("../../../utils/units")
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   }
 
                   await advanceTime(registrationPeriod + 1)
@@ -555,7 +561,9 @@ const { hour } = require("../../../utils/units")
 
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
 
-                  await takaturnDiamondParticipant_1.joinTerm(termId, false, { value: entrance })
+                  await takaturnDiamondParticipant_1["joinTerm(uint256,bool)"](termId, false, {
+                      value: entrance,
+                  })
 
                   await advanceTime(registrationPeriod + 1)
 
