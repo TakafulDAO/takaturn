@@ -58,9 +58,14 @@ contract GettersFacet is IGetters {
 
         uint availablePositionsCounter;
 
+        // Loop through the depositors array and get the available positions
         for (uint i; i < depositorsLength; ) {
+            // The position is available if the depositor is address zero
             if (collateral.depositors[i] == address(0)) {
+                // Add the position to the available positions array
                 availablePositions[availablePositionsCounter] = i;
+
+                // And increment the available positions counter
                 unchecked {
                     ++availablePositionsCounter;
                 }
@@ -70,17 +75,24 @@ contract GettersFacet is IGetters {
             }
         }
 
+        // Create the arrays to return
+        // The available positions array will have the length of the available positions counter
+        // The security amount array will have the same length
         uint[] memory availablePositionsArray = new uint[](availablePositionsCounter);
         uint[] memory securityAmountArray = new uint[](availablePositionsCounter);
 
+        // Loop through the available positions counter and fill the arrays
         for (uint i; i < availablePositionsCounter; ) {
             availablePositionsArray[i] = availablePositions[i];
+            // Get the security amount for the position
             securityAmountArray[i] = minCollateralToDeposit(termId, availablePositions[i]);
             unchecked {
                 ++i;
             }
         }
 
+        // Return the arrays, the available positions array and the security amount array are coupled
+        // availablePositionsArray[0] will have the securityAmountArray[0] and so on
         return (availablePositionsArray, securityAmountArray);
     }
 
