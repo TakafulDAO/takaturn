@@ -52,10 +52,11 @@ contract GettersFacet is IGetters {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        uint[] memory availablePositions = new uint[](collateral.depositors.length);
+
+        uint depositorsLength = collateral.depositors.length;
+        uint[] memory availablePositions = new uint[](depositorsLength);
 
         uint availablePositionsCounter;
-        uint depositorsLength = collateral.depositors.length;
 
         for (uint i; i < depositorsLength; ) {
             if (collateral.depositors[i] == address(0)) {
