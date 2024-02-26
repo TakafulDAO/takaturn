@@ -35,7 +35,7 @@ jobs:
             echo "::set-output name=branch::${{ github.head_ref }}"
           else
             branch_name=$(echo ${{ github.ref }} | sed 's/refs\/heads\///')
-            echo "::set-output name=branch::$branch_name"
+            echo "branch=$branch_name" >> $GITHUB_OUTPUT
           fi
 
       - name: Install dependencies
