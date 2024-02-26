@@ -51,8 +51,8 @@ contract TermFacet is ITerm {
         _joinTerm(termId, optYield);
     }
 
-    function joinTermByPosition(uint termId, bool optYield, uint position) external payable {
-        _joinTermByPosition(termId, optYield, position);
+    function joinTerm(uint termId, bool optYield, uint position) external payable {
+        _joinTerm(termId, optYield, position);
     }
 
     function startTerm(uint termId) external {
@@ -173,7 +173,7 @@ contract TermFacet is ITerm {
         }
     }
 
-    function _joinTermByPosition(uint _termId, bool _optYield, uint _position) internal {
+    function _joinTerm(uint _termId, bool _optYield, uint _position) internal {
         LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         LibTermStorage.Term memory term = termStorage.terms[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
