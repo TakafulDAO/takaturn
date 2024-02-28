@@ -115,9 +115,6 @@ contract TermFacet is ITerm {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[_termId];
 
         require(LibTermStorage._termExists(_termId), "Term doesn't exist");
 
@@ -142,35 +139,7 @@ contract TermFacet is ITerm {
             }
         }
 
-        uint minAmount = IGetters(address(this)).minCollateralToDeposit(_termId, memberIndex);
-        require(msg.value >= minAmount, "Eth payment too low");
-
-        collateral.collateralMembersBank[msg.sender] += msg.value;
-        collateral.isCollateralMember[msg.sender] = true;
-        collateral.depositors[memberIndex] = msg.sender;
-        collateral.counterMembers++;
-        collateral.collateralDepositByUser[msg.sender] += msg.value;
-
-        termStorage.participantToTermId[msg.sender].push(_termId);
-
-        // If the lock is false, I accept the opt in
-        if (!LibYieldGenerationStorage._yieldLock().yieldLock) {
-            yield.hasOptedIn[msg.sender] = _optYield;
-        } else {
-            // If the lock is true, opt in is always false
-            yield.hasOptedIn[msg.sender] = false;
-        }
-
-        emit OnCollateralDeposited(_termId, msg.sender, msg.value);
-
-        if (collateral.counterMembers == 1) {
-            collateral.firstDepositTime = block.timestamp;
-        }
-
-        // If all the spots are filled, change the collateral
-        if (collateral.counterMembers == term.totalParticipants) {
-            emit OnTermFilled(_termId);
-        }
+        _joinTerm(_termId, _optYield, memberIndex);
     }
 
     function _joinTerm(uint _termId, bool _optYield, uint _position) internal {
@@ -194,7 +163,7 @@ contract TermFacet is ITerm {
 
         require(!collateral.isCollateralMember[msg.sender], "Reentry");
 
-        require(_position < term.totalParticipants - 1, "Invalid position");
+        require(_position <= term.totalParticipants - 1, "Invalid position");
 
         require(collateral.depositors[_position] == address(0), "Position already taken");
 
