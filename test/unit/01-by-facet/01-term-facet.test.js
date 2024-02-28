@@ -254,10 +254,6 @@ const { hour } = require("../../../utils/units")
                       1
                   )
 
-                  //   console.table(joinedTerms)
-                  //   console.table(joinedInitializedTerms)
-                  //   console.table(joinedActiveTerms)
-
                   assert.equal(joinedTerms[0].toString(), 2)
                   assert.equal(joinedTerms[1].toString(), 3)
                   assert.equal(joinedTerms[2].toString(), 4)
@@ -402,6 +398,82 @@ const { hour } = require("../../../utils/units")
 
                   assert.ok(availablePositionsBefore.includes(position))
                   assert.ok(!availablePositionsAfter.includes(position))
+              })
+
+              it("Should allow to join every position", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  for (let i = 0; i < totalParticipants; i++) {
+                      let entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, i)
+
+                      const joinTx = takaturnDiamond
+                          .connect(accounts[i + 1])
+                          ["joinTerm(uint256,bool,uint256)"](termId, false, i, {
+                              value: entrance,
+                          })
+
+                      if (i === totalParticipants - 1) {
+                          await Promise.all([
+                              expect(joinTx)
+                                  .to.emit(takaturnDiamond, "OnCollateralDeposited")
+                                  .withArgs(termId, accounts[i + 1].address, entrance),
+                              expect(joinTx)
+                                  .to.emit(takaturnDiamond, "OnTermFilled")
+                                  .withArgs(termId),
+                          ])
+                      } else {
+                          await Promise.all([
+                              expect(joinTx)
+                                  .to.emit(takaturnDiamond, "OnCollateralDeposited")
+                                  .withArgs(termId, accounts[i + 1].address, entrance),
+                          ])
+                      }
+                  }
+              })
+
+              it("Should revert if the position is invalid", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
+                      0
+                  )
+
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_12)
+                          ["joinTerm(uint256,bool,uint256)"](termId, false, totalParticipants, {
+                              value: entrance,
+                          })
+                  ).to.be.revertedWith("Invalid position")
+              })
+
+              it("Should revert if the position is already taken", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  // Get the collateral payment deposit
+                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                      term.termId,
+                      0
+                  )
+
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
+
+                  await expect(
+                      takaturnDiamond
+                          .connect(participant_12)
+                          ["joinTerm(uint256,bool,uint256)"](termId, false, 0, {
+                              value: entrance,
+                          })
+                  ).to.be.revertedWith("Position already taken")
               })
           })
 
