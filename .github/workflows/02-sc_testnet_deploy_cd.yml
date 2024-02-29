@@ -1,8 +1,10 @@
 name: Upgrade ABIs
 
+# on:
+#   pull_request_review:
+#     types: [submitted]
 on:
-  pull_request_review:
-    types: [submitted]
+  push
 
 env:
   ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
