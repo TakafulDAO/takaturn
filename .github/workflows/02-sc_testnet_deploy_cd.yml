@@ -57,6 +57,7 @@ jobs:
         env:
           COMMIT_MSG: "ci(deployments): upgrade ABIs"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           BRANCH_REF: "${{ steps.set_branch.outputs.branch }}"
         run: |
           git config user.email "github-actions@github.com"
