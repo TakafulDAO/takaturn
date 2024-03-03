@@ -21,7 +21,7 @@ const {
     registrationPeriod,
     moneyPot,
 } = require("../utils/test-utils")
-const { BigNumber, ZeroAddress } = require("ethers")
+const { ZeroAddress } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -99,6 +99,11 @@ const { BigNumber, ZeroAddress } = require("ethers")
 
               zaynZapOwner = zaynZap.connect(zapOwnerSigner)
               usdcWhaleSigner = usdc.connect(whale)
+
+              await deployer.sendTransaction({
+                  to: zapOwner,
+                  value: ethers.parseEther("1"),
+              })
 
               await zaynZapOwner.toggleTrustedSender(takaturnDiamond, true, {
                   gasLimit: 1000000,
@@ -724,7 +729,7 @@ const { BigNumber, ZeroAddress } = require("ethers")
 
               await expect(
                   takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
-              ).to.be.revertedWith("Withdraw failed")
+              ).to.be.revertedWith("Nothing to withdraw")
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {

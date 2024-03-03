@@ -256,8 +256,11 @@ contract CollateralFacet is ICollateral {
 
         LibTermStorage.Term memory term = LibTermStorage._termStorage().terms[_termId];
 
-        uint userCollateral = collateral.collateralMembersBank[msg.sender];
-        require(userCollateral > 0, "Collateral empty");
+        uint allowedWithdrawal = IGetters(address(this)).getWithdrawableUserBalance(
+            _termId,
+            msg.sender
+        );
+        require(allowedWithdrawal > 0, "Nothing to withdraw");
 
         bool success;
         bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
@@ -270,36 +273,28 @@ contract CollateralFacet is ICollateral {
             collateral.collateralMembersBank[msg.sender] = 0;
 
             if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
-                _withdrawFromYield(_termId, msg.sender, userCollateral, yield);
+                _withdrawFromYield(_termId, msg.sender, allowedWithdrawal, yield);
             }
 
-            (success, ) = payable(_receiver).call{value: userCollateral}("");
+            (success, ) = payable(_receiver).call{value: allowedWithdrawal}("");
 
             if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
                 --collateral.counterMembers;
             }
 
-            emit OnCollateralWithdrawal(_termId, msg.sender, _receiver, userCollateral);
+            emit OnCollateralWithdrawal(_termId, msg.sender, _receiver, allowedWithdrawal);
         }
         // Or withdraw partially
         else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
             // Second case: The term is on an ongoing cycle, the user has not been expelled
             // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
-            uint minRequiredCollateral = (IGetters(address(this)).getRemainingCyclesContributionWei(
-                _termId
-            ) * 15) / 10; // 1.5 X RCC in wei
+            collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
 
-            // Collateral must be higher than 1.5 X RCC
-            if (userCollateral > minRequiredCollateral) {
-                uint allowedWithdrawal = userCollateral - minRequiredCollateral; // We allow to withdraw the positive difference
-                collateral.collateralMembersBank[msg.sender] -= allowedWithdrawal;
+            _withdrawFromYield(_termId, msg.sender, allowedWithdrawal, yield);
 
-                _withdrawFromYield(_termId, msg.sender, allowedWithdrawal, yield);
+            (success, ) = payable(_receiver).call{value: allowedWithdrawal}("");
 
-                (success, ) = payable(_receiver).call{value: allowedWithdrawal}("");
-
-                emit OnCollateralWithdrawal(_termId, msg.sender, _receiver, allowedWithdrawal);
-            }
+            emit OnCollateralWithdrawal(_termId, msg.sender, _receiver, allowedWithdrawal);
         }
 
         require(success, "Withdraw failed");
@@ -547,13 +542,11 @@ contract CollateralFacet is ICollateral {
         LibYieldGenerationStorage.YieldGeneration storage _yieldStorage
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
-            uint amountToWithdraw;
-            if (_amount > _yieldStorage.depositedCollateralByUser[_user]) {
-                amountToWithdraw = _yieldStorage.depositedCollateralByUser[_user];
-            } else {
-                amountToWithdraw = _amount;
+            uint availableWithdraw = _yieldStorage.depositedCollateralByUser[_user] - _yieldStorage.withdrawnCollateral[_user];
+            if (availableWithdraw > _amount) {
+                availableWithdraw = _amount;
             }
-            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, amountToWithdraw, _user);
+            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, availableWithdraw, _user);
         } else {
             withdrawnYield = 0;
         }
