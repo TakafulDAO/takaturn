@@ -5,11 +5,10 @@ const {
     isMainnet,
     isTestnet,
     isDevnet,
-} = require("../utils/_networks")
-const { verify } = require("../scripts/verify")
+} = require("../../../utils/_networks")
+const { verify } = require("../../../scripts/verify")
 const { writeFileSync } = require("fs")
 const { getRawTransaction } = require("../../../utils/deployTx")
-const { get } = require("http")
 
 module.exports = async ({ deployments }) => {
     const { log } = deployments
