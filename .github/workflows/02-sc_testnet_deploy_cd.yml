@@ -33,9 +33,9 @@ jobs:
         id: set_branch
         run: |
           if [[ ${{ github.event_name }} == "pull_request" ]]; then
-            echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+            echo "branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
           else
-            branch_name=$(echo ${{ github.ref }} | sed 's/refs\///')
+            branch_name=$(echo ${{ github.ref }} | sed 's/refs\/head\/${{github.event.pull_request.number}}/merge\///')
             echo "branch=$branch_name" >> $GITHUB_OUTPUT
           fi
 
