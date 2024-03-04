@@ -60,6 +60,9 @@ To view the testnet and mainnet deployments, check out the tags under this repo.
     + FORK= true to fork arbitrum mainnet. Most of the tests require this to be set to true
     + GAS_REPORT= true to get gas report on the output file
     + SIZE= true to get contract's size report when compile
+
+> [!CAUTION]
+> Never expose private keys with real funds
     
 ## Deploy, Test and Coverage
 There are some scripts set on the package.json file. Check them out
@@ -81,6 +84,9 @@ There are some scripts set on the package.json file. Check them out
         + Take the address of the recently deployed diamond from the deployments directory
         + Paste this address on the _networks file in the corresponding chain id
         + Now the staging tests can be made
+
+> [!IMPORTANT]
+> private_network staging tests have this order @initialization, @create-and-join, @start, @pay, @close, @new-cycle
 
 ## Contribute 
 Contribute by creating a gas optimization or no risk issue through github issues. 
