@@ -201,22 +201,41 @@ contract FundFacet is IFund {
     function payContribution(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        // Get the beneficiary for this cycle
-        address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
-
         require(
-            fund.currentState == LibFundStorage.FundStates.AcceptingContributions,
+            fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
+                fund.currentState == LibFundStorage.FundStates.CycleOngoing,
             "Wrong state"
         );
         require(fund.isParticipant[msg.sender], "Not a participant");
-        require(currentBeneficiary != msg.sender, "Beneficiary doesn't pay");
-        require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
-        require(
-            !fund.isExemptedOnCycle[fund.currentCycle].exempted[msg.sender],
-            "Participant is exempted this cycle"
-        );
 
-        _payContribution(termId, msg.sender, msg.sender);
+        bool payNextCycle;
+
+        if (fund.currentState == LibFundStorage.FundStates.AcceptingContributions) {
+            // Get the beneficiary for this cycle
+            address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
+
+            require(currentBeneficiary != msg.sender, "Beneficiary doesn't pay");
+            require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
+            require(
+                !fund.isExemptedOnCycle[fund.currentCycle].exempted[msg.sender],
+                "Participant is exempted this cycle"
+            );
+        } else {
+            // Get the beneficiary for the next cycle
+            uint nextCycle = fund.currentCycle + 1;
+            address nextBeneficiary = IGetters(address(this)).getNextBeneficiary(termId);
+
+            require(nextBeneficiary != msg.sender, "Beneficiary doesn't pay");
+            require(!fund.paidNextCycle[msg.sender], "Already paid for cycle");
+            require(
+                !fund.isExemptedOnCycle[nextCycle].exempted[msg.sender],
+                "Participant is exempted this cycle"
+            );
+
+            payNextCycle = true;
+        }
+
+        _payContribution(termId, msg.sender, msg.sender, payNextCycle);
     }
 
     /// @notice This function is here to give the possibility to pay using a different wallet
