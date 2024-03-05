@@ -244,21 +244,39 @@ contract FundFacet is IFund {
     function payContributionOnBehalfOf(uint termId, address participant) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
-
         require(
-            fund.currentState == LibFundStorage.FundStates.AcceptingContributions,
+            fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
+                fund.currentState == LibFundStorage.FundStates.CycleOngoing,
             "Wrong state"
         );
         require(fund.isParticipant[participant], "Not a participant");
-        require(currentBeneficiary != participant, "Beneficiary doesn't pay");
-        require(!fund.paidThisCycle[participant], "Already paid for cycle");
-        require(
-            !fund.isExemptedOnCycle[fund.currentCycle].exempted[participant],
-            "Participant is exempted this cycle"
-        );
 
-        _payContribution(termId, msg.sender, participant);
+        bool payNextCycle;
+
+        if (fund.currentState == LibFundStorage.FundStates.AcceptingContributions) {
+            address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
+
+            require(currentBeneficiary != participant, "Beneficiary doesn't pay");
+            require(!fund.paidThisCycle[participant], "Already paid for cycle");
+            require(
+                !fund.isExemptedOnCycle[fund.currentCycle].exempted[participant],
+                "Participant is exempted this cycle"
+            );
+        } else {
+            uint nextCycle = fund.currentCycle + 1;
+            address nextBeneficiary = IGetters(address(this)).getNextBeneficiary(termId);
+
+            require(nextBeneficiary != participant, "Beneficiary doesn't pay");
+            require(!fund.paidNextCycle[participant], "Already paid for cycle");
+            require(
+                !fund.isExemptedOnCycle[nextCycle].exempted[participant],
+                "Participant is exempted this cycle"
+            );
+
+            payNextCycle = true;
+        }
+
+        _payContribution(termId, msg.sender, participant, payNextCycle);
     }
 
     /// @notice Called by the beneficiary to withdraw the fund
