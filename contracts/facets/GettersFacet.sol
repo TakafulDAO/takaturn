@@ -388,6 +388,14 @@ contract GettersFacet is IGetters {
         return fund.beneficiariesOrder[fund.currentCycle - 1];
     }
 
+    /// @notice function to get the current beneficiary
+    /// @param termId the fund id
+    /// @return the current beneficiary
+    function getNextBeneficiary(uint termId) external view returns (address) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        return fund.beneficiariesOrder[fund.currentCycle];
+    }
+
     /// @notice function to know if a user was expelled before
     /// @param termId the fund id
     /// @param user the user to check

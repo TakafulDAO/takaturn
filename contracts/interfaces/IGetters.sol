@@ -139,6 +139,11 @@ interface IGetters {
     /// @return user address
     function getCurrentBeneficiary(uint termId) external view returns (address);
 
+    /// @notice Gets the next beneficiary of a term
+    /// @param termId the id of the term
+    /// @return user address
+    function getNextBeneficiary(uint termId) external view returns (address);
+
     /// @notice Gets if a user is expelled from a specefic term
     /// @param termId the id of the term
     /// @param user address
