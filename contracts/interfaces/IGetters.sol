@@ -157,18 +157,29 @@ interface IGetters {
     /// @return true or false
     function isExempted(uint termId, uint cycle, address user) external view returns (bool);
 
-    /// @notice Gets a user information of in a fund
-    /// @param participant address
-    /// @param termId the id of the term
-    /// @return if the user is a true member of the fund/term
-    /// @return if the user was beneficiary in the past
-    /// @return if the user paid for the current cycle
-    /// @return if the user has autopay enabled
-    /// @return users money pot balance
+    /// @notice function to get fund information of a specific participant
+    /// @param participant the user to get the info from
+    /// @param termId the fund id
+    /// @return isParticipant, true if is participant
+    /// @return isBeneficiary, true if has been beneficiary
+    /// @return paidThisCycle, true if has paid the current cycle
+    /// @return autoPayEnabled, true if auto pay is enabled
+    /// @return beneficiariesPool, the beneficiary pool, 6 decimals
+    /// @return beneficiariesFrozenPool, true if the beneficiary pool is frozen
     function getParticipantFundSummary(
         address participant,
         uint termId
     ) external view returns (bool, bool, bool, bool, uint, bool);
+
+    /// @notice function to get fund information of a specific participant
+    /// @param participant the user to get the info from
+    /// @param termId the fund id
+    /// @return paidThisCycle, true if has paid the current cycle
+    /// @return paidNextCycle, true if has paid the next cycle
+    function currentOrNextCyclePaid(
+        address participant,
+        uint termId
+    ) external view returns (bool, bool);
 
     /// @notice Must return 0 before closing a contribution period
     /// @param termId the id of the term

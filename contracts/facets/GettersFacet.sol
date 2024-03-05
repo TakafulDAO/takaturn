@@ -426,12 +426,12 @@ contract GettersFacet is IGetters {
     /// @notice function to get fund information of a specific participant
     /// @param participant the user to get the info from
     /// @param termId the fund id
-    /// @return fund isParticipant, true if is participant
-    /// @return fund isBeneficiary, true if has been beneficiary
-    /// @return fund paidThisCycle, true if has paid the current cycle
-    /// @return fund autoPayEnabled, true if auto pay is enabled
-    /// @return fund beneficiariesPool, the beneficiary pool, 6 decimals
-    /// @return fund beneficiariesFrozenPool, true if the beneficiary pool is frozen
+    /// @return isParticipant, true if is participant
+    /// @return isBeneficiary, true if has been beneficiary
+    /// @return paidThisCycle, true if has paid the current cycle
+    /// @return autoPayEnabled, true if auto pay is enabled
+    /// @return beneficiariesPool, the beneficiary pool, 6 decimals
+    /// @return beneficiariesFrozenPool, true if the beneficiary pool is frozen
     function getParticipantFundSummary(
         address participant,
         uint termId
@@ -448,6 +448,20 @@ contract GettersFacet is IGetters {
             fund.beneficiariesPool[participant],
             isMoneyPotFrozen
         );
+    }
+
+    /// @notice function to get fund information of a specific participant
+    /// @param participant the user to get the info from
+    /// @param termId the fund id
+    /// @return paidThisCycle, true if has paid the current cycle
+    /// @return paidNextCycle, true if has paid the next cycle
+    function currentOrNextCyclePaid(
+        address participant,
+        uint termId
+    ) external view returns (bool, bool) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+
+        return (fund.paidThisCycle[participant], fund.paidNextCycle[participant]);
     }
 
     function _checkFrozenMoneyPot(
