@@ -342,7 +342,13 @@ contract FundFacet is IFund {
     /// @param _termId the id of the term
     /// @param _payer the address that's paying
     /// @param _participant the (participant) address that's being paid for
-    function _payContribution(uint _termId, address _payer, address _participant) internal {
+    /// @param payNextCycle whether to pay for the next cycle or not
+    function _payContribution(
+        uint _termId,
+        address _payer,
+        address _participant,
+        bool payNextCycle
+    ) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
 
@@ -354,8 +360,13 @@ contract FundFacet is IFund {
         require(success, "Contribution failed, did you approve stable token?");
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
-        fund.paidThisCycle[_participant] = true;
-        emit OnPaidContribution(_termId, _participant, fund.currentCycle);
+        if (payNextCycle) {
+            fund.paidThisCycle[_participant] = true;
+            emit OnPaidContribution(_termId, _participant, fund.currentCycle);
+        } else {
+            fund.paidNextCycle[_participant] = true;
+            emit OnPaidContribution(_termId, _participant, fund.currentCycle + 1);
+        }
     }
 
     /// @notice Default the participant/beneficiary by checking the mapping first, then remove them from the appropriate array
