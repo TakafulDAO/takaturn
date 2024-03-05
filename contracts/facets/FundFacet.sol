@@ -360,7 +360,7 @@ contract FundFacet is IFund {
         require(success, "Contribution failed, did you approve stable token?");
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
-        if (payNextCycle) {
+        if (!payNextCycle) {
             fund.paidThisCycle[_participant] = true;
             emit OnPaidContribution(_termId, _participant, fund.currentCycle);
         } else {
