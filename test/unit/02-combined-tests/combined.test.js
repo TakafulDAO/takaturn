@@ -1092,18 +1092,18 @@ async function executeCycle(
                   )
               })
 
-              it("does not produce weird behaviour when theres only 2 participants, and one pays and the other doesnt 2", async function () {
+              it("does not produce weird behaviour when theres only 2 participants, nobody defaults", async function () {
                   this.timeout(200000)
 
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
-                  // First participant pays, second doesn't
+                  // Second participant pays, first doesn't
                   await usdc
                       .connect(participant_2)
                       .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   await takaturnDiamond.connect(participant_2).payContribution(termId)
 
-                  // Artifically increase time to skip the wait
+                  //   Artifically increase time to skip the wait
                   await advanceTime(contributionPeriod + 1)
                   await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
                   await advanceTime(cycleTime + 1)
