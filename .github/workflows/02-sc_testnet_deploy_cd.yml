@@ -35,6 +35,12 @@ jobs:
             echo "$branch_name"
             echo "branch=$branch_name" >> $GITHUB_OUTPUT
 
+      - name: Commit ABIs
+        env:
+          BRANCH_REF: "${{ steps.set_branch.outputs.branch }}"
+        run: |
+          echo "$BRANCH_REF"
+
       # - name: Install dependencies
       #   run: yarn install
 
