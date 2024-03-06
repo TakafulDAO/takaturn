@@ -29,8 +29,9 @@ jobs:
 
       - name: Determine Branch Name
         id: set_branch
-        run: echo "branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
-          
+        run: |          
+            branch_name=$(echo ${{ github.ref }} | sed 's/refs\///')
+            echo "branch=$branch_name" >> $GITHUB_OUTPUT          
 
       - name: Install dependencies
         run: yarn install
