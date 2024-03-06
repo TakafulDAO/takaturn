@@ -307,6 +307,40 @@ async function payTestContribution(termId, defaulterIndex) {
                       )
                   })
               })
+              describe("When the cycle is ongoing and there are payments", function () {
+                  it("Should increase with payments", async function () {
+                      const termId = 1
+
+                      await advanceTime(cycleTime + 1)
+                      await takaturnDiamond.closeFundingPeriod(termId)
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      const withdrawable1 = await takaturnDiamond.getWithdrawableUserBalance(
+                          termId,
+                          participant_1.address
+                      )
+
+                      await takaturnDiamondParticipant_1.payContribution(termId)
+
+                      const withdrawable2 = await takaturnDiamond.getWithdrawableUserBalance(
+                          termId,
+                          participant_1.address
+                      )
+
+                      await advanceTime(contributionPeriod + 1)
+                      await takaturnDiamond.closeFundingPeriod(termId)
+
+                      await takaturnDiamondParticipant_1.payContribution(termId)
+
+                      const withdrawable3 = await takaturnDiamond.getWithdrawableUserBalance(
+                          termId,
+                          participant_1.address
+                      )
+
+                      await assert(withdrawable2 > withdrawable1)
+                      await assert(withdrawable3 > withdrawable2)
+                  })
+              })
               describe("When the term is on going or ended and somebody is expelled before being beneficiary", function () {
                   beforeEach(async () => {
                       const termId = 1
