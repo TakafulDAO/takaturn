@@ -34,9 +34,6 @@ jobs:
         id: set_branch
         run: |          
             echo "${{ github.event.pull_request.head.ref }}"
-            echo "${{ github.event_name }}"
-            echo "${{ github.ref }}"
-            echo "${{ github.event.inputs.branch }}"
             echo "${{ github.head_ref }}"
 
       # - name: Install dependencies
