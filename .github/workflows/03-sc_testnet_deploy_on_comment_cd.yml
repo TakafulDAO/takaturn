@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build:
-    if: contains(github.event.comment.body, '/upgrade-abis') && contains(github.event.comment.html_url, '/pull/')
+    if: ${{github.event.issue.pull_request}} && contains(github.event.comment.body, '/upgrade-abis')
     runs-on: ubuntu-latest
 
     steps:
