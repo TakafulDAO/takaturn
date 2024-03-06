@@ -31,7 +31,7 @@ jobs:
       - name: Determine Branch Name
         id: set_branch
         run: |          
-            branch_name=$(echo "${{ github.event.pull_request.head.ref }}"
+            branch_name=$(echo "${{ github.event.pull_request.head.ref }}")
             echo "$branch_name"
             echo "branch=$branch_name" >> $GITHUB_OUTPUT
 
