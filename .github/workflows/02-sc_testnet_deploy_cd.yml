@@ -1,7 +1,9 @@
 name: Upgrade ABIs
 
 on:
-  push
+  pull_request:
+  issue_comment:
+    types: [created, edited]
 
 env:
   ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
@@ -15,6 +17,7 @@ permissions:
 
 jobs:
   build:
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'rerun prints'))
     runs-on: ubuntu-latest
 
     steps:
