@@ -39,7 +39,7 @@ contract WithdrawTestEthFacet {
         require(success, "Transfer failed");
     }
 
-    function testGithubWorkflows() external pure returns (string memory) {
+    function testGithubCDWorkflows() external pure returns (string memory) {
         return "Test Workflow [demo]";
     }
 }
