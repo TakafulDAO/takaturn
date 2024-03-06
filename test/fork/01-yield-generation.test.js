@@ -17,6 +17,7 @@ const {
     getRandomInt,
 } = require("../utils/test-utils")
 const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
+const { updateFacetsBytecode } = require("../utils/update-facets-bytecode")
 
 let takaturnDiamond, usdc
 
@@ -195,12 +196,6 @@ async function checkYieldMappings(termId, userAddress) {
               participant_11 = accounts[11]
               participant_12 = accounts[12]
 
-              participants = []
-              // From account[1] to account[12]
-              for (let i = 1; i <= totalParticipants; i++) {
-                  participants.push(accounts[i])
-              }
-
               // Get the contract instances
               const takaturnDiamondAddress = networkConfig[chainId]["takaturnDiamond"]
               takaturnDiamond = await ethers.getContractAt(abi, takaturnDiamondAddress)
@@ -221,6 +216,7 @@ async function checkYieldMappings(termId, userAddress) {
               // Connect the accounts
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
+              await updateFacetsBytecode()
           })
 
           describe("Real values", function () {
