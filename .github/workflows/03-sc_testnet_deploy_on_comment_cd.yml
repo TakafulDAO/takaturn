@@ -1,8 +1,8 @@
 name: Upgrade ABIs
 
 on:
-  issue_comment:
-    types: [created, edited, deleted]
+  pull_request:
+    types: [opened, synchronize, reopened, edited, closed, ready_for_review]
 
 env:
   ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
@@ -16,7 +16,6 @@ permissions:
 
 jobs:
   build:
-    if: ${{github.event.issue.pull_request}} && contains(github.event.comment.body, '/upgrade-abis')
     runs-on: ubuntu-latest
 
     steps:
@@ -53,6 +52,7 @@ jobs:
         run: yarn upgrade:sepolia --config hardhat-continuous-deployment.config.js
 
       - name: Commit ABIs
+        if: contains(github.event.comment.body, '/upgrade-abis')
         env:
           COMMIT_MSG: "ci(deployments): upgrade ABIs"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
