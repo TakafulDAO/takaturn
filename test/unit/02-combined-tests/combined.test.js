@@ -330,7 +330,7 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   }
 
                   await advanceTime(registrationPeriod + 1)
@@ -916,7 +916,7 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance + 1n })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance + 1n })
                   }
 
                   await advanceTime(registrationPeriod + 1)
@@ -1016,7 +1016,7 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   }
 
                   await advanceTime(registrationPeriod + 1)

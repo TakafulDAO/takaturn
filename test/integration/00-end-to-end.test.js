@@ -235,7 +235,7 @@ const { ZeroAddress } = require("ethers")
               await expect(
                   takaturnDiamond
                       .connect(participant_1)
-                      .joinTerm(termsIds[1], false, { value: entrance })
+                      ["joinTerm(uint256,bool)"](termsIds[1], false, { value: entrance })
               ).to.be.revertedWith("Term doesn't exist")
 
               // Participants join
@@ -247,13 +247,13 @@ const { ZeroAddress } = require("ethers")
                           await expect(
                               takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, true, { value: 0 })
+                                  ["joinTerm(uint256,bool)"](termId, true, { value: 0 })
                           ).to.be.revertedWith("Eth payment too low")
 
                           await expect(
                               takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, true, { value: entrance })
+                                  ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                           )
                               .to.emit(takaturnDiamond, "OnTermFilled")
                               .withArgs(termId)
@@ -261,7 +261,7 @@ const { ZeroAddress } = require("ethers")
                           await expect(
                               takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, true, { value: 0 })
+                                  ["joinTerm(uint256,bool)"](termId, true, { value: 0 })
                           ).to.be.revertedWith("No space")
 
                           await expect(
@@ -271,7 +271,7 @@ const { ZeroAddress } = require("ethers")
                           await expect(
                               takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, true, { value: entrance })
+                                  ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                           )
                               .to.emit(takaturnDiamond, "OnCollateralDeposited")
                               .withArgs(termId, accounts[i].address, entrance)
@@ -293,9 +293,11 @@ const { ZeroAddress } = require("ethers")
                           ).to.be.revertedWith("Pay collateral security first")
 
                           await expect(
-                              takaturnDiamond.connect(accounts[i]).joinTerm(termId, false, {
-                                  value: entrance,
-                              })
+                              takaturnDiamond
+                                  .connect(accounts[i])
+                                  ["joinTerm(uint256,bool)"](termId, false, {
+                                      value: entrance,
+                                  })
                           )
                               .to.emit(takaturnDiamond, "OnCollateralDeposited")
                               .withArgs(termId, accounts[i].address, entrance)
@@ -303,7 +305,7 @@ const { ZeroAddress } = require("ethers")
                           await expect(
                               takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, false, { value: entrance })
+                                  ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                           ).to.be.revertedWith("Reentry")
 
                           let hasOptedIn = await takaturnDiamond.userHasoptedInYG(
@@ -324,7 +326,7 @@ const { ZeroAddress } = require("ethers")
                           await expect(
                               takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, false, { value: entrance })
+                                  ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                           )
                               .to.emit(takaturnDiamond, "OnCollateralDeposited")
                               .withArgs(termId, accounts[i].address, entrance)
@@ -365,7 +367,7 @@ const { ZeroAddress } = require("ethers")
 
               await takaturnDiamond
                   .connect(participant_1)
-                  .joinTerm(termsIds[1], true, { value: secondEntrance })
+                  ["joinTerm(uint256,bool)"](termsIds[1], true, { value: secondEntrance })
 
               // Expire term
               await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
