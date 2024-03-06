@@ -45,7 +45,9 @@ jobs:
         run: yarn hardhat compile --config hardhat-continuous-deployment.config.js
 
       - name: Fetch repository
-        run: git fetch
+        run: |
+          git fetch
+          git pull
 
       - name: Deploy contracts on Arbitrum Sepolia
         run: yarn upgrade:sepolia --config hardhat-continuous-deployment.config.js
