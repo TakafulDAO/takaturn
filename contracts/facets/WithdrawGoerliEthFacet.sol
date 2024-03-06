@@ -39,7 +39,7 @@ contract WithdrawTestEthFacet {
         require(success, "Transfer failed");
     }
 
-    function testCommitsABIs() external pure returns (string memory) {
-        return "Test Commits [demo]";
+    function testCDworkflow() external pure returns (string memory) {
+        return "Test Workflow [demo]";
     }
 }
