@@ -39,7 +39,7 @@ contract WithdrawTestEthFacet {
         require(success, "Transfer failed");
     }
 
-    function testUpgradeOnMultisig() external pure returns (string memory) {
-        return "Test multisig upgrade [demo]";
+    function testCommits() external pure returns (string memory) {
+        return "Test Commits [demo]";
     }
 }
