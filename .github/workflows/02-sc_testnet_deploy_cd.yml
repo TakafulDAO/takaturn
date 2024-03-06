@@ -31,40 +31,34 @@ jobs:
       - name: Determine Branch Name
         id: set_branch
         run: |          
-            branch_name=$(echo "${{ github.head_ref }}")
+            branch_name=$(echo "${{ github.event.pull_request.head.ref }}")
             echo "$branch_name"
             echo "branch=$branch_name" >> $GITHUB_OUTPUT
 
-      - name: Check output
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Clear cache
+        run: yarn hardhat clean --config hardhat-continuous-deployment.config.js
+
+      - name: Compile contracts
+        run: yarn hardhat compile --config hardhat-continuous-deployment.config.js
+
+      - name: Fetch repository
+        run: git fetch
+
+      - name: Deploy contracts on Arbitrum Sepolia
+        run: yarn upgrade:sepolia --config hardhat-continuous-deployment.config.js
+
+      - name: Commit ABIs
         env:
+          COMMIT_MSG: "ci(deployments): upgrade ABIs"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           BRANCH_REF: "${{ steps.set_branch.outputs.branch }}"
         run: |
-          echo "$BRANCH_REF"
-
-      # - name: Install dependencies
-      #   run: yarn install
-
-      # - name: Clear cache
-      #   run: yarn hardhat clean --config hardhat-continuous-deployment.config.js
-
-      # - name: Compile contracts
-      #   run: yarn hardhat compile --config hardhat-continuous-deployment.config.js
-
-      # - name: Fetch repository
-      #   run: git fetch
-
-      # - name: Deploy contracts on Arbitrum Sepolia
-      #   run: yarn upgrade:sepolia --config hardhat-continuous-deployment.config.js
-
-      # - name: Commit ABIs
-      #   env:
-      #     COMMIT_MSG: "ci(deployments): upgrade ABIs"
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     GITHUB_REPOSITORY: ${{ github.repository }}
-      #     BRANCH_REF: "${{ steps.set_branch.outputs.branch }}"
-      #   run: |
-      #     git config user.email "github-actions@github.com"
-      #     git config user.name "Github Actions"
-      #     git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-      #     git add .
-      #     git diff --quiet && git diff --staged --quiet || (git commit -m "${COMMIT_MSG}"; git push origin HEAD:${BRANCH_REF})
+          git config user.email "github-actions@github.com"
+          git config user.name "Github Actions"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          git add .
+          git diff --quiet && git diff --staged --quiet || (git commit -m "${COMMIT_MSG}"; git push origin HEAD:${BRANCH_REF})
