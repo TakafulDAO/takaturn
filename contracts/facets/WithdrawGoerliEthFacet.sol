@@ -39,7 +39,7 @@ contract WithdrawTestEthFacet {
         require(success, "Transfer failed");
     }
 
-    function testCD() external pure returns (string memory) {
+    function testCDWorkflow() external pure returns (string memory) {
         return "Test CD [demo]";
     }
 }

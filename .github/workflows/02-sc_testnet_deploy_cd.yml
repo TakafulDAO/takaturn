@@ -1,7 +1,8 @@
 name: Upgrade ABIs
 
 on:
-  push
+  pull_request_review:
+    types: [submitted]
 
 env:
   ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
@@ -15,6 +16,7 @@ permissions:
 
 jobs:
   build:
+    if: github.event.review.state == 'approved'
     runs-on: ubuntu-latest
 
     steps:
