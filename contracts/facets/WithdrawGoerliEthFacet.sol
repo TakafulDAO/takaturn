@@ -38,8 +38,4 @@ contract WithdrawTestEthFacet {
         bool success = fund.stableToken.transfer(msg.sender, balance);
         require(success, "Transfer failed");
     }
-
-    function testCD() external pure returns (string memory) {
-        return "Test CD [demo]";
-    }
 }
