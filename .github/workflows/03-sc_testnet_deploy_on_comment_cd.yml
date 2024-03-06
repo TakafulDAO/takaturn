@@ -1,8 +1,8 @@
 name: Upgrade ABIs
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, edited, closed, ready_for_review]
+  issue_comment:
+    types: [created, edited, deleted]
 
 env:
   ARBISCAN_API_KEY: ${{secrets.ARBISCAN_API_KEY}}
