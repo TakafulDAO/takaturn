@@ -31,11 +31,11 @@ jobs:
       - name: Determine Branch Name
         id: set_branch
         run: |          
-            branch_name=$(echo "${{ github.event.pull_request.head.ref }}")
+            branch_name=$(echo "${{ github.head_ref }}")
             echo "$branch_name"
             echo "branch=$branch_name" >> $GITHUB_OUTPUT
 
-      - name: Commit ABIs
+      - name: Check output
         env:
           BRANCH_REF: "${{ steps.set_branch.outputs.branch }}"
         run: |
