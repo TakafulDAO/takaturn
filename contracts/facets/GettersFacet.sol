@@ -314,13 +314,31 @@ contract GettersFacet is IGetters {
         } else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
             uint minRequiredCollateral;
 
-            // Check if the user has paid this cycle
-            if (!fund.paidThisCycle[user]) {
+            // Check if the user has paid this cycle or the next
+            if (!fund.paidThisCycle[user] && !fund.paidNextCycle[user]) {
+                // If none have been paid
                 // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
                 minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
-            } else {
-                // If the user have paid this cycle, we need to check his remaining cycles and get the contribution amount for those
+            }
+
+            // If the user has paid only one of the cycles, current or next
+            if (
+                (fund.paidThisCycle[user] && !fund.paidNextCycle[user]) ||
+                (fund.paidNextCycle[user] && !fund.paidThisCycle[user])
+            ) {
+                // We need to check his remaining cycles and get the contribution amount for those
                 uint remainingCycles = fund.totalAmountOfCycles - fund.currentCycle;
+                uint contributionAmountWei = getToCollateralConversionRate(
+                    term.contributionAmount * 10 ** 18
+                );
+
+                minRequiredCollateral = (remainingCycles * contributionAmountWei * 15) / 10; // 1.5 times of what the user needs to pay for the remaining cycles
+            }
+
+            // If the user has paid both cycles, current and next
+            if (fund.paidThisCycle[user] && fund.paidNextCycle[user]) {
+                // We need to check his remaining cycles and get the contribution amount for those
+                uint remainingCycles = fund.totalAmountOfCycles - fund.currentCycle - 1;
                 uint contributionAmountWei = getToCollateralConversionRate(
                     term.contributionAmount * 10 ** 18
                 );
