@@ -31,6 +31,7 @@ jobs:
         id: set_branch
         run: |          
             branch_name=$(echo ${{ github.ref }} | sed 's/refs\///')
+            echo "$branch_name"
             echo "branch=$branch_name" >> $GITHUB_OUTPUT          
 
       - name: Install dependencies
