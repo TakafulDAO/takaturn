@@ -55,6 +55,23 @@ contract TermFacet is ITerm {
         _joinTermByPosition(termId, optYield, position);
     }
 
+    function paySecurityOnBehalfOf(
+        uint termId,
+        bool optYield,
+        address newParticipant
+    ) external payable {
+        _joinTerm(termId, optYield);
+    }
+
+    function paySecurityOnBehalfOf(
+        uint termId,
+        bool optYield,
+        address newParticipant,
+        uint position
+    ) external payable {
+        _joinTermByPosition(termId, optYield, position);
+    }
+
     function startTerm(uint termId) external {
         _startTerm(termId);
     }
