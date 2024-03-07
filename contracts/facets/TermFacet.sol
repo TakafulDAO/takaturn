@@ -23,7 +23,12 @@ import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 /// @dev v3.0 (Diamond)
 contract TermFacet is ITerm {
     event OnTermCreated(uint indexed termId, address indexed termOwner);
-    event OnCollateralDeposited(uint indexed termId, address indexed user, uint amount);
+    event OnCollateralDeposited(
+        uint indexed termId,
+        address indexed user,
+        uint amount,
+        uint indexed position
+    );
     event OnTermFilled(uint indexed termId);
     event OnTermExpired(uint indexed termId);
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
@@ -208,7 +213,7 @@ contract TermFacet is ITerm {
             yield.hasOptedIn[_newParticipant] = false;
         }
 
-        emit OnCollateralDeposited(_termId, _newParticipant, msg.value);
+        emit OnCollateralDeposited(_termId, _newParticipant, msg.value, _position);
 
         if (collateral.counterMembers == 1) {
             collateral.firstDepositTime = block.timestamp;
