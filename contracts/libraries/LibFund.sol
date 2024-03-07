@@ -61,12 +61,10 @@ library LibFund {
         ++fund.currentCycle;
         uint length = fund.beneficiariesOrder.length;
         for (uint i; i < length; ) {
-            if (!fund.paidNextCycle[fund.beneficiariesOrder[i]]) {
-                fund.paidThisCycle[fund.beneficiariesOrder[i]] = false;
-            } else {
-                fund.paidThisCycle[fund.beneficiariesOrder[i]] = true;
-                fund.paidNextCycle[fund.beneficiariesOrder[i]] = false;
-            }
+            fund.paidThisCycle[fund.beneficiariesOrder[i]] = fund.paidNextCycle[
+                fund.beneficiariesOrder[i]
+            ];
+            fund.paidNextCycle[fund.beneficiariesOrder[i]] = false;
             unchecked {
                 ++i;
             }

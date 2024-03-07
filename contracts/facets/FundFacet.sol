@@ -201,39 +201,7 @@ contract FundFacet is IFund {
     function payContribution(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        require(
-            fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
-                fund.currentState == LibFundStorage.FundStates.CycleOngoing,
-            "Wrong state"
-        );
-        require(fund.isParticipant[msg.sender], "Not a participant");
-
-        bool payNextCycle;
-
-        if (fund.currentState == LibFundStorage.FundStates.AcceptingContributions) {
-            // Get the beneficiary for this cycle
-            address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
-
-            require(currentBeneficiary != msg.sender, "Beneficiary doesn't pay");
-            require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
-            require(
-                !fund.isExemptedOnCycle[fund.currentCycle].exempted[msg.sender],
-                "Participant is exempted this cycle"
-            );
-        } else {
-            // Get the beneficiary for the next cycle
-            uint nextCycle = fund.currentCycle + 1;
-            address nextBeneficiary = IGetters(address(this)).getNextBeneficiary(termId);
-
-            require(nextBeneficiary != msg.sender, "Beneficiary doesn't pay");
-            require(!fund.paidNextCycle[msg.sender], "Already paid for cycle");
-            require(
-                !fund.isExemptedOnCycle[nextCycle].exempted[msg.sender],
-                "Participant is exempted this cycle"
-            );
-
-            payNextCycle = true;
-        }
+        bool payNextCycle = _payContributionsChecks(fund, termId, msg.sender);
 
         _payContribution(termId, msg.sender, msg.sender, payNextCycle);
     }
@@ -244,37 +212,7 @@ contract FundFacet is IFund {
     function payContributionOnBehalfOf(uint termId, address participant) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        require(
-            fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
-                fund.currentState == LibFundStorage.FundStates.CycleOngoing,
-            "Wrong state"
-        );
-        require(fund.isParticipant[participant], "Not a participant");
-
-        bool payNextCycle;
-
-        if (fund.currentState == LibFundStorage.FundStates.AcceptingContributions) {
-            address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
-
-            require(currentBeneficiary != participant, "Beneficiary doesn't pay");
-            require(!fund.paidThisCycle[participant], "Already paid for cycle");
-            require(
-                !fund.isExemptedOnCycle[fund.currentCycle].exempted[participant],
-                "Participant is exempted this cycle"
-            );
-        } else {
-            uint nextCycle = fund.currentCycle + 1;
-            address nextBeneficiary = IGetters(address(this)).getNextBeneficiary(termId);
-
-            require(nextBeneficiary != participant, "Beneficiary doesn't pay");
-            require(!fund.paidNextCycle[participant], "Already paid for cycle");
-            require(
-                !fund.isExemptedOnCycle[nextCycle].exempted[participant],
-                "Participant is exempted this cycle"
-            );
-
-            payNextCycle = true;
-        }
+        bool payNextCycle = _payContributionsChecks(fund, termId, participant);
 
         _payContribution(termId, msg.sender, participant, payNextCycle);
     }
@@ -336,6 +274,42 @@ contract FundFacet is IFund {
         if (hasCollateralPool) {
             LibCollateral._withdrawReimbursement(_termId, msg.sender, _receiver);
         }
+    }
+
+    function _payContributionsChecks(
+        LibFundStorage.Fund storage _fund,
+        uint _termId,
+        address _participant
+    ) internal view returns (bool _payNextCycle) {
+        require(
+            _fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
+                _fund.currentState == LibFundStorage.FundStates.CycleOngoing,
+            "Wrong state"
+        );
+        require(_fund.isParticipant[_participant], "Not a participant");
+
+        address _beneficiary;
+        uint _cycle;
+
+        if (_fund.currentState == LibFundStorage.FundStates.AcceptingContributions) {
+            require(!_fund.paidThisCycle[_participant], "Already paid for cycle");
+
+            _cycle = _fund.currentCycle;
+            _beneficiary = IGetters(address(this)).getCurrentBeneficiary(_termId);
+            _payNextCycle = false;
+        } else {
+            require(!_fund.paidNextCycle[_participant], "Already paid for cycle");
+
+            _cycle = _fund.currentCycle + 1;
+            _beneficiary = IGetters(address(this)).getNextBeneficiary(_termId);
+            _payNextCycle = true;
+        }
+
+        require(_beneficiary != _participant, "Beneficiary doesn't pay");
+        require(
+            !_fund.isExemptedOnCycle[_cycle].exempted[_participant],
+            "Participant is exempted this cycle"
+        );
     }
 
     /// @notice function to pay the actual contribution for the cycle
