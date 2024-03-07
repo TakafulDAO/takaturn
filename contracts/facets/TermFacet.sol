@@ -48,11 +48,11 @@ contract TermFacet is ITerm {
     }
 
     function joinTerm(uint termId, bool optYield) external payable {
-        _joinTerm(termId, optYield);
+        _joinTerm(termId, optYield, msg.sender);
     }
 
     function joinTerm(uint termId, bool optYield, uint position) external payable {
-        _joinTermByPosition(termId, optYield, position);
+        _joinTermByPosition(termId, optYield, position, msg.sender);
     }
 
     function paySecurityOnBehalfOf(
@@ -60,7 +60,7 @@ contract TermFacet is ITerm {
         bool optYield,
         address newParticipant
     ) external payable {
-        _joinTerm(termId, optYield);
+        _joinTerm(termId, optYield, newParticipant);
     }
 
     function paySecurityOnBehalfOf(
@@ -69,7 +69,7 @@ contract TermFacet is ITerm {
         address newParticipant,
         uint position
     ) external payable {
-        _joinTermByPosition(termId, optYield, position);
+        _joinTermByPosition(termId, optYield, position, newParticipant);
     }
 
     function startTerm(uint termId) external {
@@ -126,7 +126,7 @@ contract TermFacet is ITerm {
         return termId;
     }
 
-    function _joinTerm(uint _termId, bool _optYield) internal {
+    function _joinTerm(uint _termId, bool _optYield, address _newParticipant) internal {
         LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         LibTermStorage.Term memory term = termStorage.terms[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -156,10 +156,15 @@ contract TermFacet is ITerm {
             }
         }
 
-        _joinTermByPosition(_termId, _optYield, memberIndex);
+        _joinTermByPosition(_termId, _optYield, memberIndex, _newParticipant);
     }
 
-    function _joinTermByPosition(uint _termId, bool _optYield, uint _position) internal {
+    function _joinTermByPosition(
+        uint _termId,
+        bool _optYield,
+        uint _position,
+        address _newParticipant
+    ) internal {
         LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         LibTermStorage.Term memory term = termStorage.terms[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
