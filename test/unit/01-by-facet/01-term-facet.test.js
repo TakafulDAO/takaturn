@@ -417,7 +417,7 @@ const { hour } = require("../../../utils/units")
                           await Promise.all([
                               expect(joinTx)
                                   .to.emit(takaturnDiamond, "OnCollateralDeposited")
-                                  .withArgs(termId, accounts[i + 1].address, entrance),
+                                  .withArgs(termId, accounts[i + 1].address, entrance, i),
                               expect(joinTx)
                                   .to.emit(takaturnDiamond, "OnTermFilled")
                                   .withArgs(termId),
@@ -426,7 +426,7 @@ const { hour } = require("../../../utils/units")
                           await Promise.all([
                               expect(joinTx)
                                   .to.emit(takaturnDiamond, "OnCollateralDeposited")
-                                  .withArgs(termId, accounts[i + 1].address, entrance),
+                                  .withArgs(termId, accounts[i + 1].address, entrance, i),
                           ])
                       }
                   }
