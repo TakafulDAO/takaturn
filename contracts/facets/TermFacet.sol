@@ -142,7 +142,7 @@ contract TermFacet is ITerm {
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
-        require(!collateral.isCollateralMember[msg.sender], "Reentry");
+        require(!collateral.isCollateralMember[_newParticipant], "Reentry");
 
         uint memberIndex;
 
@@ -183,7 +183,7 @@ contract TermFacet is ITerm {
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
-        require(!collateral.isCollateralMember[msg.sender], "Reentry");
+        require(!collateral.isCollateralMember[_newParticipant], "Reentry");
 
         require(_position <= term.totalParticipants - 1, "Invalid position");
 
@@ -192,23 +192,23 @@ contract TermFacet is ITerm {
         uint minAmount = IGetters(address(this)).minCollateralToDeposit(_termId, _position);
         require(msg.value >= minAmount, "Eth payment too low");
 
-        collateral.collateralMembersBank[msg.sender] += msg.value;
-        collateral.isCollateralMember[msg.sender] = true;
-        collateral.depositors[_position] = msg.sender;
+        collateral.collateralMembersBank[_newParticipant] += msg.value;
+        collateral.isCollateralMember[_newParticipant] = true;
+        collateral.depositors[_position] = _newParticipant;
         collateral.counterMembers++;
-        collateral.collateralDepositByUser[msg.sender] += msg.value;
+        collateral.collateralDepositByUser[_newParticipant] += msg.value;
 
-        termStorage.participantToTermId[msg.sender].push(_termId);
+        termStorage.participantToTermId[_newParticipant].push(_termId);
 
         // If the lock is false, I accept the opt in
         if (!LibYieldGenerationStorage._yieldLock().yieldLock) {
-            yield.hasOptedIn[msg.sender] = _optYield;
+            yield.hasOptedIn[_newParticipant] = _optYield;
         } else {
             // If the lock is true, opt in is always false
-            yield.hasOptedIn[msg.sender] = false;
+            yield.hasOptedIn[_newParticipant] = false;
         }
 
-        emit OnCollateralDeposited(_termId, msg.sender, msg.value);
+        emit OnCollateralDeposited(_termId, _newParticipant, msg.value);
 
         if (collateral.counterMembers == 1) {
             collateral.firstDepositTime = block.timestamp;
