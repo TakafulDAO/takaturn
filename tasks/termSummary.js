@@ -16,21 +16,25 @@ async function _termSummary(taskArguments, hre) {
 
     const termParams = await takaturn.getTermSummary(taskArguments.termId)
 
-    console.log("")
-    console.log(`termId: ${termParams.termId}`)
-    console.log(`initialized: ${termParams.initialized}`)
-    console.log(`state: ${getTermStateFromIndex(termParams.state)}`)
-    console.log(`termOwner: ${termParams.termOwner}`)
-    console.log(`creationTime: ${termParams.creationTime}`)
-    console.log(
-        `registrationPeriod: ${termParams.registrationPeriod} seconds from the creationTime`
-    )
-    console.log(`totalParticipants: ${termParams.totalParticipants}`)
-    console.log(`cycleTime: ${termParams.cycleTime} seconds`)
-    console.log(`contributionAmount:: ${termParams.contributionAmount} USDC`)
-    console.log(`contributionPeriod:: ${termParams.contributionPeriod} seconds`)
-    console.log(`stableTokenAddress:: ${termParams.stableTokenAddress}`)
-    console.log("")
+    if (!termParams.initialized) {
+        console.log("This term has not been created yet.")
+    } else {
+        console.log("")
+        console.log(`termId: ${termParams.termId}`)
+        console.log(`initialized: ${termParams.initialized}`)
+        console.log(`state: ${getTermStateFromIndex(termParams.state)}`)
+        console.log(`termOwner: ${termParams.termOwner}`)
+        console.log(`creationTime: ${termParams.creationTime}`)
+        console.log(
+            `registrationPeriod: ${termParams.registrationPeriod} seconds from the creationTime`
+        )
+        console.log(`totalParticipants: ${termParams.totalParticipants}`)
+        console.log(`cycleTime: ${termParams.cycleTime} seconds`)
+        console.log(`contributionAmount:: ${termParams.contributionAmount} USDC`)
+        console.log(`contributionPeriod:: ${termParams.contributionPeriod} seconds`)
+        console.log(`stableTokenAddress:: ${termParams.stableTokenAddress}`)
+        console.log("")
+    }
 }
 
 async function termSummary(taskArguments, hre) {

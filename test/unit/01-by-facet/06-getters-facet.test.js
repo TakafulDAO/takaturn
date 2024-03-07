@@ -88,8 +88,12 @@ async function payTestContribution(termId, defaulterIndex) {
                       i - 1
                   )
                   // Each participant joins the term
-                  await takaturnDiamond.connect(accounts[i]).joinTerm(1, false, { value: entrance })
-                  await takaturnDiamond.connect(accounts[i]).joinTerm(2, false, { value: entrance })
+                  await takaturnDiamond
+                      .connect(accounts[i])
+                      ["joinTerm(uint256,bool)"](1, false, { value: entrance })
+                  await takaturnDiamond
+                      .connect(accounts[i])
+                      ["joinTerm(uint256,bool)"](2, false, { value: entrance })
               }
 
               await advanceTime(registrationPeriod + 1)
@@ -148,7 +152,9 @@ async function payTestContribution(termId, defaulterIndex) {
                       // Participant 1 joins the term
                       const entrance = await takaturnDiamond.minCollateralToDeposit(termId, 0)
 
-                      await takaturnDiamondParticipant_1.joinTerm(0, false, { value: entrance })
+                      await takaturnDiamondParticipant_1["joinTerm(uint256,bool)"](0, false, {
+                          value: entrance,
+                      })
 
                       const withdrawable =
                           await takaturnDiamondParticipant_1.getWithdrawableUserBalance(
@@ -174,7 +180,9 @@ async function payTestContribution(termId, defaulterIndex) {
                       // Participant 1 joins the term
                       const entrance = await takaturnDiamond.minCollateralToDeposit(termId, 0)
 
-                      await takaturnDiamondParticipant_1.joinTerm(0, false, { value: entrance })
+                      await takaturnDiamondParticipant_1["joinTerm(uint256,bool)"](0, false, {
+                          value: entrance,
+                      })
 
                       await advanceTime(registrationPeriod + 1)
 

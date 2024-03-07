@@ -162,7 +162,7 @@ const { hour } = require("../../../utils/units")
                           // Each participant joins the term
                           await takaturnDiamondParticipant_1
                               .connect(accounts[i + 1])
-                              .joinTerm(termId, false, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                       }
 
                       await advanceTime(registrationPeriod + 1)
@@ -321,7 +321,7 @@ const { hour } = require("../../../utils/units")
                       // Each participant joins the term
                       await takaturnDiamondParticipant_1
                           .connect(accounts[i + 1])
-                          .joinTerm(termId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   }
 
                   await advanceTime(registrationPeriod + 1)
