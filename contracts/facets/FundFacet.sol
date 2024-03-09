@@ -201,22 +201,9 @@ contract FundFacet is IFund {
     function payContribution(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        // Get the beneficiary for this cycle
-        address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
+        bool payNextCycle = _payContributionsChecks(fund, termId, msg.sender);
 
-        require(
-            fund.currentState == LibFundStorage.FundStates.AcceptingContributions,
-            "Wrong state"
-        );
-        require(fund.isParticipant[msg.sender], "Not a participant");
-        require(currentBeneficiary != msg.sender, "Beneficiary doesn't pay");
-        require(!fund.paidThisCycle[msg.sender], "Already paid for cycle");
-        require(
-            !fund.isExemptedOnCycle[fund.currentCycle].exempted[msg.sender],
-            "Participant is exempted this cycle"
-        );
-
-        _payContribution(termId, msg.sender, msg.sender);
+        _payContribution(termId, msg.sender, msg.sender, payNextCycle);
     }
 
     /// @notice This function is here to give the possibility to pay using a different wallet
@@ -225,21 +212,9 @@ contract FundFacet is IFund {
     function payContributionOnBehalfOf(uint termId, address participant) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
+        bool payNextCycle = _payContributionsChecks(fund, termId, participant);
 
-        require(
-            fund.currentState == LibFundStorage.FundStates.AcceptingContributions,
-            "Wrong state"
-        );
-        require(fund.isParticipant[participant], "Not a participant");
-        require(currentBeneficiary != participant, "Beneficiary doesn't pay");
-        require(!fund.paidThisCycle[participant], "Already paid for cycle");
-        require(
-            !fund.isExemptedOnCycle[fund.currentCycle].exempted[participant],
-            "Participant is exempted this cycle"
-        );
-
-        _payContribution(termId, msg.sender, participant);
+        _payContribution(termId, msg.sender, participant, payNextCycle);
     }
 
     /// @notice Called by the beneficiary to withdraw the fund
@@ -301,11 +276,53 @@ contract FundFacet is IFund {
         }
     }
 
+    function _payContributionsChecks(
+        LibFundStorage.Fund storage _fund,
+        uint _termId,
+        address _participant
+    ) internal view returns (bool _payNextCycle) {
+        require(
+            _fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
+                _fund.currentState == LibFundStorage.FundStates.CycleOngoing,
+            "Wrong state"
+        );
+        require(_fund.isParticipant[_participant], "Not a participant");
+
+        address _beneficiary;
+        uint _cycle;
+
+        if (_fund.currentState == LibFundStorage.FundStates.AcceptingContributions) {
+            require(!_fund.paidThisCycle[_participant], "Already paid for cycle");
+
+            _cycle = _fund.currentCycle;
+            _beneficiary = IGetters(address(this)).getCurrentBeneficiary(_termId);
+            _payNextCycle = false;
+        } else {
+            require(!_fund.paidNextCycle[_participant], "Already paid for cycle");
+
+            _cycle = _fund.currentCycle + 1;
+            _beneficiary = IGetters(address(this)).getNextBeneficiary(_termId);
+            _payNextCycle = true;
+        }
+
+        require(_beneficiary != _participant, "Beneficiary doesn't pay");
+        require(
+            !_fund.isExemptedOnCycle[_cycle].exempted[_participant],
+            "Participant is exempted this cycle"
+        );
+    }
+
     /// @notice function to pay the actual contribution for the cycle
     /// @param _termId the id of the term
     /// @param _payer the address that's paying
     /// @param _participant the (participant) address that's being paid for
-    function _payContribution(uint _termId, address _payer, address _participant) internal {
+    /// @param payNextCycle whether to pay for the next cycle or not
+    function _payContribution(
+        uint _termId,
+        address _payer,
+        address _participant,
+        bool payNextCycle
+    ) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
 
@@ -317,8 +334,13 @@ contract FundFacet is IFund {
         require(success, "Contribution failed, did you approve stable token?");
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
-        fund.paidThisCycle[_participant] = true;
-        emit OnPaidContribution(_termId, _participant, fund.currentCycle);
+        if (!payNextCycle) {
+            fund.paidThisCycle[_participant] = true;
+            emit OnPaidContribution(_termId, _participant, fund.currentCycle);
+        } else {
+            fund.paidNextCycle[_participant] = true;
+            emit OnPaidContribution(_termId, _participant, fund.currentCycle + 1);
+        }
     }
 
     /// @notice Default the participant/beneficiary by checking the mapping first, then remove them from the appropriate array

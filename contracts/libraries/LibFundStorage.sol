@@ -45,6 +45,7 @@ library LibFundStorage {
         uint expelledParticipants; // Total amount of participants that have been expelled so far
         uint totalAmountOfCycles;
         mapping(address => bool) expelledBeforeBeneficiary; // Mapping to keep track of who has been expelled before being a beneficiary
+        mapping(address => bool) paidNextCycle; // Mapping to keep track of who has paid for the next cycle
     }
 
     struct FundStorage {

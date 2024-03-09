@@ -315,6 +315,40 @@ async function payTestContribution(termId, defaulterIndex) {
                       )
                   })
               })
+              describe("When the cycle is ongoing and there are payments", function () {
+                  it("Should increase with payments", async function () {
+                      const termId = 1
+
+                      await advanceTime(cycleTime + 1)
+                      await takaturnDiamond.closeFundingPeriod(termId)
+                      await takaturnDiamond.startNewCycle(termId)
+
+                      const withdrawable1 = await takaturnDiamond.getWithdrawableUserBalance(
+                          termId,
+                          participant_1.address
+                      )
+
+                      await takaturnDiamondParticipant_1.payContribution(termId)
+
+                      const withdrawable2 = await takaturnDiamond.getWithdrawableUserBalance(
+                          termId,
+                          participant_1.address
+                      )
+
+                      await advanceTime(contributionPeriod + 1)
+                      await takaturnDiamond.closeFundingPeriod(termId)
+
+                      await takaturnDiamondParticipant_1.payContribution(termId)
+
+                      const withdrawable3 = await takaturnDiamond.getWithdrawableUserBalance(
+                          termId,
+                          participant_1.address
+                      )
+
+                      await assert(withdrawable2 > withdrawable1)
+                      await assert(withdrawable3 > withdrawable2)
+                  })
+              })
               describe("When the term is on going or ended and somebody is expelled before being beneficiary", function () {
                   beforeEach(async () => {
                       const termId = 1
@@ -850,6 +884,155 @@ async function payTestContribution(termId, defaulterIndex) {
                   assert.ok(!participant_3_sets[0]) // Not on participant set
                   assert.ok(!participant_3_sets[1]) // Not on beneficiary set
                   assert.ok(!participant_3_sets[2]) // Not on defaulter set
+              })
+          })
+          describe("Beneficiaries", function () {
+              it("Should return the current beneficiary", async function () {
+                  const termId = 1
+
+                  const currentBeneficiary = await takaturnDiamond.getCurrentBeneficiary(termId)
+
+                  assert.equal(currentBeneficiary, participant_1.address)
+              })
+
+              it("Should return the next beneficiary", async function () {
+                  const termId = 1
+
+                  const nextBeneficiary = await takaturnDiamond.getNextBeneficiary(termId)
+
+                  assert.equal(nextBeneficiary, participant_2.address)
+              })
+          })
+
+          describe("Current or next cycle paid", function () {
+              it("Nothing paid", async function () {
+                  const termId = 1
+
+                  // First cycle
+
+                  const participant1Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_1,
+                      termId
+                  )
+                  const participant3Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_3,
+                      termId
+                  )
+
+                  assert.ok(!participant1Payments[0])
+                  assert.ok(!participant1Payments[1])
+                  assert.ok(!participant3Payments[0])
+                  assert.ok(!participant3Payments[1])
+              })
+              it("Pay current cycle", async function () {
+                  const termId = 1
+
+                  // First cycle
+                  await takaturnDiamondParticipant_3.payContribution(termId)
+
+                  const participant1Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_1,
+                      termId
+                  )
+                  const participant3Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_3,
+                      termId
+                  )
+
+                  assert.ok(!participant1Payments[0])
+                  assert.ok(!participant1Payments[1])
+                  assert.ok(participant3Payments[0]) // Current cycle paid
+                  assert.ok(!participant3Payments[1])
+              })
+              it("Pay current cycle and close funding period", async function () {
+                  const termId = 1
+
+                  await takaturnDiamondParticipant_3.payContribution(termId)
+
+                  await advanceTime(contributionPeriod + 1)
+                  // Close funding period
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const participant1Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_1,
+                      termId
+                  )
+                  const participant3Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_3,
+                      termId
+                  )
+
+                  assert.ok(!participant1Payments[0])
+                  assert.ok(!participant1Payments[1])
+                  assert.ok(participant3Payments[0]) // Current cycle paid
+                  assert.ok(!participant3Payments[1])
+              })
+              it("Pay next cycle, and emits event", async function () {
+                  const termId = 1
+
+                  await takaturnDiamondParticipant_3.payContribution(termId)
+
+                  await advanceTime(contributionPeriod + 1)
+                  // Close funding period
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  // Pay next cycle
+                  const fundSummary = await takaturnDiamond.getFundSummary(termId)
+                  const currentCycle = fundSummary[6]
+                  const nextCycle = currentCycle + 1n
+
+                  await expect(takaturnDiamondParticipant_1.payContribution(termId))
+                      .to.emit(takaturnDiamond, "OnPaidContribution")
+                      .withArgs(termId, participant_1.address, nextCycle)
+                  await expect(takaturnDiamondParticipant_3.payContribution(termId))
+                      .to.emit(takaturnDiamond, "OnPaidContribution")
+                      .withArgs(termId, participant_3.address, nextCycle)
+
+                  const participant1Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_1,
+                      termId
+                  )
+                  const participant3Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_3,
+                      termId
+                  )
+
+                  assert.ok(!participant1Payments[0])
+                  assert.ok(participant1Payments[1]) // Next cycle paid
+                  assert.ok(participant3Payments[0]) // Current cycle paid
+                  assert.ok(participant3Payments[1]) // Next cycle paid
+              })
+              it("New cycle starts and some payments are in advanced", async function () {
+                  const termId = 1
+
+                  await takaturnDiamondParticipant_3.payContribution(termId)
+
+                  await advanceTime(contributionPeriod + 1)
+                  // Close funding period
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  // Pay next cycle
+                  await takaturnDiamondParticipant_1.payContribution(termId)
+                  await takaturnDiamondParticipant_3.payContribution(termId)
+
+                  await advanceTime(cycleTime + 1)
+
+                  // Second cycle
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  const participant1Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_1,
+                      termId
+                  )
+                  const participant3Payments = await takaturnDiamond.currentOrNextCyclePaid(
+                      participant_3,
+                      termId
+                  )
+
+                  assert.ok(participant1Payments[0]) // Current cycle paid
+                  assert.ok(!participant1Payments[1])
+                  assert.ok(participant3Payments[0]) // Current cycle paid
+                  assert.ok(!participant3Payments[1])
               })
           })
       })
