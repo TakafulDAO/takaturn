@@ -274,7 +274,13 @@ const { ZeroAddress } = require("ethers")
                                   ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                           )
                               .to.emit(takaturnDiamond, "OnCollateralDeposited")
-                              .withArgs(termId, accounts[i].address, entrance, i - 1)
+                              .withArgs(
+                                  termId,
+                                  accounts[i].address,
+                                  accounts[i].address,
+                                  entrance,
+                                  i - 1
+                              )
                       }
                       let hasOptedIn = await takaturnDiamond.userHasoptedInYG(
                           termId,
@@ -300,7 +306,13 @@ const { ZeroAddress } = require("ethers")
                                   })
                           )
                               .to.emit(takaturnDiamond, "OnCollateralDeposited")
-                              .withArgs(termId, accounts[i].address, entrance, i - 1)
+                              .withArgs(
+                                  termId,
+                                  accounts[i].address,
+                                  accounts[i].address,
+                                  entrance,
+                                  i - 1
+                              )
 
                           await expect(
                               takaturnDiamond
@@ -329,7 +341,13 @@ const { ZeroAddress } = require("ethers")
                                   ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                           )
                               .to.emit(takaturnDiamond, "OnCollateralDeposited")
-                              .withArgs(termId, accounts[i].address, entrance, i - 1)
+                              .withArgs(
+                                  termId,
+                                  accounts[i].address,
+                                  accounts[i].address,
+                                  entrance,
+                                  i - 1
+                              )
                           let hasOptedIn = await takaturnDiamond.userHasoptedInYG(
                               termId,
                               accounts[i].address

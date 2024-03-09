@@ -417,7 +417,13 @@ const { hour } = require("../../../utils/units")
                           await Promise.all([
                               expect(joinTx)
                                   .to.emit(takaturnDiamond, "OnCollateralDeposited")
-                                  .withArgs(termId, accounts[i + 1].address, entrance, i),
+                                  .withArgs(
+                                      termId,
+                                      accounts[i + 1].address,
+                                      accounts[i + 1].address,
+                                      entrance,
+                                      i
+                                  ),
                               expect(joinTx)
                                   .to.emit(takaturnDiamond, "OnTermFilled")
                                   .withArgs(termId),
@@ -426,7 +432,13 @@ const { hour } = require("../../../utils/units")
                           await Promise.all([
                               expect(joinTx)
                                   .to.emit(takaturnDiamond, "OnCollateralDeposited")
-                                  .withArgs(termId, accounts[i + 1].address, entrance, i),
+                                  .withArgs(
+                                      termId,
+                                      accounts[i + 1].address,
+                                      accounts[i + 1].address,
+                                      entrance,
+                                      i
+                                  ),
                           ])
                       }
                   }
@@ -812,7 +824,13 @@ const { hour } = require("../../../utils/units")
                           await Promise.all([
                               expect(joinTx)
                                   .to.emit(takaturnDiamond, "OnCollateralDeposited")
-                                  .withArgs(termId, accounts[i + 1].address, entrance, i),
+                                  .withArgs(
+                                      termId,
+                                      deployer.address,
+                                      accounts[i + 1].address,
+                                      entrance,
+                                      i
+                                  ),
                               expect(joinTx)
                                   .to.emit(takaturnDiamond, "OnTermFilled")
                                   .withArgs(termId),
@@ -821,7 +839,13 @@ const { hour } = require("../../../utils/units")
                           await Promise.all([
                               expect(joinTx)
                                   .to.emit(takaturnDiamond, "OnCollateralDeposited")
-                                  .withArgs(termId, accounts[i + 1].address, entrance, i),
+                                  .withArgs(
+                                      termId,
+                                      deployer.address,
+                                      accounts[i + 1].address,
+                                      entrance,
+                                      i
+                                  ),
                           ])
                       }
                   }
