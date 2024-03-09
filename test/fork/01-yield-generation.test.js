@@ -17,6 +17,7 @@ const {
     getRandomInt,
 } = require("../utils/test-utils")
 const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
+const { updateFacetsBytecode } = require("../utils/update-facets-bytecode")
 
 let takaturnDiamond, usdc
 
@@ -195,12 +196,6 @@ async function checkYieldMappings(termId, userAddress) {
               participant_11 = accounts[11]
               participant_12 = accounts[12]
 
-              participants = []
-              // From account[1] to account[12]
-              for (let i = 1; i <= totalParticipants; i++) {
-                  participants.push(accounts[i])
-              }
-
               // Get the contract instances
               const takaturnDiamondAddress = networkConfig[chainId]["takaturnDiamond"]
               takaturnDiamond = await ethers.getContractAt(abi, takaturnDiamondAddress)
@@ -221,6 +216,7 @@ async function checkYieldMappings(termId, userAddress) {
               // Connect the accounts
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
+              await updateFacetsBytecode()
           })
 
           describe("Real values", function () {
@@ -291,7 +287,7 @@ async function checkYieldMappings(termId, userAddress) {
                               await expect(
                                   takaturnDiamond
                                       .connect(accounts[i])
-                                      .joinTerm(termId, true, { value: entrance })
+                                      ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                               )
                                   .to.emit(takaturnDiamond, "OnCollateralDeposited")
                                   .withArgs(termId, accounts[i].address, entrance)
@@ -299,7 +295,7 @@ async function checkYieldMappings(termId, userAddress) {
                               await expect(
                                   takaturnDiamond
                                       .connect(accounts[i])
-                                      .joinTerm(termId, true, { value: entrance })
+                                      ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                               )
                                   .to.emit(takaturnDiamond, "OnTermFilled")
                                   .withArgs(termId)
@@ -326,7 +322,7 @@ async function checkYieldMappings(termId, userAddress) {
 
                           await takaturnDiamond
                               .connect(accounts[i])
-                              .joinTerm(termId, true, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                       }
                       await advanceTime(registrationPeriod + 1)
                       await expect(takaturnDiamond.startTerm(termId)).not.to.be.reverted
@@ -345,11 +341,11 @@ async function checkYieldMappings(termId, userAddress) {
                           if (i == 1 || i == totalParticipants) {
                               await takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, true, { value: entrance })
+                                  ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                           } else {
                               await takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, false, { value: entrance })
+                                  ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                           }
                       }
                       await advanceTime(registrationPeriod + 1)
@@ -374,7 +370,7 @@ async function checkYieldMappings(termId, userAddress) {
                           0
                       )
 
-                      await takaturnDiamondParticipant_1.joinTerm(termId, true, {
+                      await takaturnDiamondParticipant_1["joinTerm(uint256,bool)"](termId, true, {
                           value: entrance,
                       })
 
@@ -408,7 +404,7 @@ async function checkYieldMappings(termId, userAddress) {
 
                           await takaturnDiamond
                               .connect(accounts[i])
-                              .joinTerm(termId, true, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                       }
                       await advanceTime(registrationPeriod + 1)
 
@@ -433,7 +429,7 @@ async function checkYieldMappings(termId, userAddress) {
 
                           await takaturnDiamond
                               .connect(accounts[i])
-                              .joinTerm(termId, true, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                       }
                       await advanceTime(registrationPeriod + 1)
                       await takaturnDiamond.startTerm(termId)

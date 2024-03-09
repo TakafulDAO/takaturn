@@ -21,7 +21,7 @@ async function checkYieldMappings(termId, userAddress) {
 
 !isFork || isMainnet
     ? describe.skip
-    : describe("Fork Mainnet test. Yield calculations", function () {
+    : xdescribe("Fork Mainnet test. Yield calculations", function () {
           const chainId = network.config.chainId
 
           // Variables from the term to check

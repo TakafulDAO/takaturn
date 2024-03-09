@@ -330,7 +330,7 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   }
 
                   await advanceTime(registrationPeriod + 1)
@@ -401,6 +401,80 @@ async function executeCycle(
                               contributionAmount * 10n ** 6n
                           )
                       }
+                  })
+
+                  it("allows to pay cycle in advance", async function () {
+                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                      const termId = lastTerm[0]
+
+                      await advanceTime(contributionPeriod + 1)
+
+                      await takaturnDiamond.closeFundingPeriod(termId)
+
+                      const fundSummary = await takaturnDiamond.getFundSummary(termId)
+                      const nextCycle = fundSummary[6] + 1n
+
+                      expect(getFundStateFromIndex(fundSummary[1])).to.equal(
+                          FundStates.CycleOngoing
+                      )
+                      await expect(takaturnDiamondParticipant_1.payContribution(termId))
+                          .to.emit(takaturnDiamond, "OnPaidContribution")
+                          .withArgs(termId, participant_1.address, nextCycle)
+                  })
+
+                  it("reverts if try to pay in advance the last cycle", async function () {
+                      this.timeout(200000)
+                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                      const termId = lastTerm[0]
+
+                      // First cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Second cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Third cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Fourth cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Fifth cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Sixth cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Seventh cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Eighth cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Ninth cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Tenth cycle
+                      await executeCycle(termId, 0, [], false)
+                      // Eleventh cycle
+                      await executeCycle(termId, 0, [], false)
+
+                      // Twelfth cycle
+                      let fundSummary = await takaturnDiamond.getFundSummary(termId)
+                      const currentCycle = fundSummary[6]
+
+                      // Allows to pay current cycle
+                      await usdc
+                          .connect(participant_1)
+                          .approve(takaturnDiamond, contributionAmount * 10 ** 6)
+
+                      await expect(takaturnDiamondParticipant_1.payContribution(termId))
+                          .to.emit(takaturnDiamond, "OnPaidContribution")
+                          .withArgs(termId, participant_1.address, currentCycle)
+
+                      await advanceTime(contributionPeriod + 1)
+                      await takaturnDiamond.closeFundingPeriod(termId)
+
+                      fundSummary = await takaturnDiamond.getFundSummary(termId)
+
+                      // But reverts if try to pay in advance if we are in the last cycle
+                      await expect(
+                          takaturnDiamondParticipant_1.payContribution(termId)
+                      ).to.be.revertedWith("Wrong state")
+
+                      assert.equal(currentCycle, totalParticipants)
+                      expect(getFundStateFromIndex(fundSummary[1])).to.equal(FundStates.FundClosed)
                   })
 
                   it("can close the funding period after the given time", async function () {
@@ -916,7 +990,7 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance + 1n })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance + 1n })
                   }
 
                   await advanceTime(registrationPeriod + 1)
@@ -1016,7 +1090,7 @@ async function executeCycle(
 
                       await takaturnDiamond
                           .connect(accounts[i])
-                          .joinTerm(termId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   }
 
                   await advanceTime(registrationPeriod + 1)
@@ -1092,18 +1166,18 @@ async function executeCycle(
                   )
               })
 
-              it("does not produce weird behaviour when theres only 2 participants, and one pays and the other doesnt 2", async function () {
+              it("does not produce weird behaviour when theres only 2 participants, nobody defaults", async function () {
                   this.timeout(200000)
 
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
-                  // First participant pays, second doesn't
+                  // Second participant pays, first doesn't
                   await usdc
                       .connect(participant_2)
                       .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   await takaturnDiamond.connect(participant_2).payContribution(termId)
 
-                  // Artifically increase time to skip the wait
+                  //   Artifically increase time to skip the wait
                   await advanceTime(contributionPeriod + 1)
                   await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
                   await advanceTime(cycleTime + 1)

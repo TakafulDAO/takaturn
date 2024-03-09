@@ -228,21 +228,37 @@ const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
-                          await takaturnDiamondParticipant_1.joinTerm(termId, true, {
-                              value: ethers.parseEther("0.19268"),
-                          })
+                          await takaturnDiamondParticipant_1["joinTerm(uint256,bool)"](
+                              termId,
+                              true,
+                              {
+                                  value: ethers.parseEther("0.19268"),
+                              }
+                          )
 
-                          await takaturnDiamondParticipant_2.joinTerm(termId, true, {
-                              value: ethers.parseEther("0.14507"),
-                          })
+                          await takaturnDiamondParticipant_2["joinTerm(uint256,bool)"](
+                              termId,
+                              true,
+                              {
+                                  value: ethers.parseEther("0.14507"),
+                              }
+                          )
 
-                          await takaturnDiamondParticipant_3.joinTerm(termId, true, {
-                              value: ethers.parseEther("0.09518"),
-                          })
+                          await takaturnDiamondParticipant_3["joinTerm(uint256,bool)"](
+                              termId,
+                              true,
+                              {
+                                  value: ethers.parseEther("0.09518"),
+                              }
+                          )
 
-                          await takaturnDiamondParticipant_4.joinTerm(termId, true, {
-                              value: ethers.parseEther("0.04735"),
-                          })
+                          await takaturnDiamondParticipant_4["joinTerm(uint256,bool)"](
+                              termId,
+                              true,
+                              {
+                                  value: ethers.parseEther("0.04735"),
+                              }
+                          )
 
                           await advanceTime(registrationPeriod + 1)
 
