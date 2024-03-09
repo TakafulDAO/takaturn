@@ -1,36 +1,37 @@
 const { network } = require("hardhat")
-const {
-    networkConfig,
-    developmentChains,
-    VERIFICATION_BLOCK_CONFIRMATIONS,
-    isDevnet,
-    isFork,
-} = require("../utils/_networks")
+const { networkConfig, isDevnet, isFork } = require("../../../utils/_networks")
+const { deployUpgradeDiamond } = require("../../../utils/deployTx")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
-    const { diamond, log } = deployments
+    const { log } = deployments
     const { deployer } = await getNamedAccounts()
+
     const chainId = network.config.chainId
-    const waitBlockConfirmations = developmentChains.includes(network.name)
-        ? 1
-        : VERIFICATION_BLOCK_CONFIRMATIONS
+
     let ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress
     let zaynfiZapAddress, zaynfiVaultAddress
     let takaturnDiamondUpgrade
 
-    log("02. Deploying Takaturn Diamond...")
-
+    log("01.00.01. Deploying Takaturn Diamond...")
     if (isDevnet && isFork) {
         const ethUsdAggregator = await deployments.get("MockEthUsdAggregator")
         ethUsdPriceFeedAddress = ethUsdAggregator.address
-
         const usdcUsdAggregator = await deployments.get("MockUsdcUsdAggregator")
         usdcUsdPriceFeedAddress = usdcUsdAggregator.address
-
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
 
+        const diamondName = "TakaturnDiamond"
         const args = []
+        const facets = [
+            "CollateralFacet",
+            "FundFacet",
+            "TermFacet",
+            "GettersFacet",
+            "YGFacetZaynFi",
+        ]
+        const initContract = "DiamondInit"
+        const initMethod = "init"
         const initArgs = [
             ethUsdPriceFeedAddress,
             usdcUsdPriceFeedAddress,
@@ -39,23 +40,18 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             false,
         ]
 
-        takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
-            from: deployer,
-            owner: deployer,
-            args: args,
-            log: true,
-            facets: ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet", "YGFacetZaynFi"],
-            execute: {
-                contract: "DiamondInit",
-                methodName: "init",
-                args: initArgs,
-            },
-            waitConfirmations: waitBlockConfirmations,
-        })
+        takaturnDiamondUpgrade = await deployUpgradeDiamond(
+            diamondName,
+            deployer,
+            args,
+            facets,
+            initContract,
+            initMethod,
+            initArgs
+        )
     }
-
-    log("02. Diamond Deployed!")
+    log("01.00.01. Diamond Deployed!")
     log("==========================================================================")
 }
 
-module.exports.tags = ["mocks"]
+module.exports.tags = ["all", "mocks"]
