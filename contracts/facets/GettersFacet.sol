@@ -366,13 +366,31 @@ contract GettersFacet is IGetters {
         } else if (collateral.state == LibCollateralStorage.CollateralStates.CycleOngoing) {
             uint minRequiredCollateral;
 
-            // Check if the user has paid this cycle
-            if (!fund.paidThisCycle[user]) {
+            // Check if the user has paid this cycle or the next
+            if (!fund.paidThisCycle[user] && !fund.paidNextCycle[user]) {
+                // If none have been paid
                 // Everything above 1.5 X remaining cycles contribution (RCC) can be withdrawn
                 minRequiredCollateral = (getRemainingCyclesContributionWei(termId) * 15) / 10; // 1.5 X RCC in wei
-            } else {
-                // If the user have paid this cycle, we need to check his remaining cycles and get the contribution amount for those
+            }
+
+            // If the user has paid only one of the cycles, current or next
+            if (
+                (fund.paidThisCycle[user] && !fund.paidNextCycle[user]) ||
+                (fund.paidNextCycle[user] && !fund.paidThisCycle[user])
+            ) {
+                // We need to check his remaining cycles and get the contribution amount for those
                 uint remainingCycles = fund.totalAmountOfCycles - fund.currentCycle;
+                uint contributionAmountWei = getToCollateralConversionRate(
+                    term.contributionAmount * 10 ** 18
+                );
+
+                minRequiredCollateral = (remainingCycles * contributionAmountWei * 15) / 10; // 1.5 times of what the user needs to pay for the remaining cycles
+            }
+
+            // If the user has paid both cycles, current and next
+            if (fund.paidThisCycle[user] && fund.paidNextCycle[user]) {
+                // We need to check his remaining cycles and get the contribution amount for those
+                uint remainingCycles = fund.totalAmountOfCycles - fund.currentCycle - 1;
                 uint contributionAmountWei = getToCollateralConversionRate(
                     term.contributionAmount * 10 ** 18
                 );
@@ -440,6 +458,14 @@ contract GettersFacet is IGetters {
         return fund.beneficiariesOrder[fund.currentCycle - 1];
     }
 
+    /// @notice function to get the current beneficiary
+    /// @param termId the fund id
+    /// @return the current beneficiary
+    function getNextBeneficiary(uint termId) external view returns (address) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        return fund.beneficiariesOrder[fund.currentCycle];
+    }
+
     /// @notice function to know if a user was expelled before
     /// @param termId the fund id
     /// @param user the user to check
@@ -470,12 +496,12 @@ contract GettersFacet is IGetters {
     /// @notice function to get fund information of a specific participant
     /// @param participant the user to get the info from
     /// @param termId the fund id
-    /// @return fund isParticipant, true if is participant
-    /// @return fund isBeneficiary, true if has been beneficiary
-    /// @return fund paidThisCycle, true if has paid the current cycle
-    /// @return fund autoPayEnabled, true if auto pay is enabled
-    /// @return fund beneficiariesPool, the beneficiary pool, 6 decimals
-    /// @return fund beneficiariesFrozenPool, true if the beneficiary pool is frozen
+    /// @return isParticipant, true if is participant
+    /// @return isBeneficiary, true if has been beneficiary
+    /// @return paidThisCycle, true if has paid the current cycle
+    /// @return autoPayEnabled, true if auto pay is enabled
+    /// @return beneficiariesPool, the beneficiary pool, 6 decimals
+    /// @return beneficiariesFrozenPool, true if the beneficiary pool is frozen
     function getParticipantFundSummary(
         address participant,
         uint termId
@@ -492,6 +518,20 @@ contract GettersFacet is IGetters {
             fund.beneficiariesPool[participant],
             isMoneyPotFrozen
         );
+    }
+
+    /// @notice function to get fund information of a specific participant
+    /// @param participant the user to get the info from
+    /// @param termId the fund id
+    /// @return paidThisCycle, true if has paid the current cycle
+    /// @return paidNextCycle, true if has paid the next cycle
+    function currentOrNextCyclePaid(
+        address participant,
+        uint termId
+    ) external view returns (bool, bool) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+
+        return (fund.paidThisCycle[participant], fund.paidNextCycle[participant]);
     }
 
     function _checkFrozenMoneyPot(

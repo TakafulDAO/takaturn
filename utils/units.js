@@ -16,11 +16,11 @@ function erc20UnitsFormat(amount) {
     return formatUnits(amount, 18)
 }
 
-function usdtUnits(amount) {
+function usdcUnits(amount) {
     return parseUnits(amount, 6)
 }
 
-function usdtUnitsFormat(amount) {
+function usdcUnitsFormat(amount) {
     return formatUnits(amount, 6)
 }
 
@@ -34,6 +34,6 @@ module.exports = {
     year,
     erc20Units,
     erc20UnitsFormat,
-    usdtUnits,
-    usdtUnitsFormat,
+    usdcUnits,
+    usdcUnitsFormat,
 }
