@@ -25,6 +25,7 @@ contract TermFacet is ITerm {
     event OnTermCreated(uint indexed termId, address indexed termOwner);
     event OnCollateralDeposited(
         uint indexed termId,
+        address payer,
         address indexed user,
         uint amount,
         uint indexed position
@@ -213,7 +214,7 @@ contract TermFacet is ITerm {
             yield.hasOptedIn[_newParticipant] = false;
         }
 
-        emit OnCollateralDeposited(_termId, _newParticipant, msg.value, _position);
+        emit OnCollateralDeposited(_termId, msg.sender, _newParticipant, msg.value, _position);
 
         if (collateral.counterMembers == 1) {
             collateral.firstDepositTime = block.timestamp;
