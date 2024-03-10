@@ -23,7 +23,13 @@ import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 /// @dev v3.0 (Diamond)
 contract TermFacet is ITerm {
     event OnTermCreated(uint indexed termId, address indexed termOwner);
-    event OnCollateralDeposited(uint indexed termId, address indexed user, uint amount);
+    event OnCollateralDeposited(
+        uint indexed termId,
+        address payer,
+        address indexed user,
+        uint amount,
+        uint indexed position
+    );
     event OnTermFilled(uint indexed termId);
     event OnTermExpired(uint indexed termId);
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
@@ -48,11 +54,28 @@ contract TermFacet is ITerm {
     }
 
     function joinTerm(uint termId, bool optYield) external payable {
-        _joinTerm(termId, optYield);
+        _joinTerm(termId, optYield, msg.sender);
     }
 
     function joinTerm(uint termId, bool optYield, uint position) external payable {
-        _joinTermByPosition(termId, optYield, position);
+        _joinTermByPosition(termId, optYield, position, msg.sender);
+    }
+
+    function paySecurityOnBehalfOf(
+        uint termId,
+        bool optYield,
+        address newParticipant
+    ) external payable {
+        _joinTerm(termId, optYield, newParticipant);
+    }
+
+    function paySecurityOnBehalfOf(
+        uint termId,
+        bool optYield,
+        address newParticipant,
+        uint position
+    ) external payable {
+        _joinTermByPosition(termId, optYield, position, newParticipant);
     }
 
     function startTerm(uint termId) external {
@@ -109,7 +132,7 @@ contract TermFacet is ITerm {
         return termId;
     }
 
-    function _joinTerm(uint _termId, bool _optYield) internal {
+    function _joinTerm(uint _termId, bool _optYield, address _newParticipant) internal {
         LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         LibTermStorage.Term memory term = termStorage.terms[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -125,7 +148,7 @@ contract TermFacet is ITerm {
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
-        require(!collateral.isCollateralMember[msg.sender], "Reentry");
+        require(!collateral.isCollateralMember[_newParticipant], "Reentry");
 
         uint memberIndex;
 
@@ -139,10 +162,15 @@ contract TermFacet is ITerm {
             }
         }
 
-        _joinTermByPosition(_termId, _optYield, memberIndex);
+        _joinTermByPosition(_termId, _optYield, memberIndex, _newParticipant);
     }
 
-    function _joinTermByPosition(uint _termId, bool _optYield, uint _position) internal {
+    function _joinTermByPosition(
+        uint _termId,
+        bool _optYield,
+        uint _position,
+        address _newParticipant
+    ) internal {
         LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         LibTermStorage.Term memory term = termStorage.terms[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -161,7 +189,7 @@ contract TermFacet is ITerm {
 
         require(collateral.counterMembers < term.totalParticipants, "No space");
 
-        require(!collateral.isCollateralMember[msg.sender], "Reentry");
+        require(!collateral.isCollateralMember[_newParticipant], "Reentry");
 
         require(_position <= term.totalParticipants - 1, "Invalid position");
 
@@ -170,23 +198,23 @@ contract TermFacet is ITerm {
         uint minAmount = IGetters(address(this)).minCollateralToDeposit(_termId, _position);
         require(msg.value >= minAmount, "Eth payment too low");
 
-        collateral.collateralMembersBank[msg.sender] += msg.value;
-        collateral.isCollateralMember[msg.sender] = true;
-        collateral.depositors[_position] = msg.sender;
+        collateral.collateralMembersBank[_newParticipant] += msg.value;
+        collateral.isCollateralMember[_newParticipant] = true;
+        collateral.depositors[_position] = _newParticipant;
         collateral.counterMembers++;
-        collateral.collateralDepositByUser[msg.sender] += msg.value;
+        collateral.collateralDepositByUser[_newParticipant] += msg.value;
 
-        termStorage.participantToTermId[msg.sender].push(_termId);
+        termStorage.participantToTermId[_newParticipant].push(_termId);
 
         // If the lock is false, I accept the opt in
         if (!LibYieldGenerationStorage._yieldLock().yieldLock) {
-            yield.hasOptedIn[msg.sender] = _optYield;
+            yield.hasOptedIn[_newParticipant] = _optYield;
         } else {
             // If the lock is true, opt in is always false
-            yield.hasOptedIn[msg.sender] = false;
+            yield.hasOptedIn[_newParticipant] = false;
         }
 
-        emit OnCollateralDeposited(_termId, msg.sender, msg.value);
+        emit OnCollateralDeposited(_termId, msg.sender, _newParticipant, msg.value, _position);
 
         if (collateral.counterMembers == 1) {
             collateral.firstDepositTime = block.timestamp;
