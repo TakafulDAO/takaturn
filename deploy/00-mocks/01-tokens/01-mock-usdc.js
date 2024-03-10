@@ -9,15 +9,16 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     if ((isTestnet && chainId == 421614) || isDevnet) {
         log("00.01.01. Deploying USDC mock...")
         const contractName = "FiatTokenV2_1"
+        const args = []
 
-        await deploySimpleContract(contractName)
+        const usdc = await deploySimpleContract(contractName)
         log("00.01.01. USDC mock Deployed!...")
         log("==========================================================================")
-    }
-    if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
-        log("00.01.01. Verifying USDC Mock...")
-        await verify(usdc.address, args)
-        log("00.01.01. USDC Verified!")
+        if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
+            log("00.01.01. Verifying USDC Mock...")
+            await verify(usdc.address, args)
+            log("00.01.01. USDC Verified!")
+        }
     }
 }
 

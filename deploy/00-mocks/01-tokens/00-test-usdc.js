@@ -9,6 +9,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     if ((isTestnet && chainId == 421614) || isInternal) {
         log("00.01.00. Deploying test USDC...")
         const contractName = "tUSDC"
+        const args = []
 
         const usdc = await deploySimpleContract(contractName)
         log("00.01.00. test USDC Deployed!...")
