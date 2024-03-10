@@ -21,6 +21,12 @@ interface IGetters {
     /// @return remaining registration time in seconds
     function getRemainingRegistrationTime(uint termId) external view returns (uint);
 
+    ///@notice Gets the remaining positions in a term and the corresponding security amount
+    ///@param termId the term id
+    function getAvailablePositionsAndSecurityAmount(
+        uint termId
+    ) external view returns (uint[] memory, uint[] memory);
+
     /// @notice Get current information of a term
     /// @param termId the id of the term
     /// @return Term Struct, see LibTermStorage.sol
