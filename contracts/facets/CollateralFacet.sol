@@ -49,6 +49,9 @@ contract CollateralFacet is ICollateral {
         uint indexed amount
     ); // Emits when a user claims their yield
 
+    // Function cannot be called at this time.
+    error FunctionInvalidAtThisState();
+
     /// @param termId term id
     /// @param _state collateral state
     modifier atState(uint termId, LibCollateralStorage.CollateralStates _state) {
