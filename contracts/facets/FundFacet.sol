@@ -15,7 +15,7 @@ import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 import {LibFund} from "../libraries/LibFund.sol";
 
-/// @title Takaturn Fund
+/// @title Takaturn Fund Facet
 /// @author Mohammed Haddouti
 /// @notice This is used to operate the Takaturn fund
 /// @dev v3.0 (Diamond)

@@ -15,6 +15,10 @@ import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+/// @title Takaturn Getters Facet
+/// @author Maikel Ordaz
+/// @notice Getters for Takaturn protocol
+/// @dev v3.0 (Diamond)
 contract GettersFacet is IGetters {
     using EnumerableSet for EnumerableSet.AddressSet;
 

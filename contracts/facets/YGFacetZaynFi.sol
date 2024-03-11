@@ -13,6 +13,10 @@ import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
+/// @title Takaturn Yield Facet
+/// @author Maikel Ordaz
+/// @notice Used to operate the yield generation feature
+/// @dev v3.0 (Diamond)
 contract YGFacetZaynFi is IYGFacetZaynFi {
     event OnYGOptInToggled(uint indexed termId, address indexed user, bool indexed optedIn); // Emits when a user succesfully toggles yield generation
     event OnYieldClaimed(

@@ -14,7 +14,7 @@ import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 
-/// @title Takaturn Collateral
+/// @title Takaturn Collateral Facet
 /// @author Aisha El Allam
 /// @notice This is used to operate the Takaturn collateral
 /// @dev v3.0 (Diamond)

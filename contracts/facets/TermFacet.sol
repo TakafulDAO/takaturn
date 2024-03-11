@@ -17,7 +17,7 @@ import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
-/// @title Takaturn Term
+/// @title Takaturn Term Facet
 /// @author Mohammed Haddouti
 /// @notice This is used to create terms
 /// @dev v3.0 (Diamond)
