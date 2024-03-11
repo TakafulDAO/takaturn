@@ -246,129 +246,6 @@ contract FundFacet is IFund {
         _withdrawFund(termId, receiver);
     }
 
-    /// @param _termId term Id
-    /// @param _receiver address that will receive the money pot
-    /// @dev Revert if Fund is closed
-    /// @dev Revert if the user have not been a beneficiary
-    /// @dev Revert if the user is not a participant
-    /// @dev Revert if there is nothing to withdraw
-    /// @dev Revert if the money pot is frozen
-    function _withdrawFund(uint _termId, address _receiver) internal {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[_termId];
-        // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
-        // any of the past cycles.
-
-        bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
-
-        require(
-            fund.currentState == LibFundStorage.FundStates.FundClosed ||
-                fund.isBeneficiary[msg.sender] ||
-                expelledBeforeBeneficiary,
-            "The caller must be a participant"
-        );
-
-        bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
-        bool hasFrozenPool = fund.beneficiariesFrozenPool[msg.sender];
-        bool hasCollateralPool = collateral.collateralPaymentBank[msg.sender] > 0;
-
-        require(hasFundPool || hasFrozenPool || hasCollateralPool, "Nothing to withdraw");
-
-        if (hasFrozenPool) {
-            bool freeze = _freezePot(
-                LibTermStorage._termStorage().terms[_termId],
-                fund,
-                msg.sender
-            );
-
-            if (fund.currentState != LibFundStorage.FundStates.FundClosed) {
-                require(!freeze, "Need at least 1.1RCC collateral to unfreeze your fund");
-            }
-
-            _transferPoolToBeneficiary(_termId, msg.sender, _receiver);
-        } else if (hasFundPool) {
-            _transferPoolToBeneficiary(_termId, msg.sender, _receiver);
-        }
-
-        if (hasCollateralPool) {
-            LibCollateral._withdrawReimbursement(_termId, msg.sender, _receiver);
-        }
-    }
-
-    /// @param _fund Fund object
-    /// @param _termId term Id
-    /// @param _participant address
-    /// @dev Revert if the fund is Closed or initializing
-    /// @dev Revert if the caller is not a participant, is exempted, is the beneficiary or has already paid
-    function _payContributionsChecks(
-        LibFundStorage.Fund storage _fund,
-        uint _termId,
-        address _participant
-    ) internal view returns (bool _payNextCycle) {
-        require(
-            _fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
-                _fund.currentState == LibFundStorage.FundStates.CycleOngoing,
-            "Wrong state"
-        );
-        require(_fund.isParticipant[_participant], "Not a participant");
-
-        address _beneficiary;
-        uint _cycle;
-
-        if (_fund.currentState == LibFundStorage.FundStates.AcceptingContributions) {
-            require(!_fund.paidThisCycle[_participant], "Already paid for cycle");
-
-            _cycle = _fund.currentCycle;
-            _beneficiary = IGetters(address(this)).getCurrentBeneficiary(_termId);
-            _payNextCycle = false;
-        } else {
-            require(!_fund.paidNextCycle[_participant], "Already paid for cycle");
-
-            _cycle = _fund.currentCycle + 1;
-            _beneficiary = IGetters(address(this)).getNextBeneficiary(_termId);
-            _payNextCycle = true;
-        }
-
-        require(_beneficiary != _participant, "Beneficiary doesn't pay");
-        require(
-            !_fund.isExemptedOnCycle[_cycle].exempted[_participant],
-            "Participant is exempted this cycle"
-        );
-    }
-
-    /// @notice function to pay the actual contribution for the cycle
-    /// @param _termId the id of the term
-    /// @param _payer the address that's paying
-    /// @param _participant the (participant) address that's being paid for
-    /// @param _payNextCycle whether to pay for the next cycle or not
-    function _payContribution(
-        uint _termId,
-        address _payer,
-        address _participant,
-        bool _payNextCycle
-    ) internal {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
-
-        // Get the amount and do the actual transfer
-        // This will only succeed if the sender approved this contract address beforehand
-        uint amount = term.contributionAmount * 10 ** 6; // Deducted from user's wallet, six decimals
-
-        bool success = fund.stableToken.transferFrom(_payer, address(this), amount);
-        require(success, "Contribution failed, did you approve stable token?");
-
-        // Finish up, set that the participant paid for this cycle and emit an event that it's been done
-        if (!_payNextCycle) {
-            fund.paidThisCycle[_participant] = true;
-            emit OnPaidContribution(_termId, _participant, fund.currentCycle);
-        } else {
-            fund.paidNextCycle[_participant] = true;
-            emit OnPaidContribution(_termId, _participant, fund.currentCycle + 1);
-        }
-    }
-
     /// @notice Default the participant/beneficiary by checking the mapping first, then remove them from the appropriate array
     /// @param _termId The id of the term
     /// @param _defaulter The participant to default
@@ -456,6 +333,99 @@ contract FundFacet is IFund {
         LibFund._setState(_term.termId, LibFundStorage.FundStates.CycleOngoing);
     }
 
+    /// @notice Internal function for close fund which is used by _startNewCycle & _chooseBeneficiary to cover some edge-cases
+    /// @param _termId The id of the term
+    function _closeFund(uint _termId) internal {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
+        fund.fundEnd = block.timestamp;
+        term.state = LibTermStorage.TermStates.ClosedTerm;
+        LibFund._setState(_termId, LibFundStorage.FundStates.FundClosed);
+        ICollateral(address(this)).releaseCollateral(_termId);
+    }
+
+    /// @notice function to pay the actual contribution for the cycle
+    /// @param _termId the id of the term
+    /// @param _payer the address that's paying
+    /// @param _participant the (participant) address that's being paid for
+    /// @param _payNextCycle whether to pay for the next cycle or not
+    function _payContribution(
+        uint _termId,
+        address _payer,
+        address _participant,
+        bool _payNextCycle
+    ) internal {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
+
+        // Get the amount and do the actual transfer
+        // This will only succeed if the sender approved this contract address beforehand
+        uint amount = term.contributionAmount * 10 ** 6; // Deducted from user's wallet, six decimals
+
+        bool success = fund.stableToken.transferFrom(_payer, address(this), amount);
+        require(success, "Contribution failed, did you approve stable token?");
+
+        // Finish up, set that the participant paid for this cycle and emit an event that it's been done
+        if (!_payNextCycle) {
+            fund.paidThisCycle[_participant] = true;
+            emit OnPaidContribution(_termId, _participant, fund.currentCycle);
+        } else {
+            fund.paidNextCycle[_participant] = true;
+            emit OnPaidContribution(_termId, _participant, fund.currentCycle + 1);
+        }
+    }
+
+    /// @param _termId term Id
+    /// @param _receiver address that will receive the money pot
+    /// @dev Revert if Fund is closed
+    /// @dev Revert if the user have not been a beneficiary
+    /// @dev Revert if the user is not a participant
+    /// @dev Revert if there is nothing to withdraw
+    /// @dev Revert if the money pot is frozen
+    function _withdrawFund(uint _termId, address _receiver) internal {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[_termId];
+        // To withdraw the fund, the fund must be closed or the participant must be a beneficiary on
+        // any of the past cycles.
+
+        bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
+
+        require(
+            fund.currentState == LibFundStorage.FundStates.FundClosed ||
+                fund.isBeneficiary[msg.sender] ||
+                expelledBeforeBeneficiary,
+            "The caller must be a participant"
+        );
+
+        bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
+        bool hasFrozenPool = fund.beneficiariesFrozenPool[msg.sender];
+        bool hasCollateralPool = collateral.collateralPaymentBank[msg.sender] > 0;
+
+        require(hasFundPool || hasFrozenPool || hasCollateralPool, "Nothing to withdraw");
+
+        if (hasFrozenPool) {
+            bool freeze = _freezePot(
+                LibTermStorage._termStorage().terms[_termId],
+                fund,
+                msg.sender
+            );
+
+            if (fund.currentState != LibFundStorage.FundStates.FundClosed) {
+                require(!freeze, "Need at least 1.1RCC collateral to unfreeze your fund");
+            }
+
+            _transferPoolToBeneficiary(_termId, msg.sender, _receiver);
+        } else if (hasFundPool) {
+            _transferPoolToBeneficiary(_termId, msg.sender, _receiver);
+        }
+
+        if (hasCollateralPool) {
+            LibCollateral._withdrawReimbursement(_termId, msg.sender, _receiver);
+        }
+    }
+
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
     /// @param _fund Fund object
     /// @param _term Term object
@@ -487,17 +457,6 @@ contract FundFacet is IFund {
         ++_fund.expelledParticipants;
 
         emit OnDefaulterExpelled(_term.termId, _fund.currentCycle, _expellant);
-    }
-
-    /// @notice Internal function for close fund which is used by _startNewCycle & _chooseBeneficiary to cover some edge-cases
-    /// @param _termId The id of the term
-    function _closeFund(uint _termId) internal {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
-        fund.fundEnd = block.timestamp;
-        term.state = LibTermStorage.TermStates.ClosedTerm;
-        LibFund._setState(_termId, LibFundStorage.FundStates.FundClosed);
-        ICollateral(address(this)).releaseCollateral(_termId);
     }
 
     /// @notice Internal function to transfer the pool to the beneficiary
@@ -556,5 +515,46 @@ contract FundFacet is IFund {
             }
         }
         return _fund.beneficiariesFrozenPool[_user];
+    }
+
+    /// @param _fund Fund object
+    /// @param _termId term Id
+    /// @param _participant address
+    /// @dev Revert if the fund is Closed or initializing
+    /// @dev Revert if the caller is not a participant, is exempted, is the beneficiary or has already paid
+    function _payContributionsChecks(
+        LibFundStorage.Fund storage _fund,
+        uint _termId,
+        address _participant
+    ) internal view returns (bool _payNextCycle) {
+        require(
+            _fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
+                _fund.currentState == LibFundStorage.FundStates.CycleOngoing,
+            "Wrong state"
+        );
+        require(_fund.isParticipant[_participant], "Not a participant");
+
+        address _beneficiary;
+        uint _cycle;
+
+        if (_fund.currentState == LibFundStorage.FundStates.AcceptingContributions) {
+            require(!_fund.paidThisCycle[_participant], "Already paid for cycle");
+
+            _cycle = _fund.currentCycle;
+            _beneficiary = IGetters(address(this)).getCurrentBeneficiary(_termId);
+            _payNextCycle = false;
+        } else {
+            require(!_fund.paidNextCycle[_participant], "Already paid for cycle");
+
+            _cycle = _fund.currentCycle + 1;
+            _beneficiary = IGetters(address(this)).getNextBeneficiary(_termId);
+            _payNextCycle = true;
+        }
+
+        require(_beneficiary != _participant, "Beneficiary doesn't pay");
+        require(
+            !_fund.isExemptedOnCycle[_cycle].exempted[_participant],
+            "Participant is exempted this cycle"
+        );
     }
 }
