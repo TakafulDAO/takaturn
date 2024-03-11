@@ -28,9 +28,10 @@ contract GettersFacet is IGetters {
         return (lastTermId, nextTermId);
     }
 
-    ///  @notice Gets the remaining registration period for a term
-    ///  @param termId the term id
-    ///  @return remaining contribution period
+    /// @notice Gets the remaining registration period for a term
+    /// @dev Revert if nobody have deposited
+    /// @param termId the term id
+    /// @return remaining contribution period
     function getRemainingRegistrationTime(uint termId) external view returns (uint) {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -44,8 +45,11 @@ contract GettersFacet is IGetters {
         }
     }
 
-    ///@notice Gets the remaining positions in a term and the corresponding security amount
-    ///@param termId the term id
+    /// @notice Gets the remaining positions in a term and the corresponding security amount
+    /// @param termId the term id
+    /// @dev Available positions starts at 0
+    /// @return availablePositions an array with the available positions
+    /// @return securityAmount an array with the security amount for each available position
     function getAvailablePositionsAndSecurityAmount(
         uint termId
     ) external view returns (uint[] memory, uint[] memory) {
@@ -70,6 +74,8 @@ contract GettersFacet is IGetters {
                     ++availablePositionsCounter;
                 }
             }
+
+            /// @custom:unchecked-block without risk, i can't be higher than depositors length
             unchecked {
                 ++i;
             }
@@ -96,12 +102,14 @@ contract GettersFacet is IGetters {
         return (availablePositionsArray, securityAmountArray);
     }
 
+    /// @notice Gets the term object
     /// @param termId the term id
-    /// @return the term struct
+    /// @return the term object
     function getTermSummary(uint termId) external view returns (LibTermStorage.Term memory) {
         return (LibTermStorage._termStorage().terms[termId]);
     }
 
+    /// @notice Get all the terms a participant is part of
     /// @param participant the participant address
     /// @return an array with the term ids the participant is part of
     function getAllJoinedTerms(address participant) public view returns (uint[] memory) {
@@ -110,6 +118,7 @@ contract GettersFacet is IGetters {
         return participantTermIds;
     }
 
+    /// @notice Get all the terms a participant is part of by a given state
     /// @param participant the participant address
     /// @param state the term state
     /// @return an array with the term ids the participant is part of, giving the state of the term
@@ -125,10 +134,14 @@ contract GettersFacet is IGetters {
         for (uint i; i < joinedTermsLength; ) {
             if (LibTermStorage._termStorage().terms[joinedTerms[i]].state == state) {
                 temporaryArray[termsCounter] = joinedTerms[i];
+
+                /// @custom:unchecked-block without risk, termsCounter can't be higher than joinedTerms length
                 unchecked {
                     ++termsCounter;
                 }
             }
+
+            /// @custom:unchecked-block without risk, i can't be higher than joinedTerms length
             unchecked {
                 ++i;
             }
@@ -146,6 +159,7 @@ contract GettersFacet is IGetters {
         return userTermsByState;
     }
 
+    /// @notice Get all the terms a participant was expelled from
     /// @param participant the participant address
     /// @return an array the term ids the participant is part of, giving the state of the term
     function getExpelledTerms(address participant) external view returns (uint[] memory) {
@@ -157,10 +171,14 @@ contract GettersFacet is IGetters {
         for (uint i; i < joinedTermsLength; ) {
             if (wasExpelled(joinedTerms[i], participant)) {
                 temporaryArray[termsCounter] = joinedTerms[i];
+
+                /// @custom:unchecked-block without risk, termsCounter can't be higher than joinedTerms length
                 unchecked {
                     ++termsCounter;
                 }
             }
+
+            /// @custom:unchecked-block without risk, i can't be higher than joinedTerms length
             unchecked {
                 ++i;
             }
@@ -170,6 +188,8 @@ contract GettersFacet is IGetters {
 
         for (uint i; i < termsCounter; ) {
             termsExpelled[i] = temporaryArray[i];
+
+            /// @custom:unchecked-block without risk, i can't be higher than termsCounter
             unchecked {
                 ++i;
             }
@@ -178,6 +198,7 @@ contract GettersFacet is IGetters {
         return termsExpelled;
     }
 
+    /// @notice Get the term's remaining cycles
     /// @param termId the term id
     /// @return remaining cycles
     function getRemainingCycles(uint termId) public view returns (uint) {
@@ -186,6 +207,7 @@ contract GettersFacet is IGetters {
         return (1 + fund.totalAmountOfCycles - fund.currentCycle);
     }
 
+    /// @notice Get the term's remaining time in the current cycle
     /// @param termId the term id
     /// @return remaining time in the current cycle
     function getRemainingCycleTime(uint termId) external view returns (uint) {
@@ -199,8 +221,9 @@ contract GettersFacet is IGetters {
         }
     }
 
+    /// @notice Get the term's remaining contribution amount converted from USDC to wei
     /// @param termId the term id
-    /// @return remaining cycles contribution
+    /// @return remaining cycles contribution in wei
     function getRemainingCyclesContributionWei(uint termId) public view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
@@ -237,6 +260,8 @@ contract GettersFacet is IGetters {
                 getRemainingCycles(activeTerms[i]) *
                 10 ** 6;
             neededAllowance += remainingPayments;
+
+            /// @custom:unchecked-block without risk, i can't be higher than activeTerms length
             unchecked {
                 ++i;
             }
@@ -248,6 +273,8 @@ contract GettersFacet is IGetters {
             ];
             uint totalPayments = term.contributionAmount * term.totalParticipants * 10 ** 6;
             neededAllowance += totalPayments;
+
+            /// @custom:unchecked-block without risk, i can't be higher than initializedTerms length
             unchecked {
                 ++i;
             }
@@ -258,6 +285,7 @@ contract GettersFacet is IGetters {
 
     // COLLATERAL GETTERS
 
+    /// @notice function to get the depositor collateral summary
     /// @param depositor the depositor address
     /// @param termId the collateral id
     /// @return isCollateralMember
@@ -291,6 +319,7 @@ contract GettersFacet is IGetters {
         );
     }
 
+    /// @notice function to get the collateral object
     /// @param termId the collateral id
     /// @return collateral initialized
     /// @return collateral state
@@ -317,11 +346,13 @@ contract GettersFacet is IGetters {
     }
 
     /// @notice Called to check the minimum collateral amount to deposit in wei
+    /// @param termId term id
+    /// @param depositorIndex the index the depositor wants to join
     /// @return amount the minimum collateral amount to deposit in wei
     /// @dev The minimum collateral amount is calculated based on the index on the depositors array
     /// @dev The return value should be the minimum msg.value when calling joinTerm
     /// @dev C = 1.5 Cp (Tp - I) where C = minimum collateral amount, Cp = contribution amount,
-    /// Tp = total participants, I = depositor index (starts at 0). 1.5
+    ///      Tp = total participants, I = depositor index (starts at 0). 1.5
     function minCollateralToDeposit(
         uint termId,
         uint depositorIndex
@@ -450,7 +481,7 @@ contract GettersFacet is IGetters {
         );
     }
 
-    /// @notice function to get the current beneficiary
+    /// @notice function to get the beneficiary from the current cycle
     /// @param termId the fund id
     /// @return the current beneficiary
     function getCurrentBeneficiary(uint termId) external view returns (address) {
@@ -458,7 +489,7 @@ contract GettersFacet is IGetters {
         return fund.beneficiariesOrder[fund.currentCycle - 1];
     }
 
-    /// @notice function to get the current beneficiary
+    /// @notice function to get the beneficiary from the next cycle
     /// @param termId the fund id
     /// @return the current beneficiary
     function getNextBeneficiary(uint termId) external view returns (address) {
@@ -534,6 +565,10 @@ contract GettersFacet is IGetters {
         return (fund.paidThisCycle[participant], fund.paidNextCycle[participant]);
     }
 
+    /// @notice checks if the money pot is frozen for a participant
+    /// @param _participant the user to check
+    /// @param _termId the fund id
+    /// @return _isMoneyPotFrozen true if the money pot is frozen
     function _checkFrozenMoneyPot(
         address _participant,
         uint _termId
@@ -570,6 +605,7 @@ contract GettersFacet is IGetters {
         return (onParticipantSet, onBeneficiarySet, onDefaulterSet);
     }
 
+    /// @notice checks if a participant have been a beneficiary
     /// @param termId the id of the term
     /// @param beneficiary the address of the participant to check
     /// @return true if the participant is a beneficiary
@@ -578,6 +614,7 @@ contract GettersFacet is IGetters {
         return fund.isBeneficiary[beneficiary];
     }
 
+    /// @notice checks if a participant have been expelled before being a beneficiary
     /// @param termId the id of the term
     /// @param user the address of the participant to check
     /// @return true if the participant is expelled before being a beneficiary
@@ -611,6 +648,7 @@ contract GettersFacet is IGetters {
     // CONVERSION GETTERS
 
     /// @notice Gets latest ETH / USD price
+    /// @dev Revert if there is problem with chainlink data
     /// @return uint latest price in Wei Note: 18 decimals
     function getLatestPrice() public view returns (uint) {
         LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
@@ -650,7 +688,6 @@ contract GettersFacet is IGetters {
     }
 
     /// @notice Gets the conversion rate of an amount in USD to ETH
-    /// @dev should we always deal with in Wei?
     /// @param USDAmount The amount in USD with 18 decimals
     /// @return uint converted amount in wei
     function getToCollateralConversionRate(uint USDAmount) public view returns (uint) {
@@ -660,7 +697,6 @@ contract GettersFacet is IGetters {
     }
 
     /// @notice Gets the conversion rate of an amount in ETH to USD
-    /// @dev should we always deal with in Wei?
     /// @param ethAmount The amount in ETH
     /// @return uint converted amount in USD correct to 18 decimals
     function getToStableConversionRate(uint ethAmount) external view returns (uint) {
@@ -737,6 +773,7 @@ contract GettersFacet is IGetters {
         for (uint i; i < arrayLength; ) {
             totalWithdrawnYield += yield.withdrawnYield[arrayToCheck[i]];
 
+            /// @custom:unchecked-block without risk, i can't be higher than arrayLength
             unchecked {
                 ++i;
             }
@@ -751,6 +788,7 @@ contract GettersFacet is IGetters {
         }
     }
 
+    /// @notice Gets the user yield summary
     /// @param user the depositor address
     /// @param termId the collateral id
     /// @return hasOptedIn
@@ -779,6 +817,7 @@ contract GettersFacet is IGetters {
         );
     }
 
+    /// @notice Gets the yield object
     /// @param termId the collateral id
     /// @return initialized
     /// @return startTimeStamp
@@ -807,6 +846,7 @@ contract GettersFacet is IGetters {
     }
 
     /// @notice This function is used to get the current state of the yield lock
+    /// @return The current state of the yield lock
     function getYieldLockState() external view returns (bool) {
         return LibYieldGenerationStorage._yieldLock().yieldLock;
     }
@@ -816,6 +856,7 @@ contract GettersFacet is IGetters {
     /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"
     /// @param zapAddress The name of the zap address. Example: "ZaynZap"
     /// @param vaultAddress The name of the vault address. Example: "ZaynVault"
+    /// @return The addresses of the oracles and yield providers
     function getConstants(
         string memory firstAggregator,
         string memory secondAggregator,
