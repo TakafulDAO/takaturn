@@ -23,25 +23,25 @@ contract CollateralFacet is ICollateral {
         uint indexed termId,
         LibCollateralStorage.CollateralStates indexed oldState,
         LibCollateralStorage.CollateralStates indexed newState
-    );
+    ); // Emits when the state of the collateral changes
     event OnCollateralWithdrawal(
         uint indexed termId,
         address indexed user,
         address receiver,
         uint indexed collateralAmount
-    );
+    ); // Emits when a user withdraws their collateral
     event OnReimbursementWithdrawn(
         uint indexed termId,
         address indexed participant,
         address receiver,
         uint indexed amount
-    );
-    event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount);
+    ); // Emits when a user withdraws their reimbursement
+    event OnCollateralLiquidated(uint indexed termId, address indexed user, uint indexed amount); // Emits when a user's collateral is liquidated due to default
     event OnFrozenMoneyPotLiquidated(
         uint indexed termId,
         address indexed user,
         uint indexed amount
-    );
+    ); // Emits when a user's frozen money pot is liquidated due to default
     event OnYieldClaimed(
         uint indexed termId,
         address indexed user,
@@ -56,6 +56,7 @@ contract CollateralFacet is ICollateral {
         _;
     }
 
+    /// @param termId term id
     modifier onlyTermOwner(uint termId) {
         LibTermOwnership._ensureTermOwner(termId);
         _;
@@ -63,6 +64,8 @@ contract CollateralFacet is ICollateral {
 
     /// @notice Called from Fund contract when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
+    /// @dev Revert if the caller is not the Diamond proxy
+    /// @param term Term object
     /// @param defaulters Addressess of all defaulters of the current cycle
     /// @return expellants array of addresses that were expelled
     function requestContribution(
@@ -103,6 +106,7 @@ contract CollateralFacet is ICollateral {
                     nonBeneficiaries
                 );
 
+                /// @custom:unchecked-block without risk, i can't be higher than expellants length
                 unchecked {
                     ++i;
                 }
@@ -113,6 +117,7 @@ contract CollateralFacet is ICollateral {
             for (uint i; i < nonBeneficiaryCounter; ) {
                 collateral.collateralPaymentBank[nonBeneficiaries[i]] += collateralToDistribute;
 
+                /// @custom:unchecked-block without risk, i can't be higher than nonBeneficiariesCounter
                 unchecked {
                     ++i;
                 }
@@ -122,8 +127,9 @@ contract CollateralFacet is ICollateral {
     }
 
     /// @notice Called to exempt users from needing to pay
-    /// @param _fund Fund storage
+    /// @param _fund Fund object
     /// @param _expellant The expellant in question
+    /// @param _nonBeneficiaryCounter The number of non-beneficiaries
     /// @param _nonBeneficiaries All non-beneficiaries at this time
     function _exemptNonBeneficiariesFromPaying(
         LibFundStorage.Fund storage _fund,
@@ -140,6 +146,7 @@ contract CollateralFacet is ICollateral {
                     expellantBeneficiaryCycle = i + 1;
                     break;
                 }
+                /// @custom:unchecked-block without risk, i can't be higher than beneficiariesOrder length
                 unchecked {
                     ++i;
                 }
@@ -149,6 +156,8 @@ contract CollateralFacet is ICollateral {
                 _fund.isExemptedOnCycle[expellantBeneficiaryCycle].exempted[
                     _nonBeneficiaries[i]
                 ] = true;
+
+                /// @custom:unchecked-block without risk, i can't be higher than nonBeneficiariesCounter from input
                 unchecked {
                     ++i;
                 }
@@ -163,8 +172,9 @@ contract CollateralFacet is ICollateral {
         _withdrawCollateral(termId, msg.sender);
     }
 
-    /// @notice Called by each member after during or at the end of the term to withraw collateral
+    /// @notice Called by each member after during or at the end of the term to withraw collateral to a different address than the caller
     /// @dev This follows the pull-over-push pattern.
+    /// @dev Revert if the caller is not a participant
     /// @param termId term id
     /// @param receiver receiver address
     function withdrawCollateralToAnotherAddress(uint termId, address receiver) external {
@@ -180,6 +190,7 @@ contract CollateralFacet is ICollateral {
                 break;
             }
 
+            /// @custom:unchecked-block without risk, i can't be higher than beneficiariesOrder length
             unchecked {
                 ++i;
             }
@@ -190,6 +201,9 @@ contract CollateralFacet is ICollateral {
         _withdrawCollateral(termId, receiver);
     }
 
+    /// @notice Allows to withdraw all collateral from the at the term's end
+    /// @dev Does not withdraw anything, just set the state for users to withdraw
+    /// @dev Revert if the fund is not closed
     /// @param termId term id
     function releaseCollateral(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
@@ -198,6 +212,9 @@ contract CollateralFacet is ICollateral {
     }
 
     /// @notice allow the owner to empty the Collateral after 180 days
+    /// @dev Revert if the collateral is not at releasing collateral
+    /// @dev Revert if the caller is not the term owner
+    /// @dev Revert if the time is not met
     /// @param termId The term id
     function emptyCollateralAfterEnd(
         uint termId
@@ -229,6 +246,7 @@ contract CollateralFacet is ICollateral {
 
             totalToWithdraw += (amount + paymentAmount + withdrawnYield);
 
+            /// @custom:unchecked-block without risks. i can't be higher than depositors length
             unchecked {
                 ++i;
             }
@@ -239,8 +257,8 @@ contract CollateralFacet is ICollateral {
         require(success);
     }
 
-    /// @notice Called by each member after during or at the end of the term to withraw collateral
     /// @dev This follows the pull-over-push pattern.
+    /// @dev Revert if the caller has nothing to withdraw
     /// @param _termId term id
     /// @param _receiver receiver address
     function _withdrawCollateral(uint _termId, address _receiver) internal {
@@ -303,8 +321,9 @@ contract CollateralFacet is ICollateral {
         }
     }
 
-    /// @param _collateral Collateral storage
-    /// @param _term Term storage
+    /// @param _collateral Collateral object
+    /// @param _term Term object
+    /// @param _fund Fund object
     /// @param _defaulters Defaulters array
     /// @return share The total amount of collateral to be divided among non-beneficiaries
     /// @return expellants array of addresses that were expelled
@@ -314,8 +333,6 @@ contract CollateralFacet is ICollateral {
         LibFundStorage.Fund storage _fund,
         address[] memory _defaulters
     ) internal returns (uint, address[] memory) {
-        // require(_defaulters.length > 0, "No defaulters");
-
         address[] memory expellants = new address[](_defaulters.length);
         uint expellantsCounter;
         uint distributedCollateral;
@@ -401,11 +418,13 @@ contract CollateralFacet is ICollateral {
                 expellants[expellantsCounter] = _defaulters[i];
                 _fund.cycleOfExpulsion[expellants[expellantsCounter]] = _fund.currentCycle;
 
+                /// @custom:unchecked-block without risks, expellantsCounter can't be higher than _defaulters length from input
                 unchecked {
                     ++expellantsCounter;
                 }
             }
 
+            /// @custom:unchecked-block without risks, i can't be higher than _defaulters length from input
             unchecked {
                 ++i;
             }
@@ -415,6 +434,13 @@ contract CollateralFacet is ICollateral {
     }
 
     /// @notice called internally to pay defaulter contribution
+    /// @param _collateral Collateral object
+    /// @param _fund Fund object
+    /// @param _term Term object
+    /// @param _defaulter The defaulter in question
+    /// @param _contributionAmountWei The contribution amount converted from USDC to wei
+    /// @param _defaulterState Defaulter state object
+    /// @return distributedCollateral The total amount of collateral to be divided among non-beneficiaries
     function _payDefaulterContribution(
         LibCollateralStorage.Collateral storage _collateral,
         LibFundStorage.Fund storage _fund,
@@ -504,8 +530,8 @@ contract CollateralFacet is ICollateral {
         }
     }
 
-    /// @param _collateral Collateral storage
-    /// @param _fund Fund storage
+    /// @param _collateral Collateral object
+    /// @param _fund Fund object
     /// @return nonBeneficiaryCounter The total amount of collateral to be divided among non-beneficiaries
     /// @return nonBeneficiaries array of addresses that were expelled
     function _findNonBeneficiaries(
@@ -527,6 +553,8 @@ contract CollateralFacet is ICollateral {
                 nonBeneficiaries[nonBeneficiaryCounter] = currentDepositor;
                 nonBeneficiaryCounter++;
             }
+
+            /// @custom:unchecked-block without risks, i can't be higher than depositors length
             unchecked {
                 ++i;
             }
@@ -535,6 +563,11 @@ contract CollateralFacet is ICollateral {
         return (nonBeneficiaryCounter, nonBeneficiaries);
     }
 
+    /// @param _termId term id
+    /// @param _user user address
+    /// @param _amount amount to withdraw from yield
+    /// @param _yieldStorage YieldGeneration object
+    /// @return withdrawnYield The total amount of yield withdrawn
     function _withdrawFromYield(
         uint _termId,
         address _user,
@@ -542,7 +575,8 @@ contract CollateralFacet is ICollateral {
         LibYieldGenerationStorage.YieldGeneration storage _yieldStorage
     ) internal returns (uint withdrawnYield) {
         if (_yieldStorage.hasOptedIn[_user]) {
-            uint availableWithdraw = _yieldStorage.depositedCollateralByUser[_user] - _yieldStorage.withdrawnCollateral[_user];
+            uint availableWithdraw = _yieldStorage.depositedCollateralByUser[_user] -
+                _yieldStorage.withdrawnCollateral[_user];
             if (availableWithdraw > _amount) {
                 availableWithdraw = _amount;
             }
@@ -552,6 +586,10 @@ contract CollateralFacet is ICollateral {
         }
     }
 
+    /// @notice Used on modifier
+    /// @param _termId term Id
+    /// @param _state Collateral state
+    /// @dev revert if the state is invalid
     function _atState(uint _termId, LibCollateralStorage.CollateralStates _state) internal view {
         LibCollateralStorage.CollateralStates state = LibCollateralStorage
             ._collateralStorage()
