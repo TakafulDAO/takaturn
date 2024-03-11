@@ -12,11 +12,17 @@ contract DiamondInit {
         _;
     }
 
+    /// @notice Initialize the contract
+    /// @param _aggregatorAddressEthUsd Chainlink aggregator address for ETH/USD
+    /// @param _aggregatorAddressUsdUsdc Chainlink aggregator address for USDC/USD
+    /// @param _zapAddress Zaynfi Zap address
+    /// @param _vaultAddress Zaynfi Vault address
+    /// @param _yieldLock Yield lock
     function init(
         address _aggregatorAddressEthUsd,
         address _aggregatorAddressUsdUsdc,
-        address _zapAddress, // Zaynfi Zap address
-        address _vaultAddress, // Zaynfi Vault address
+        address _zapAddress,
+        address _vaultAddress,
         bool _yieldLock
     ) external onlyOwner {
         LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
