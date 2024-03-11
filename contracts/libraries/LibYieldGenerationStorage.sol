@@ -24,16 +24,16 @@ library LibYieldGenerationStorage {
         bool initialized;
         YGProviders provider;
         mapping(string => address) providerAddresses;
-        uint startTimeStamp;
-        uint totalDeposit;
-        uint currentTotalDeposit;
+        uint startTimeStamp; // In seconds
+        uint totalDeposit; // In wei
+        uint currentTotalDeposit; // In wei
         uint totalShares;
         address[] yieldUsers;
         mapping(address => bool) hasOptedIn;
-        mapping(address => uint256) withdrawnYield;
-        mapping(address => uint256) withdrawnCollateral;
-        mapping(address => uint256) availableYield;
-        mapping(address => uint256) depositedCollateralByUser;
+        mapping(address => uint256) withdrawnYield; // In wei
+        mapping(address => uint256) withdrawnCollateral; // In wei
+        mapping(address => uint256) availableYield; // In wei
+        mapping(address => uint256) depositedCollateralByUser; // In wei
     }
 
     struct YieldStorage {
