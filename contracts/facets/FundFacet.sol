@@ -47,13 +47,13 @@ contract FundFacet is IFund {
     ); // Emits when a defaulter can't compensate with the collateral
     event OnAutoPayToggled(uint indexed termId, address indexed participant, bool indexed enabled); // Emits when a participant succesfully toggles autopay
 
+    /// @param termId term Id
     modifier onlyTermOwner(uint termId) {
         LibTermOwnership._ensureTermOwner(termId);
         _;
     }
 
-    /// Insufficient balance for transfer. Needed `required` but only
-    /// `available` available.
+    /// @dev Insufficient balance for transfer. Needed `required` but only `available` available.
     /// @param available balance available.
     /// @param required requested amount to transfer.
     error InsufficientBalance(uint available, uint required);
@@ -65,6 +65,8 @@ contract FundFacet is IFund {
     }
 
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
+    /// @dev Revert if still time to contribute
+    /// @dev Revert if Fund is not accepting contributions
     /// @param termId the id of the term
     function closeFundingPeriod(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
@@ -106,6 +108,8 @@ contract FundFacet is IFund {
                         EnumerableSet.add(fund._participants, p);
                     }
                 }
+
+                /// @custom:unchecked-block without risks, i can't be higher than beneficiariesOrder length
                 unchecked {
                     ++i;
                 }
@@ -136,6 +140,8 @@ contract FundFacet is IFund {
                     _defaultParticipant(termId, p);
                 }
             }
+
+            /// @custom:unchecked-block without risks, i can't be higher than beneficiariesOrder length
             unchecked {
                 ++i;
             }
@@ -153,6 +159,8 @@ contract FundFacet is IFund {
     /// @notice allow the owner to empty the fund if there's any excess fund left after 180 days,
     ///         this with the assumption that beneficiaries can't claim it themselves due to losing their keys for example,
     ///         and prevent the fund to be stuck in limbo
+    /// @dev Revert if the caller is not the term owner
+    /// @dev Revert if the time is not met (180 days)
     /// @param termId the id of the term
     function emptyFundAfterEnd(uint termId) external onlyTermOwner(termId) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
@@ -170,6 +178,8 @@ contract FundFacet is IFund {
                 balance += fund.beneficiariesPool[fund.beneficiariesOrder[i]];
                 fund.beneficiariesPool[fund.beneficiariesOrder[i]] = 0;
             }
+
+            /// @custom:unchecked-block without risks, i can't be higher than beneficiariesOrder length
             unchecked {
                 ++i;
             }
@@ -182,6 +192,10 @@ contract FundFacet is IFund {
     }
 
     /// @notice function to enable/disable autopay
+    /// @dev Revert if the user is not a collateral member
+    /// @dev Revert if the Fund is closed
+    /// @dev It needs the user to have enough tokens and allow the contract as spender
+    /// @dev Can be set before the Fund starts
     /// @param termId the id of the term
     function toggleAutoPay(uint termId) external {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -232,6 +246,13 @@ contract FundFacet is IFund {
         _withdrawFund(termId, receiver);
     }
 
+    /// @param _termId term Id
+    /// @param _receiver address that will receive the money pot
+    /// @dev Revert if Fund is closed
+    /// @dev Revert if the user have not been a beneficiary
+    /// @dev Revert if the user is not a participant
+    /// @dev Revert if there is nothing to withdraw
+    /// @dev Revert if the money pot is frozen
     function _withdrawFund(uint _termId, address _receiver) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -276,6 +297,11 @@ contract FundFacet is IFund {
         }
     }
 
+    /// @param _fund Fund object
+    /// @param _termId term Id
+    /// @param _participant address
+    /// @dev Revert if the fund is Closed or initializing
+    /// @dev Revert if the caller is not a participant, is exempted, is the beneficiary or has already paid
     function _payContributionsChecks(
         LibFundStorage.Fund storage _fund,
         uint _termId,
@@ -316,12 +342,12 @@ contract FundFacet is IFund {
     /// @param _termId the id of the term
     /// @param _payer the address that's paying
     /// @param _participant the (participant) address that's being paid for
-    /// @param payNextCycle whether to pay for the next cycle or not
+    /// @param _payNextCycle whether to pay for the next cycle or not
     function _payContribution(
         uint _termId,
         address _payer,
         address _participant,
-        bool payNextCycle
+        bool _payNextCycle
     ) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
@@ -334,7 +360,7 @@ contract FundFacet is IFund {
         require(success, "Contribution failed, did you approve stable token?");
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
-        if (!payNextCycle) {
+        if (!_payNextCycle) {
             fund.paidThisCycle[_participant] = true;
             emit OnPaidContribution(_termId, _participant, fund.currentCycle);
         } else {
@@ -364,6 +390,8 @@ contract FundFacet is IFund {
 
     /// @notice The beneficiary will be awarded here based on the beneficiariesOrder array.
     /// @notice It will loop through the array and choose the first in line to be eligible to be beneficiary.
+    /// @param _fund Fund object
+    /// @param _term Term object
     function _awardBeneficiary(
         LibFundStorage.Fund storage _fund,
         LibTermStorage.Term storage _term
@@ -380,12 +408,15 @@ contract FundFacet is IFund {
             uint expellantsLength = expellants.length;
             for (uint i; i < expellantsLength; ) {
                 if (expellants[i] == address(0) || expellants[i] == beneficiary) {
+                    /// @custom:unchecked-block without risks, i can't be higher than expellants length
                     unchecked {
                         ++i;
                     }
                     continue;
                 }
                 _expelDefaulter(_fund, _term, expellants[i]);
+
+                /// @custom:unchecked-block without risks, i can't be higher than expellants length
                 unchecked {
                     ++i;
                 }
@@ -409,6 +440,8 @@ contract FundFacet is IFund {
             if (_fund.paidThisCycle[participants[i]]) {
                 paidCount++;
             }
+
+            /// @custom:unchecked-block without risks, i can't be higher than beneficiariesOrder length
             unchecked {
                 ++i;
             }
@@ -424,6 +457,8 @@ contract FundFacet is IFund {
     }
 
     /// @notice called internally to expel a participant. It should not be possible to expel non-defaulters, so those arrays are not checked.
+    /// @param _fund Fund object
+    /// @param _term Term object
     /// @param _expellant The address of the defaulter that will be expelled
     function _expelDefaulter(
         LibFundStorage.Fund storage _fund,
@@ -466,8 +501,10 @@ contract FundFacet is IFund {
     }
 
     /// @notice Internal function to transfer the pool to the beneficiary
+    /// @dev Revert if the contrat does not have enough funds
     /// @param _termId The id of the term
-    /// @param _receiver The address of the beneficiary
+    /// @param _participant address
+    /// @param _receiver address
     function _transferPoolToBeneficiary(
         uint _termId,
         address _participant,
@@ -489,6 +526,10 @@ contract FundFacet is IFund {
     }
 
     /// @notice Internal function to freeze the pot for the beneficiary
+    /// @dev Users remaining collatera must be at least 1.1 times remaining cycles contributions
+    /// @param _term Term object
+    /// @param _fund Fund object
+    /// @param _user address
     function _freezePot(
         LibTermStorage.Term memory _term,
         LibFundStorage.Fund storage _fund,
