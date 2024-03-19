@@ -3,7 +3,7 @@ const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const { impersonateAccount } = require("../../utils/_helpers")
 const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
-const { updateFacetsBytecode } = require("../utils/update-facets-bytecode")
+const { upgradeDiamond } = require("../utils/upgrade-diamond")
 
 let takaturnDiamond
 
@@ -42,7 +42,7 @@ async function checkYieldMappings(termId, userAddress) {
 
               takaturnParticipant = takaturnDiamond.connect(participantSigner)
 
-              await updateFacetsBytecode()
+              await upgradeDiamond()
           })
 
           it("Correct yield calculation", async function () {
