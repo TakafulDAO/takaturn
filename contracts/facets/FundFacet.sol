@@ -65,7 +65,7 @@ contract FundFacet is IFund {
     }
 
     /// @notice Must be called at the end of the contribution period after the time has passed by the owner
-    /// @dev Revert if still time to contribute
+    /// @dev Revert if there is still time to contribute
     /// @dev Revert if Fund is not accepting contributions
     /// @param termId the id of the term
     function closeFundingPeriod(uint termId) external {
@@ -460,7 +460,7 @@ contract FundFacet is IFund {
     }
 
     /// @notice Internal function to transfer the pool to the beneficiary
-    /// @dev Revert if the contrat does not have enough funds
+    /// @dev Revert if the contract does not have enough funds
     /// @param _termId The id of the term
     /// @param _participant address
     /// @param _receiver address
@@ -485,7 +485,7 @@ contract FundFacet is IFund {
     }
 
     /// @notice Internal function to freeze the pot for the beneficiary
-    /// @dev Users remaining collatera must be at least 1.1 times remaining cycles contributions
+    /// @dev Users remaining collateral must be at least 1.1 times remaining cycles contributions
     /// @param _term Term object
     /// @param _fund Fund object
     /// @param _user address

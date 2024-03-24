@@ -41,7 +41,7 @@ contract CollateralFacet is ICollateral {
         uint indexed termId,
         address indexed user,
         uint indexed amount
-    ); // Emits when a user's frozen money pot is liquidated due to default
+    ); // Emits when a user's frozen money pot is liquidated due to a default
     event OnYieldClaimed(
         uint indexed termId,
         address indexed user,
@@ -65,7 +65,7 @@ contract CollateralFacet is ICollateral {
         _;
     }
 
-    /// @notice Called from Fund contract when someone defaults
+    /// @notice Called from Fund facet when someone defaults
     /// @dev Check EnumerableMap (openzeppelin) for arrays that are being accessed from Fund contract
     /// @dev Revert if the caller is not the Diamond proxy
     /// @param term Term object
@@ -167,7 +167,7 @@ contract CollateralFacet is ICollateral {
 
     /// @notice Allows to withdraw all collateral from the at the term's end
     /// @dev Does not withdraw anything, just set the state for users to withdraw
-    /// @dev Revert if the fund is not closed
+    /// @dev Only succeeds when fund is closed or term is expired
     /// @param termId term id
     function releaseCollateral(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
@@ -397,7 +397,8 @@ contract CollateralFacet is ICollateral {
 
         bool success;
         bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
-        // Withdraw all the user has.
+
+        // Withdraw all the user has
         if (
             collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral ||
             expelledBeforeBeneficiary
@@ -405,6 +406,7 @@ contract CollateralFacet is ICollateral {
             // First case: The collateral is released or the user was expelled before being a beneficiary
             collateral.collateralMembersBank[msg.sender] = 0;
 
+            // Yield generation has not started during the join period, so we can skip this step if the term expired
             if (term.state != LibTermStorage.TermStates.ExpiredTerm) {
                 _withdrawFromYield(_termId, msg.sender, allowedWithdrawal, yield);
             }

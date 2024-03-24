@@ -225,7 +225,7 @@ contract GettersFacet is IGetters {
     }
 
     /// @notice Gets the remaining registration period for a term
-    /// @dev Revert if nobody have deposited
+    /// @dev Revert if nobody has deposited
     /// @param termId the term id
     /// @return remaining contribution period
     function getRemainingRegistrationTime(uint termId) external view returns (uint) {
