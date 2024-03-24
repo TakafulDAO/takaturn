@@ -411,11 +411,11 @@ contract CollateralFacet is ICollateral {
                 _withdrawFromYield(_termId, msg.sender, allowedWithdrawal, yield);
             }
 
-            (success, ) = payable(_receiver).call{value: allowedWithdrawal}("");
-
             if (collateral.state == LibCollateralStorage.CollateralStates.ReleasingCollateral) {
                 --collateral.counterMembers;
             }
+
+            (success, ) = payable(_receiver).call{value: allowedWithdrawal}("");
 
             emit OnCollateralWithdrawal(_termId, msg.sender, _receiver, allowedWithdrawal);
         }
