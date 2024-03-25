@@ -179,6 +179,10 @@ contract GettersFacet is IGetters {
             ._collateralStorage()
             .collaterals[termId];
 
+        if (collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral) {
+            return (new uint[](0), new uint[](0));
+        }
+
         uint depositorsLength = collateral.depositors.length;
         uint[] memory availablePositions = new uint[](depositorsLength);
 
@@ -233,8 +237,10 @@ contract GettersFacet is IGetters {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        require(collateral.firstDepositTime != 0, "Nobody has deposited yet");
-        if (block.timestamp >= collateral.firstDepositTime + term.registrationPeriod) {
+        if (
+            collateral.firstDepositTime == 0 ||
+            block.timestamp >= collateral.firstDepositTime + term.registrationPeriod
+        ) {
             return 0;
         } else {
             return collateral.firstDepositTime + term.registrationPeriod - block.timestamp;
