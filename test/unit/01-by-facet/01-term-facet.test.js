@@ -323,7 +323,7 @@ const { hour } = require("../../../utils/units")
                   // Join
                   await takaturnDiamond
                       .connect(participant_1)
-                      ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
+                      ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, position, {
                           value: entrance,
                       })
 
@@ -372,21 +372,21 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_1)
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
+                          ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, position, {
                               value: positionsAndDeposits[1][positionIndex + 1],
                           })
                   ).to.be.revertedWith("Eth payment too low")
 
                   await takaturnDiamond
                       .connect(participant_1)
-                      ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
+                      ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, position, {
                           value: entrance,
                       })
 
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
+                          ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, position, {
                               value: entrance,
                           })
                   ).to.be.revertedWith("Position already taken")
@@ -409,7 +409,7 @@ const { hour } = require("../../../utils/units")
 
                       const joinTx = takaturnDiamond
                           .connect(accounts[i + 1])
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, i, {
+                          ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, i, {
                               value: entrance,
                           })
 
@@ -458,9 +458,14 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, totalParticipants, {
-                              value: entrance,
-                          })
+                          ["joinTermOnPosition(uint256,bool,uint256)"](
+                              termId,
+                              false,
+                              totalParticipants,
+                              {
+                                  value: entrance,
+                              }
+                          )
                   ).to.be.revertedWith("Invalid position")
               })
 
@@ -482,7 +487,7 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, 0, {
+                          ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, 0, {
                               value: entrance,
                           })
                   ).to.be.revertedWith("Position already taken")
