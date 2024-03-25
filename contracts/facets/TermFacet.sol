@@ -27,9 +27,15 @@ contract TermFacet is ITerm {
         uint indexed termId,
         address payer,
         address indexed user,
+        uint amount
+    ); // TODO: To be deprecated, here to ensure backwards compatibility with the old event
+    event OnCollateralDepositedNext(
+        uint indexed termId,
+        address payer,
+        address indexed user,
         uint amount,
         uint indexed position
-    ); // Emits when a user joins a term
+    ); // Emits when a user joins a term // Todo: To be renamed to OnCollateralDeposited
     event OnTermFilled(uint indexed termId); // Emits when all the spots are filled
     event OnTermExpired(uint indexed termId); // Emits when a term expires
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
@@ -72,7 +78,8 @@ contract TermFacet is ITerm {
     /// @param termId The id of the term
     /// @param optYield Whether the participant wants to opt in for yield generation
     /// @param position The position in the term
-    function joinTerm(uint termId, bool optYield, uint position) external payable {
+    // TODO: To be renamed to joinTerm, this name only to ensure backwards compatibility
+    function joinTermNext(uint termId, bool optYield, uint position) external payable {
         _joinTermByPosition(termId, optYield, position, msg.sender);
     }
 
@@ -262,7 +269,9 @@ contract TermFacet is ITerm {
             yield.hasOptedIn[_newParticipant] = false;
         }
 
-        emit OnCollateralDeposited(_termId, msg.sender, _newParticipant, msg.value, _position);
+        // TODO: Emit both events to ensure backwards compatibility
+        emit OnCollateralDeposited(_termId, msg.sender, _newParticipant, msg.value);
+        emit OnCollateralDepositedNext(_termId, msg.sender, _newParticipant, msg.value, _position);
 
         if (collateral.counterMembers == 1) {
             collateral.firstDepositTime = block.timestamp;

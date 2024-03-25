@@ -191,7 +191,7 @@ const { hour } = require("../../../utils/units")
                           takaturnDiamond
                               .connect(participant_1)
                               ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
-                      ).to.emit(takaturnDiamond, "OnCollateralDeposited")
+                      ).to.emit(takaturnDiamond, "OnCollateralDepositedNext")
 
                       const participantSummary =
                           await takaturnDiamond.getDepositorCollateralSummary(participant_1, termId)
@@ -323,7 +323,7 @@ const { hour } = require("../../../utils/units")
                   // Join
                   await takaturnDiamond
                       .connect(participant_1)
-                      ["joinTerm(uint256,bool,uint256)"](termId, false, position, {
+                      ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
                           value: entrance,
                       })
 
@@ -372,21 +372,21 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_1)
-                          ["joinTerm(uint256,bool,uint256)"](termId, false, position, {
+                          ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
                               value: positionsAndDeposits[1][positionIndex + 1],
                           })
                   ).to.be.revertedWith("Eth payment too low")
 
                   await takaturnDiamond
                       .connect(participant_1)
-                      ["joinTerm(uint256,bool,uint256)"](termId, false, position, {
+                      ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
                           value: entrance,
                       })
 
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          ["joinTerm(uint256,bool,uint256)"](termId, false, position, {
+                          ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
                               value: entrance,
                           })
                   ).to.be.revertedWith("Position already taken")
@@ -409,14 +409,14 @@ const { hour } = require("../../../utils/units")
 
                       const joinTx = takaturnDiamond
                           .connect(accounts[i + 1])
-                          ["joinTerm(uint256,bool,uint256)"](termId, false, i, {
+                          ["joinTermNext(uint256,bool,uint256)"](termId, false, i, {
                               value: entrance,
                           })
 
                       if (i === totalParticipants - 1) {
                           await Promise.all([
                               expect(joinTx)
-                                  .to.emit(takaturnDiamond, "OnCollateralDeposited")
+                                  .to.emit(takaturnDiamond, "OnCollateralDepositedNext")
                                   .withArgs(
                                       termId,
                                       accounts[i + 1].address,
@@ -431,7 +431,7 @@ const { hour } = require("../../../utils/units")
                       } else {
                           await Promise.all([
                               expect(joinTx)
-                                  .to.emit(takaturnDiamond, "OnCollateralDeposited")
+                                  .to.emit(takaturnDiamond, "OnCollateralDepositedNext")
                                   .withArgs(
                                       termId,
                                       accounts[i + 1].address,
@@ -458,7 +458,7 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          ["joinTerm(uint256,bool,uint256)"](termId, false, totalParticipants, {
+                          ["joinTermNext(uint256,bool,uint256)"](termId, false, totalParticipants, {
                               value: entrance,
                           })
                   ).to.be.revertedWith("Invalid position")
@@ -482,7 +482,7 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          ["joinTerm(uint256,bool,uint256)"](termId, false, 0, {
+                          ["joinTermNext(uint256,bool,uint256)"](termId, false, 0, {
                               value: entrance,
                           })
                   ).to.be.revertedWith("Position already taken")
@@ -570,7 +570,7 @@ const { hour } = require("../../../utils/units")
                               participant_1,
                               { value: entrance }
                           )
-                      ).to.emit(takaturnDiamond, "OnCollateralDeposited")
+                      ).to.emit(takaturnDiamond, "OnCollateralDepositedNext")
 
                       const participantSummary =
                           await takaturnDiamond.getDepositorCollateralSummary(participant_1, termId)
@@ -823,7 +823,7 @@ const { hour } = require("../../../utils/units")
                       if (i === totalParticipants - 1) {
                           await Promise.all([
                               expect(joinTx)
-                                  .to.emit(takaturnDiamond, "OnCollateralDeposited")
+                                  .to.emit(takaturnDiamond, "OnCollateralDepositedNext")
                                   .withArgs(
                                       termId,
                                       deployer.address,
@@ -838,7 +838,7 @@ const { hour } = require("../../../utils/units")
                       } else {
                           await Promise.all([
                               expect(joinTx)
-                                  .to.emit(takaturnDiamond, "OnCollateralDeposited")
+                                  .to.emit(takaturnDiamond, "OnCollateralDepositedNext")
                                   .withArgs(
                                       termId,
                                       deployer.address,
