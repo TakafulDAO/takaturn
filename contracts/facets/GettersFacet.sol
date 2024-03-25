@@ -71,6 +71,99 @@ contract GettersFacet is IGetters {
         latestPrice = getLatestPrice();
     }
 
+    /// @notice This function is used as a helper for front-end implementation
+    /// @param user the depositor address
+    /// @param termId the collateral id
+    /// @return boolResults an array of booleans that contains the following values:
+    ///                     user is collateral member, user is participant, user have been
+    ///                     beneficiary, user paid current cycle, user paid next cycle, user
+    ///                     enabled auto pay, user money pot is frozen, user has opted in for
+    ///                     yield generation
+    /// @return uintResults an array of uints that contains the following values:
+    ///                     current users locked collateral balance in wei, current users
+    ///                     unlocked collateral balance in wei, initial users deposit in wei,
+    ///                     expulsion limit, beneficiaries pool, withdrawn yield, withdrawn
+    ///                     collateral from yield, available yield, deposited collateral by
+    ///                     user on yield, amount of yield distributed
+    function getUserSummary(
+        address user,
+        uint termId
+    ) external view returns (bool[8] memory boolResults, uint[10] memory uintResults) {
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        uint limit;
+        if (!fund.isBeneficiary[user]) {
+            limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
+        } else {
+            limit = getRemainingCyclesContributionWei(termId);
+        }
+        bool isMoneyPotFrozen = _checkFrozenMoneyPot(user, termId);
+
+        boolResults = [
+            collateral.isCollateralMember[user],
+            fund.isParticipant[user],
+            fund.isBeneficiary[user],
+            fund.paidThisCycle[user],
+            fund.paidNextCycle[user],
+            fund.autoPayEnabled[user],
+            isMoneyPotFrozen,
+            yield.hasOptedIn[user]
+        ];
+
+        if (collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral) {
+            uintResults = [
+                collateral.collateralMembersBank[user],
+                collateral.collateralPaymentBank[user],
+                collateral.collateralDepositByUser[user],
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ];
+        } else if (
+            !yield.hasOptedIn[user] &&
+            collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral
+        ) {
+            uintResults = [
+                collateral.collateralMembersBank[user],
+                collateral.collateralPaymentBank[user],
+                collateral.collateralDepositByUser[user],
+                limit,
+                fund.beneficiariesPool[user],
+                0,
+                0,
+                0,
+                0,
+                0
+            ];
+        } else {
+            uint yieldDistributed = LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
+
+            uintResults = [
+                collateral.collateralMembersBank[user],
+                collateral.collateralPaymentBank[user],
+                collateral.collateralDepositByUser[user],
+                limit,
+                fund.beneficiariesPool[user],
+                yield.withdrawnYield[user],
+                yield.withdrawnCollateral[user],
+                yield.availableYield[user],
+                yield.depositedCollateralByUser[user],
+                yieldDistributed
+            ];
+        }
+    }
+
     /// @notice This function return the current constant values for oracles and yield providers
     /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
     /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"

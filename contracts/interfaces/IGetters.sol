@@ -28,6 +28,25 @@ interface IGetters {
         uint termId
     ) external view returns (uint, uint, uint, uint, uint, uint);
 
+    /// @notice This function is used as a helper for front-end implementation
+    /// @param user the depositor address
+    /// @param termId the collateral id
+    /// @return boolResults an array of booleans that contains the following values:
+    ///                     user is collateral member, user is participant, user have been
+    ///                     beneficiary, user paid current cycle, user paid next cycle, user
+    ///                     enabled auto pay, user money pot is frozen, user has opted in for
+    ///                     yield generation
+    /// @return uintResults an array of uints that contains the following values:
+    ///                     current users locked collateral balance in wei, current users
+    ///                     unlocked collateral balance in wei, initial users deposit in wei,
+    ///                     expulsion limit, beneficiaries pool, withdrawn yield, withdrawn
+    ///                     collateral from yield, available yield, deposited collateral by
+    ///                     user on yield, amount of yield distributed
+    function getUserSummary(
+        address user,
+        uint termId
+    ) external view returns (bool[8] memory boolResults, uint[10] memory uintResults);
+
     /// @notice This function return the current constant values for oracles and yield providers
     /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
     /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"
