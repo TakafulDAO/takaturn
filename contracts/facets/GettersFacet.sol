@@ -216,122 +216,6 @@ contract GettersFacet is IGetters {
             elaspedTime;
     }
 
-    /// @notice Gets the remaining positions in a term and the corresponding security amount
-    /// @param termId the term id
-    /// @dev Available positions starts at 0
-    /// @return availablePositions an array with the available positions
-    /// @return securityAmount an array with the security amount for each available position
-    function getAvailablePositionsAndSecurityAmount(
-        uint termId
-    ) public view returns (uint[] memory, uint[] memory) {
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[termId];
-
-        if (collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral) {
-            return (new uint[](0), new uint[](0));
-        }
-
-        uint depositorsLength = collateral.depositors.length;
-        uint[] memory availablePositions = new uint[](depositorsLength);
-
-        uint availablePositionsCounter;
-
-        // Loop through the depositors array and get the available positions
-        for (uint i; i < depositorsLength; ) {
-            // The position is available if the depositor is address zero
-            if (collateral.depositors[i] == address(0)) {
-                // Add the position to the available positions array
-                availablePositions[availablePositionsCounter] = i;
-
-                // And increment the available positions counter
-                unchecked {
-                    ++availablePositionsCounter;
-                }
-            }
-
-            /// @custom:unchecked-block without risk, i can't be higher than depositors length
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Create the arrays to return
-        // The available positions array will have the length of the available positions counter
-        // The security amount array will have the same length
-        uint[] memory availablePositionsArray = new uint[](availablePositionsCounter);
-        uint[] memory securityAmountArray = new uint[](availablePositionsCounter);
-
-        // Loop through the available positions counter and fill the arrays
-        for (uint i; i < availablePositionsCounter; ) {
-            availablePositionsArray[i] = availablePositions[i];
-            // Get the security amount for the position
-            securityAmountArray[i] = minCollateralToDeposit(termId, availablePositions[i]);
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Return the arrays, the available positions array and the security amount array are coupled
-        // availablePositionsArray[0] will have the securityAmountArray[0] and so on
-        return (availablePositionsArray, securityAmountArray);
-    }
-
-    /// @notice Gets the remaining registration period for a term
-    /// @dev Revert if nobody has deposited
-    /// @param termId the term id
-    /// @return remaining contribution period
-    function getRemainingRegistrationTime(uint termId) public view returns (uint) {
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[termId];
-        if (
-            collateral.firstDepositTime == 0 ||
-            block.timestamp >= collateral.firstDepositTime + term.registrationPeriod
-        ) {
-            return 0;
-        } else {
-            return collateral.firstDepositTime + term.registrationPeriod - block.timestamp;
-        }
-    }
-
-    /// @notice returns the time left to contribute for this cycle
-    /// @param termId the fund id
-    /// @return the time left to contribute
-    function getRemainingContributionTime(uint termId) public view returns (uint) {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
-        if (fund.currentState != LibFundStorage.FundStates.AcceptingContributions) {
-            return 0;
-        }
-
-        // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
-        uint contributionEndTimestamp = term.cycleTime *
-            (fund.currentCycle - 1) +
-            fund.fundStart +
-            term.contributionPeriod;
-        if (block.timestamp > contributionEndTimestamp) {
-            return 0;
-        } else {
-            return contributionEndTimestamp - block.timestamp;
-        }
-    }
-
-    /// @notice Get the term's remaining time in the current cycle
-    /// @param termId the term id
-    /// @return remaining time in the current cycle
-    function getRemainingCycleTime(uint termId) public view returns (uint) {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
-        uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
-        if (block.timestamp > cycleEndTimestamp) {
-            return 0;
-        } else {
-            return cycleEndTimestamp - block.timestamp;
-        }
-    }
-
     /// @notice a function to get the needed allowance for every active term the user is part of
     /// @param user the user address
     /// @return the needed allowance
@@ -897,6 +781,122 @@ contract GettersFacet is IGetters {
         }
 
         return userTermsByState;
+    }
+
+    /// @notice Gets the remaining positions in a term and the corresponding security amount
+    /// @param termId the term id
+    /// @dev Available positions starts at 0
+    /// @return availablePositions an array with the available positions
+    /// @return securityAmount an array with the security amount for each available position
+    function getAvailablePositionsAndSecurityAmount(
+        uint termId
+    ) public view returns (uint[] memory, uint[] memory) {
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+
+        if (collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral) {
+            return (new uint[](0), new uint[](0));
+        }
+
+        uint depositorsLength = collateral.depositors.length;
+        uint[] memory availablePositions = new uint[](depositorsLength);
+
+        uint availablePositionsCounter;
+
+        // Loop through the depositors array and get the available positions
+        for (uint i; i < depositorsLength; ) {
+            // The position is available if the depositor is address zero
+            if (collateral.depositors[i] == address(0)) {
+                // Add the position to the available positions array
+                availablePositions[availablePositionsCounter] = i;
+
+                // And increment the available positions counter
+                unchecked {
+                    ++availablePositionsCounter;
+                }
+            }
+
+            /// @custom:unchecked-block without risk, i can't be higher than depositors length
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Create the arrays to return
+        // The available positions array will have the length of the available positions counter
+        // The security amount array will have the same length
+        uint[] memory availablePositionsArray = new uint[](availablePositionsCounter);
+        uint[] memory securityAmountArray = new uint[](availablePositionsCounter);
+
+        // Loop through the available positions counter and fill the arrays
+        for (uint i; i < availablePositionsCounter; ) {
+            availablePositionsArray[i] = availablePositions[i];
+            // Get the security amount for the position
+            securityAmountArray[i] = minCollateralToDeposit(termId, availablePositions[i]);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Return the arrays, the available positions array and the security amount array are coupled
+        // availablePositionsArray[0] will have the securityAmountArray[0] and so on
+        return (availablePositionsArray, securityAmountArray);
+    }
+
+    /// @notice Gets the remaining registration period for a term
+    /// @dev Revert if nobody has deposited
+    /// @param termId the term id
+    /// @return remaining contribution period
+    function getRemainingRegistrationTime(uint termId) public view returns (uint) {
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+        if (
+            collateral.firstDepositTime == 0 ||
+            block.timestamp >= collateral.firstDepositTime + term.registrationPeriod
+        ) {
+            return 0;
+        } else {
+            return collateral.firstDepositTime + term.registrationPeriod - block.timestamp;
+        }
+    }
+
+    /// @notice returns the time left to contribute for this cycle
+    /// @param termId the fund id
+    /// @return the time left to contribute
+    function getRemainingContributionTime(uint termId) public view returns (uint) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        if (fund.currentState != LibFundStorage.FundStates.AcceptingContributions) {
+            return 0;
+        }
+
+        // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
+        uint contributionEndTimestamp = term.cycleTime *
+            (fund.currentCycle - 1) +
+            fund.fundStart +
+            term.contributionPeriod;
+        if (block.timestamp > contributionEndTimestamp) {
+            return 0;
+        } else {
+            return contributionEndTimestamp - block.timestamp;
+        }
+    }
+
+    /// @notice Get the term's remaining time in the current cycle
+    /// @param termId the term id
+    /// @return remaining time in the current cycle
+    function getRemainingCycleTime(uint termId) public view returns (uint) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
+        if (block.timestamp > cycleEndTimestamp) {
+            return 0;
+        } else {
+            return cycleEndTimestamp - block.timestamp;
+        }
     }
 
     /// @notice checks if the money pot is frozen for a participant
