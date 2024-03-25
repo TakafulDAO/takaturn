@@ -1,4 +1,4 @@
-const { assert } = require("chai")
+const { assert, expect } = require("chai")
 const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const { impersonateAccount, advanceTime } = require("../../utils/_helpers")
@@ -487,6 +487,66 @@ const { erc20UnitsFormat } = require("../../utils/units")
                                   userYieldGeneratedAfter.toString()
                           )
                       })
+                  })
+              })
+
+              describe("Join with yield unlocked", function () {
+                  it("Should return if true the user has opted in yield generation", async function () {
+                      const lastTerm = await takaturnDiamond.getTermsId()
+                      const termId = lastTerm[0]
+
+                      for (let i = 1; i <= 4; i++) {
+                          let optedIn = await takaturnDiamond.userHasoptedInYG(
+                              termId,
+                              accounts[i].address
+                          )
+
+                          assert.ok(optedIn)
+                      }
+                  })
+              })
+              describe("Join with yield locked", function () {
+                  beforeEach(async () => {
+                      await takaturnDiamond.toggleYieldLock()
+
+                      await takaturnDiamond.createTerm(
+                          totalParticipants,
+                          registrationPeriod,
+                          cycleTime,
+                          contributionAmount,
+                          contributionPeriod,
+                          usdc
+                      )
+
+                      const terms = await takaturnDiamond.getTermsId()
+                      const termId = terms[0]
+
+                      for (let i = 1; i <= 4; i++) {
+                          let entrance = await takaturnDiamond.minCollateralToDeposit(termId, i - 1)
+
+                          await takaturnDiamond
+                              .connect(accounts[i])
+                              ["joinTerm(uint256,bool)"](termId, true, {
+                                  value: entrance,
+                              })
+                      }
+
+                      await advanceTime(registrationPeriod + 1)
+
+                      await takaturnDiamond.startTerm(termId)
+                  })
+                  it("Should return false, even if the user wants to opted in", async function () {
+                      const lastTerm = await takaturnDiamond.getTermsId()
+                      const termId = lastTerm[0]
+
+                      for (let i = 1; i <= 4; i++) {
+                          let optedIn = await takaturnDiamond.userHasoptedInYG(
+                              termId,
+                              accounts[i].address
+                          )
+
+                          assert.ok(!optedIn)
+                      }
                   })
               })
           })

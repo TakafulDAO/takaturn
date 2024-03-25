@@ -1047,7 +1047,6 @@ async function payTestContribution(termId, defaulterIndex) {
               it("Converts from stablecoin to collateral", async function () {
                   const expectedPrice = 1
                   const actualPrice = await takaturnDiamond.getToCollateralConversionRate(2000)
-                  console.log(actualPrice)
 
                   assert.equal(expectedPrice, actualPrice)
               })
