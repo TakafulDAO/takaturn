@@ -549,10 +549,14 @@ contract CollateralFacet is ICollateral {
         if (_yieldStorage.hasOptedIn[_user]) {
             uint availableWithdraw = _yieldStorage.depositedCollateralByUser[_user] -
                 _yieldStorage.withdrawnCollateral[_user];
-            if (availableWithdraw > _amount) {
-                availableWithdraw = _amount;
+            if (availableWithdraw == 0) {
+                withdrawnYield = 0;
+            } else {
+                if (availableWithdraw > _amount) {
+                    availableWithdraw = _amount;
+                }
+                withdrawnYield = LibYieldGeneration._withdrawYG(_termId, availableWithdraw, _user);
             }
-            withdrawnYield = LibYieldGeneration._withdrawYG(_termId, availableWithdraw, _user);
         } else {
             withdrawnYield = 0;
         }
