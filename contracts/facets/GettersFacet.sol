@@ -31,13 +31,12 @@ contract GettersFacet is IGetters {
     ///  @notice Gets the remaining registration period for a term
     ///  @param termId the term id
     ///  @return remaining contribution period
-    function getRemainingRegistrationTime(uint termId) external view returns (uint) {
+    function getRemainingRegistrationTime(uint termId) public view returns (uint) {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        require(collateral.firstDepositTime != 0, "Nobody has deposited yet");
-        if (block.timestamp >= collateral.firstDepositTime + term.registrationPeriod) {
+        if (collateral.firstDepositTime == 0 || block.timestamp >= collateral.firstDepositTime + term.registrationPeriod) {
             return 0;
         } else {
             return collateral.firstDepositTime + term.registrationPeriod - block.timestamp;
@@ -48,10 +47,14 @@ contract GettersFacet is IGetters {
     ///@param termId the term id
     function getAvailablePositionsAndSecurityAmount(
         uint termId
-    ) external view returns (uint[] memory, uint[] memory) {
+    ) public view returns (uint[] memory, uint[] memory) {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
+
+        if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
+            return(new uint[](0), new uint[](0));
+        }
 
         uint depositorsLength = collateral.depositors.length;
         uint[] memory availablePositions = new uint[](depositorsLength);
@@ -94,6 +97,37 @@ contract GettersFacet is IGetters {
         // Return the arrays, the available positions array and the security amount array are coupled
         // availablePositionsArray[0] will have the securityAmountArray[0] and so on
         return (availablePositionsArray, securityAmountArray);
+    }
+
+    function getSummary(uint termId) external view returns (LibTermStorage.Term memory, 
+                                                            LibCollateralStorage.Collateral memory,
+                                                            LibFundStorage.Fund memory,
+                                                            LibYieldGenerationStorage.YieldGeneration memory,
+                                                            uint[] memory, uint[] memory,
+                                                            uint, uint, uint, uint, uint,) {
+
+        (uint[] memory joinPositions, uint[] memory joinAmounts) = getAvailablePositionsAndSecurityAmount(termId);
+
+        /*uint collateralLimit;
+        if (!fund.isBeneficiary[depositor]) {
+            collateralLimit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
+        } else {
+            collateralLimit = getRemainingCyclesContributionWei(termId);
+        }*/
+
+        return (LibTermStorage._termStorage().terms[termId],
+                LibCollateralStorage._collateralStorage().collaterals[termId],
+                LibFundStorage._fundStorage.funds[termId],
+                LibYieldGenerationStorage._yieldStorage().yields[termId],
+                joinPositions,
+                joinAmounts,
+                getRemainingRegistrationTime(termId),
+                getRemainingContributionTime(termId),
+                getRemainingCycleTime(termId),
+                getRemainingCycles(termId),
+                getRemainingCyclesContributionWei(termId),
+                getLatestPrice(),
+                )
     }
 
     /// @param termId the term id
@@ -188,7 +222,7 @@ contract GettersFacet is IGetters {
 
     /// @param termId the term id
     /// @return remaining time in the current cycle
-    function getRemainingCycleTime(uint termId) external view returns (uint) {
+    function getRemainingCycleTime(uint termId) public view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
@@ -589,7 +623,7 @@ contract GettersFacet is IGetters {
     /// @notice returns the time left to contribute for this cycle
     /// @param termId the fund id
     /// @return the time left to contribute
-    function getRemainingContributionTime(uint termId) external view returns (uint) {
+    function getRemainingContributionTime(uint termId) public view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         if (fund.currentState != LibFundStorage.FundStates.AcceptingContributions) {
