@@ -29,7 +29,7 @@ interface ITerm {
     /// @param termId The id of the term
     /// @param optYield Whether the participant wants to opt in for yield generation
     /// @param position The position in the term
-    function joinTermNext(uint termId, bool optYield, uint position) external payable;
+    function joinTermOnPosition(uint termId, bool optYield, uint position) external payable;
 
     /// @notice Pay security deposit on behalf of someone else, at the next available position
     /// @param termId The id of the term
