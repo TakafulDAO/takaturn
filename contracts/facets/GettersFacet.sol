@@ -22,6 +22,55 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 contract GettersFacet is IGetters {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    /// @notice This function is used as a helper for front-end implementation
+    /// @param termId The term id for which the summary is being requested
+    /// @return The term object, the available positions and the security amount for each position
+    function getSummaryTermPositionsAndSecurityDeposits(
+        uint termId
+    ) external view returns (LibTermStorage.Term memory, uint[] memory, uint[] memory) {
+        (
+            uint[] memory joinPositions,
+            uint[] memory joinAmounts
+        ) = getAvailablePositionsAndSecurityAmount(termId);
+
+        return (LibTermStorage._termStorage().terms[termId], joinPositions, joinAmounts);
+    }
+
+    /// @notice This function is used as a helper for front-end implementation
+    /// @param termId The term id for which the summary is being requested
+    /// @return remainingRegistrationTime The remaining time for registration in seconds
+    /// @return remainingContributionTime The remaining time for contribution in seconds
+    /// @return remainingCycleTime The remaining time for the cycle in seconds
+    /// @return remainingCycles The remaining cycles
+    /// @return remainingCyclesContributionWei The remaining cycles contribution in wei
+    /// @return latestPrice The latest price from chainlink
+    function getSummaryTimesCyclesContributionAndPrices(
+        uint termId
+    )
+        external
+        view
+        returns (
+            uint remainingRegistrationTime,
+            uint remainingContributionTime,
+            uint remainingCycleTime,
+            uint remainingCycles,
+            uint remainingCyclesContributionWei,
+            uint latestPrice
+        )
+    {
+        // Times
+        remainingRegistrationTime = getRemainingRegistrationTime(termId);
+        remainingContributionTime = getRemainingContributionTime(termId);
+        remainingCycleTime = getRemainingCycleTime(termId);
+
+        // Cycles
+        remainingCycles = getRemainingCycles(termId);
+
+        // Contributions and prices
+        remainingCyclesContributionWei = getRemainingCyclesContributionWei(termId);
+        latestPrice = getLatestPrice();
+    }
+
     /// @notice This function return the current constant values for oracles and yield providers
     /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
     /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"
@@ -174,7 +223,7 @@ contract GettersFacet is IGetters {
     /// @return securityAmount an array with the security amount for each available position
     function getAvailablePositionsAndSecurityAmount(
         uint termId
-    ) external view returns (uint[] memory, uint[] memory) {
+    ) public view returns (uint[] memory, uint[] memory) {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
@@ -232,7 +281,7 @@ contract GettersFacet is IGetters {
     /// @dev Revert if nobody has deposited
     /// @param termId the term id
     /// @return remaining contribution period
-    function getRemainingRegistrationTime(uint termId) external view returns (uint) {
+    function getRemainingRegistrationTime(uint termId) public view returns (uint) {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
@@ -250,7 +299,7 @@ contract GettersFacet is IGetters {
     /// @notice returns the time left to contribute for this cycle
     /// @param termId the fund id
     /// @return the time left to contribute
-    function getRemainingContributionTime(uint termId) external view returns (uint) {
+    function getRemainingContributionTime(uint termId) public view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         if (fund.currentState != LibFundStorage.FundStates.AcceptingContributions) {
@@ -272,7 +321,7 @@ contract GettersFacet is IGetters {
     /// @notice Get the term's remaining time in the current cycle
     /// @param termId the term id
     /// @return remaining time in the current cycle
-    function getRemainingCycleTime(uint termId) external view returns (uint) {
+    function getRemainingCycleTime(uint termId) public view returns (uint) {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
