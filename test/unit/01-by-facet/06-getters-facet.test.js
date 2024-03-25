@@ -1035,4 +1035,21 @@ async function payTestContribution(termId, defaulterIndex) {
                   assert.ok(!participant3Payments[1])
               })
           })
+
+          describe("Conversions", function () {
+              it("Converts from collateral to stablecoin", async function () {
+                  const expectedPrice = networkConfig[chainId]["initialPriceEthUsd"]
+                  const actualPrice = await takaturnDiamond.getToStableConversionRate(1)
+
+                  assert.equal(expectedPrice / 10 ** 8, actualPrice)
+              })
+
+              it("Converts from stablecoin to collateral", async function () {
+                  const expectedPrice = 1
+                  const actualPrice = await takaturnDiamond.getToCollateralConversionRate(2000)
+                  console.log(actualPrice)
+
+                  assert.equal(expectedPrice, actualPrice)
+              })
+          })
       })
