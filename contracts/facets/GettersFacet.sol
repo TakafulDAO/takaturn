@@ -795,7 +795,7 @@ contract GettersFacet is IGetters {
             ._collateralStorage()
             .collaterals[termId];
 
-        if (collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral) {
+        if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
             return (new uint[](0), new uint[](0));
         }
 
