@@ -39,6 +39,7 @@ library LibYieldGeneration {
     /// @param _termId The term id for which the collateral is being withdrawn
     /// @param _collateralAmount The amount of collateral being withdrawn
     /// @param _user The user address that is withdrawing the collateral
+    /// @return The amount of yield withdrawn
     function _withdrawYG(
         uint _termId,
         uint256 _collateralAmount,
@@ -89,6 +90,7 @@ library LibYieldGeneration {
     /// @notice Conversion from shares to eth
     /// @param _termId The term id
     /// @param _yield The yield generation struct
+    /// @return Wei equivalent of the shares
     function _sharesToEth(
         uint _termId,
         LibYieldGenerationStorage.YieldGeneration storage _yield
@@ -107,6 +109,7 @@ library LibYieldGeneration {
     /// @param _collateralAmount The amount of collateral to withdraw
     /// @param _totalShares The total shares in the yield from the term
     /// @param _totalDeposit The total deposit in the yield from the term
+    /// @return The amount of shares equivalent to a collateral amount
     function _neededShares(
         uint _collateralAmount,
         uint _totalShares,
@@ -170,6 +173,10 @@ library LibYieldGeneration {
         return yieldDistributed;
     }
 
+    /// @notice This function is used to claim the available yield for a user
+    /// @param _termId The term id for which the yield is being claimed
+    /// @param _user The user for which the yield is being claimed
+    /// @param _receiver The receiver of the yield
     function _claimAvailableYield(uint _termId, address _user, address _receiver) internal {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()

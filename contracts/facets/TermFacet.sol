@@ -17,23 +17,37 @@ import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 
-/// @title Takaturn Term
+/// @title Takaturn Term Facet
 /// @author Mohammed Haddouti
-/// @notice This is used to deploy the collateral & fund contracts
+/// @notice This is used to create terms
 /// @dev v3.0 (Diamond)
 contract TermFacet is ITerm {
-    event OnTermCreated(uint indexed termId, address indexed termOwner);
+    event OnTermCreated(uint indexed termId, address indexed termOwner); // Emits when a new term is created
     event OnCollateralDeposited(
+        uint indexed termId,
+        address payer,
+        address indexed user,
+        uint amount
+    ); // TODO: To be deprecated, here to ensure backwards compatibility with the old event
+    event OnCollateralDepositedNext(
         uint indexed termId,
         address payer,
         address indexed user,
         uint amount,
         uint indexed position
-    );
-    event OnTermFilled(uint indexed termId);
-    event OnTermExpired(uint indexed termId);
+    ); // Emits when a user joins a term // Todo: To be renamed to OnCollateralDeposited
+    event OnTermFilled(uint indexed termId); // Emits when all the spots are filled
+    event OnTermExpired(uint indexed termId); // Emits when a term expires
     event OnTermStart(uint indexed termId); // Emits when a new term starts, this also marks the start of the first cycle
 
+    /// @notice Create a new term
+    /// @param totalParticipants The number of participants in the term
+    /// @param registrationPeriod The time in seconds that the term will be open for registration
+    /// @param cycleTime The time in seconds that the term will last
+    /// @param contributionAmount The amount of stable token that each participant will have to contribute
+    /// @param contributionPeriod The time in seconds that the participants will have to contribute
+    /// @param stableTokenAddress The address of the stable token
+    /// @return termId The id of the new term
     function createTerm(
         uint totalParticipants,
         uint registrationPeriod,
@@ -53,14 +67,26 @@ contract TermFacet is ITerm {
             );
     }
 
+    /// @notice Join a term at the next available position
+    /// @param termId The id of the term
+    /// @param optYield Whether the participant wants to opt in for yield generation
     function joinTerm(uint termId, bool optYield) external payable {
         _joinTerm(termId, optYield, msg.sender);
     }
 
-    function joinTerm(uint termId, bool optYield, uint position) external payable {
+    /// @notice Join a term at a specific position
+    /// @param termId The id of the term
+    /// @param optYield Whether the participant wants to opt in for yield generation
+    /// @param position The position in the term
+    // TODO: To be renamed to joinTerm, this name only to ensure backwards compatibility
+    function joinTermNext(uint termId, bool optYield, uint position) external payable {
         _joinTermByPosition(termId, optYield, position, msg.sender);
     }
 
+    /// @notice Pay security deposit on behalf of someone else, at the next available position
+    /// @param termId The id of the term
+    /// @param optYield Whether the participant wants to opt in for yield generation
+    /// @param newParticipant The address of the new participant
     function paySecurityOnBehalfOf(
         uint termId,
         bool optYield,
@@ -69,6 +95,11 @@ contract TermFacet is ITerm {
         _joinTerm(termId, optYield, newParticipant);
     }
 
+    /// @notice Pay security deposit on behalf of someone else, at a specific position
+    /// @param termId The id of the term
+    /// @param optYield Whether the participant wants to opt in for yield generation
+    /// @param newParticipant The address of the new participant
+    /// @param position The position in the term
     function paySecurityOnBehalfOf(
         uint termId,
         bool optYield,
@@ -78,14 +109,25 @@ contract TermFacet is ITerm {
         _joinTermByPosition(termId, optYield, position, newParticipant);
     }
 
+    /// @notice Start a term
+    /// @param termId The id of the term
     function startTerm(uint termId) external {
         _startTerm(termId);
     }
 
+    /// @notice Expire a term
+    /// @param termId The id of the term
     function expireTerm(uint termId) external {
         _expireTerm(termId);
     }
 
+    /// @dev Revert if the cycle time is 0
+    /// @dev Revert if the contribution amount is 0
+    /// @dev Revert if the contribution period is 0
+    /// @dev Revert if the total participants is 0
+    /// @dev Revert if the registration period is 0
+    /// @dev Revert if the contribution period is greater than the cycle time
+    /// @dev Revert if the stable token address is 0
     function _createTerm(
         uint _totalParticipants,
         uint _registrationPeriod,
@@ -132,6 +174,10 @@ contract TermFacet is ITerm {
         return termId;
     }
 
+    /// @dev Revert if the term doesn't exist
+    /// @dev Revert if the collateral is not accepting collateral
+    /// @dev Revert if the collateral is full
+    /// @dev Revert if the new participant is already a collateral member
     function _joinTerm(uint _termId, bool _optYield, address _newParticipant) internal {
         LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
         LibTermStorage.Term memory term = termStorage.terms[_termId];
@@ -157,6 +203,8 @@ contract TermFacet is ITerm {
                 memberIndex = i;
                 break;
             }
+
+            /// @custom:unchecked-block without risk, i can't be higher than term total participants
             unchecked {
                 ++i;
             }
@@ -165,6 +213,13 @@ contract TermFacet is ITerm {
         _joinTermByPosition(_termId, _optYield, memberIndex, _newParticipant);
     }
 
+    /// @dev Revert if the term doesn't exist
+    /// @dev Revert if the collateral is not accepting collateral
+    /// @dev Revert if the collateral is full
+    /// @dev Revert if the new participant is already a collateral member
+    /// @dev Revert if the position is higher than the total participants
+    /// @dev Revert if the position is already taken
+    /// @dev Revert if the msg.value is lower than the min amount
     function _joinTermByPosition(
         uint _termId,
         bool _optYield,
@@ -214,7 +269,9 @@ contract TermFacet is ITerm {
             yield.hasOptedIn[_newParticipant] = false;
         }
 
-        emit OnCollateralDeposited(_termId, msg.sender, _newParticipant, msg.value, _position);
+        // TODO: Emit both events to ensure backwards compatibility
+        emit OnCollateralDeposited(_termId, msg.sender, _newParticipant, msg.value);
+        emit OnCollateralDepositedNext(_termId, msg.sender, _newParticipant, msg.value, _position);
 
         if (collateral.counterMembers == 1) {
             collateral.firstDepositTime = block.timestamp;
@@ -226,6 +283,10 @@ contract TermFacet is ITerm {
         }
     }
 
+    /// @dev Revert if the term doesn't exist
+    /// @dev Revert if the term is not ready to start
+    /// @dev Revert if the term is already active
+    /// @dev Revert if someone is undercollaterized
     function _startTerm(uint _termId) internal {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -252,6 +313,7 @@ contract TermFacet is ITerm {
                 "Eth prices dropped"
             );
 
+            /// @custom:unchecked-block without risk, i can't be higher than depositors length
             unchecked {
                 ++i;
             }
@@ -269,6 +331,8 @@ contract TermFacet is ITerm {
                     _createYieldGenerator(term, collateral);
                     break;
                 }
+
+                /// @custom:unchecked-block without risk, i can't be higher than depositors length
                 unchecked {
                     ++i;
                 }
@@ -280,6 +344,8 @@ contract TermFacet is ITerm {
                 if (yield.hasOptedIn[depositors[i]]) {
                     yield.hasOptedIn[depositors[i]] = false;
                 }
+
+                /// @custom:unchecked-block without risk, i can't be higher than depositors length
                 unchecked {
                     ++i;
                 }
@@ -292,6 +358,9 @@ contract TermFacet is ITerm {
         term.state = LibTermStorage.TermStates.ActiveTerm;
     }
 
+    /// @notice Create a new collateral
+    /// @param _termId The id of the term
+    /// @param _totalParticipants The number of participants in the term
     function _createCollateral(uint _termId, uint _totalParticipants) internal {
         //require(!LibCollateralStorage._collateralExists(termId), "Collateral already exists");
         LibCollateralStorage.Collateral storage newCollateral = LibCollateralStorage
@@ -303,6 +372,10 @@ contract TermFacet is ITerm {
         newCollateral.depositors = new address[](_totalParticipants);
     }
 
+    /// @notice Create a new fund
+    /// @dev Revert if the fund already exists
+    /// @param _term The term
+    /// @param _collateral The collateral object
     function _createFund(
         LibTermStorage.Term memory _term,
         LibCollateralStorage.Collateral storage _collateral
@@ -319,6 +392,10 @@ contract TermFacet is ITerm {
         LibFund._initFund(_term.termId);
     }
 
+    /// @dev Revert if the term or collateral doesn't exist
+    /// @dev Revert if registration period is not ended
+    /// @dev Revert if all spots are filled
+    /// @dev Revert if the term is already expired
     function _expireTerm(uint _termId) internal {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -348,6 +425,9 @@ contract TermFacet is ITerm {
         emit OnTermExpired(_termId);
     }
 
+    /// @notice Create a new yield generator
+    /// @param _term The term object
+    /// @param _collateral The collateral object
     function _createYieldGenerator(
         LibTermStorage.Term memory _term,
         LibCollateralStorage.Collateral storage _collateral
@@ -372,6 +452,7 @@ contract TermFacet is ITerm {
                 amountToYield += yield.depositedCollateralByUser[depositors[i]];
             }
 
+            /// @custom:unchecked-block without risk, i can't be higher than depositors length
             unchecked {
                 ++i;
             }

@@ -21,7 +21,7 @@ library LibCollateralStorage {
     struct Collateral {
         bool initialized;
         CollateralStates state;
-        uint firstDepositTime;
+        uint firstDepositTime; // Time when the first deposit was made in seconds
         uint counterMembers;
         address[] depositors;
         mapping(address => bool) isCollateralMember; // Determines if a depositor is a valid user

@@ -52,26 +52,21 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
 
-    const diamondName = "TakaturnDiamond"
-    const args = []
-    const initContract = "DiamondInit"
-    const initMethod = "init"
-    const initArgs = [
+    let diamondName = "TakaturnDiamond"
+    let args = []
+    let initContract = "DiamondInit"
+    let initMethod = "init"
+    let initArgs = [
         ethUsdPriceFeedAddress,
         usdcUsdPriceFeedAddress,
         zaynfiZapAddress,
         zaynfiVaultAddress,
         false,
     ]
+    let facets = []
 
     if (isMainnet) {
-        const facets = [
-            "CollateralFacet",
-            "FundFacet",
-            "TermFacet",
-            "GettersFacet",
-            "YGFacetZaynFi",
-        ]
+        facets = ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet", "YGFacetZaynFi"]
 
         takaturnDiamondUpgrade = await deployUpgradeDiamond(
             diamondName,
@@ -83,7 +78,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             initArgs
         )
     } else {
-        const facets = [
+        facets = [
             "CollateralFacet",
             "FundFacet",
             "TermFacet",
@@ -131,17 +126,17 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     ]
 
     contractAddresses = [
-        takaturnDiamondUpgrade,
-        collateralFacet,
-        fundFacet,
-        termFacet,
-        gettersFacet,
-        yieldFacet,
-        diamondInit,
-        diamondCutFacet,
-        diamondOwnershipFacet,
-        diamondLoupeFacet,
-        diamondERC165Init,
+        takaturnDiamondUpgrade.address,
+        collateralFacet.address,
+        fundFacet.address,
+        termFacet.address,
+        gettersFacet.address,
+        yieldFacet.address,
+        diamondInit.address,
+        diamondCutFacet.address,
+        diamondOwnershipFacet.address,
+        diamondLoupeFacet.address,
+        diamondERC165Init.address,
     ]
 
     log("01.00.00. Diamond Deployed!")

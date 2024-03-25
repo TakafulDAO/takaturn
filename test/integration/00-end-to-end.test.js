@@ -273,7 +273,7 @@ const { ZeroAddress } = require("ethers")
                                   .connect(accounts[i])
                                   ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                           )
-                              .to.emit(takaturnDiamond, "OnCollateralDeposited")
+                              .to.emit(takaturnDiamond, "OnCollateralDepositedNext")
                               .withArgs(
                                   termId,
                                   accounts[i].address,
@@ -305,7 +305,7 @@ const { ZeroAddress } = require("ethers")
                                       value: entrance,
                                   })
                           )
-                              .to.emit(takaturnDiamond, "OnCollateralDeposited")
+                              .to.emit(takaturnDiamond, "OnCollateralDepositedNext")
                               .withArgs(
                                   termId,
                                   accounts[i].address,
@@ -340,7 +340,7 @@ const { ZeroAddress } = require("ethers")
                                   .connect(accounts[i])
                                   ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                           )
-                              .to.emit(takaturnDiamond, "OnCollateralDeposited")
+                              .to.emit(takaturnDiamond, "OnCollateralDepositedNext")
                               .withArgs(
                                   termId,
                                   accounts[i].address,
