@@ -11,22 +11,25 @@ import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 interface IGetters {
     /// @notice This function is used as a helper for front-end implementation
     /// @param termId The term id for which the summary is being requested
-    /// @return The term object, the available positions and the security amount for each position
-    function getSummaryTermPositionsAndSecurityDeposits(
+    /// @return term complete term object
+    /// @param joinPositions available positions if any
+    /// @param joinAmounts the minimum security deposit for each position from joinPositions
+    function getTurnGroupRelatedSummary(
         uint termId
-    ) external view returns (LibTermStorage.Term memory, uint[] memory, uint[] memory);
-
-    /// @notice This function is used as a helper for front-end implementation
-    /// @param termId The term id for which the summary is being requested
-    /// @return remainingRegistrationTime The remaining time for registration in seconds
-    /// @return remainingContributionTime The remaining time for contribution in seconds
-    /// @return remainingCycleTime The remaining time for the cycle in seconds
-    /// @return remainingCycles The remaining cycles
-    /// @return remainingCyclesContributionWei The remaining cycles contribution in wei
-    /// @return latestPrice The latest price from chainlink
-    function getSummaryTimesCyclesContributionAndPrices(
-        uint termId
-    ) external view returns (uint, uint, uint, uint, uint, uint);
+    )
+        external
+        view
+        returns (
+            LibTermStorage.Term memory term,
+            uint[] memory joinPositions,
+            uint[] memory joinAmounts,
+            uint[3] memory timesRelated,
+            uint remainingCycles,
+            uint[2] memory contributionsAndPrices,
+            uint[2] memory collateralValues,
+            uint[5] memory fundValues,
+            uint[4] memory yieldValues
+        );
 
     /// @notice This function is used as a helper for front-end implementation
     /// @param user the depositor address

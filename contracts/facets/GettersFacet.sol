@@ -24,52 +24,69 @@ contract GettersFacet is IGetters {
 
     /// @notice This function is used as a helper for front-end implementation
     /// @param termId The term id for which the summary is being requested
-    /// @return The term object, the available positions and the security amount for each position
-    // TODO: NON USER SPECIFIC
-    function getSummaryTermPositionsAndSecurityDeposits(
-        uint termId
-    ) external view returns (LibTermStorage.Term memory, uint[] memory, uint[] memory) {
-        (
-            uint[] memory joinPositions,
-            uint[] memory joinAmounts
-        ) = getAvailablePositionsAndSecurityAmount(termId);
-
-        return (LibTermStorage._termStorage().terms[termId], joinPositions, joinAmounts);
-    }
-
-    /// @notice This function is used as a helper for front-end implementation
-    /// @param termId The term id for which the summary is being requested
-    /// @return remainingRegistrationTime The remaining time for registration in seconds
-    /// @return remainingContributionTime The remaining time for contribution in seconds
-    /// @return remainingCycleTime The remaining time for the cycle in seconds
-    /// @return remainingCycles The remaining cycles
-    /// @return remainingCyclesContributionWei The remaining cycles contribution in wei
-    /// @return latestPrice The latest price from chainlink
-    function getSummaryTimesCyclesContributionAndPrices(
+    /// @return term complete term object
+    /// @param joinPositions available positions if any
+    /// @param joinAmounts the minimum security deposit for each position from joinPositions
+    function getTurnGroupRelatedSummary(
         uint termId
     )
         external
         view
         returns (
-            uint remainingRegistrationTime,
-            uint remainingContributionTime,
-            uint remainingCycleTime,
+            LibTermStorage.Term memory term,
+            uint[] memory joinPositions,
+            uint[] memory joinAmounts,
+            uint[3] memory timesRelated,
             uint remainingCycles,
-            uint remainingCyclesContributionWei,
-            uint latestPrice
+            uint[2] memory contributionsAndPrices,
+            uint[2] memory collateralValues,
+            uint[5] memory fundValues,
+            uint[4] memory yieldValues
         )
     {
-        // Times
-        remainingRegistrationTime = getRemainingRegistrationTime(termId);
-        remainingContributionTime = getRemainingContributionTime(termId);
-        remainingCycleTime = getRemainingCycleTime(termId);
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        term = LibTermStorage._termStorage().terms[termId];
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        (joinPositions, joinAmounts) = getAvailablePositionsAndSecurityAmount(termId);
+
+        // Times related
+        timesRelated = [
+            getRemainingRegistrationTime(termId),
+            getRemainingContributionTime(termId),
+            getRemainingCycleTime(termId)
+        ];
 
         // Cycles
         remainingCycles = getRemainingCycles(termId);
 
         // Contributions and prices
-        remainingCyclesContributionWei = getRemainingCyclesContributionWei(termId);
-        latestPrice = getLatestPrice();
+        contributionsAndPrices = [getRemainingCyclesContributionWei(termId), getLatestPrice()];
+
+        // Collateral values
+        collateralValues = [collateral.firstDepositTime, collateral.counterMembers];
+
+        // Fund values
+        fundValues = [
+            fund.fundStart,
+            fund.fundEnd,
+            fund.currentCycle,
+            fund.expelledParticipants,
+            fund.totalAmountOfCycles
+        ];
+
+        // Yield values
+        yieldValues = [
+            yield.startTimeStamp,
+            yield.totalDeposit,
+            yield.currentTotalDeposit,
+            yield.totalShares
+        ];
     }
 
     /// @notice This function is used as a helper for front-end implementation
