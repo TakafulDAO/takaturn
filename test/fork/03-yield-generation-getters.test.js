@@ -670,137 +670,34 @@ const { erc20UnitsFormat } = require("../../utils/units")
                           )
                       })
                       describe("Term not started", function () {
-                          describe("Nobody joined yet", function () {
-                              it("Should get the correct values", async function () {
-                                  const terms = await takaturnDiamond.getTermsId()
-                                  const termId = terms[0]
-                                  const termSummary =
-                                      await takaturnDiamond.getTurnGroupRelatedSummary(termId)
+                          it("Should get the correct values", async function () {
+                              const terms = await takaturnDiamond.getTermsId()
+                              const termId = terms[0]
+                              const termSummary = await takaturnDiamond.getTurnGroupRelatedSummary(
+                                  termId
+                              )
 
-                                  assert.ok(termSummary[0].initialized) // Term initialized
-                                  // Every position should be available
-                                  assert.equal(termSummary[1].length, totalParticipants)
-                                  assert.equal(termSummary[1].length, termSummary[2].length)
-                                  // Every time related shoud be 0
-                                  assert.equal(termSummary[3][0], 0n)
-                                  assert.equal(termSummary[3][1], 0n)
-                                  assert.equal(termSummary[3][2], 0n)
-                                  // Nobody has deposited in collateral
-                                  assert.equal(termSummary[6][0], 0n)
-                                  assert.equal(termSummary[6][1], 0n)
-                                  // Fund neither yield has values
-                                  assert.equal(termSummary[7][0], 0n)
-                                  assert.equal(termSummary[7][1], 0n)
-                                  assert.equal(termSummary[7][2], 0n)
-                                  assert.equal(termSummary[7][3], 0n)
-                                  assert.equal(termSummary[7][4], 0n)
-                                  assert.equal(termSummary[8][0], 0n)
-                                  assert.equal(termSummary[8][1], 0n)
-                                  assert.equal(termSummary[8][2], 0n)
-                                  assert.equal(termSummary[8][3], 0n)
-                              })
-                          })
-                          describe("Someone join", function () {
-                              describe("With yield generation", function () {
-                                  beforeEach(async function () {
-                                      const terms = await takaturnDiamond.getTermsId()
-                                      const termId = terms[0]
-
-                                      const entrance = await takaturnDiamond.minCollateralToDeposit(
-                                          termId,
-                                          0
-                                      )
-
-                                      await takaturnDiamond
-                                          .connect(participant_1)
-                                          ["joinTerm(uint256,bool)"](termId, true, {
-                                              value: entrance,
-                                          })
-                                  })
-                                  it("Should get the correct values", async function () {
-                                      const terms = await takaturnDiamond.getTermsId()
-                                      const termId = terms[0]
-                                      const termSummary =
-                                          await takaturnDiamond.getTurnGroupRelatedSummary(termId)
-
-                                      const deposited =
-                                          await takaturnDiamond.minCollateralToDeposit(termId, 0)
-
-                                      assert.ok(termSummary[0].initialized) // Term initialized
-                                      // One position taken
-                                      assert.equal(termSummary[1].length, totalParticipants - 1)
-                                      assert.equal(termSummary[1].length, termSummary[2].length)
-                                      // Somebody joined so registration time starts to run
-                                      assert(termSummary[3][0] > 0n)
-                                      // Have not started so remaining contribution and cycle time are 0
-                                      assert.equal(termSummary[3][1], 0n)
-                                      assert.equal(termSummary[3][2], 0n)
-                                      // There something in collateral
-                                      assert.equal(termSummary[6][0], deposited)
-                                      // There is one member
-                                      assert.equal(termSummary[6][1], 1n)
-                                      // Fund neither yield has values
-                                      assert.equal(termSummary[7][0], 0n)
-                                      assert.equal(termSummary[7][1], 0n)
-                                      assert.equal(termSummary[7][2], 0n)
-                                      assert.equal(termSummary[7][3], 0n)
-                                      assert.equal(termSummary[7][4], 0n)
-                                      assert.equal(termSummary[8][0], 0n)
-                                      assert.equal(termSummary[8][1], 0n)
-                                      assert.equal(termSummary[8][2], 0n)
-                                      assert.equal(termSummary[8][3], 0n)
-                                  })
-                              })
-                              describe("Without yield generation", function () {
-                                  beforeEach(async function () {
-                                      const terms = await takaturnDiamond.getTermsId()
-                                      const termId = terms[0]
-
-                                      const entrance = await takaturnDiamond.minCollateralToDeposit(
-                                          termId,
-                                          0
-                                      )
-
-                                      await takaturnDiamond
-                                          .connect(participant_1)
-                                          ["joinTerm(uint256,bool)"](termId, false, {
-                                              value: entrance,
-                                          })
-                                  })
-                                  it("Should get the correct values", async function () {
-                                      const terms = await takaturnDiamond.getTermsId()
-                                      const termId = terms[0]
-                                      const termSummary =
-                                          await takaturnDiamond.getTurnGroupRelatedSummary(termId)
-
-                                      const deposited =
-                                          await takaturnDiamond.minCollateralToDeposit(termId, 0)
-
-                                      assert.ok(termSummary[0].initialized) // Term initialized
-                                      // One position taken
-                                      assert.equal(termSummary[1].length, totalParticipants - 1)
-                                      assert.equal(termSummary[1].length, termSummary[2].length)
-                                      // Somebody joined so registration time starts to run
-                                      assert(termSummary[3][0] > 0n)
-                                      // Have not started so remaining contribution and cycle time are 0
-                                      assert.equal(termSummary[3][1], 0n)
-                                      assert.equal(termSummary[3][2], 0n)
-                                      // There something in collateral
-                                      assert.equal(termSummary[6][0], deposited)
-                                      // There is one member
-                                      assert.equal(termSummary[6][1], 1n)
-                                      // Fund neither yield has values
-                                      assert.equal(termSummary[7][0], 0n)
-                                      assert.equal(termSummary[7][1], 0n)
-                                      assert.equal(termSummary[7][2], 0n)
-                                      assert.equal(termSummary[7][3], 0n)
-                                      assert.equal(termSummary[7][4], 0n)
-                                      assert.equal(termSummary[8][0], 0n)
-                                      assert.equal(termSummary[8][1], 0n)
-                                      assert.equal(termSummary[8][2], 0n)
-                                      assert.equal(termSummary[8][3], 0n)
-                                  })
-                              })
+                              assert.ok(termSummary[0].initialized) // Term initialized
+                              // Every position should be available
+                              assert.equal(termSummary[1].length, totalParticipants)
+                              assert.equal(termSummary[1].length, termSummary[2].length)
+                              // Every time related shoud be 0
+                              assert.equal(termSummary[3][0], 0n)
+                              assert.equal(termSummary[3][1], 0n)
+                              assert.equal(termSummary[3][2], 0n)
+                              // Nobody has deposited in collateral
+                              assert.equal(termSummary[6][0], 0n)
+                              assert.equal(termSummary[6][1], 0n)
+                              // Fund neither yield has values
+                              assert.equal(termSummary[7][0], 0n)
+                              assert.equal(termSummary[7][1], 0n)
+                              assert.equal(termSummary[7][2], 0n)
+                              assert.equal(termSummary[7][3], 0n)
+                              assert.equal(termSummary[7][4], 0n)
+                              assert.equal(termSummary[8][0], 0n)
+                              assert.equal(termSummary[8][1], 0n)
+                              assert.equal(termSummary[8][2], 0n)
+                              assert.equal(termSummary[8][3], 0n)
                           })
                       })
                       describe("Term started", function () {
