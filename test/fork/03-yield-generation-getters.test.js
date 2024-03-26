@@ -489,5 +489,174 @@ const { erc20UnitsFormat } = require("../../utils/units")
                       })
                   })
               })
+
+              describe.only("Helper getters", function () {
+                  describe("User related getter", function () {
+                      beforeEach(async function () {
+                          await takaturnDiamond.createTerm(
+                              totalParticipants,
+                              registrationPeriod,
+                              cycleTime,
+                              contributionAmount,
+                              contributionPeriod,
+                              usdc
+                          )
+                      })
+                      describe("Not opted in yield generation", function () {
+                          beforeEach(async function () {
+                              const terms = await takaturnDiamond.getTermsId()
+                              const termId = terms[0]
+
+                              for (let i = 1; i <= totalParticipants; i++) {
+                                  const entrance = await takaturnDiamond.minCollateralToDeposit(
+                                      termId,
+                                      i - 1
+                                  )
+
+                                  await takaturnDiamond
+                                      .connect(accounts[i])
+                                      ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
+                              }
+
+                              await advanceTime(registrationPeriod + 1)
+                              await takaturnDiamond.startTerm(termId)
+                          })
+                          it("Should get the correct values", async function () {
+                              const terms = await takaturnDiamond.getTermsId()
+                              const termId = terms[0]
+
+                              const userSummary = await takaturnDiamond.getUserRelatedSummary(
+                                  participant_1,
+                                  termId
+                              )
+
+                              const deposited = await takaturnDiamond.minCollateralToDeposit(
+                                  termId,
+                                  0
+                              )
+
+                              assert.ok(userSummary[0][0]) // collateral member
+                              assert.ok(userSummary[0][1]) // participant
+                              assert.ok(!userSummary[0][2]) // beneficiary
+                              assert.ok(!userSummary[0][3]) // paid this cycle
+                              assert.ok(!userSummary[0][4]) // paid next cycle
+                              assert.ok(!userSummary[0][5]) // auto pay
+                              assert.ok(!userSummary[0][6]) // money pot frozen
+                              assert.ok(!userSummary[0][7]) // opted yield
+                              assert.equal(userSummary[1][0], deposited) // collateral members bank
+                              assert.equal(userSummary[1][1], 0n) // collateral payment bank
+                              assert.equal(userSummary[1][2], deposited) // deposited
+                              assert(userSummary[1][3] > 0) // expulsion limit
+                              assert(userSummary[1][3] < deposited) // expulsion limit
+                              assert.equal(userSummary[1][4], 0n) // pool
+                              assert.equal(userSummary[1][5], 0n) // cycle of expulsion
+                              assert.equal(userSummary[1][6], 0n) // withdrawn yield
+                              assert.equal(userSummary[1][7], 0n) // withdrawn collateral
+                              assert.equal(userSummary[1][8], 0n) // available yield
+                              assert.equal(userSummary[1][9], 0n) // deposited on yield
+                              assert.equal(userSummary[1][10], 0n) // yield distributed
+                          })
+                      })
+                      describe("Opted in yield generaion", function () {
+                          beforeEach(async function () {
+                              const terms = await takaturnDiamond.getTermsId()
+                              const termId = terms[0]
+
+                              for (let i = 1; i <= totalParticipants; i++) {
+                                  const entrance = await takaturnDiamond.minCollateralToDeposit(
+                                      termId,
+                                      i - 1
+                                  )
+
+                                  await takaturnDiamond
+                                      .connect(accounts[i])
+                                      ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
+                              }
+                          })
+                          describe("Still accepting collateral", function () {
+                              it("Should get the correct values", async function () {
+                                  const terms = await takaturnDiamond.getTermsId()
+                                  const termId = terms[0]
+
+                                  const userSummary = await takaturnDiamond.getUserRelatedSummary(
+                                      participant_1,
+                                      termId
+                                  )
+
+                                  const deposited = await takaturnDiamond.minCollateralToDeposit(
+                                      termId,
+                                      0
+                                  )
+
+                                  assert.ok(userSummary[0][0]) // collateral member
+                                  assert.ok(!userSummary[0][1]) // participant
+                                  assert.ok(!userSummary[0][2]) // beneficiary
+                                  assert.ok(!userSummary[0][3]) // paid this cycle
+                                  assert.ok(!userSummary[0][4]) // paid next cycle
+                                  assert.ok(!userSummary[0][5]) // auto pay
+                                  assert.ok(!userSummary[0][6]) // money pot frozen
+                                  assert.ok(userSummary[0][7]) // opted yield
+                                  assert.equal(userSummary[1][0], deposited) // collateral members bank
+                                  assert.equal(userSummary[1][1], 0n) // collateral payment bank
+                                  assert.equal(userSummary[1][2], deposited) // deposited
+                                  assert.equal(userSummary[1][3], 0n) // expulsion limit
+                                  assert.equal(userSummary[1][4], 0n) // pool
+                                  assert.equal(userSummary[1][5], 0n) // cycle of expulsion
+                                  assert.equal(userSummary[1][6], 0n) // withdrawn yield
+                                  assert.equal(userSummary[1][7], 0n) // withdrawn collateral
+                                  assert.equal(userSummary[1][8], 0n) // available yield
+                                  assert.equal(userSummary[1][9], 0n) // deposited on yield
+                                  assert.equal(userSummary[1][10], 0n) // yield distributed
+                              })
+                          })
+                          describe("Term started", function () {
+                              beforeEach(async function () {
+                                  const terms = await takaturnDiamond.getTermsId()
+                                  const termId = terms[0]
+
+                                  await advanceTime(registrationPeriod + 1)
+                                  await takaturnDiamond.startTerm(termId)
+                              })
+                              it("Should get the correct values", async function () {
+                                  const terms = await takaturnDiamond.getTermsId()
+                                  const termId = terms[0]
+
+                                  const userSummary = await takaturnDiamond.getUserRelatedSummary(
+                                      participant_1,
+                                      termId
+                                  )
+
+                                  const deposited = await takaturnDiamond.minCollateralToDeposit(
+                                      termId,
+                                      0
+                                  )
+
+                                  const expectedDepositedOnYield = (deposited * 95n) / 100n
+
+                                  assert.ok(userSummary[0][0]) // collateral member
+                                  assert.ok(userSummary[0][1]) // participant
+                                  assert.ok(!userSummary[0][2]) // beneficiary
+                                  assert.ok(!userSummary[0][3]) // paid this cycle
+                                  assert.ok(!userSummary[0][4]) // paid next cycle
+                                  assert.ok(!userSummary[0][5]) // auto pay
+                                  assert.ok(!userSummary[0][6]) // money pot frozen
+                                  assert.ok(userSummary[0][7]) // opted yield
+                                  assert.equal(userSummary[1][0], deposited) // collateral members bank
+                                  assert.equal(userSummary[1][1], 0n) // collateral payment bank
+                                  assert.equal(userSummary[1][2], deposited) // deposited
+                                  assert(userSummary[1][3] > 0) // expulsion limit
+                                  assert(userSummary[1][3] < deposited) // expulsion limit
+                                  assert.equal(userSummary[1][4], 0n) // pool
+                                  assert.equal(userSummary[1][5], 0n) // cycle of expulsion
+                                  assert.equal(userSummary[1][6], 0n) // withdrawn yield
+                                  assert.equal(userSummary[1][7], 0n) // withdrawn collateral
+                                  assert.equal(userSummary[1][8], 0n) // available yield
+                                  assert.equal(userSummary[1][9], expectedDepositedOnYield) // deposited on yield
+                                  assert(userSummary[1][10] > 0n) // yield distributed
+                              })
+                          })
+                      })
+                  })
+              })
           })
       })
