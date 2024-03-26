@@ -821,7 +821,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               await advanceTime(registrationPeriod + 1)
                               await takaturnDiamond.startTerm(termId)
                           })
-                          it.only("Should get the correct values", async function () {
+                          it("Should get the correct values", async function () {
                               const terms = await takaturnDiamond.getTermsId()
                               const termId = terms[0]
                               const termSummary = await takaturnDiamond.getTurnGroupRelatedSummary(
