@@ -25,6 +25,7 @@ contract GettersFacet is IGetters {
     /// @notice This function is used as a helper for front-end implementation
     /// @param termId The term id for which the summary is being requested
     /// @return The term object, the available positions and the security amount for each position
+    // TODO: NON USER SPECIFIC
     function getSummaryTermPositionsAndSecurityDeposits(
         uint termId
     ) external view returns (LibTermStorage.Term memory, uint[] memory, uint[] memory) {
@@ -82,13 +83,13 @@ contract GettersFacet is IGetters {
     /// @return uintResults an array of uints that contains the following values:
     ///                     current users locked collateral balance in wei, current users
     ///                     unlocked collateral balance in wei, initial users deposit in wei,
-    ///                     expulsion limit, beneficiaries pool, withdrawn yield, withdrawn
-    ///                     collateral from yield, available yield, deposited collateral by
-    ///                     user on yield, amount of yield distributed
-    function getUserSummary(
+    ///                     expulsion limit, beneficiaries pool, cycle of expulsion if applies
+    //                      withdrawn yield, withdrawn collateral from yield, available yield,
+    ///                     deposited collateral by user on yield, amount of yield distributed
+    function getUserRelatedSummary(
         address user,
         uint termId
-    ) external view returns (bool[8] memory boolResults, uint[10] memory uintResults) {
+    ) external view returns (bool[8] memory boolResults, uint[11] memory uintResults) {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
@@ -99,36 +100,37 @@ contract GettersFacet is IGetters {
             .yields[termId];
 
         uint limit;
+        uint yieldDistributed;
         if (!fund.isBeneficiary[user]) {
             limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
         } else {
             limit = getRemainingCyclesContributionWei(termId);
         }
-        bool isMoneyPotFrozen = _checkFrozenMoneyPot(user, termId);
 
         boolResults = [
-            collateral.isCollateralMember[user],
-            fund.isParticipant[user],
-            fund.isBeneficiary[user],
-            fund.paidThisCycle[user],
-            fund.paidNextCycle[user],
-            fund.autoPayEnabled[user],
-            isMoneyPotFrozen,
-            yield.hasOptedIn[user]
+            collateral.isCollateralMember[user], // true if member
+            fund.isParticipant[user], // true if participant
+            fund.isBeneficiary[user], // true if have been beneficiary
+            fund.paidThisCycle[user], // true if has paid current cycle
+            fund.paidNextCycle[user], // true if has paid next cycle
+            fund.autoPayEnabled[user], // true if enabled auto pay
+            _checkFrozenMoneyPot(user, termId), // true if money pot is frozen
+            yield.hasOptedIn[user] // true if deposit on yield
         ];
 
         if (collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral) {
             uintResults = [
                 collateral.collateralMembersBank[user],
-                collateral.collateralPaymentBank[user],
-                collateral.collateralDepositByUser[user],
+                collateral.collateralPaymentBank[user], // At this moment should be 0
+                collateral.collateralDepositByUser[user], // At this moment should be equal to collateral members bank
+                0, // At this moment neither yield or fund objects have been created so nothing exist yet, everithing 0 to avoid reverts
                 0,
                 0,
                 0,
                 0,
                 0,
                 0,
-                0
+                yieldDistributed
             ];
         } else if (
             !yield.hasOptedIn[user] &&
@@ -140,14 +142,15 @@ contract GettersFacet is IGetters {
                 collateral.collateralDepositByUser[user],
                 limit,
                 fund.beneficiariesPool[user],
+                fund.cycleOfExpulsion[user],
+                0, // The user does not exist in the yield object, everything 0 to avoid reverts
                 0,
                 0,
                 0,
-                0,
-                0
+                yieldDistributed
             ];
         } else {
-            uint yieldDistributed = LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
+            yieldDistributed = LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
 
             uintResults = [
                 collateral.collateralMembersBank[user],
@@ -155,6 +158,7 @@ contract GettersFacet is IGetters {
                 collateral.collateralDepositByUser[user],
                 limit,
                 fund.beneficiariesPool[user],
+                fund.cycleOfExpulsion[user], // 0 if have not been expelled
                 yield.withdrawnYield[user],
                 yield.withdrawnCollateral[user],
                 yield.availableYield[user],

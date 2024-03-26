@@ -42,10 +42,10 @@ interface IGetters {
     ///                     expulsion limit, beneficiaries pool, withdrawn yield, withdrawn
     ///                     collateral from yield, available yield, deposited collateral by
     ///                     user on yield, amount of yield distributed
-    function getUserSummary(
+    function getUserRelatedSummary(
         address user,
         uint termId
-    ) external view returns (bool[8] memory boolResults, uint[10] memory uintResults);
+    ) external view returns (bool[8] memory boolResults, uint[11] memory uintResults);
 
     /// @notice This function return the current constant values for oracles and yield providers
     /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
