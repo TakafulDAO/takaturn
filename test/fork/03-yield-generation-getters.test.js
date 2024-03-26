@@ -490,7 +490,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                   })
               })
 
-              describe.only("Helper getters", function () {
+              describe("Helper getters", function () {
                   describe("User related getter", function () {
                       beforeEach(async function () {
                           await takaturnDiamond.createTerm(
