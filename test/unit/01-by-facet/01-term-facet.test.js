@@ -88,7 +88,7 @@ const { hour } = require("../../../utils/units")
                       const termId = await takaturnDiamondDeployer.getTermsId()
                       await expect(
                           takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)
-                      ).to.be.revertedWith("TT-GF-02") // ChainlinkOracle: stale data
+                      ).to.be.revertedWith("ChainlinkOracle: stale data")
                   })
               })
           }
@@ -137,7 +137,7 @@ const { hour } = require("../../../utils/units")
                       takaturnDiamond
                           .connect(participant_1)
                           ["joinTerm(uint256,bool)"](wrongTermId, false, { value: entrance })
-                  ).to.be.revertedWith("TT-TF-02") // Term doesn't exist
+                  ).to.be.revertedWith("Term doesn't exist")
 
                   await takaturnDiamond
                       .connect(participant_1)
@@ -283,7 +283,7 @@ const { hour } = require("../../../utils/units")
                           takaturnDiamond
                               .connect(accounts[i])
                               ["joinTerm(uint256,bool)"](termId, false, { value: failedEntrance })
-                      ).to.be.revertedWith("TT-TF-08") //  Eth payment too low
+                      ).to.be.revertedWith("Eth payment too low")
 
                       await expect(
                           takaturnDiamond
@@ -323,7 +323,7 @@ const { hour } = require("../../../utils/units")
                   // Join
                   await takaturnDiamond
                       .connect(participant_1)
-                      ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
+                      ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, position, {
                           value: entrance,
                       })
 
@@ -372,24 +372,24 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_1)
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
+                          ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, position, {
                               value: positionsAndDeposits[1][positionIndex + 1],
                           })
-                  ).to.be.revertedWith("TT-TF-08") //  Eth payment too low
+                  ).to.be.revertedWith("Eth payment too low")
 
                   await takaturnDiamond
                       .connect(participant_1)
-                      ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
+                      ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, position, {
                           value: entrance,
                       })
 
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, position, {
+                          ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, position, {
                               value: entrance,
                           })
-                  ).to.be.revertedWith("TT-TF-07") // Position already taken
+                  ).to.be.revertedWith("Position already taken")
 
                   positionsAndDeposits =
                       await takaturnDiamond.getAvailablePositionsAndSecurityAmount(termId)
@@ -409,7 +409,7 @@ const { hour } = require("../../../utils/units")
 
                       const joinTx = takaturnDiamond
                           .connect(accounts[i + 1])
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, i, {
+                          ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, i, {
                               value: entrance,
                           })
 
@@ -458,10 +458,15 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, totalParticipants, {
-                              value: entrance,
-                          })
-                  ).to.be.revertedWith("TT-TF-06") // Invalid position
+                          ["joinTermOnPosition(uint256,bool,uint256)"](
+                              termId,
+                              false,
+                              totalParticipants,
+                              {
+                                  value: entrance,
+                              }
+                          )
+                  ).to.be.revertedWith("Invalid position")
               })
 
               it("Should revert if the position is already taken", async function () {
@@ -482,10 +487,10 @@ const { hour } = require("../../../utils/units")
                   await expect(
                       takaturnDiamond
                           .connect(participant_12)
-                          ["joinTermNext(uint256,bool,uint256)"](termId, false, 0, {
+                          ["joinTermOnPosition(uint256,bool,uint256)"](termId, false, 0, {
                               value: entrance,
                           })
-                  ).to.be.revertedWith("TT-TF-07") // Position already taken
+                  ).to.be.revertedWith("Position already taken")
               })
           })
 
@@ -510,7 +515,7 @@ const { hour } = require("../../../utils/units")
                           participant_1,
                           { value: entrance }
                       )
-                  ).to.be.revertedWith("TT-TF-02") // Term doesn't exist
+                  ).to.be.revertedWith("Term doesn't exist")
 
                   await takaturnDiamond["paySecurityOnBehalfOf(uint256,bool,address)"](
                       termId,
@@ -671,7 +676,7 @@ const { hour } = require("../../../utils/units")
                               accounts[i].address,
                               { value: failedEntrance }
                           )
-                      ).to.be.revertedWith("TT-TF-08") //  Eth payment too low
+                      ).to.be.revertedWith("Eth payment too low")
 
                       await expect(
                           takaturnDiamond["paySecurityOnBehalfOf(uint256,bool,address)"](
@@ -774,7 +779,7 @@ const { hour } = require("../../../utils/units")
                               value: positionsAndDeposits[1][positionIndex + 1],
                           }
                       )
-                  ).to.be.revertedWith("TT-TF-08") //  Eth payment too low
+                  ).to.be.revertedWith("Eth payment too low")
 
                   await takaturnDiamond["paySecurityOnBehalfOf(uint256,bool,address,uint256)"](
                       termId,
@@ -796,7 +801,7 @@ const { hour } = require("../../../utils/units")
                               value: entrance,
                           }
                       )
-                  ).to.be.revertedWith("TT-TF-07") // Position already taken
+                  ).to.be.revertedWith("Position already taken")
 
                   positionsAndDeposits =
                       await takaturnDiamond.getAvailablePositionsAndSecurityAmount(termId)
@@ -872,7 +877,7 @@ const { hour } = require("../../../utils/units")
                               value: entrance,
                           }
                       )
-                  ).to.be.revertedWith("TT-TF-06") // Invalid position
+                  ).to.be.revertedWith("Invalid position")
               })
 
               it("Should revert if the position is already taken", async function () {
@@ -903,7 +908,7 @@ const { hour } = require("../../../utils/units")
                               value: entrance,
                           }
                       )
-                  ).to.be.revertedWith("TT-TF-07") // Position already taken
+                  ).to.be.revertedWith("Position already taken")
               })
           })
 
@@ -921,7 +926,7 @@ const { hour } = require("../../../utils/units")
 
                   await expect(
                       takaturnDiamond.connect(participant_1).toggleAutoPay(termId)
-                  ).to.be.revertedWith("TT-FF-05") // Pay collateral security first
+                  ).to.be.revertedWith("Pay collateral security first")
 
                   // Join
 
@@ -988,11 +993,11 @@ const { hour } = require("../../../utils/units")
 
                   await expect(
                       takaturnDiamond.connect(participant_1).toggleAutoPay(termId)
-                  ).to.be.revertedWith("TT-FF-02") // Wrong state
+                  ).to.be.revertedWith("Wrong state")
 
                   await expect(
                       takaturnDiamond.connect(participant_2).toggleAutoPay(termId)
-                  ).to.be.revertedWith("TT-FF-02") // Wrong state
+                  ).to.be.revertedWith("Wrong state")
               })
           })
 
@@ -1030,7 +1035,9 @@ const { hour } = require("../../../utils/units")
                   const lastTerm = await takaturnDiamondDeployer.getTermsId()
                   const termId = lastTerm[0]
 
-                  await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith("TT-TF-13") // Registration period not ended
+                  await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
+                      "Registration period not ended"
+                  )
               })
 
               it("Should revert if all the spots are filled", async function () {
@@ -1050,7 +1057,9 @@ const { hour } = require("../../../utils/units")
 
                   await advanceTime(registrationPeriod + 1)
 
-                  await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith("TT-TF-14") // All spots are filled, can't expire
+                  await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
+                      "All spots are filled, can't expire"
+                  )
               })
 
               it("Should revert if all the spots are filled", async function () {
