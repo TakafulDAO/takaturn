@@ -144,7 +144,7 @@ contract TermFacet is ITerm {
                 _registrationPeriod != 0 &&
                 _contributionPeriod < _cycleTime &&
                 _stableTokenAddress != address(0),
-            "Invalid inputs"
+            "TT-TF-01"
         );
 
         LibTermStorage.TermStorage storage termStorage = LibTermStorage._termStorage();
@@ -185,16 +185,16 @@ contract TermFacet is ITerm {
             ._collateralStorage()
             .collaterals[_termId];
 
-        require(LibTermStorage._termExists(_termId), "Term doesn't exist");
+        require(LibTermStorage._termExists(_termId), "TT-TF-02");
 
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
-            "Closed"
+            "TT-TF-03"
         );
 
-        require(collateral.counterMembers < term.totalParticipants, "No space");
+        require(collateral.counterMembers < term.totalParticipants, "TT-TF-04");
 
-        require(!collateral.isCollateralMember[_newParticipant], "Reentry");
+        require(!collateral.isCollateralMember[_newParticipant], "TT-TF-05");
 
         uint memberIndex;
 
@@ -235,23 +235,23 @@ contract TermFacet is ITerm {
             ._yieldStorage()
             .yields[_termId];
 
-        require(LibTermStorage._termExists(_termId), "Term doesn't exist");
+        require(LibTermStorage._termExists(_termId), "TT-TF-02");
 
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
-            "Closed"
+            "TT-TF-03"
         );
 
-        require(collateral.counterMembers < term.totalParticipants, "No space");
+        require(collateral.counterMembers < term.totalParticipants, "TT-TF-04");
 
-        require(!collateral.isCollateralMember[_newParticipant], "Reentry");
+        require(!collateral.isCollateralMember[_newParticipant], "TT-TF-05");
 
-        require(_position <= term.totalParticipants - 1, "Invalid position");
+        require(_position <= term.totalParticipants - 1, "TT-TF-06");
 
-        require(collateral.depositors[_position] == address(0), "Position already taken");
+        require(collateral.depositors[_position] == address(0), "TT-TF-07");
 
         uint minAmount = IGetters(address(this)).minCollateralToDeposit(_termId, _position);
-        require(msg.value >= minAmount, "Eth payment too low");
+        require(msg.value >= minAmount, "TT-TF-08");
 
         collateral.collateralMembersBank[_newParticipant] += msg.value;
         collateral.isCollateralMember[_newParticipant] = true;
@@ -301,17 +301,14 @@ contract TermFacet is ITerm {
 
         require(
             block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
-            "Term not ready to start"
+            "TT-TF-09"
         );
 
-        require(collateral.counterMembers == term.totalParticipants, "All spots are not filled");
+        require(collateral.counterMembers == term.totalParticipants, "TT-TF-10");
 
         // Need to check each user because they can have different collateral amounts
         for (uint i; i < depositorsArrayLength; ) {
-            require(
-                !LibCollateral._isUnderCollaterized(term.termId, depositors[i]),
-                "Eth prices dropped"
-            );
+            require(!LibCollateral._isUnderCollaterized(term.termId, depositors[i]), "TT-TF-11");
 
             /// @custom:unchecked-block without risk, i can't be higher than depositors length
             unchecked {
@@ -362,7 +359,6 @@ contract TermFacet is ITerm {
     /// @param _termId The id of the term
     /// @param _totalParticipants The number of participants in the term
     function _createCollateral(uint _termId, uint _totalParticipants) internal {
-        //require(!LibCollateralStorage._collateralExists(termId), "Collateral already exists");
         LibCollateralStorage.Collateral storage newCollateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
@@ -380,7 +376,7 @@ contract TermFacet is ITerm {
         LibTermStorage.Term memory _term,
         LibCollateralStorage.Collateral storage _collateral
     ) internal {
-        require(!LibFundStorage._fundExists(_term.termId), "Fund already exists");
+        require(!LibFundStorage._fundExists(_term.termId), "TT-TF-12");
         LibFundStorage.Fund storage newFund = LibFundStorage._fundStorage().funds[_term.termId];
 
         newFund.stableToken = IERC20(_term.stableTokenAddress);
@@ -409,15 +405,12 @@ contract TermFacet is ITerm {
         require(
             collateral.firstDepositTime != 0 &&
                 block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
-            "Registration period not ended"
+            "TT-TF-13"
         );
 
-        require(
-            collateral.counterMembers < term.totalParticipants,
-            "All spots are filled, can't expire"
-        );
+        require(collateral.counterMembers < term.totalParticipants, "TT-TF-14");
 
-        require(term.state != LibTermStorage.TermStates.ExpiredTerm, "Term already expired");
+        require(term.state != LibTermStorage.TermStates.ExpiredTerm, "TT-TF-15");
 
         term.state = LibTermStorage.TermStates.ExpiredTerm;
         collateral.state = LibCollateralStorage.CollateralStates.ReleasingCollateral;

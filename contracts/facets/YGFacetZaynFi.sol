@@ -65,7 +65,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             }
         }
 
-        require(canCall, "The caller must be a participant");
+        require(canCall, "TT-YF-01");
 
         LibYieldGeneration._claimAvailableYield(termId, msg.sender, receiver);
     }
@@ -84,12 +84,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
         require(
             collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral,
-            "Too late to change YG opt in"
+            "TT-YF-02"
         );
-        require(
-            collateral.isCollateralMember[msg.sender],
-            "Pay the collateral security deposit first"
-        );
+        require(collateral.isCollateralMember[msg.sender], "TT-YF-03");
 
         bool optIn = !yield.hasOptedIn[msg.sender];
         yield.hasOptedIn[msg.sender] = optIn;
@@ -131,12 +128,9 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             ._yieldStorage()
             .yields[termId];
 
-        require(LibFundStorage._fundExists(termId), "Fund does not exist");
-        require(providerAddress != address(0), "Invalid provider address");
-        require(
-            yield.providerAddresses[providerString] != providerAddress,
-            "Same provider address"
-        );
+        require(LibFundStorage._fundExists(termId), "TT-YF-04");
+        require(providerAddress != address(0), "TT-YF-05");
+        require(yield.providerAddresses[providerString] != providerAddress, "TT-YF-06");
 
         yield.providerAddresses[providerString] = providerAddress;
     }
@@ -159,7 +153,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
             length == originalWithdrawals.length &&
                 length == originalShares.length &&
                 length == users.length,
-            "Arrays don't match"
+            "TT-YF-07"
         );
 
         uint usedValue = 0; // Used to keep track of the lost ETH stored back into zaynfi
@@ -174,7 +168,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 .yields[termId];
 
             // Make sure user is part of this term and has enabled yield generation
-            require(yield.hasOptedIn[user], "User not part of yield generation");
+            require(yield.hasOptedIn[user], "TT-YF-08");
 
             // Zaynfi's addresses
             address vaultAddress = yield.providerAddresses["ZaynVault"];
@@ -216,7 +210,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 uint sharesBefore = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
 
                 // Make sure we have enough eth
-                require(neededEth + usedValue <= msg.value, "Not enough ETH value sent");
+                require(neededEth + usedValue <= msg.value, "TT-YF-09");
 
                 // Deposit the amount of shares we lost
                 IZaynZapV2TakaDAO(zapAddress).zapInEth{value: neededEth}(vaultAddress, termId);
@@ -235,10 +229,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 );
 
                 uint sharesFinal = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
-                require(
-                    neededShares == (sharesFinal - sharesBefore),
-                    "Final share balance incorrect"
-                );
+                require(neededShares == (sharesFinal - sharesBefore), "TT-YF-10");
 
                 // Give the extra eth back to msg.sender
                 usedValue -= withdrawnExtraEth;
@@ -254,7 +245,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         // Reimburse the leftover eth that the msg.sender sent
         if (usedValue < msg.value) {
             (bool success, ) = payable(msg.sender).call{value: msg.value - usedValue}("");
-            require(success, "Failed to send leftover ETH back");
+            require(success, "TT-YF-11");
         }
     }
 
@@ -309,7 +300,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
                 require(
                     neededShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId),
-                    "Shares target not reached!"
+                    "TT-YF-12"
                 );
 
                 unchecked {
@@ -356,7 +347,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
             require(
                 neededShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId),
-                "Shares target not reached!"
+                "TT-YF-12"
             );
 
             unchecked {
@@ -367,7 +358,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         // Reimburse the leftover eth that the msg.sender sent
         if (usedValue < msg.value) {
             (bool success, ) = payable(msg.sender).call{value: msg.value - usedValue}("");
-            require(success, "Failed to send leftover ETH back");
+            require(success, "TT-YF-11");
         }
     }
 
@@ -399,7 +390,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
             require(
                 neededShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId),
-                "currentTotalDeposit does not match needed shares!"
+                "TT-YF-13"
             );
 
             // Deal with the case where the user has withdrawn too much eth from yield
@@ -455,7 +446,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 uint neededEth = (15 * (neededShares - sharesBalance) * pricePerShare) / 10 ** 19; // We ask for 150% of the shares we need to compensate for the slippage
 
                 // Make sure we have enough eth
-                require(neededEth + usedValue <= msg.value, "Not enough ETH value sent");
+                require(neededEth + usedValue <= msg.value, "TT-YF-09");
 
                 // Deposit the amount of shares we lost
                 IZaynZapV2TakaDAO(zapAddress).zapInEth{value: neededEth}(vaultAddress, termId);
@@ -475,7 +466,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
 
                 require(
                     neededShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId),
-                    "Final share balance incorrect"
+                    "TT-YF-10"
                 );
 
                 // Give the extra eth back to msg.sender
@@ -499,7 +490,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 address user = users[j];
                 uint withdraw = yield.withdrawnCollateral[user];
                 uint deposit = yield.depositedCollateralByUser[user];
-                require(deposit >= withdraw, "Withdraw greater than deposit");
+                require(deposit >= withdraw, "TT-YF-14");
 
                 currentTotalDeposit +=
                     yield.depositedCollateralByUser[user] -
@@ -510,16 +501,13 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
                 }
             }
 
-            require(
-                yield.currentTotalDeposit == currentTotalDeposit,
-                "currentTotalDeposit invalid"
-            );
+            require(yield.currentTotalDeposit == currentTotalDeposit, "TT-YF-15");
 
             uint currentShares = (currentTotalDeposit * yield.totalShares) / yield.totalDeposit;
 
             require(
                 currentShares == IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId),
-                "Shares invalid"
+                "TT-YF-16"
             );
 
             unchecked {
@@ -530,7 +518,7 @@ contract YGFacetZaynFi is IYGFacetZaynFi {
         // Reimburse the leftover eth that the msg.sender sent
         if (usedValue < msg.value) {
             (bool success, ) = payable(msg.sender).call{value: msg.value - usedValue}("");
-            require(success, "Failed to send leftover ETH back");
+            require(success, "TT-YF-11");
         }
     }
 
