@@ -156,7 +156,7 @@ const { hour } = require("../../../utils/units")
                               takaturnDiamondParticipant_1
                                   .connect(accounts[i + 1])
                                   .payContribution(termId)
-                          ).to.be.revertedWith("Beneficiary doesn't pay")
+                          ).to.be.revertedWith("TT-FF-14") // Beneficiary doesn't pay
                       } else {
                           await takaturnDiamondParticipant_1
                               .connect(accounts[i + 1])
@@ -196,7 +196,7 @@ const { hour } = require("../../../utils/units")
                               takaturnDiamondParticipant_1
                                   .connect(accounts[i + 1])
                                   .payContribution(termId)
-                          ).to.be.revertedWith("Beneficiary doesn't pay")
+                          ).to.be.revertedWith("TT-FF-14") // Beneficiary doesn't pay
                       } else {
                           await takaturnDiamondParticipant_1
                               .connect(accounts[i + 1])
