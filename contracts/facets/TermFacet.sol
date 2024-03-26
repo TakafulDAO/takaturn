@@ -79,7 +79,7 @@ contract TermFacet is ITerm {
     /// @param optYield Whether the participant wants to opt in for yield generation
     /// @param position The position in the term
     // TODO: To be renamed to joinTerm, this name only to ensure backwards compatibility
-    function joinTermNext(uint termId, bool optYield, uint position) external payable {
+    function joinTermOnPosition(uint termId, bool optYield, uint position) external payable {
         _joinTermByPosition(termId, optYield, position, msg.sender);
     }
 
