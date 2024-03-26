@@ -85,7 +85,7 @@ library LibFund {
     /// @param _newState The new state of the fund
     function _setState(uint _termId, LibFundStorage.FundStates _newState) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        require(fund.currentState != LibFundStorage.FundStates.FundClosed, "Fund closed");
+        require(fund.currentState != LibFundStorage.FundStates.FundClosed, "TT-LF-03");
         fund.currentState = _newState;
         emit OnFundStateChanged(_termId, fund.currentCycle, _newState);
     }
