@@ -88,7 +88,7 @@ const { hour } = require("../../../utils/units")
                       const termId = await takaturnDiamondDeployer.getTermsId()
                       await expect(
                           takaturnDiamondDeployer.minCollateralToDeposit(termId[0], 0)
-                      ).to.be.revertedWith("ChainlinkOracle: stale data")
+                      ).to.be.revertedWith("TT-GF-02")
                   })
               })
           }
