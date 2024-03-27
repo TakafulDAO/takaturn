@@ -142,7 +142,7 @@ const { ZeroAddress } = require("ethers")
                       contributionPeriod,
                       usdc
                   )
-              ).to.be.revertedWith("Invalid inputs")
+              ).to.be.revertedWith("TT-TF-01") // Invalid inputs
               await expect(
                   takaturnDiamond.createTerm(
                       totalParticipants,
@@ -152,7 +152,7 @@ const { ZeroAddress } = require("ethers")
                       contributionPeriod,
                       usdc
                   )
-              ).to.be.revertedWith("Invalid inputs")
+              ).to.be.revertedWith("TT-TF-01") // Invalid inputs
               await expect(
                   takaturnDiamond.createTerm(
                       0,
@@ -162,7 +162,7 @@ const { ZeroAddress } = require("ethers")
                       contributionPeriod,
                       usdc
                   )
-              ).to.be.revertedWith("Invalid inputs")
+              ).to.be.revertedWith("TT-TF-01") // Invalid inputs
               await expect(
                   takaturnDiamond.createTerm(
                       totalParticipants,
@@ -172,7 +172,7 @@ const { ZeroAddress } = require("ethers")
                       contributionPeriod,
                       usdc
                   )
-              ).to.be.revertedWith("Invalid inputs")
+              ).to.be.revertedWith("TT-TF-01") // Invalid inputs
               await expect(
                   takaturnDiamond.createTerm(
                       totalParticipants,
@@ -182,7 +182,7 @@ const { ZeroAddress } = require("ethers")
                       0,
                       usdc
                   )
-              ).to.be.revertedWith("Invalid inputs")
+              ).to.be.revertedWith("TT-TF-01") // Invalid inputs
               await expect(
                   takaturnDiamond.createTerm(
                       totalParticipants,
@@ -192,7 +192,7 @@ const { ZeroAddress } = require("ethers")
                       contributionPeriod,
                       ZeroAddress
                   )
-              ).to.be.revertedWith("Invalid inputs")
+              ).to.be.revertedWith("TT-TF-01") // Invalid inputs
               // Create term
               await expect(
                   takaturnDiamond.createTerm(
@@ -236,7 +236,7 @@ const { ZeroAddress } = require("ethers")
                   takaturnDiamond
                       .connect(participant_1)
                       ["joinTerm(uint256,bool)"](termsIds[1], false, { value: entrance })
-              ).to.be.revertedWith("Term doesn't exist")
+              ).to.be.revertedWith("TT-TF-02") // Term doesn't exist
 
               // Participants join
               for (let i = 1; i <= totalParticipants; i++) {
@@ -248,7 +248,7 @@ const { ZeroAddress } = require("ethers")
                               takaturnDiamond
                                   .connect(accounts[i])
                                   ["joinTerm(uint256,bool)"](termId, true, { value: 0 })
-                          ).to.be.revertedWith("Eth payment too low")
+                          ).to.be.revertedWith("TT-TF-08") // Eth payment too low
 
                           await expect(
                               takaturnDiamond
@@ -262,11 +262,11 @@ const { ZeroAddress } = require("ethers")
                               takaturnDiamond
                                   .connect(accounts[i])
                                   ["joinTerm(uint256,bool)"](termId, true, { value: 0 })
-                          ).to.be.revertedWith("No space")
+                          ).to.be.revertedWith("TT-TF-04") //  No space
 
                           await expect(
                               takaturnDiamondDeployer.minCollateralToDeposit(termId, i)
-                          ).to.be.revertedWith("Index out of bounds")
+                          ).to.be.revertedWith("TT-GF-01") // Index out of bounds
                       } else {
                           await expect(
                               takaturnDiamond
@@ -292,11 +292,11 @@ const { ZeroAddress } = require("ethers")
                       if (i == 1) {
                           await expect(
                               takaturnDiamond.connect(accounts[i]).toggleOptInYG(termId)
-                          ).to.be.revertedWith("Pay the collateral security deposit first")
+                          ).to.be.revertedWith("TT-YF-03") // Pay the collateral security deposit first
 
                           await expect(
                               takaturnDiamond.connect(accounts[i]).toggleAutoPay(termId)
-                          ).to.be.revertedWith("Pay collateral security first")
+                          ).to.be.revertedWith("TT-FF-05") // Reentry
 
                           await expect(
                               takaturnDiamond
@@ -318,7 +318,7 @@ const { ZeroAddress } = require("ethers")
                               takaturnDiamond
                                   .connect(accounts[i])
                                   ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
-                          ).to.be.revertedWith("Reentry")
+                          ).to.be.revertedWith("TT-TF-05") // Reentry
 
                           let hasOptedIn = await takaturnDiamond.userHasoptedInYG(
                               termId,
@@ -388,23 +388,15 @@ const { ZeroAddress } = require("ethers")
                   ["joinTerm(uint256,bool)"](termsIds[1], true, { value: secondEntrance })
 
               // Expire term
-              await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
-                  "Registration period not ended"
-              )
+              await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith("TT-TF-13") // Registration period not ended
 
-              await expect(takaturnDiamond.startTerm(termId)).to.be.revertedWith(
-                  "Term not ready to start"
-              )
+              await expect(takaturnDiamond.startTerm(termId)).to.be.revertedWith("TT-TF-09") // Term not ready to start
 
               await advanceTime(registrationPeriod + 1)
 
-              await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith(
-                  "All spots are filled, can't expire"
-              )
+              await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith("TT-TF-14") // All spots are filled, can't expire
 
-              await expect(takaturnDiamond.startTerm(termsIds[1])).to.be.revertedWith(
-                  "All spots are not filled"
-              )
+              await expect(takaturnDiamond.startTerm(termsIds[1])).to.be.revertedWith("TT-TF-10") // All spots are not filled
 
               await expect(takaturnDiamond.expireTerm(termsIds[1]))
                   .to.emit(takaturnDiamond, "OnTermExpired")
@@ -434,9 +426,7 @@ const { ZeroAddress } = require("ethers")
               // Manipulate Eth price to test the revert
               await aggregator.setPrice("100000000")
 
-              await expect(takaturnDiamond.startTerm(termId)).to.be.revertedWith(
-                  "Eth prices dropped"
-              )
+              await expect(takaturnDiamond.startTerm(termId)).to.be.revertedWith("TT-TF-11") //  Eth prices dropped
 
               const neededAllowance_participant_1 =
                   await takaturnDiamondDeployer.getNeededAllowance(participant_1.address)
@@ -525,7 +515,7 @@ const { ZeroAddress } = require("ethers")
                       if (i == fund[6]) {
                           await expect(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                          ).to.be.revertedWith("Beneficiary doesn't pay")
+                          ).to.be.revertedWith("TT-FF-14") // Beneficiary doesn't pay
                       } else if (i == 3) {
                           await expect(takaturnDiamond.connect(accounts[i]).payContribution(termId))
                               .to.emit(takaturnDiamond, "OnPaidContribution")
@@ -547,7 +537,7 @@ const { ZeroAddress } = require("ethers")
                       } else if (i == 7) {
                           await expect(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                          ).to.be.revertedWith("Already paid for cycle")
+                          ).to.be.revertedWith("TT-FF-13") // Already paid for cycle
 
                           fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
                               accounts[i].address,
@@ -557,7 +547,7 @@ const { ZeroAddress } = require("ethers")
                       } else if (i == 8) {
                           await expect(
                               takaturnDiamond.connect(deployer).payContribution(termId)
-                          ).to.be.revertedWith("Not a participant")
+                          ).to.be.revertedWith("TT-FF-12") // Not a participant
                       } else {
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
                       }
@@ -571,8 +561,8 @@ const { ZeroAddress } = require("ethers")
               }
 
               await expect(takaturnDiamond.closeFundingPeriod(termId)).to.be.revertedWith(
-                  "Still time to contribute"
-              )
+                  "TT-FF-01"
+              ) // Still time to contribute
 
               await advanceTime(contributionPeriod + 1)
 
@@ -642,8 +632,8 @@ const { ZeroAddress } = require("ethers")
               )
 
               await expect(takaturnDiamond.closeFundingPeriod(termId)).to.be.revertedWith(
-                  "Wrong state"
-              )
+                  "TT-FF-02"
+              ) // Wrong state
 
               // Check the auto payers
               for (let i = 10; i <= totalParticipants; i++) {
@@ -658,9 +648,7 @@ const { ZeroAddress } = require("ethers")
               }
 
               // Start new Cycle
-              await expect(takaturnDiamond.startNewCycle(termId)).to.be.revertedWith(
-                  "Too early to start new cycle"
-              )
+              await expect(takaturnDiamond.startNewCycle(termId)).to.be.revertedWith("TT-LF-01") // Too early to start new cycle
 
               await advanceTime(cycleTime - contributionPeriod + 1)
 
@@ -700,7 +688,7 @@ const { ZeroAddress } = require("ethers")
 
               await expect(
                   takaturnDiamond.connect(participant_2).withdrawFund(termId)
-              ).to.be.revertedWith("The caller must be a participant")
+              ).to.be.revertedWith("TT-FF-08") // The caller must be a participant
 
               let withdrawFundTx = takaturnDiamond.connect(participant_1).withdrawFund(termId)
               await Promise.all([
@@ -724,7 +712,7 @@ const { ZeroAddress } = require("ethers")
 
               await expect(
                   takaturnDiamond.connect(participant_1).withdrawFund(termId)
-              ).to.be.revertedWith("Nothing to withdraw")
+              ).to.be.revertedWith("TT-FF-09") // Nothing to withdraw
 
               participant_1_fundSummary = await takaturnDiamond.getParticipantFundSummary(
                   participant_1.address,
@@ -749,7 +737,7 @@ const { ZeroAddress } = require("ethers")
 
               await expect(
                   takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
-              ).to.be.revertedWith("Nothing to withdraw")
+              ).to.be.revertedWith("TT-CF-04") // Nothing to withdraw
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
@@ -802,7 +790,7 @@ const { ZeroAddress } = require("ethers")
                       takaturnDiamond
                           .connect(participant_2)
                           .claimAvailableYield(termId, participant_2.address)
-                  ).to.be.revertedWith("No yield to withdraw")
+                  ).to.be.revertedWith("TT-LYG-01") // No yield to withdraw
               }
 
               for (let i = 1; i <= totalParticipants; i++) {
@@ -864,7 +852,7 @@ const { ZeroAddress } = require("ethers")
                       takaturnDiamond
                           .connect(participant_2)
                           .claimAvailableYield(termId, participant_2.address)
-                  ).to.be.revertedWith("No yield to withdraw")
+                  ).to.be.revertedWith("TT-LYG-01") // No yield to withdraw
               }
 
               for (let i = 1; i <= totalParticipants; i++) {
@@ -1044,12 +1032,12 @@ const { ZeroAddress } = require("ethers")
                   if (i == 4 || i == 8) {
                       await expect(
                           takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                      ).to.be.revertedWith("Not a participant")
+                      ).to.be.revertedWith("TT-FF-12") // Not a participant
                   }
                   if (i == 7 || i > 8) {
                       await expect(
                           takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                      ).to.be.revertedWith("Participant is exempted this cycle")
+                      ).to.be.revertedWith("TT-FF-15") // Participant is exempted this cycle
 
                       let isExempted = await takaturnDiamond.isExempted(
                           termId,
@@ -1106,7 +1094,7 @@ const { ZeroAddress } = require("ethers")
 
               await expect(
                   takaturnDiamond.connect(participant_9).withdrawFund(termId)
-              ).to.be.revertedWith("Need at least 1.1RCC collateral to unfreeze your fund")
+              ).to.be.revertedWith("TT-FF-10") // Need at least 1.1RCC collateral to unfreeze your fund
 
               await aggregator.setPrice("9000000000")
 
@@ -1178,16 +1166,14 @@ const { ZeroAddress } = require("ethers")
 
               await advanceTime(cycleTime + 1)
 
-              await expect(takaturnDiamond.startNewCycle(termId)).to.be.revertedWith("Wrong state")
+              await expect(takaturnDiamond.startNewCycle(termId)).to.be.revertedWith("TT-LF-02") // Wrong state
 
               //******************************************** After End *********************************************************/
 
-              await expect(takaturnDiamond.emptyFundAfterEnd(termId)).to.be.revertedWith(
-                  "Can't empty yet"
-              )
+              await expect(takaturnDiamond.emptyFundAfterEnd(termId)).to.be.revertedWith("TT-FF-03") // Can’t empty yet
               await expect(takaturnDiamond.emptyCollateralAfterEnd(termId)).to.be.revertedWith(
-                  "Can't empty yet"
-              )
+                  "TT-CF-03"
+              ) // Can’t empty yet
 
               await advanceTimeByDate(180, day)
 

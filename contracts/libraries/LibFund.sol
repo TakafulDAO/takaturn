@@ -51,14 +51,11 @@ library LibFund {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
         // currentCycle is 0 when this is called for the first time
-        require(
-            block.timestamp > term.cycleTime * fund.currentCycle + fund.fundStart,
-            "Too early to start new cycle"
-        );
+        require(block.timestamp > term.cycleTime * fund.currentCycle + fund.fundStart, "TT-LF-01");
         require(
             fund.currentState == LibFundStorage.FundStates.InitializingFund ||
                 fund.currentState == LibFundStorage.FundStates.CycleOngoing,
-            "Wrong state"
+            "TT-LF-02"
         );
 
         ++fund.currentCycle;
@@ -88,7 +85,7 @@ library LibFund {
     /// @param _newState The new state of the fund
     function _setState(uint _termId, LibFundStorage.FundStates _newState) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        require(fund.currentState != LibFundStorage.FundStates.FundClosed, "Fund closed");
+        require(fund.currentState != LibFundStorage.FundStates.FundClosed, "TT-LF-03");
         fund.currentState = _newState;
         emit OnFundStateChanged(_termId, fund.currentCycle, _newState);
     }

@@ -184,7 +184,7 @@ library LibYieldGeneration {
 
         uint availableYield = yield.availableYield[_user];
 
-        require(availableYield > 0, "No yield to withdraw");
+        require(availableYield > 0, "TT-LYG-01");
 
         yield.availableYield[_user] = 0;
         (bool success, ) = payable(_receiver).call{value: availableYield}("");

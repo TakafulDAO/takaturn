@@ -705,7 +705,7 @@ contract GettersFacet is IGetters {
     ) public view returns (uint amount) {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
-        require(depositorIndex < term.totalParticipants, "Index out of bounds");
+        require(depositorIndex < term.totalParticipants, "TT-GF-01");
 
         uint contributionAmountInWei = getToCollateralConversionRate(
             term.contributionAmount * 10 ** 18
@@ -731,7 +731,7 @@ contract GettersFacet is IGetters {
         // Check if chainlink data is not stale or incorrect
         require(
             timeStamp_ethUSD != 0 && answeredInRound_ethUSD >= roundID_ethUSD && price_ethUSD > 0,
-            "ChainlinkOracle: stale data"
+            "TT-GF-02"
         );
 
         (
@@ -746,7 +746,7 @@ contract GettersFacet is IGetters {
             timeStamp_usdUSDC != 0 &&
                 answeredInRound_usdUSDC >= roundID_usdUSDC &&
                 price_usdUSDC > 0,
-            "ChainlinkOracle: stale data"
+            "TT-GF-02"
         );
 
         int256 ethUSDC = price_ethUSD / price_usdUSDC;
