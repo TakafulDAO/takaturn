@@ -21,7 +21,12 @@ interface IGetters {
             LibTermStorage.Term memory term,
             uint[] memory joinPositions,
             uint[] memory joinAmounts,
-            LibGettersHelpers.NonUserRelatedHelper memory nonUserRelated
+            LibCollateralStorage.CollateralStates collateralState,
+            LibFundStorage.FundStates fundState,
+            LibGettersHelpers.TimesAndContributionsHelper memory timesAndContributionsRelated,
+            LibGettersHelpers.CollateralNonUserRelatedHelper memory collateralRelated,
+            LibGettersHelpers.FundNonUserRelatedHelper memory fundRelated,
+            LibGettersHelpers.YieldNonUserRelatedHelper memory yieldRelated
         );
 
     /// @notice This function is used as a helper for front-end implementation

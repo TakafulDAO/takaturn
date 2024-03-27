@@ -34,7 +34,12 @@ contract GettersFacet is IGetters {
             LibTermStorage.Term memory term,
             uint[] memory joinPositions,
             uint[] memory joinAmounts,
-            LibGettersHelpers.NonUserRelatedHelper memory nonUserRelated
+            LibCollateralStorage.CollateralStates collateralState,
+            LibFundStorage.FundStates fundState,
+            LibGettersHelpers.TimesAndContributionsHelper memory timesAndContributionsRelated,
+            LibGettersHelpers.CollateralNonUserRelatedHelper memory collateralRelated,
+            LibGettersHelpers.FundNonUserRelatedHelper memory fundRelated,
+            LibGettersHelpers.YieldNonUserRelatedHelper memory yieldRelated
         )
     {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -48,58 +53,37 @@ contract GettersFacet is IGetters {
 
         (joinPositions, joinAmounts) = getAvailablePositionsAndSecurityAmount(termId);
 
-        nonUserRelated = LibGettersHelpers.NonUserRelatedHelper({
+        collateralState = collateral.state;
+        fundState = fund.currentState;
+
+        timesAndContributionsRelated = LibGettersHelpers.TimesAndContributionsHelper({
             remainingRegistrationTime: getRemainingRegistrationTime(termId),
             remainingContributionTime: getRemainingContributionTime(termId),
             remainingCycleTime: getRemainingCycleTime(termId),
             remainingCycles: getRemainingCycles(termId),
             rcc: getRemainingCyclesContributionWei(termId),
-            latestPrice: getLatestPrice(),
+            latestPrice: getLatestPrice()
+        });
+
+        collateralRelated = LibGettersHelpers.CollateralNonUserRelatedHelper({
             collateralFirstDepositTime: collateral.firstDepositTime,
-            collateralCounterMembers: collateral.counterMembers,
+            collateralCounterMembers: collateral.counterMembers
+        });
+
+        fundRelated = LibGettersHelpers.FundNonUserRelatedHelper({
             fundStartTime: fund.fundStart,
             fundEndTime: fund.fundEnd,
             fundCurrentCycle: fund.currentCycle,
             fundExpellantsCount: fund.expelledParticipants,
-            fundTotalCycles: fund.totalAmountOfCycles,
+            fundTotalCycles: fund.totalAmountOfCycles
+        });
+
+        yieldRelated = LibGettersHelpers.YieldNonUserRelatedHelper({
             yieldStartTime: yield.startTimeStamp,
             yieldTotalDeposit: yield.totalDeposit,
             yieldCurrentTotalDeposit: yield.currentTotalDeposit,
             yieldTotalShares: yield.totalShares
         });
-
-        // // Times related
-        // timesRelated = [
-        //     getRemainingRegistrationTime(termId),
-        //     getRemainingContributionTime(termId),
-        //     getRemainingCycleTime(termId)
-        // ];
-
-        // Cycles
-        // remainingCycles = getRemainingCycles(termId);
-
-        // // Contributions and prices
-        // contributionsAndPrices = [getRemainingCyclesContributionWei(termId), getLatestPrice()];
-
-        // // Collateral values
-        // collateralValues = [collateral.firstDepositTime, collateral.counterMembers];
-
-        // Fund values
-        // fundValues = [
-        //     fund.fundStart,
-        //     fund.fundEnd,
-        //     fund.currentCycle,
-        //     fund.expelledParticipants,
-        //     fund.totalAmountOfCycles
-        // ];
-
-        // Yield values
-        // yieldValues = [
-        //     yield.startTimeStamp,
-        //     yield.totalDeposit,
-        //     yield.currentTotalDeposit,
-        //     yield.totalShares
-        // ];
     }
 
     /// @notice This function is used as a helper for front-end implementation
