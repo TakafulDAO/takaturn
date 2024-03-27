@@ -7,13 +7,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
+import {LibGettersHelpers} from "../libraries/LibGettersHelpers.sol";
 
 interface IGetters {
     /// @notice This function is used as a helper for front-end implementation
     /// @param termId The term id for which the summary is being requested
-    /// @return term complete term object
-    /// @param joinPositions available positions if any
-    /// @param joinAmounts the minimum security deposit for each position from joinPositions
     function getTurnGroupRelatedSummary(
         uint termId
     )
@@ -23,12 +21,7 @@ interface IGetters {
             LibTermStorage.Term memory term,
             uint[] memory joinPositions,
             uint[] memory joinAmounts,
-            uint[3] memory timesRelated,
-            uint remainingCycles,
-            uint[2] memory contributionsAndPrices,
-            uint[2] memory collateralValues,
-            uint[5] memory fundValues,
-            uint[4] memory yieldValues
+            LibGettersHelpers.NonUserRelatedHelper memory nonUserRelated
         );
 
     /// @notice This function is used as a helper for front-end implementation

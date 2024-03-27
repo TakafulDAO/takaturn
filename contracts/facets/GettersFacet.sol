@@ -14,6 +14,7 @@ import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {LibGettersHelpers} from "../libraries/LibGettersHelpers.sol";
 
 /// @title Takaturn Getters Facet
 /// @author Maikel Ordaz
@@ -24,9 +25,6 @@ contract GettersFacet is IGetters {
 
     /// @notice This function is used as a helper for front-end implementation
     /// @param termId The term id for which the summary is being requested
-    /// @return term complete term object
-    /// @param joinPositions available positions if any
-    /// @param joinAmounts the minimum security deposit for each position from joinPositions
     function getTurnGroupRelatedSummary(
         uint termId
     )
@@ -36,12 +34,7 @@ contract GettersFacet is IGetters {
             LibTermStorage.Term memory term,
             uint[] memory joinPositions,
             uint[] memory joinAmounts,
-            uint[3] memory timesRelated,
-            uint remainingCycles,
-            uint[2] memory contributionsAndPrices,
-            uint[2] memory collateralValues,
-            uint[5] memory fundValues,
-            uint[4] memory yieldValues
+            LibGettersHelpers.NonUserRelatedHelper memory nonUserRelated
         )
     {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -55,38 +48,58 @@ contract GettersFacet is IGetters {
 
         (joinPositions, joinAmounts) = getAvailablePositionsAndSecurityAmount(termId);
 
-        // Times related
-        timesRelated = [
-            getRemainingRegistrationTime(termId),
-            getRemainingContributionTime(termId),
-            getRemainingCycleTime(termId)
-        ];
+        nonUserRelated = LibGettersHelpers.NonUserRelatedHelper({
+            remainingRegistrationTime: getRemainingRegistrationTime(termId),
+            remainingContributionTime: getRemainingContributionTime(termId),
+            remainingCycleTime: getRemainingCycleTime(termId),
+            remainingCycles: getRemainingCycles(termId),
+            rcc: getRemainingCyclesContributionWei(termId),
+            latestPrice: getLatestPrice(),
+            collateralFirstDepositTime: collateral.firstDepositTime,
+            collateralCounterMembers: collateral.counterMembers,
+            fundStartTime: fund.fundStart,
+            fundEndTime: fund.fundEnd,
+            fundCurrentCycle: fund.currentCycle,
+            fundExpellantsCount: fund.expelledParticipants,
+            fundTotalCycles: fund.totalAmountOfCycles,
+            yieldStartTime: yield.startTimeStamp,
+            yieldTotalDeposit: yield.totalDeposit,
+            yieldCurrentTotalDeposit: yield.currentTotalDeposit,
+            yieldTotalShares: yield.totalShares
+        });
+
+        // // Times related
+        // timesRelated = [
+        //     getRemainingRegistrationTime(termId),
+        //     getRemainingContributionTime(termId),
+        //     getRemainingCycleTime(termId)
+        // ];
 
         // Cycles
-        remainingCycles = getRemainingCycles(termId);
+        // remainingCycles = getRemainingCycles(termId);
 
-        // Contributions and prices
-        contributionsAndPrices = [getRemainingCyclesContributionWei(termId), getLatestPrice()];
+        // // Contributions and prices
+        // contributionsAndPrices = [getRemainingCyclesContributionWei(termId), getLatestPrice()];
 
-        // Collateral values
-        collateralValues = [collateral.firstDepositTime, collateral.counterMembers];
+        // // Collateral values
+        // collateralValues = [collateral.firstDepositTime, collateral.counterMembers];
 
         // Fund values
-        fundValues = [
-            fund.fundStart,
-            fund.fundEnd,
-            fund.currentCycle,
-            fund.expelledParticipants,
-            fund.totalAmountOfCycles
-        ];
+        // fundValues = [
+        //     fund.fundStart,
+        //     fund.fundEnd,
+        //     fund.currentCycle,
+        //     fund.expelledParticipants,
+        //     fund.totalAmountOfCycles
+        // ];
 
         // Yield values
-        yieldValues = [
-            yield.startTimeStamp,
-            yield.totalDeposit,
-            yield.currentTotalDeposit,
-            yield.totalShares
-        ];
+        // yieldValues = [
+        //     yield.startTimeStamp,
+        //     yield.totalDeposit,
+        //     yield.currentTotalDeposit,
+        //     yield.totalShares
+        // ];
     }
 
     /// @notice This function is used as a helper for front-end implementation
@@ -145,7 +158,8 @@ contract GettersFacet is IGetters {
 
         if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
             uint limit;
-            if (beneficiary) { // limit is determined by whether the user is beneficiary or not
+            if (beneficiary) {
+                // limit is determined by whether the user is beneficiary or not
                 limit = getRemainingCyclesContributionWei(termId);
             } else {
                 limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
