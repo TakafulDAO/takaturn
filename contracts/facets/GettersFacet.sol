@@ -116,13 +116,7 @@ contract GettersFacet is IGetters {
             ._yieldStorage()
             .yields[termId];
 
-        uint limit;
         bool beneficiary = fund.isBeneficiary[user]; // true if user has been beneficiary
-        if (beneficiary) { // limit is determined by whether the user is beneficiary or not
-            limit = getRemainingCyclesContributionWei(termId);
-        } else {
-            limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
-        }
 
         boolResults = [
             collateral.isCollateralMember[user], // true if member
@@ -139,7 +133,7 @@ contract GettersFacet is IGetters {
             collateral.collateralMembersBank[user],
             collateral.collateralPaymentBank[user], // At this moment should be 0
             collateral.collateralDepositByUser[user], // At this moment should be equal to collateral members bank
-            limit,
+            0,
             0, // At this moment neither yield nor fund objects have been created so nothing exist yet, everything 0 to avoid reverts
             0,
             0,
@@ -150,6 +144,14 @@ contract GettersFacet is IGetters {
         ];
 
         if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
+            uint limit;
+            if (beneficiary) { // limit is determined by whether the user is beneficiary or not
+                limit = getRemainingCyclesContributionWei(termId);
+            } else {
+                limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
+            }
+
+            uintResults[3] = limit;
             uintResults[4] = fund.beneficiariesPool[user];
             uintResults[5] = fund.cycleOfExpulsion[user];
 
