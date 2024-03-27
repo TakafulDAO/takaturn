@@ -12,19 +12,23 @@ library LibGettersHelpers {
     }
 
     struct CollateralNonUserRelatedHelper {
+        bool collateralInitialized;
         uint collateralFirstDepositTime; // In seconds
         uint collateralCounterMembers; // Member count
     }
 
     struct FundNonUserRelatedHelper {
+        bool fundInitialized;
         uint fundStartTime; // In seconds
         uint fundEndTime; // In seconds
         uint fundCurrentCycle;
         uint fundExpellantsCount;
         uint fundTotalCycles;
+        address[] fundBeneficiariesOrder;
     }
 
     struct YieldNonUserRelatedHelper {
+        bool yieldInitialized;
         uint yieldStartTime; // In seconds
         uint yieldTotalDeposit; // In wei
         uint yieldCurrentTotalDeposit; // In wei

@@ -83,19 +83,23 @@ contract GettersFacet is IGetters {
         });
 
         collateralRelated = LibGettersHelpers.CollateralNonUserRelatedHelper({
+            collateralInitialized: collateral.initialized,
             collateralFirstDepositTime: collateral.firstDepositTime,
             collateralCounterMembers: collateral.counterMembers
         });
 
         fundRelated = LibGettersHelpers.FundNonUserRelatedHelper({
+            fundInitialized: fund.initialized,
             fundStartTime: fund.fundStart,
             fundEndTime: fund.fundEnd,
             fundCurrentCycle: fund.currentCycle,
             fundExpellantsCount: fund.expelledParticipants,
-            fundTotalCycles: fund.totalAmountOfCycles
+            fundTotalCycles: fund.totalAmountOfCycles,
+            fundBeneficiariesOrder: fund.beneficiariesOrder
         });
 
         yieldRelated = LibGettersHelpers.YieldNonUserRelatedHelper({
+            yieldInitialized: yield.initialized,
             yieldStartTime: yield.startTimeStamp,
             yieldTotalDeposit: yield.totalDeposit,
             yieldCurrentTotalDeposit: yield.currentTotalDeposit,
