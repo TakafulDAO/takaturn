@@ -1,7 +1,14 @@
-const { assert } = require("chai")
+const { assert, expect } = require("chai")
 const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
-const { impersonateAccount, advanceTime } = require("../../utils/_helpers")
+const {
+    impersonateAccount,
+    advanceTime,
+    FundStates,
+    CollateralStates,
+    getFundStateFromIndex,
+    getCollateralStateFromIndex,
+} = require("../../utils/_helpers")
 const { balanceForUser } = require("../utils/test-utils")
 const { erc20UnitsFormat } = require("../../utils/units")
 
@@ -681,23 +688,32 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               // Every position should be available
                               assert.equal(termSummary[1].length, totalParticipants)
                               assert.equal(termSummary[1].length, termSummary[2].length)
+                              // States
+                              expect(getCollateralStateFromIndex(termSummary[3])).to.equal(
+                                  CollateralStates.AcceptingCollateral
+                              )
+                              expect(getFundStateFromIndex(termSummary[4])).to.equal(
+                                  FundStates.InitializingFund
+                              )
                               // Every time related shoud be 0
-                              assert.equal(termSummary[3][0], 0n)
-                              assert.equal(termSummary[3][1], 0n)
-                              assert.equal(termSummary[3][2], 0n)
+                              assert.equal(termSummary[5].remainingRegistrationTime, 0n)
+                              assert.equal(termSummary[5].remainingContributionTime, 0n)
+                              assert.equal(termSummary[5].remainingCycleTime, 0n)
+                              assert(termSummary[5].rcc > 0n)
+                              assert(termSummary[5].latestPrice > 0n)
                               // Nobody has deposited in collateral
-                              assert.equal(termSummary[6][0], 0n)
-                              assert.equal(termSummary[6][1], 0n)
+                              assert.equal(termSummary[6].collateralFirstDepositTime, 0n)
+                              assert.equal(termSummary[6].collateralCounterMembers, 0n)
                               // Fund neither yield has values
-                              assert.equal(termSummary[7][0], 0n)
-                              assert.equal(termSummary[7][1], 0n)
-                              assert.equal(termSummary[7][2], 0n)
-                              assert.equal(termSummary[7][3], 0n)
-                              assert.equal(termSummary[7][4], 0n)
-                              assert.equal(termSummary[8][0], 0n)
-                              assert.equal(termSummary[8][1], 0n)
-                              assert.equal(termSummary[8][2], 0n)
-                              assert.equal(termSummary[8][3], 0n)
+                              assert.equal(termSummary[7].fundStartTime, 0n)
+                              assert.equal(termSummary[7].fundEndTime, 0n)
+                              assert.equal(termSummary[7].fundCurrentCycle, 0n)
+                              assert.equal(termSummary[7].fundExpellantsCount, 0n)
+                              assert.equal(termSummary[7].fundTotalCycles, 0n)
+                              assert.equal(termSummary[8].yieldStartTime, 0n)
+                              assert.equal(termSummary[8].yieldTotalDeposit, 0n)
+                              assert.equal(termSummary[8].yieldCurrentTotalDeposit, 0n)
+                              assert.equal(termSummary[8].yieldTotalShares, 0n)
                           })
                       })
                       describe("Term started", function () {
@@ -726,29 +742,37 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               )
 
                               assert.ok(termSummary[0].initialized) // Term initialized
-                              // No positions availables
+                              // Every position should be available
                               assert.equal(termSummary[1].length, 0n)
                               assert.equal(termSummary[1].length, termSummary[2].length)
-                              // Registration period ends
-                              assert.equal(termSummary[3][0], 0n)
-                              // Term started
-                              assert(termSummary[3][1] > 0n)
-                              assert(termSummary[3][2] > 0n)
-                              // Cycles remaining all
-                              assert.equal(termSummary[4], totalParticipants)
-                              // All members
-                              assert.equal(termSummary[6][1], totalParticipants)
-                              // Fund values
-                              assert(termSummary[7][0] > 0) // Term started
-                              assert.equal(termSummary[7][1], 0n) // Not ended
-                              assert.equal(termSummary[7][2], 1n) // current cycle
-                              assert.equal(termSummary[7][3], 0n) // nobody expelled
-                              assert.equal(termSummary[7][4], totalParticipants) // total cycles
-                              // Yield values are available
-                              assert(termSummary[8][0] > 0n)
-                              assert(termSummary[8][1] > 0n)
-                              assert(termSummary[8][2] > 0n)
-                              assert(termSummary[8][3] > 0n)
+                              // States
+                              expect(getCollateralStateFromIndex(termSummary[3])).to.equal(
+                                  CollateralStates.CycleOngoing
+                              )
+                              expect(getFundStateFromIndex(termSummary[4])).to.equal(
+                                  FundStates.AcceptingContributions
+                              )
+                              // Every time related shoud be 0
+                              assert.equal(termSummary[5].remainingRegistrationTime, 0n)
+                              assert(termSummary[5].remainingContributionTime > 0n)
+                              assert(termSummary[5].remainingCycleTime > 0n)
+                              assert.equal(termSummary[5].remainingCycles, totalParticipants)
+                              assert(termSummary[5].rcc > 0n)
+                              assert(termSummary[5].latestPrice > 0n)
+                              assert(termSummary[6].collateralFirstDepositTime > 0n)
+                              assert.equal(
+                                  termSummary[6].collateralCounterMembers,
+                                  totalParticipants
+                              )
+                              assert(termSummary[7].fundStartTime > 0n)
+                              assert.equal(termSummary[7].fundEndTime, 0n)
+                              assert.equal(termSummary[7].fundCurrentCycle, 1n)
+                              assert.equal(termSummary[7].fundExpellantsCount, 0n)
+                              assert.equal(termSummary[7].fundTotalCycles, totalParticipants)
+                              assert(termSummary[8].yieldStartTime > 0n)
+                              assert(termSummary[8].yieldTotalDeposit > 0n)
+                              assert(termSummary[8].yieldCurrentTotalDeposit > 0n)
+                              assert(termSummary[8].yieldTotalShares > 0n)
                           })
                       })
                   })
