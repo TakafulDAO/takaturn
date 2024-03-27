@@ -685,6 +685,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               )
 
                               assert.ok(termSummary[0].initialized) // Term initialized
+                              assert.equal(termSummary[0].stableTokenAddress, usdc.target) // Stable token
                               // Every position should be available
                               assert.equal(termSummary[1].length, totalParticipants)
                               assert.equal(termSummary[1].length, termSummary[2].length)
@@ -702,14 +703,17 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               assert(termSummary[5].rcc > 0n)
                               assert(termSummary[5].latestPrice > 0n)
                               // Nobody has deposited in collateral
+                              assert.ok(termSummary[6].collateralInitialized)
                               assert.equal(termSummary[6].collateralFirstDepositTime, 0n)
                               assert.equal(termSummary[6].collateralCounterMembers, 0n)
                               // Fund neither yield has values
+                              assert.ok(!termSummary[7].fundInitialized)
                               assert.equal(termSummary[7].fundStartTime, 0n)
                               assert.equal(termSummary[7].fundEndTime, 0n)
                               assert.equal(termSummary[7].fundCurrentCycle, 0n)
                               assert.equal(termSummary[7].fundExpellantsCount, 0n)
                               assert.equal(termSummary[7].fundTotalCycles, 0n)
+                              assert.ok(!termSummary[8].yieldInitialized)
                               assert.equal(termSummary[8].yieldStartTime, 0n)
                               assert.equal(termSummary[8].yieldTotalDeposit, 0n)
                               assert.equal(termSummary[8].yieldCurrentTotalDeposit, 0n)
@@ -734,7 +738,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               await advanceTime(registrationPeriod + 1)
                               await takaturnDiamond.startTerm(termId)
                           })
-                          it("Should get the correct values", async function () {
+                          it.only("Should get the correct values", async function () {
                               const terms = await takaturnDiamond.getTermsId()
                               const termId = terms[0]
                               const termSummary = await takaturnDiamond.getTurnGroupRelatedSummary(
@@ -742,6 +746,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               )
 
                               assert.ok(termSummary[0].initialized) // Term initialized
+                              assert.equal(termSummary[0].stableTokenAddress, usdc.target) // Stable token
                               // Every position should be available
                               assert.equal(termSummary[1].length, 0n)
                               assert.equal(termSummary[1].length, termSummary[2].length)
@@ -759,16 +764,45 @@ const { erc20UnitsFormat } = require("../../utils/units")
                               assert.equal(termSummary[5].remainingCycles, totalParticipants)
                               assert(termSummary[5].rcc > 0n)
                               assert(termSummary[5].latestPrice > 0n)
+
+                              // Collateral
+                              assert.ok(termSummary[6].collateralInitialized)
                               assert(termSummary[6].collateralFirstDepositTime > 0n)
                               assert.equal(
                                   termSummary[6].collateralCounterMembers,
                                   totalParticipants
                               )
+
+                              // Fund
+                              assert.ok(termSummary[7].fundInitialized)
                               assert(termSummary[7].fundStartTime > 0n)
                               assert.equal(termSummary[7].fundEndTime, 0n)
                               assert.equal(termSummary[7].fundCurrentCycle, 1n)
                               assert.equal(termSummary[7].fundExpellantsCount, 0n)
                               assert.equal(termSummary[7].fundTotalCycles, totalParticipants)
+                              assert.equal(
+                                  termSummary[7].fundBeneficiariesOrder.length,
+                                  totalParticipants
+                              )
+                              assert.equal(
+                                  termSummary[7].fundBeneficiariesOrder[0],
+                                  participant_1.address
+                              )
+                              assert.equal(
+                                  termSummary[7].fundBeneficiariesOrder[1],
+                                  participant_2.address
+                              )
+                              assert.equal(
+                                  termSummary[7].fundBeneficiariesOrder[2],
+                                  participant_3.address
+                              )
+                              assert.equal(
+                                  termSummary[7].fundBeneficiariesOrder[3],
+                                  participant_4.address
+                              )
+
+                              // Yield
+                              assert.ok(termSummary[8].yieldInitialized)
                               assert(termSummary[8].yieldStartTime > 0n)
                               assert(termSummary[8].yieldTotalDeposit > 0n)
                               assert(termSummary[8].yieldCurrentTotalDeposit > 0n)
