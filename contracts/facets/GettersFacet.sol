@@ -117,17 +117,17 @@ contract GettersFacet is IGetters {
             .yields[termId];
 
         uint limit;
-        uint yieldDistributed;
-        if (!fund.isBeneficiary[user]) {
-            limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
-        } else {
+        bool beneficiary = fund.isBeneficiary[user]; // true if user has been beneficiary
+        if (beneficiary) { // limit is determined by whether the user is beneficiary or not
             limit = getRemainingCyclesContributionWei(termId);
+        } else {
+            limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
         }
 
         boolResults = [
             collateral.isCollateralMember[user], // true if member
             fund.isParticipant[user], // true if participant
-            fund.isBeneficiary[user], // true if have been beneficiary
+            beneficiary, // true if user has been beneficiary
             fund.paidThisCycle[user], // true if has paid current cycle
             fund.paidNextCycle[user], // true if has paid next cycle
             fund.autoPayEnabled[user], // true if enabled auto pay
@@ -135,53 +135,31 @@ contract GettersFacet is IGetters {
             yield.hasOptedIn[user] // true if deposit on yield
         ];
 
-        if (collateral.state == LibCollateralStorage.CollateralStates.AcceptingCollateral) {
-            uintResults = [
-                collateral.collateralMembersBank[user],
-                collateral.collateralPaymentBank[user], // At this moment should be 0
-                collateral.collateralDepositByUser[user], // At this moment should be equal to collateral members bank
-                0, // At this moment neither yield or fund objects have been created so nothing exist yet, everithing 0 to avoid reverts
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                yieldDistributed
-            ];
-        } else if (
-            !yield.hasOptedIn[user] &&
-            collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral
-        ) {
-            uintResults = [
-                collateral.collateralMembersBank[user],
-                collateral.collateralPaymentBank[user],
-                collateral.collateralDepositByUser[user],
-                limit,
-                fund.beneficiariesPool[user],
-                fund.cycleOfExpulsion[user],
-                0, // The user does not exist in the yield object, everything 0 to avoid reverts
-                0,
-                0,
-                0,
-                yieldDistributed
-            ];
-        } else {
-            yieldDistributed = LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
+        uintResults = [
+            collateral.collateralMembersBank[user],
+            collateral.collateralPaymentBank[user], // At this moment should be 0
+            collateral.collateralDepositByUser[user], // At this moment should be equal to collateral members bank
+            limit,
+            0, // At this moment neither yield nor fund objects have been created so nothing exist yet, everything 0 to avoid reverts
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ];
 
-            uintResults = [
-                collateral.collateralMembersBank[user],
-                collateral.collateralPaymentBank[user],
-                collateral.collateralDepositByUser[user],
-                limit,
-                fund.beneficiariesPool[user],
-                fund.cycleOfExpulsion[user], // 0 if have not been expelled
-                yield.withdrawnYield[user],
-                yield.withdrawnCollateral[user],
-                yield.availableYield[user],
-                yield.depositedCollateralByUser[user],
-                yieldDistributed
-            ];
+        if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
+            uintResults[4] = fund.beneficiariesPool[user];
+            uintResults[5] = fund.cycleOfExpulsion[user];
+
+            if (yield.hasOptedIn[user]) {
+                uintResults[6] = yield.withdrawnYield[user];
+                uintResults[7] = yield.withdrawnCollateral[user];
+                uintResults[8] = yield.availableYield[user];
+                uintResults[9] = yield.depositedCollateralByUser[user];
+                uintResults[10] = LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
+            }
         }
     }
 
