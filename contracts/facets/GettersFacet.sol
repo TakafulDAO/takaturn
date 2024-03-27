@@ -26,22 +26,18 @@ contract GettersFacet is IGetters {
     /// @notice This function is used as a helper for front-end implementation
     /// @param termId The term id for which the summary is being requested
     /// @return term The term object
-    /// @return joinPositions The positions available for the user to join, if any
-    /// @return joinAmounts The minimum security deposit for each position from joinPositions
     /// @return collateralState The current state of the collateral
     /// @return fundState The current state of the fund
-    /// @return timesAndContributionsRelated A helper struct with the following values:
-    ///                                      remaining registration time, remaining contribution
-    ///                                      time, remaining cycle time, remaining cycles, remaining
-    ///                                      cycles contribution in wei, latest price from Chainlink
-    /// @return collateralRelated A helper struct with the following values:
-    ///                           collateral first deposit time in seconds, collateral counter members
-    /// @return fundRelated A helper struct with the following values:
-    ///                     fund start time in seconds, fund end time in seconds, current cycle, expelled
-    ///                     participants, total amount of cycles
-    /// @return yieldRelated A helper struct with the following values:
-    ///                      yield start time in seconds, total deposit in wei, current total deposit in wei,
-    ///                      total shares
+    /// @return nonUserRelated A helper struct with the following values:
+    ///                        available positions, security deposits corresponding to each position,
+    ///                        remaining registration time, remaining contribution time,
+    ///                        remaining cycle time, remaining cycles, remaining cycles
+    ///                        contribution in wei, latest price from Chainlink, collateral
+    ///                        first deposit time in seconds, collateral counter members,
+    ///                        fund start time in seconds, fund end time in seconds, current
+    ///                        cycle, expelled participants, total amount of cycles, yield
+    ///                        start time in seconds, total deposit in wei, current total
+    ///                        deposit in wei, total shares
     function getTurnGroupRelatedSummary(
         uint termId
     )
@@ -49,14 +45,9 @@ contract GettersFacet is IGetters {
         view
         returns (
             LibTermStorage.Term memory term,
-            uint[] memory joinPositions,
-            uint[] memory joinAmounts,
             LibCollateralStorage.CollateralStates collateralState,
             LibFundStorage.FundStates fundState,
-            LibGettersHelpers.TimesAndContributionsHelper memory timesAndContributionsRelated,
-            LibGettersHelpers.CollateralNonUserRelatedHelper memory collateralRelated,
-            LibGettersHelpers.FundNonUserRelatedHelper memory fundRelated,
-            LibGettersHelpers.YieldNonUserRelatedHelper memory yieldRelated
+            LibGettersHelpers.NonUserRelated memory nonUserRelated
         )
     {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -68,37 +59,33 @@ contract GettersFacet is IGetters {
             ._yieldStorage()
             .yields[termId];
 
-        (joinPositions, joinAmounts) = getAvailablePositionsAndSecurityAmount(termId);
+        (
+            uint[] memory joinPositions,
+            uint[] memory joinAmounts
+        ) = getAvailablePositionsAndSecurityAmount(termId);
 
         collateralState = collateral.state;
         fundState = fund.currentState;
 
-        timesAndContributionsRelated = LibGettersHelpers.TimesAndContributionsHelper({
+        nonUserRelated = LibGettersHelpers.NonUserRelated({
+            availablePositions: joinPositions,
+            securityDeposits: joinAmounts,
             remainingRegistrationTime: getRemainingRegistrationTime(termId),
             remainingContributionTime: getRemainingContributionTime(termId),
             remainingCycleTime: getRemainingCycleTime(termId),
             remainingCycles: getRemainingCycles(termId),
             rcc: getRemainingCyclesContributionWei(termId),
-            latestPrice: getLatestPrice()
-        });
-
-        collateralRelated = LibGettersHelpers.CollateralNonUserRelatedHelper({
+            latestPrice: getLatestPrice(),
             collateralInitialized: collateral.initialized,
             collateralFirstDepositTime: collateral.firstDepositTime,
-            collateralCounterMembers: collateral.counterMembers
-        });
-
-        fundRelated = LibGettersHelpers.FundNonUserRelatedHelper({
+            collateralCounterMembers: collateral.counterMembers,
             fundInitialized: fund.initialized,
             fundStartTime: fund.fundStart,
             fundEndTime: fund.fundEnd,
             fundCurrentCycle: fund.currentCycle,
             fundExpellantsCount: fund.expelledParticipants,
             fundTotalCycles: fund.totalAmountOfCycles,
-            fundBeneficiariesOrder: fund.beneficiariesOrder
-        });
-
-        yieldRelated = LibGettersHelpers.YieldNonUserRelatedHelper({
+            fundBeneficiariesOrder: fund.beneficiariesOrder,
             yieldInitialized: yield.initialized,
             yieldStartTime: yield.startTimeStamp,
             yieldTotalDeposit: yield.totalDeposit,
@@ -110,12 +97,11 @@ contract GettersFacet is IGetters {
     /// @notice This function is used as a helper for front-end implementation
     /// @param user the depositor address
     /// @param termId the collateral id
-    /// @return boolResults an array of booleans that contains the following values:
+    /// @return userRelated an object that contains the following values:
     ///                     user is collateral member, user is participant, user have been
     ///                     beneficiary, user paid current cycle, user paid next cycle, user
     ///                     enabled auto pay, user money pot is frozen, user has opted in for
-    ///                     yield generation
-    /// @return uintResults an array of uints that contains the following values:
+    ///                     yield generation an array of uints that contains the following values:
     ///                     current users locked collateral balance in wei, current users
     ///                     unlocked collateral balance in wei, initial users deposit in wei,
     ///                     expulsion limit, beneficiaries pool, cycle of expulsion if applies
@@ -124,7 +110,7 @@ contract GettersFacet is IGetters {
     function getUserRelatedSummary(
         address user,
         uint termId
-    ) external view returns (bool[8] memory boolResults, uint[11] memory uintResults) {
+    ) external view returns (LibGettersHelpers.UserRelated memory userRelated) {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
@@ -136,30 +122,17 @@ contract GettersFacet is IGetters {
 
         bool beneficiary = fund.isBeneficiary[user]; // true if user has been beneficiary
 
-        boolResults = [
-            collateral.isCollateralMember[user], // true if member
-            fund.isParticipant[user], // true if participant
-            beneficiary, // true if user has been beneficiary
-            fund.paidThisCycle[user], // true if has paid current cycle
-            fund.paidNextCycle[user], // true if has paid next cycle
-            fund.autoPayEnabled[user], // true if enabled auto pay
-            _checkFrozenMoneyPot(user, termId), // true if money pot is frozen
-            yield.hasOptedIn[user] // true if deposit on yield
-        ];
-
-        uintResults = [
-            collateral.collateralMembersBank[user],
-            collateral.collateralPaymentBank[user], // At this moment should be 0
-            collateral.collateralDepositByUser[user], // At this moment should be equal to collateral members bank
-            0,
-            0, // At this moment neither yield nor fund objects have been created so nothing exist yet, everything 0 to avoid reverts
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ];
+        userRelated.collateralMember = collateral.isCollateralMember[user]; // true if member
+        userRelated.membersBank = collateral.collateralMembersBank[user];
+        userRelated.paymentBank = collateral.collateralPaymentBank[user];
+        userRelated.deposited = collateral.collateralDepositByUser[user];
+        userRelated.fundMember = fund.isParticipant[user]; // true if participant
+        userRelated.beneficiary = beneficiary; // true if user has been beneficiary
+        userRelated.currentCyclePaid = fund.paidThisCycle[user]; // true if has paid current cycle
+        userRelated.nextCyclePaid = fund.paidNextCycle[user]; // true if has paid next cycle
+        userRelated.autoPayer = fund.autoPayEnabled[user]; // true if enabled auto pay
+        userRelated.moneyPotFrozen = _checkFrozenMoneyPot(user, termId); // true if money pot is frozen
+        userRelated.yieldMember = yield.hasOptedIn[user]; // true if deposit on yield
 
         if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
             uint limit;
@@ -170,16 +143,19 @@ contract GettersFacet is IGetters {
                 limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
             }
 
-            uintResults[3] = limit;
-            uintResults[4] = fund.beneficiariesPool[user];
-            uintResults[5] = fund.cycleOfExpulsion[user];
+            userRelated.expulsonLimit = limit;
+            userRelated.pool = fund.beneficiariesPool[user];
+            userRelated.cycleExpelled = fund.cycleOfExpulsion[user];
 
             if (yield.hasOptedIn[user]) {
-                uintResults[6] = yield.withdrawnYield[user];
-                uintResults[7] = yield.withdrawnCollateral[user];
-                uintResults[8] = yield.availableYield[user];
-                uintResults[9] = yield.depositedCollateralByUser[user];
-                uintResults[10] = LibYieldGeneration._unwithdrawnUserYieldGenerated(termId, user);
+                userRelated.yieldWithdrawn = yield.withdrawnYield[user];
+                userRelated.collateralWithdrawnFromYield = yield.withdrawnCollateral[user];
+                userRelated.yieldAvailable = yield.availableYield[user];
+                userRelated.collateralDepositedInYield = yield.depositedCollateralByUser[user];
+                userRelated.ditributedYield = LibYieldGeneration._unwithdrawnUserYieldGenerated(
+                    termId,
+                    user
+                );
             }
         }
     }

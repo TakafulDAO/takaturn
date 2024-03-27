@@ -13,22 +13,18 @@ interface IGetters {
     /// @notice This function is used as a helper for front-end implementation
     /// @param termId The term id for which the summary is being requested
     /// @return term The term object
-    /// @return joinPositions The positions available for the user to join, if any
-    /// @return joinAmounts The minimum security deposit for each position from joinPositions
     /// @return collateralState The current state of the collateral
     /// @return fundState The current state of the fund
-    /// @return timesAndContributionsRelated A helper struct with the following values:
-    ///                                      remaining registration time, remaining contribution
-    ///                                      time, remaining cycle time, remaining cycles, remaining
-    ///                                      cycles contribution in wei, latest price from Chainlink
-    /// @return collateralRelated A helper struct with the following values:
-    ///                           collateral first deposit time in seconds, collateral counter members
-    /// @return fundRelated A helper struct with the following values:
-    ///                     fund start time in seconds, fund end time in seconds, current cycle, expelled
-    ///                     participants, total amount of cycles
-    /// @return yieldRelated A helper struct with the following values:
-    ///                      yield start time in seconds, total deposit in wei, current total deposit in wei,
-    ///                      total shares
+    /// @return nonUserRelated A helper struct with the following values:
+    ///                        available positions, security deposits corresponding to each position,
+    ///                        remaining registration time, remaining contribution time,
+    ///                        remaining cycle time, remaining cycles, remaining cycles
+    ///                        contribution in wei, latest price from Chainlink, collateral
+    ///                        first deposit time in seconds, collateral counter members,
+    ///                        fund start time in seconds, fund end time in seconds, current
+    ///                        cycle, expelled participants, total amount of cycles, yield
+    ///                        start time in seconds, total deposit in wei, current total
+    ///                        deposit in wei, total shares
     function getTurnGroupRelatedSummary(
         uint termId
     )
@@ -36,34 +32,28 @@ interface IGetters {
         view
         returns (
             LibTermStorage.Term memory term,
-            uint[] memory joinPositions,
-            uint[] memory joinAmounts,
             LibCollateralStorage.CollateralStates collateralState,
             LibFundStorage.FundStates fundState,
-            LibGettersHelpers.TimesAndContributionsHelper memory timesAndContributionsRelated,
-            LibGettersHelpers.CollateralNonUserRelatedHelper memory collateralRelated,
-            LibGettersHelpers.FundNonUserRelatedHelper memory fundRelated,
-            LibGettersHelpers.YieldNonUserRelatedHelper memory yieldRelated
+            LibGettersHelpers.NonUserRelated memory nonUserRelated
         );
 
     /// @notice This function is used as a helper for front-end implementation
     /// @param user the depositor address
     /// @param termId the collateral id
-    /// @return boolResults an array of booleans that contains the following values:
+    /// @return userRelated an object that contains the following values:
     ///                     user is collateral member, user is participant, user have been
     ///                     beneficiary, user paid current cycle, user paid next cycle, user
     ///                     enabled auto pay, user money pot is frozen, user has opted in for
-    ///                     yield generation
-    /// @return uintResults an array of uints that contains the following values:
+    ///                     yield generation an array of uints that contains the following values:
     ///                     current users locked collateral balance in wei, current users
     ///                     unlocked collateral balance in wei, initial users deposit in wei,
-    ///                     expulsion limit, beneficiaries pool, withdrawn yield, withdrawn
-    ///                     collateral from yield, available yield, deposited collateral by
-    ///                     user on yield, amount of yield distributed
+    ///                     expulsion limit, beneficiaries pool, cycle of expulsion if applies
+    //                      withdrawn yield, withdrawn collateral from yield, available yield,
+    ///                     deposited collateral by user on yield, amount of yield distributed
     function getUserRelatedSummary(
         address user,
         uint termId
-    ) external view returns (bool[8] memory boolResults, uint[11] memory uintResults);
+    ) external view returns (LibGettersHelpers.UserRelated memory userRelated);
 
     /// @notice This function return the current constant values for oracles and yield providers
     /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
