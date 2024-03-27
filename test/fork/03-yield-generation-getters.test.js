@@ -683,7 +683,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                           it("Should get the correct values", async function () {
                               const terms = await takaturnDiamond.getTermsId()
                               const termId = terms[0]
-                              const termSummary = await takaturnDiamond.getTurnGroupRelatedSummary(
+                              const termSummary = await takaturnDiamond.getTermGroupRelatedSummary(
                                   termId
                               )
 
@@ -750,7 +750,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                           it("Should get the correct values", async function () {
                               const terms = await takaturnDiamond.getTermsId()
                               const termId = terms[0]
-                              const termSummary = await takaturnDiamond.getTurnGroupRelatedSummary(
+                              const termSummary = await takaturnDiamond.getTermGroupRelatedSummary(
                                   termId
                               )
 
