@@ -12,6 +12,23 @@ import {LibGettersHelpers} from "../libraries/LibGettersHelpers.sol";
 interface IGetters {
     /// @notice This function is used as a helper for front-end implementation
     /// @param termId The term id for which the summary is being requested
+    /// @return term The term object
+    /// @return joinPositions The positions available for the user to join, if any
+    /// @return joinAmounts The minimum security deposit for each position from joinPositions
+    /// @return collateralState The current state of the collateral
+    /// @return fundState The current state of the fund
+    /// @return timesAndContributionsRelated A helper struct with the following values:
+    ///                                      remaining registration time, remaining contribution
+    ///                                      time, remaining cycle time, remaining cycles, remaining
+    ///                                      cycles contribution in wei, latest price from Chainlink
+    /// @return collateralRelated A helper struct with the following values:
+    ///                           collateral first deposit time in seconds, collateral counter members
+    /// @return fundRelated A helper struct with the following values:
+    ///                     fund start time in seconds, fund end time in seconds, current cycle, expelled
+    ///                     participants, total amount of cycles
+    /// @return yieldRelated A helper struct with the following values:
+    ///                      yield start time in seconds, total deposit in wei, current total deposit in wei,
+    ///                      total shares
     function getTurnGroupRelatedSummary(
         uint termId
     )
