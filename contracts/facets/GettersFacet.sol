@@ -161,7 +161,7 @@ contract GettersFacet is IGetters {
                 userRelated.collateralWithdrawnFromYield = yield.withdrawnCollateral[user];
                 userRelated.yieldAvailable = yield.availableYield[user];
                 userRelated.yieldWithdrawn = yield.withdrawnYield[user];
-                userRelated.ditributedYield = LibYieldGeneration._unwithdrawnUserYieldGenerated(
+                userRelated.distributedYield = LibYieldGeneration._unwithdrawnUserYieldGenerated(
                     termId,
                     user
                 );
