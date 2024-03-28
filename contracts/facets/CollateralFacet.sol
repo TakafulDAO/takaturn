@@ -160,7 +160,7 @@ contract CollateralFacet is ICollateral {
             }
         }
 
-        require(canCall, "The caller must be a participant");
+        require(canCall, "TT-CF-01");
 
         _withdrawCollateral(termId, receiver);
     }
@@ -171,7 +171,7 @@ contract CollateralFacet is ICollateral {
     /// @param termId term id
     function releaseCollateral(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        require(fund.currentState == LibFundStorage.FundStates.FundClosed, "Wrong state");
+        require(fund.currentState == LibFundStorage.FundStates.FundClosed, "TT-CF-02");
         LibCollateral._setState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral);
     }
 
@@ -195,7 +195,7 @@ contract CollateralFacet is ICollateral {
             .yields[termId];
 
         (, , , , , uint fundEnd, , ) = IGetters(address(this)).getFundSummary(termId);
-        require(block.timestamp > fundEnd + 180 days, "Can't empty yet");
+        require(block.timestamp > fundEnd + 180 days, "TT-CF-03");
 
         uint totalToWithdraw;
         uint depositorsLength = collateral.depositors.length;
@@ -393,7 +393,7 @@ contract CollateralFacet is ICollateral {
             _termId,
             msg.sender
         );
-        require(allowedWithdrawal > 0, "Nothing to withdraw");
+        require(allowedWithdrawal > 0, "TT-CF-04");
 
         bool success;
         bool expelledBeforeBeneficiary = fund.expelledBeforeBeneficiary[msg.sender];
@@ -432,7 +432,7 @@ contract CollateralFacet is ICollateral {
             emit OnCollateralWithdrawal(_termId, msg.sender, _receiver, allowedWithdrawal);
         }
 
-        require(success, "Withdraw failed");
+        require(success, "TT-CF-05");
         if (yield.hasOptedIn[msg.sender] && yield.availableYield[msg.sender] > 0) {
             LibYieldGeneration._claimAvailableYield(_termId, msg.sender, _receiver);
         }

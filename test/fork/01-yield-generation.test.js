@@ -311,6 +311,7 @@ async function checkYieldMappings(termId, userAddress) {
                   })
 
                   it("allows to start a term with participants joining yield generation", async function () {
+                      this.timeout(200000)
                       const ids = await takaturnDiamondDeployer.getTermsId()
                       const termId = ids[0]
 
