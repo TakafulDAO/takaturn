@@ -28,6 +28,7 @@ contract GettersFacet is IGetters {
     /// @return term The term object
     /// @return collateralState The current state of the collateral
     /// @return fundState The current state of the fund
+    /// @return stable token address used
     /// @return nonUserRelated A helper struct with the following values:
     ///                        available positions, security deposits corresponding to each position,
     ///                        remaining registration time, remaining contribution time,
@@ -47,6 +48,7 @@ contract GettersFacet is IGetters {
             LibTermStorage.Term memory term,
             LibCollateralStorage.CollateralStates collateralState,
             LibFundStorage.FundStates fundState,
+            IERC20 stableToken,
             LibGettersHelpers.NonUserRelated memory nonUserRelated
         )
     {
@@ -66,6 +68,7 @@ contract GettersFacet is IGetters {
 
         collateralState = collateral.state;
         fundState = fund.currentState;
+        stableToken = fund.stableToken;
 
         nonUserRelated = LibGettersHelpers.NonUserRelated({
             availablePositions: joinPositions,
@@ -79,7 +82,6 @@ contract GettersFacet is IGetters {
             collateralInitialized: collateral.initialized,
             collateralFirstDepositTime: collateral.firstDepositTime,
             collateralCounterMembers: collateral.counterMembers,
-            collateralState: collateral.state,
             fundInitialized: fund.initialized,
             fundStartTime: fund.fundStart,
             fundEndTime: fund.fundEnd,
@@ -87,8 +89,6 @@ contract GettersFacet is IGetters {
             fundExpellantsCount: fund.expelledParticipants,
             fundTotalCycles: fund.totalAmountOfCycles,
             fundBeneficiariesOrder: fund.beneficiariesOrder,
-            fundState: fund.currentState,
-            stableToken: fund.stableToken,
             yieldInitialized: yield.initialized,
             yieldStartTime: yield.startTimeStamp,
             yieldTotalDeposit: yield.totalDeposit,
@@ -240,7 +240,7 @@ contract GettersFacet is IGetters {
     /// @param termId the fund id
     /// @return if fund initialized
     /// @return current fund state
-    /// @return stablecoin address used
+    /// @return stable token address used
     /// @return list of beneficiaries order
     /// @return when the fund starts in seconds
     /// @return when the fund ended, 0 if not ended

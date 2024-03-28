@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import {LibCollateralStorage} from ".libraries/LibCollateralStorage.sol";
-import {LibFundStorage} from "./LibFundStorage.sol";
-
 library LibGettersHelpers {
     struct NonUserRelated {
         // Positions and security deposits related
@@ -22,7 +17,6 @@ library LibGettersHelpers {
         bool collateralInitialized;
         uint collateralFirstDepositTime; // In seconds
         uint collateralCounterMembers; // Member count
-        LibCollateralStorage.CollateralStates collateralState;
         // Fund related
         bool fundInitialized;
         uint fundStartTime; // In seconds
@@ -31,8 +25,6 @@ library LibGettersHelpers {
         uint fundExpellantsCount;
         uint fundTotalCycles;
         address[] fundBeneficiariesOrder;
-        LibFundStorage.FundStates fundState;
-        IERC20 stableToken;
         // Yield related
         bool yieldInitialized;
         uint yieldStartTime; // In seconds
