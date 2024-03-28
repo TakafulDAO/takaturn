@@ -28,7 +28,7 @@ contract GettersFacet is IGetters {
     /// @return term The term object
     /// @return collateralState The current state of the collateral
     /// @return fundState The current state of the fund
-    /// @return stable token address used
+    /// @return stableToken token address used
     /// @return nonUserRelated A helper struct with the following values:
     ///                        available positions, security deposits corresponding to each position,
     ///                        remaining registration time, remaining contribution time,
