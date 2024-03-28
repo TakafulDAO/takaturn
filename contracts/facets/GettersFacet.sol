@@ -94,7 +94,7 @@ contract GettersFacet is IGetters {
             yieldTotalDeposit: yield.totalDeposit,
             yieldCurrentTotalDeposit: yield.currentTotalDeposit,
             yieldTotalShares: yield.totalShares,
-            yieldUsers: yield.yieldUsers,
+            yieldUsers: yield.yieldUsers
         });
     }
 
