@@ -38,7 +38,7 @@ contract GettersFacet is IGetters {
     ///                        cycle, expelled participants, total amount of cycles, yield
     ///                        start time in seconds, total deposit in wei, current total
     ///                        deposit in wei, total shares
-    function getTermGroupRelatedSummary(
+    function getTermRelatedSummary(
         uint termId
     )
         external
@@ -79,6 +79,7 @@ contract GettersFacet is IGetters {
             collateralInitialized: collateral.initialized,
             collateralFirstDepositTime: collateral.firstDepositTime,
             collateralCounterMembers: collateral.counterMembers,
+            collateralState: collateral.state,
             fundInitialized: fund.initialized,
             fundStartTime: fund.fundStart,
             fundEndTime: fund.fundEnd,
@@ -86,11 +87,14 @@ contract GettersFacet is IGetters {
             fundExpellantsCount: fund.expelledParticipants,
             fundTotalCycles: fund.totalAmountOfCycles,
             fundBeneficiariesOrder: fund.beneficiariesOrder,
+            fundState: fund.currentState,
+            stableToken: fund.stableToken,
             yieldInitialized: yield.initialized,
             yieldStartTime: yield.startTimeStamp,
             yieldTotalDeposit: yield.totalDeposit,
             yieldCurrentTotalDeposit: yield.currentTotalDeposit,
             yieldTotalShares: yield.totalShares
+            yieldUsers: yield.yieldUsers,
         });
     }
 

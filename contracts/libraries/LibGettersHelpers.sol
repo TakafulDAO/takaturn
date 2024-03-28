@@ -6,7 +6,7 @@ library LibGettersHelpers {
         // Positions and security deposits related
         uint[] availablePositions;
         uint[] securityDeposits;
-        // Times and com=ntributions related
+        // Times and contributions related
         uint remainingRegistrationTime; // In seconds
         uint remainingContributionTime; // In seconds
         uint remainingCycleTime; // In seconds
@@ -17,6 +17,7 @@ library LibGettersHelpers {
         bool collateralInitialized;
         uint collateralFirstDepositTime; // In seconds
         uint collateralCounterMembers; // Member count
+        LibCollateralStorage.CollateralStates collateralState;
         // Fund related
         bool fundInitialized;
         uint fundStartTime; // In seconds
@@ -25,12 +26,15 @@ library LibGettersHelpers {
         uint fundExpellantsCount;
         uint fundTotalCycles;
         address[] fundBeneficiariesOrder;
+        LibFundStorage.FundStates fundState;
+        IERC20 stableToken;
         // Yield related
         bool yieldInitialized;
         uint yieldStartTime; // In seconds
         uint yieldTotalDeposit; // In wei
         uint yieldCurrentTotalDeposit; // In wei
         uint yieldTotalShares;
+        address[] yieldUsers;
     }
 
     struct UserRelated {
