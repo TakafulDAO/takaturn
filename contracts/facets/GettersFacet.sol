@@ -141,7 +141,6 @@ contract GettersFacet is IGetters {
         userRelated.currentCycle = cycle;   
         userRelated.yieldMember = yield.hasOptedIn[user]; // true if deposit on yield
         userRelated.withdrawableBalance = getWithdrawableUserBalance(user); // Gets the amount of collateral the user can withdraw right now
-        
 
         if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
             uint limit;
