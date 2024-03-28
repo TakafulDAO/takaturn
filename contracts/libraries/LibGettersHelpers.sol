@@ -51,7 +51,6 @@ library LibGettersHelpers {
         bool autoPayer;
         bool moneyPotFrozen;
         bool exemptedThisCycle;
-        uint currentCycle;
         uint pool;
         uint cycleExpelled;
         // Yield related

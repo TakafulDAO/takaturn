@@ -124,7 +124,6 @@ contract GettersFacet is IGetters {
             .yields[termId];
 
         bool beneficiary = fund.isBeneficiary[user]; // true if user has been beneficiary
-        uint cycle = fund.currentCycle; // The current cycle no.
 
         userRelated.collateralMember = collateral.isCollateralMember[user]; // true if member
         userRelated.isUnderCollaterized = LibCollateral._isUnderCollaterized(termId, user); // checks if user is undercollaterized
@@ -137,8 +136,7 @@ contract GettersFacet is IGetters {
         userRelated.nextCyclePaid = fund.paidNextCycle[user]; // true if has paid next cycle
         userRelated.autoPayer = fund.autoPayEnabled[user]; // true if enabled auto pay
         userRelated.moneyPotFrozen = _checkFrozenMoneyPot(user, termId); // true if money pot is frozen
-        userRelated.exemptedThisCycle = fund.isExemptedOnCycle[cycle].exempted[user];
-        userRelated.currentCycle = cycle;   
+        userRelated.exemptedThisCycle = fund.isExemptedOnCycle[fund.currentCycle].exempted[user];
         userRelated.yieldMember = yield.hasOptedIn[user]; // true if deposit on yield
         userRelated.withdrawableBalance = getWithdrawableUserBalance(termId, user); // Gets the amount of collateral the user can withdraw right now
 
