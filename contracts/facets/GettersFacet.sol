@@ -28,7 +28,6 @@ contract GettersFacet is IGetters {
     /// @return term The term object
     /// @return collateralState The current state of the collateral
     /// @return fundState The current state of the fund
-    /// @return stableToken token address used
     /// @return nonUserRelated A helper struct with the following values:
     ///                        available positions, security deposits corresponding to each position,
     ///                        remaining registration time, remaining contribution time,
@@ -48,7 +47,6 @@ contract GettersFacet is IGetters {
             LibTermStorage.Term memory term,
             LibCollateralStorage.CollateralStates collateralState,
             LibFundStorage.FundStates fundState,
-            IERC20 stableToken,
             LibGettersHelpers.NonUserRelated memory nonUserRelated
         )
     {
@@ -68,7 +66,6 @@ contract GettersFacet is IGetters {
 
         collateralState = collateral.state;
         fundState = fund.currentState;
-        stableToken = fund.stableToken;
 
         nonUserRelated = LibGettersHelpers.NonUserRelated({
             availablePositions: joinPositions,
