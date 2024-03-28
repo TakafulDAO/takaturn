@@ -7,8 +7,54 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
+import {LibGettersHelpers} from "../libraries/LibGettersHelpers.sol";
 
 interface IGetters {
+    /// @notice This function is used as a helper for front-end implementation
+    /// @param termId The term id for which the summary is being requested
+    /// @return term The term object
+    /// @return collateralState The current state of the collateral
+    /// @return fundState The current state of the fund
+    /// @return nonUserRelated A helper struct with the following values:
+    ///                        available positions, security deposits corresponding to each position,
+    ///                        remaining registration time, remaining contribution time,
+    ///                        remaining cycle time, remaining cycles, remaining cycles
+    ///                        contribution in wei, latest price from Chainlink, collateral
+    ///                        first deposit time in seconds, collateral counter members,
+    ///                        fund start time in seconds, fund end time in seconds, current
+    ///                        cycle, expelled participants, total amount of cycles, yield
+    ///                        start time in seconds, total deposit in wei, current total
+    ///                        deposit in wei, total shares
+    function getTermRelatedSummary(
+        uint termId
+    )
+        external
+        view
+        returns (
+            LibTermStorage.Term memory term,
+            LibCollateralStorage.CollateralStates collateralState,
+            LibFundStorage.FundStates fundState,
+            LibGettersHelpers.NonUserRelated memory nonUserRelated
+        );
+
+    /// @notice This function is used as a helper for front-end implementation
+    /// @param user the depositor address
+    /// @param termId the collateral id
+    /// @return userRelated an object that contains the following values:
+    ///                     user is collateral member, user is participant, user have been
+    ///                     beneficiary, user paid current cycle, user paid next cycle, user
+    ///                     enabled auto pay, user money pot is frozen, user has opted in for
+    ///                     yield generation an array of uints that contains the following values:
+    ///                     current users locked collateral balance in wei, current users
+    ///                     unlocked collateral balance in wei, initial users deposit in wei,
+    ///                     expulsion limit, beneficiaries pool, cycle of expulsion if applies
+    //                      withdrawn yield, withdrawn collateral from yield, available yield,
+    ///                     deposited collateral by user on yield, amount of yield distributed
+    function getUserRelatedSummary(
+        address user,
+        uint termId
+    ) external view returns (LibGettersHelpers.UserRelated memory userRelated);
+
     /// @notice This function return the current constant values for oracles and yield providers
     /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
     /// @param secondAggregator The name of the second aggregator. Example: "USDC/USD"
@@ -84,31 +130,6 @@ interface IGetters {
     /// @param termId The term id for which the APY is being calculated
     /// @return The APY for the term
     function termAPY(uint termId) external view returns (uint256);
-
-    /// @notice Gets the remaining positions in a term and the corresponding security amount
-    /// @param termId the term id
-    /// @dev Available positions starts at 0
-    /// @return availablePositions an array with the available positions
-    /// @return securityAmount an array with the security amount for each available position
-    function getAvailablePositionsAndSecurityAmount(
-        uint termId
-    ) external view returns (uint[] memory, uint[] memory);
-
-    /// @notice Gets the remaining registration period for a term
-    /// @dev Revert if nobody have deposited
-    /// @param termId the term id
-    /// @return remaining contribution period
-    function getRemainingRegistrationTime(uint termId) external view returns (uint);
-
-    /// @notice Must return 0 before closing a contribution period
-    /// @param termId the id of the term
-    /// @return remaining contribution time in seconds
-    function getRemainingContributionTime(uint termId) external view returns (uint);
-
-    /// @notice Must be 0 before starting a new cycle
-    /// @param termId the id of the term
-    /// @return remaining cycle time in seconds
-    function getRemainingCycleTime(uint termId) external view returns (uint);
 
     /// @notice a function to get the needed allowance
     /// @param user the user address
@@ -294,4 +315,29 @@ interface IGetters {
         address participant,
         LibTermStorage.TermStates state
     ) external view returns (uint[] memory);
+
+    /// @notice Gets the remaining positions in a term and the corresponding security amount
+    /// @param termId the term id
+    /// @dev Available positions starts at 0
+    /// @return availablePositions an array with the available positions
+    /// @return securityAmount an array with the security amount for each available position
+    function getAvailablePositionsAndSecurityAmount(
+        uint termId
+    ) external view returns (uint[] memory, uint[] memory);
+
+    /// @notice Gets the remaining registration period for a term
+    /// @dev Revert if nobody have deposited
+    /// @param termId the term id
+    /// @return remaining contribution period
+    function getRemainingRegistrationTime(uint termId) external view returns (uint);
+
+    /// @notice Must return 0 before closing a contribution period
+    /// @param termId the id of the term
+    /// @return remaining contribution time in seconds
+    function getRemainingContributionTime(uint termId) external view returns (uint);
+
+    /// @notice Must be 0 before starting a new cycle
+    /// @param termId the id of the term
+    /// @return remaining cycle time in seconds
+    function getRemainingCycleTime(uint termId) external view returns (uint);
 }
