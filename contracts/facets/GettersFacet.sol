@@ -104,12 +104,11 @@ contract GettersFacet is IGetters {
     ///                     initial deposited collateral, collateral expulsion limit,
     ///                     currently withdrawable balance, is fund member, is or was beneficiary,
     ///                     user paid current cycle, user paid next cycle in advance,
-    ///                     user enabled autopay, user's money pot is frozen, user is exempted this cycle,
-    ///                     the current cycle, the money pot pool the user can withdraw,
-    ///                     the cycle the user got expelled (if applicable), is yield member,
-    ///                     amount of collateral deposited in yield pool,
-    ///                     amount of collateral withdrawn from yield pool,
-    ///                     available yield to withdraw, amount of yield withdrawn, yield to be distributed
+    ///                     user enabled autopay, user's money pot is frozen, user is exempted this
+    ///                     cycle, the money pot pool the user can withdraw, the cycle the user got
+    ///                     expelled (if applicable), is yield member, amount of collateral deposited
+    ///                     in yield pool, amount of collateral withdrawn from yield pool, available
+    ///                     yield to withdraw, amount of yield withdrawn, yield to be distributed
     function getUserRelatedSummary(
         address user,
         uint termId
