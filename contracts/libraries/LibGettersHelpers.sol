@@ -37,10 +37,12 @@ library LibGettersHelpers {
     struct UserRelated {
         // Collateral related
         bool collateralMember;
+        bool isUnderCollaterized;
         uint membersBank;
         uint paymentBank;
         uint deposited;
         uint expulsonLimit;
+        uint withdrawableBalance;
         // Fund related
         bool fundMember;
         bool beneficiary;
@@ -48,14 +50,16 @@ library LibGettersHelpers {
         bool nextCyclePaid;
         bool autoPayer;
         bool moneyPotFrozen;
+        bool exemptedThisCycle;
+        uint currentCycle;
         uint pool;
         uint cycleExpelled;
         // Yield related
         bool yieldMember;
-        uint yieldWithdrawn;
+        uint collateralDepositedInYield;
         uint collateralWithdrawnFromYield;
         uint yieldAvailable;
-        uint collateralDepositedInYield;
-        uint ditributedYield;
+        uint yieldWithdrawn;
+        uint distributedYield;
     }
 }
