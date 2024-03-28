@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.18;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import {LibCollateralStorage} from ".libraries/LibCollateralStorage.sol";
+import {LibFundStorage} from "./LibFundStorage.sol";
+
 library LibGettersHelpers {
     struct NonUserRelated {
         // Positions and security deposits related
