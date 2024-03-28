@@ -1008,10 +1008,6 @@ const { hour } = require("../../../utils/units")
 
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
 
-                  await expect(
-                      takaturnDiamond.getRemainingRegistrationTime(termId)
-                  ).to.be.revertedWith("Nobody has deposited yet")
-
                   await takaturnDiamond
                       .connect(participant_1)
                       ["joinTerm(uint256,bool)"](termId, false, { value: entrance })

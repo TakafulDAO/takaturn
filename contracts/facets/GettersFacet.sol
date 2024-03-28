@@ -14,6 +14,7 @@ import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {LibGettersHelpers} from "../libraries/LibGettersHelpers.sol";
 
 /// @title Takaturn Getters Facet
 /// @author Maikel Ordaz
@@ -21,6 +22,148 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 /// @dev v3.0 (Diamond)
 contract GettersFacet is IGetters {
     using EnumerableSet for EnumerableSet.AddressSet;
+
+    /// @notice This function is used as a helper for front-end implementation
+    /// @param termId The term id for which the summary is being requested
+    /// @return term The term object
+    /// @return collateralState The current state of the collateral
+    /// @return fundState The current state of the fund
+    /// @return nonUserRelated A helper struct with the following values:
+    ///                        available positions, security deposits corresponding to each position,
+    ///                        remaining registration time, remaining contribution time,
+    ///                        remaining cycle time, remaining cycles, remaining cycles
+    ///                        contribution in wei, latest price from Chainlink, collateral
+    ///                        first deposit time in seconds, collateral counter members,
+    ///                        fund start time in seconds, fund end time in seconds, current
+    ///                        cycle, expelled participants, total amount of cycles, yield
+    ///                        start time in seconds, total deposit in wei, current total
+    ///                        deposit in wei, total shares, users opted in for yield
+    function getTermRelatedSummary(
+        uint termId
+    )
+        external
+        view
+        returns (
+            LibTermStorage.Term memory term,
+            LibCollateralStorage.CollateralStates collateralState,
+            LibFundStorage.FundStates fundState,
+            LibGettersHelpers.NonUserRelated memory nonUserRelated
+        )
+    {
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        term = LibTermStorage._termStorage().terms[termId];
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        (
+            uint[] memory joinPositions,
+            uint[] memory joinAmounts
+        ) = getAvailablePositionsAndSecurityAmount(termId);
+
+        collateralState = collateral.state;
+        fundState = fund.currentState;
+
+        nonUserRelated = LibGettersHelpers.NonUserRelated({
+            availablePositions: joinPositions,
+            securityDeposits: joinAmounts,
+            remainingRegistrationTime: getRemainingRegistrationTime(termId),
+            remainingContributionTime: getRemainingContributionTime(termId),
+            remainingCycleTime: getRemainingCycleTime(termId),
+            remainingCycles: getRemainingCycles(termId),
+            rcc: getRemainingCyclesContributionWei(termId),
+            latestPrice: getLatestPrice(),
+            collateralInitialized: collateral.initialized,
+            collateralFirstDepositTime: collateral.firstDepositTime,
+            collateralCounterMembers: collateral.counterMembers,
+            fundInitialized: fund.initialized,
+            fundStartTime: fund.fundStart,
+            fundEndTime: fund.fundEnd,
+            fundCurrentCycle: fund.currentCycle,
+            fundExpellantsCount: fund.expelledParticipants,
+            fundTotalCycles: fund.totalAmountOfCycles,
+            fundBeneficiariesOrder: fund.beneficiariesOrder,
+            yieldInitialized: yield.initialized,
+            yieldStartTime: yield.startTimeStamp,
+            yieldTotalDeposit: yield.totalDeposit,
+            yieldCurrentTotalDeposit: yield.currentTotalDeposit,
+            yieldTotalShares: yield.totalShares,
+            yieldUsers: yield.yieldUsers
+        });
+    }
+
+    /// @notice This function is used as a helper for front-end implementation
+    /// @param user the depositor address
+    /// @param termId the collateral id
+    /// @return userRelated an object that contains the following values:
+    ///                     user is collateral member, user is undercollaterized,
+    ///                     current collateral balance, received collateral from defaults,
+    ///                     initial deposited collateral, collateral expulsion limit,
+    ///                     currently withdrawable balance, is fund member, is or was beneficiary,
+    ///                     user paid current cycle, user paid next cycle in advance,
+    ///                     user enabled autopay, user's money pot is frozen, user is exempted this
+    ///                     cycle, the money pot pool the user can withdraw, the cycle the user got
+    ///                     expelled (if applicable), is yield member, amount of collateral deposited
+    ///                     in yield pool, amount of collateral withdrawn from yield pool, available
+    ///                     yield to withdraw, amount of yield withdrawn, yield to be distributed
+    function getUserRelatedSummary(
+        address user,
+        uint termId
+    ) external view returns (LibGettersHelpers.UserRelated memory userRelated) {
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        bool beneficiary = fund.isBeneficiary[user]; // true if user has been beneficiary
+
+        userRelated.collateralMember = collateral.isCollateralMember[user]; // true if member
+        userRelated.isUnderCollaterized = LibCollateral._isUnderCollaterized(termId, user); // checks if user is undercollaterized
+        userRelated.membersBank = collateral.collateralMembersBank[user];
+        userRelated.paymentBank = collateral.collateralPaymentBank[user];
+        userRelated.deposited = collateral.collateralDepositByUser[user];
+        userRelated.fundMember = fund.isParticipant[user]; // true if participant
+        userRelated.beneficiary = beneficiary; // true if user has been beneficiary
+        userRelated.currentCyclePaid = fund.paidThisCycle[user]; // true if has paid current cycle
+        userRelated.nextCyclePaid = fund.paidNextCycle[user]; // true if has paid next cycle
+        userRelated.autoPayer = fund.autoPayEnabled[user]; // true if enabled auto pay
+        userRelated.moneyPotFrozen = _checkFrozenMoneyPot(user, termId); // true if money pot is frozen
+        userRelated.exemptedThisCycle = fund.isExemptedOnCycle[fund.currentCycle].exempted[user];
+        userRelated.yieldMember = yield.hasOptedIn[user]; // true if deposit on yield
+        userRelated.withdrawableBalance = getWithdrawableUserBalance(termId, user); // Gets the amount of collateral the user can withdraw right now
+
+        if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
+            uint limit;
+            if (beneficiary) {
+                // limit is determined by whether the user is beneficiary or not
+                limit = getRemainingCyclesContributionWei(termId);
+            } else {
+                limit = getToCollateralConversionRate(term.contributionAmount * 10 ** 18);
+            }
+
+            userRelated.expulsonLimit = limit;
+            userRelated.pool = fund.beneficiariesPool[user];
+            userRelated.cycleExpelled = fund.cycleOfExpulsion[user];
+
+            if (yield.hasOptedIn[user]) {
+                userRelated.collateralDepositedInYield = yield.depositedCollateralByUser[user];
+                userRelated.collateralWithdrawnFromYield = yield.withdrawnCollateral[user];
+                userRelated.yieldAvailable = yield.availableYield[user];
+                userRelated.yieldWithdrawn = yield.withdrawnYield[user];
+                userRelated.distributedYield = LibYieldGeneration._unwithdrawnUserYieldGenerated(
+                    termId,
+                    user
+                );
+            }
+        }
+    }
 
     /// @notice This function return the current constant values for oracles and yield providers
     /// @param firstAggregator The name of the first aggregator. Example: "ETH/USD"
@@ -98,7 +241,7 @@ contract GettersFacet is IGetters {
     /// @param termId the fund id
     /// @return if fund initialized
     /// @return current fund state
-    /// @return stablecoin address used
+    /// @return stable token address used
     /// @return list of beneficiaries order
     /// @return when the fund starts in seconds
     /// @return when the fund ended, 0 if not ended
@@ -165,116 +308,6 @@ contract GettersFacet is IGetters {
         return
             (((totalYieldGenerated(termId) * 10 ** 18) / yield.currentTotalDeposit) * 365 days) /
             elaspedTime;
-    }
-
-    /// @notice Gets the remaining positions in a term and the corresponding security amount
-    /// @param termId the term id
-    /// @dev Available positions starts at 0
-    /// @return availablePositions an array with the available positions
-    /// @return securityAmount an array with the security amount for each available position
-    function getAvailablePositionsAndSecurityAmount(
-        uint termId
-    ) external view returns (uint[] memory, uint[] memory) {
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[termId];
-
-        uint depositorsLength = collateral.depositors.length;
-        uint[] memory availablePositions = new uint[](depositorsLength);
-
-        uint availablePositionsCounter;
-
-        // Loop through the depositors array and get the available positions
-        for (uint i; i < depositorsLength; ) {
-            // The position is available if the depositor is address zero
-            if (collateral.depositors[i] == address(0)) {
-                // Add the position to the available positions array
-                availablePositions[availablePositionsCounter] = i;
-
-                // And increment the available positions counter
-                unchecked {
-                    ++availablePositionsCounter;
-                }
-            }
-
-            /// @custom:unchecked-block without risk, i can't be higher than depositors length
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Create the arrays to return
-        // The available positions array will have the length of the available positions counter
-        // The security amount array will have the same length
-        uint[] memory availablePositionsArray = new uint[](availablePositionsCounter);
-        uint[] memory securityAmountArray = new uint[](availablePositionsCounter);
-
-        // Loop through the available positions counter and fill the arrays
-        for (uint i; i < availablePositionsCounter; ) {
-            availablePositionsArray[i] = availablePositions[i];
-            // Get the security amount for the position
-            securityAmountArray[i] = minCollateralToDeposit(termId, availablePositions[i]);
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Return the arrays, the available positions array and the security amount array are coupled
-        // availablePositionsArray[0] will have the securityAmountArray[0] and so on
-        return (availablePositionsArray, securityAmountArray);
-    }
-
-    /// @notice Gets the remaining registration period for a term
-    /// @dev Revert if nobody has deposited
-    /// @param termId the term id
-    /// @return remaining contribution period
-    function getRemainingRegistrationTime(uint termId) external view returns (uint) {
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[termId];
-        require(collateral.firstDepositTime != 0, "Nobody has deposited yet");
-        if (block.timestamp >= collateral.firstDepositTime + term.registrationPeriod) {
-            return 0;
-        } else {
-            return collateral.firstDepositTime + term.registrationPeriod - block.timestamp;
-        }
-    }
-
-    /// @notice returns the time left to contribute for this cycle
-    /// @param termId the fund id
-    /// @return the time left to contribute
-    function getRemainingContributionTime(uint termId) external view returns (uint) {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
-        if (fund.currentState != LibFundStorage.FundStates.AcceptingContributions) {
-            return 0;
-        }
-
-        // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
-        uint contributionEndTimestamp = term.cycleTime *
-            (fund.currentCycle - 1) +
-            fund.fundStart +
-            term.contributionPeriod;
-        if (block.timestamp > contributionEndTimestamp) {
-            return 0;
-        } else {
-            return contributionEndTimestamp - block.timestamp;
-        }
-    }
-
-    /// @notice Get the term's remaining time in the current cycle
-    /// @param termId the term id
-    /// @return remaining time in the current cycle
-    function getRemainingCycleTime(uint termId) external view returns (uint) {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
-        uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
-        if (block.timestamp > cycleEndTimestamp) {
-            return 0;
-        } else {
-            return cycleEndTimestamp - block.timestamp;
-        }
     }
 
     /// @notice a function to get the needed allowance for every active term the user is part of
@@ -451,7 +484,7 @@ contract GettersFacet is IGetters {
     function getWithdrawableUserBalance(
         uint termId,
         address user
-    ) external view returns (uint allowedWithdrawal) {
+    ) public view returns (uint allowedWithdrawal) {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -842,6 +875,122 @@ contract GettersFacet is IGetters {
         }
 
         return userTermsByState;
+    }
+
+    /// @notice Gets the remaining positions in a term and the corresponding security amount
+    /// @param termId the term id
+    /// @dev Available positions starts at 0
+    /// @return availablePositions an array with the available positions
+    /// @return securityAmount an array with the security amount for each available position
+    function getAvailablePositionsAndSecurityAmount(
+        uint termId
+    ) public view returns (uint[] memory, uint[] memory) {
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+
+        if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
+            return (new uint[](0), new uint[](0));
+        }
+
+        uint depositorsLength = collateral.depositors.length;
+        uint[] memory availablePositions = new uint[](depositorsLength);
+
+        uint availablePositionsCounter;
+
+        // Loop through the depositors array and get the available positions
+        for (uint i; i < depositorsLength; ) {
+            // The position is available if the depositor is address zero
+            if (collateral.depositors[i] == address(0)) {
+                // Add the position to the available positions array
+                availablePositions[availablePositionsCounter] = i;
+
+                // And increment the available positions counter
+                unchecked {
+                    ++availablePositionsCounter;
+                }
+            }
+
+            /// @custom:unchecked-block without risk, i can't be higher than depositors length
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Create the arrays to return
+        // The available positions array will have the length of the available positions counter
+        // The security amount array will have the same length
+        uint[] memory availablePositionsArray = new uint[](availablePositionsCounter);
+        uint[] memory securityAmountArray = new uint[](availablePositionsCounter);
+
+        // Loop through the available positions counter and fill the arrays
+        for (uint i; i < availablePositionsCounter; ) {
+            availablePositionsArray[i] = availablePositions[i];
+            // Get the security amount for the position
+            securityAmountArray[i] = minCollateralToDeposit(termId, availablePositions[i]);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Return the arrays, the available positions array and the security amount array are coupled
+        // availablePositionsArray[0] will have the securityAmountArray[0] and so on
+        return (availablePositionsArray, securityAmountArray);
+    }
+
+    /// @notice Gets the remaining registration period for a term
+    /// @dev Revert if nobody has deposited
+    /// @param termId the term id
+    /// @return remaining contribution period
+    function getRemainingRegistrationTime(uint termId) public view returns (uint) {
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+        if (
+            collateral.firstDepositTime == 0 ||
+            block.timestamp >= collateral.firstDepositTime + term.registrationPeriod
+        ) {
+            return 0;
+        } else {
+            return collateral.firstDepositTime + term.registrationPeriod - block.timestamp;
+        }
+    }
+
+    /// @notice returns the time left to contribute for this cycle
+    /// @param termId the fund id
+    /// @return the time left to contribute
+    function getRemainingContributionTime(uint termId) public view returns (uint) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        if (fund.currentState != LibFundStorage.FundStates.AcceptingContributions) {
+            return 0;
+        }
+
+        // Current cycle minus 1 because we use the previous cycle time as start point then add contribution period
+        uint contributionEndTimestamp = term.cycleTime *
+            (fund.currentCycle - 1) +
+            fund.fundStart +
+            term.contributionPeriod;
+        if (block.timestamp > contributionEndTimestamp) {
+            return 0;
+        } else {
+            return contributionEndTimestamp - block.timestamp;
+        }
+    }
+
+    /// @notice Get the term's remaining time in the current cycle
+    /// @param termId the term id
+    /// @return remaining time in the current cycle
+    function getRemainingCycleTime(uint termId) public view returns (uint) {
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+        uint cycleEndTimestamp = term.cycleTime * fund.currentCycle + fund.fundStart;
+        if (block.timestamp > cycleEndTimestamp) {
+            return 0;
+        } else {
+            return cycleEndTimestamp - block.timestamp;
+        }
     }
 
     /// @notice checks if the money pot is frozen for a participant
