@@ -25,7 +25,7 @@ interface IGetters {
     ///                        cycle, expelled participants, total amount of cycles, yield
     ///                        start time in seconds, total deposit in wei, current total
     ///                        deposit in wei, total shares
-    function getTermGroupRelatedSummary(
+    function getTermRelatedSummary(
         uint termId
     )
         external
