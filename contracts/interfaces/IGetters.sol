@@ -41,15 +41,16 @@ interface IGetters {
     /// @param user the depositor address
     /// @param termId the collateral id
     /// @return userRelated an object that contains the following values:
-    ///                     user is collateral member, user is participant, user have been
-    ///                     beneficiary, user paid current cycle, user paid next cycle, user
-    ///                     enabled auto pay, user money pot is frozen, user has opted in for
-    ///                     yield generation an array of uints that contains the following values:
-    ///                     current users locked collateral balance in wei, current users
-    ///                     unlocked collateral balance in wei, initial users deposit in wei,
-    ///                     expulsion limit, beneficiaries pool, cycle of expulsion if applies
-    //                      withdrawn yield, withdrawn collateral from yield, available yield,
-    ///                     deposited collateral by user on yield, amount of yield distributed
+    ///                     user is collateral member, user is undercollaterized,
+    ///                     current collateral balance, received collateral from defaults,
+    ///                     initial deposited collateral, collateral expulsion limit,
+    ///                     currently withdrawable balance, is fund member, is or was beneficiary,
+    ///                     user paid current cycle, user paid next cycle in advance,
+    ///                     user enabled autopay, user's money pot is frozen, user is exempted this
+    ///                     cycle, the money pot pool the user can withdraw, the cycle the user got
+    ///                     expelled (if applicable), is yield member, amount of collateral deposited
+    ///                     in yield pool, amount of collateral withdrawn from yield pool, available
+    ///                     yield to withdraw, amount of yield withdrawn, yield to be distributed
     function getUserRelatedSummary(
         address user,
         uint termId

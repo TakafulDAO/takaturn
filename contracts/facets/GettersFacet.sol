@@ -37,7 +37,7 @@ contract GettersFacet is IGetters {
     ///                        fund start time in seconds, fund end time in seconds, current
     ///                        cycle, expelled participants, total amount of cycles, yield
     ///                        start time in seconds, total deposit in wei, current total
-    ///                        deposit in wei, total shares
+    ///                        deposit in wei, total shares, users opted in for yield
     function getTermRelatedSummary(
         uint termId
     )
@@ -99,15 +99,16 @@ contract GettersFacet is IGetters {
     /// @param user the depositor address
     /// @param termId the collateral id
     /// @return userRelated an object that contains the following values:
-    ///                     user is collateral member, user is participant, user have been
-    ///                     beneficiary, user paid current cycle, user paid next cycle, user
-    ///                     enabled auto pay, user money pot is frozen, user has opted in for
-    ///                     yield generation an array of uints that contains the following values:
-    ///                     current users locked collateral balance in wei, current users
-    ///                     unlocked collateral balance in wei, initial users deposit in wei,
-    ///                     expulsion limit, beneficiaries pool, cycle of expulsion if applies
-    //                      withdrawn yield, withdrawn collateral from yield, available yield,
-    ///                     deposited collateral by user on yield, amount of yield distributed
+    ///                     user is collateral member, user is undercollaterized,
+    ///                     current collateral balance, received collateral from defaults,
+    ///                     initial deposited collateral, collateral expulsion limit,
+    ///                     currently withdrawable balance, is fund member, is or was beneficiary,
+    ///                     user paid current cycle, user paid next cycle in advance,
+    ///                     user enabled autopay, user's money pot is frozen, user is exempted this
+    ///                     cycle, the money pot pool the user can withdraw, the cycle the user got
+    ///                     expelled (if applicable), is yield member, amount of collateral deposited
+    ///                     in yield pool, amount of collateral withdrawn from yield pool, available
+    ///                     yield to withdraw, amount of yield withdrawn, yield to be distributed
     function getUserRelatedSummary(
         address user,
         uint termId
@@ -124,6 +125,7 @@ contract GettersFacet is IGetters {
         bool beneficiary = fund.isBeneficiary[user]; // true if user has been beneficiary
 
         userRelated.collateralMember = collateral.isCollateralMember[user]; // true if member
+        userRelated.isUnderCollaterized = LibCollateral._isUnderCollaterized(termId, user); // checks if user is undercollaterized
         userRelated.membersBank = collateral.collateralMembersBank[user];
         userRelated.paymentBank = collateral.collateralPaymentBank[user];
         userRelated.deposited = collateral.collateralDepositByUser[user];
@@ -133,7 +135,9 @@ contract GettersFacet is IGetters {
         userRelated.nextCyclePaid = fund.paidNextCycle[user]; // true if has paid next cycle
         userRelated.autoPayer = fund.autoPayEnabled[user]; // true if enabled auto pay
         userRelated.moneyPotFrozen = _checkFrozenMoneyPot(user, termId); // true if money pot is frozen
+        userRelated.exemptedThisCycle = fund.isExemptedOnCycle[fund.currentCycle].exempted[user];
         userRelated.yieldMember = yield.hasOptedIn[user]; // true if deposit on yield
+        userRelated.withdrawableBalance = getWithdrawableUserBalance(termId, user); // Gets the amount of collateral the user can withdraw right now
 
         if (collateral.state != LibCollateralStorage.CollateralStates.AcceptingCollateral) {
             uint limit;
@@ -149,11 +153,11 @@ contract GettersFacet is IGetters {
             userRelated.cycleExpelled = fund.cycleOfExpulsion[user];
 
             if (yield.hasOptedIn[user]) {
-                userRelated.yieldWithdrawn = yield.withdrawnYield[user];
+                userRelated.collateralDepositedInYield = yield.depositedCollateralByUser[user];
                 userRelated.collateralWithdrawnFromYield = yield.withdrawnCollateral[user];
                 userRelated.yieldAvailable = yield.availableYield[user];
-                userRelated.collateralDepositedInYield = yield.depositedCollateralByUser[user];
-                userRelated.ditributedYield = LibYieldGeneration._unwithdrawnUserYieldGenerated(
+                userRelated.yieldWithdrawn = yield.withdrawnYield[user];
+                userRelated.distributedYield = LibYieldGeneration._unwithdrawnUserYieldGenerated(
                     termId,
                     user
                 );
@@ -480,7 +484,7 @@ contract GettersFacet is IGetters {
     function getWithdrawableUserBalance(
         uint termId,
         address user
-    ) external view returns (uint allowedWithdrawal) {
+    ) public view returns (uint allowedWithdrawal) {
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
