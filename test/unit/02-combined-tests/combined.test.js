@@ -361,11 +361,11 @@ async function executeCycle(
 
                       await expect(
                           takaturnDiamondDeployer.payContribution(termId)
-                      ).to.be.revertedWith("Not a participant")
+                      ).to.be.revertedWith("TT-FF-12") // Not a participant
 
                       await expect(
                           takaturnDiamondParticipant_1.payContribution(termId)
-                      ).to.be.revertedWith("Beneficiary doesn't pay")
+                      ).to.be.revertedWith("TT-FF-14") // Beneficiary doesn't pay
 
                       for (let i = 2; i <= totalParticipants; i++) {
                           let takaturnBalanceBefore = await usdc.balanceOf(takaturnDiamond)
@@ -377,7 +377,7 @@ async function executeCycle(
 
                           await expect(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                          ).to.be.revertedWith("Already paid for cycle")
+                          ).to.be.revertedWith("TT-FF-13") // Already paid for cycle
 
                           let takaturnBalanceAfter = await usdc.balanceOf(takaturnDiamond)
                           let participantBalanceAfter = await usdc.balanceOf(accounts[i].address)
@@ -471,7 +471,7 @@ async function executeCycle(
                       // But reverts if try to pay in advance if we are in the last cycle
                       await expect(
                           takaturnDiamondParticipant_1.payContribution(termId)
-                      ).to.be.revertedWith("Wrong state")
+                      ).to.be.revertedWith("TT-FF-02") // Wrong state
 
                       assert.equal(currentCycle, totalParticipants)
                       expect(getFundStateFromIndex(fundSummary[1])).to.equal(FundStates.FundClosed)
@@ -492,7 +492,7 @@ async function executeCycle(
 
                       await expect(
                           takaturnDiamondParticipant_1.closeFundingPeriod(termId)
-                      ).to.be.revertedWith("Still time to contribute")
+                      ).to.be.revertedWith("TT-FF-01") // Still time to contribute
 
                       // Artifically increase time to skip the wait
                       await advanceTime(contributionPeriod + 1)
@@ -567,7 +567,7 @@ async function executeCycle(
 
                       await expect(
                           takaturnDiamondParticipant_1.withdrawFund(termId)
-                      ).to.be.revertedWith("The caller must be a participant")
+                      ).to.be.revertedWith("TT-FF-08") // The caller must be a participant
 
                       await everyonePaysAndCloseCycle(termId)
 
@@ -586,7 +586,7 @@ async function executeCycle(
                               termId,
                               deployer.address
                           )
-                      ).to.be.revertedWith("The caller must be a participant")
+                      ).to.be.revertedWith("TT-FF-08") // The caller must be a participant
 
                       await everyonePaysAndCloseCycle(termId)
 
@@ -644,7 +644,7 @@ async function executeCycle(
 
                       //   await expect(
                       //       takaturnDiamondDeployer.startNewCycle(termId)
-                      //   ).to.be.revertedWith("TermOwnable: caller is not the owner")
+                      //   ).to.be.revertedWith("TT-LTO-01")
 
                       await takaturnDiamondParticipant_1.startNewCycle(termId)
 
@@ -776,7 +776,7 @@ async function executeCycle(
 
                       await expect(
                           takaturnDiamondDeployer.emptyCollateralAfterEnd(termId)
-                      ).to.be.revertedWith("TermOwnable: caller is not the owner")
+                      ).to.be.revertedWith("TT-LTO-01") // TermOwnable: caller is not the owner
 
                       await expect(takaturnDiamondParticipant_1.emptyCollateralAfterEnd(termId)).not
                           .to.be.reverted
@@ -816,7 +816,7 @@ async function executeCycle(
                       // Attempt to withdraw while cycles are ongoing, this should fail
                       await expect(
                           takaturnDiamondParticipant_1.emptyFundAfterEnd(termId)
-                      ).to.be.revertedWith("Can't empty yet")
+                      ).to.be.revertedWith("TT-FF-03") // Can’t empty yet
 
                       balance = await usdc.balanceOf(takaturnDiamond)
                       assert.ok(balance > 0)
@@ -833,7 +833,7 @@ async function executeCycle(
                       // Attempt to withdraw after last cycle, this should fail
                       await expect(
                           takaturnDiamondParticipant_1.emptyFundAfterEnd(termId)
-                      ).to.be.revertedWith("Can't empty yet")
+                      ).to.be.revertedWith("TT-FF-03") // Can’t empty yet
 
                       balance = await usdc.balanceOf(takaturnDiamond)
                       assert.ok(balance > 0)
@@ -1111,7 +1111,7 @@ async function executeCycle(
 
                   await expect(
                       takaturnDiamond.connect(participant_1).payContribution(termId)
-                  ).to.be.revertedWith("Beneficiary doesn't pay")
+                  ).to.be.revertedWith("TT-FF-14") // Beneficiary doesn't pay
 
                   // Artifically increase time to skip the wait
                   await advanceTime(contributionPeriod + 1)
@@ -1126,7 +1126,7 @@ async function executeCycle(
                       .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   await expect(
                       takaturnDiamond.connect(participant_2).payContribution(termId)
-                  ).to.be.revertedWith("Beneficiary doesn't pay")
+                  ).to.be.revertedWith("TT-FF-14") // Beneficiary doesn't pay
 
                   // Artifically increase time to skip the wait
                   await advanceTime(contributionPeriod + 1)

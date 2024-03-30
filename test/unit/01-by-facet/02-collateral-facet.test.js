@@ -435,7 +435,7 @@ const { hour } = require("../../../utils/units")
 
                   await expect(
                       takaturnDiamond.connect(participant_4).withdrawFund(termId)
-                  ).to.be.revertedWith("Need at least 1.1RCC collateral to unfreeze your fund")
+                  ).to.be.revertedWith("TT-FF-10") // Need at least 1.1RCC collateral to unfreeze your fund
 
                   assert.ok(moneyPotFrozen)
               })
@@ -630,12 +630,12 @@ const { hour } = require("../../../utils/units")
                       if (i == 4 && i == 6) {
                           await expect(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                          ).to.be.revertedWith("Participant is exempted this cycle")
+                          ).to.be.revertedWith("TT-FF-15") // Participant is exempted this cycle
                       }
                       if (i == 5) {
                           await expect(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                          ).to.be.revertedWith("Not a participant")
+                          ).to.be.revertedWith("TT-FF-12") // Not a participant
                       }
                   }
 

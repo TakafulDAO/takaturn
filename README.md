@@ -92,6 +92,6 @@ There are some scripts set on the package.json file. Check them out
 Contribute by creating a gas optimization or no risk issue through github issues. 
 Contribute by sending critical issues/ vulnerabilities to info@takadao.io. 
 
-[top](#takaturn-diamond-migration)
+[top](#takaturn-v2-smart-contracts)
 
 

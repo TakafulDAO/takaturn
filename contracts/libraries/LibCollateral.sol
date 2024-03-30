@@ -41,13 +41,13 @@ library LibCollateral {
         address _participant,
         address _receiver
     ) internal {
-        require(LibFundStorage._fundExists(_termId), "Fund does not exists");
+        require(LibFundStorage._fundExists(_termId), "TT-LC-01");
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
 
         uint amount = collateral.collateralPaymentBank[_participant];
-        require(amount > 0, "Nothing to claim");
+        require(amount > 0, "TT-LC-02");
         collateral.collateralPaymentBank[_participant] = 0;
 
         (bool success, ) = payable(_receiver).call{value: amount}("");

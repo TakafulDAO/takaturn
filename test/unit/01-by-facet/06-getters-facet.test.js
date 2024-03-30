@@ -436,7 +436,7 @@ async function payTestContribution(termId, defaulterIndex) {
 
                       await expect(
                           takaturnDiamondParticipant_3.withdrawFund(termId)
-                      ).to.be.revertedWith("Nothing to withdraw")
+                      ).to.be.revertedWith("TT-FF-09") // Nothing to withdraw
 
                       // Withdrawable is equal to collateral locked
                       assert.equal(

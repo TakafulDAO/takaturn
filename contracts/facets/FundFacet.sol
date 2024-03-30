@@ -75,12 +75,9 @@ contract FundFacet is IFund {
         require(
             block.timestamp >
                 term.cycleTime * (fund.currentCycle - 1) + fund.fundStart + term.contributionPeriod,
-            "Still time to contribute"
+            "TT-FF-01"
         );
-        require(
-            fund.currentState == LibFundStorage.FundStates.AcceptingContributions,
-            "Wrong state"
-        );
+        require(fund.currentState == LibFundStorage.FundStates.AcceptingContributions, "TT-FF-02");
 
         address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
 
@@ -167,7 +164,7 @@ contract FundFacet is IFund {
         require(
             fund.currentState == LibFundStorage.FundStates.FundClosed &&
                 block.timestamp > fund.fundEnd + 180 days,
-            "Can't empty yet"
+            "TT-FF-03"
         );
 
         uint balance;
@@ -187,7 +184,7 @@ contract FundFacet is IFund {
 
         if (balance > 0) {
             bool success = fund.stableToken.transfer(msg.sender, balance);
-            require(success, "Transfer failed");
+            require(success, "TT-FF-04");
         }
     }
 
@@ -202,8 +199,8 @@ contract FundFacet is IFund {
             ._collateralStorage()
             .collaterals[termId];
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        require(collateral.isCollateralMember[msg.sender], "Pay collateral security first");
-        require(fund.currentState != LibFundStorage.FundStates.FundClosed, "Wrong state");
+        require(collateral.isCollateralMember[msg.sender], "TT-FF-05");
+        require(fund.currentState != LibFundStorage.FundStates.FundClosed, "TT-FF-02");
         bool enabled = !fund.autoPayEnabled[msg.sender];
         fund.autoPayEnabled[msg.sender] = enabled;
 
@@ -259,7 +256,7 @@ contract FundFacet is IFund {
             success = EnumerableSet.remove(fund._beneficiaries, _defaulter);
         }
 
-        require(success, "Can't remove defaulter");
+        require(success, "TT-FF-06");
         EnumerableSet.add(fund._defaulters, _defaulter);
 
         emit OnParticipantDefaulted(_termId, fund.currentCycle, _defaulter);
@@ -363,7 +360,7 @@ contract FundFacet is IFund {
         uint amount = term.contributionAmount * 10 ** 6; // Deducted from user's wallet, six decimals
 
         bool success = fund.stableToken.transferFrom(_payer, address(this), amount);
-        require(success, "Contribution failed, did you approve stable token?");
+        require(success, "TT-FF-07");
 
         // Finish up, set that the participant paid for this cycle and emit an event that it's been done
         if (!_payNextCycle) {
@@ -396,14 +393,14 @@ contract FundFacet is IFund {
             fund.currentState == LibFundStorage.FundStates.FundClosed ||
                 fund.isBeneficiary[msg.sender] ||
                 expelledBeforeBeneficiary,
-            "The caller must be a participant"
+            "TT-FF-08"
         );
 
         bool hasFundPool = fund.beneficiariesPool[msg.sender] > 0;
         bool hasFrozenPool = fund.beneficiariesFrozenPool[msg.sender];
         bool hasCollateralPool = collateral.collateralPaymentBank[msg.sender] > 0;
 
-        require(hasFundPool || hasFrozenPool || hasCollateralPool, "Nothing to withdraw");
+        require(hasFundPool || hasFrozenPool || hasCollateralPool, "TT-FF-09");
 
         if (hasFrozenPool) {
             bool freeze = _freezePot(
@@ -413,7 +410,7 @@ contract FundFacet is IFund {
             );
 
             if (fund.currentState != LibFundStorage.FundStates.FundClosed) {
-                require(!freeze, "Need at least 1.1RCC collateral to unfreeze your fund");
+                require(!freeze, "TT-FF-10");
             }
 
             _transferPoolToBeneficiary(_termId, msg.sender, _receiver);
@@ -438,7 +435,7 @@ contract FundFacet is IFund {
         // Expellants should only be in the defauters set so no need to touch the other sets
         require(
             _fund.isParticipant[_expellant] && EnumerableSet.remove(_fund._defaulters, _expellant),
-            "Expellant not found"
+            "TT-FF-11"
         );
 
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -479,7 +476,7 @@ contract FundFacet is IFund {
         } else {
             fund.beneficiariesPool[_participant] = 0;
             bool success = fund.stableToken.transfer(_receiver, transferAmount);
-            require(success, "Transfer failed");
+            require(success, "TT-FF-04");
         }
         emit OnFundWithdrawn(_termId, _participant, _receiver, transferAmount);
     }
@@ -530,31 +527,28 @@ contract FundFacet is IFund {
         require(
             _fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
                 _fund.currentState == LibFundStorage.FundStates.CycleOngoing,
-            "Wrong state"
+            "TT-FF-02"
         );
-        require(_fund.isParticipant[_participant], "Not a participant");
+        require(_fund.isParticipant[_participant], "TT-FF-12");
 
         address _beneficiary;
         uint _cycle;
 
         if (_fund.currentState == LibFundStorage.FundStates.AcceptingContributions) {
-            require(!_fund.paidThisCycle[_participant], "Already paid for cycle");
+            require(!_fund.paidThisCycle[_participant], "TT-FF-13");
 
             _cycle = _fund.currentCycle;
             _beneficiary = IGetters(address(this)).getCurrentBeneficiary(_termId);
             _payNextCycle = false;
         } else {
-            require(!_fund.paidNextCycle[_participant], "Already paid for cycle");
+            require(!_fund.paidNextCycle[_participant], "TT-FF-13");
 
             _cycle = _fund.currentCycle + 1;
             _beneficiary = IGetters(address(this)).getNextBeneficiary(_termId);
             _payNextCycle = true;
         }
 
-        require(_beneficiary != _participant, "Beneficiary doesn't pay");
-        require(
-            !_fund.isExemptedOnCycle[_cycle].exempted[_participant],
-            "Participant is exempted this cycle"
-        );
+        require(_beneficiary != _participant, "TT-FF-14");
+        require(!_fund.isExemptedOnCycle[_cycle].exempted[_participant], "TT-FF-15");
     }
 }
