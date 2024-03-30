@@ -18,6 +18,15 @@ module.exports = {
     solidity: {
         compilers: [
             {
+                version: "0.4.18",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+            {
                 version: "0.6.12",
                 settings: {
                     optimizer: {
@@ -53,7 +62,7 @@ module.exports = {
                 //chainId: 42161,
                 accounts: [TESTNET_DEPLOYER_PK],
                 url: ARBITRUM_MAINNET_RPC_URL,
-                blockNumber: 157570648, // Block to ensure zayn contracts are deployed and trusted sender is set
+                blockNumber: 175144195,
                 enabled: true,
             },
         },

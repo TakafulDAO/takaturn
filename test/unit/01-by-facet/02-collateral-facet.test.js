@@ -162,7 +162,7 @@ const { hour } = require("../../../utils/units")
                           // Each participant joins the term
                           await takaturnDiamondParticipant_1
                               .connect(accounts[i + 1])
-                              .joinTerm(termId, false, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                       }
 
                       await advanceTime(registrationPeriod + 1)
@@ -321,7 +321,7 @@ const { hour } = require("../../../utils/units")
                       // Each participant joins the term
                       await takaturnDiamondParticipant_1
                           .connect(accounts[i + 1])
-                          .joinTerm(termId, false, { value: entrance })
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                   }
 
                   await advanceTime(registrationPeriod + 1)
@@ -435,7 +435,7 @@ const { hour } = require("../../../utils/units")
 
                   await expect(
                       takaturnDiamond.connect(participant_4).withdrawFund(termId)
-                  ).to.be.revertedWith("Need at least 1.1RCC collateral to unfreeze your fund")
+                  ).to.be.revertedWith("TT-FF-10") // Need at least 1.1RCC collateral to unfreeze your fund
 
                   assert.ok(moneyPotFrozen)
               })
@@ -458,7 +458,7 @@ const { hour } = require("../../../utils/units")
 
                   await expect(takaturnDiamond.closeFundingPeriod(termId))
                       .to.emit(takaturnDiamond, "OnCollateralLiquidated")
-                      .withArgs(termId, participant_6.address, 4478280340349305)
+                      .withArgs(termId, participant_6.address, 4446420631391729)
               })
 
               it("Liquidate collateral previous beneficiary [ @skip-on-ci ]", async function () {
@@ -486,7 +486,7 @@ const { hour } = require("../../../utils/units")
                   await advanceTime(cycleTime + 1)
                   await expect(takaturnDiamond.closeFundingPeriod(termId))
                       .to.emit(takaturnDiamond, "OnCollateralLiquidated")
-                      .withArgs(termId, participant_1.address, 4478280340349305)
+                      .withArgs(termId, participant_1.address, 4446420631391729)
               })
 
               it("Defaulter expelled, non previous beneficiary", async function () {
@@ -630,12 +630,12 @@ const { hour } = require("../../../utils/units")
                       if (i == 4 && i == 6) {
                           await expect(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                          ).to.be.revertedWith("Participant is exempted this cycle")
+                          ).to.be.revertedWith("TT-FF-15") // Participant is exempted this cycle
                       }
                       if (i == 5) {
                           await expect(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
-                          ).to.be.revertedWith("Not a participant")
+                          ).to.be.revertedWith("TT-FF-12") // Not a participant
                       }
                   }
 

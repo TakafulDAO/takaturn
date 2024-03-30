@@ -20,7 +20,7 @@ library LibTermStorage {
         bool initialized;
         TermStates state;
         address termOwner;
-        uint creationTime;
+        uint creationTime; // In seconds
         uint termId;
         uint registrationPeriod; // Time for registration (seconds)
         uint totalParticipants; // Max number of participants

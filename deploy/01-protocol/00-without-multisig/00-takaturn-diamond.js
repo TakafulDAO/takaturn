@@ -2,25 +2,28 @@ const { network } = require("hardhat")
 const {
     networkConfig,
     developmentChains,
-    VERIFICATION_BLOCK_CONFIRMATIONS,
     isMainnet,
     isTestnet,
     isDevnet,
     isFork,
-} = require("../utils/_networks")
-const { verify } = require("../scripts/verify")
+    isInternal,
+} = require("../../../utils/_networks")
+const { verify } = require("../../../scripts/verify")
+const { deployUpgradeDiamond } = require("../../../utils/deployTx")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
-    const { diamond, log } = deployments
+    const { log } = deployments
     const { deployer } = await getNamedAccounts()
+
     const chainId = network.config.chainId
-    const waitBlockConfirmations = developmentChains.includes(network.name)
-        ? 1
-        : VERIFICATION_BLOCK_CONFIRMATIONS
+
     let ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress
     let zaynfiZapAddress, zaynfiVaultAddress
+
     let contractNames, contractAddresses
+
     let takaturnDiamondUpgrade
+
     let collateralFacet,
         fundFacet,
         termFacet,
@@ -31,72 +34,68 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         diamondOwnershipFacet,
         diamondLoupeFacet,
         diamondERC165Init,
-        withdrawGoerliEthFacet
+        withdrawTestEthFacet
 
-    log("01. Deploying Takaturn Diamond...")
-
-    if (isMainnet || isTestnet || isFork) {
+    log("01.00.00. Deploying Takaturn Diamond...")
+    if (isMainnet || isTestnet || isFork || isInternal) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
         usdcUsdPriceFeedAddress = networkConfig[chainId]["usdcUsdPriceFeed"]
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
-
     if (isDevnet && !isFork) {
         const ethUsdAggregator = await deployments.get("MockEthUsdAggregator")
         ethUsdPriceFeedAddress = ethUsdAggregator.address
-
         const usdcUsdAggregator = await deployments.get("MockUsdcUsdAggregator")
         usdcUsdPriceFeedAddress = usdcUsdAggregator.address
-
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
     }
 
-    const args = []
-    const initArgs = [
+    let diamondName = "TakaturnDiamond"
+    let args = []
+    let initContract = "DiamondInit"
+    let initMethod = "init"
+    let initArgs = [
         ethUsdPriceFeedAddress,
         usdcUsdPriceFeedAddress,
         zaynfiZapAddress,
         zaynfiVaultAddress,
         false,
     ]
+    let facets = []
 
     if (isMainnet) {
-        takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
-            from: deployer,
-            owner: deployer,
-            args: args,
-            log: true,
-            facets: ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet", "YGFacetZaynFi"],
-            execute: {
-                contract: "DiamondInit",
-                methodName: "init",
-                args: initArgs,
-            },
-            waitConfirmations: waitBlockConfirmations,
-        })
+        facets = ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet", "YGFacetZaynFi"]
+
+        takaturnDiamondUpgrade = await deployUpgradeDiamond(
+            diamondName,
+            deployer,
+            args,
+            facets,
+            initContract,
+            initMethod,
+            initArgs
+        )
     } else {
-        takaturnDiamondUpgrade = await diamond.deploy("TakaturnDiamond", {
-            from: deployer,
-            owner: deployer,
-            args: args,
-            log: true,
-            facets: [
-                "CollateralFacet",
-                "FundFacet",
-                "TermFacet",
-                "GettersFacet",
-                "YGFacetZaynFi",
-                "WithdrawTestEthFacet",
-            ],
-            execute: {
-                contract: "DiamondInit",
-                methodName: "init",
-                args: initArgs,
-            },
-            waitConfirmations: waitBlockConfirmations,
-        })
+        facets = [
+            "CollateralFacet",
+            "FundFacet",
+            "TermFacet",
+            "GettersFacet",
+            "YGFacetZaynFi",
+            "WithdrawTestEthFacet",
+        ]
+
+        takaturnDiamondUpgrade = await deployUpgradeDiamond(
+            diamondName,
+            deployer,
+            args,
+            facets,
+            initContract,
+            initMethod,
+            initArgs
+        )
 
         withdrawTestEthFacet = await deployments.get("WithdrawTestEthFacet") // This facet is never deployed on mainnet
     }
@@ -140,24 +139,23 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         diamondERC165Init.address,
     ]
 
-    log("01. Diamond Deployed!")
+    log("01.00.00. Diamond Deployed!")
     log("==========================================================================")
-
-    if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
-        log("01. Verifying Diamond...")
+    if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY && !isInternal) {
+        log("01.00.00. Verifying Diamond...")
         for (let i = 0; i < contractAddresses.length; i++) {
-            log(`01. Verifying "${contractNames[i]}"...`)
+            log(`01.00.00. Verifying "${contractNames[i]}"...`)
             await verify(contractAddresses[i], args)
-            log(`01. Verified "${contractNames[i]}"...`)
+            log(`01.00.00. Verified "${contractNames[i]}"...`)
             log("==========================================================================")
         }
         if (isTestnet) {
-            log("01. Verifying Withdraw Test Eth Facet...")
+            log("01.00.00. Verifying Withdraw Test Eth Facet...")
             await verify(withdrawTestEthFacet.address, args)
-            log("01. Withdraw Test Eth Facet Verified!")
+            log("0100.00. Withdraw Test Eth Facet Verified!")
         }
         log("==========================================================================")
     }
 }
 
-module.exports.tags = ["all", "diamond", "takaturn_deploy", "takaturn_upgrade"]
+module.exports.tags = ["all", "takadao_main", "diamond", "takaturn_deploy", "takaturn_upgrade"]

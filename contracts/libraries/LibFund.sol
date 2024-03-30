@@ -27,6 +27,8 @@ library LibFund {
         for (uint i; i < participantsArrayLength; ) {
             EnumerableSet.add(fund._participants, fund.beneficiariesOrder[i]);
             fund.isParticipant[fund.beneficiariesOrder[i]] = true;
+
+            /// @custom:unchecked-block without risk, i can't be higher than beneficiariesOrder length
             unchecked {
                 ++i;
             }
@@ -43,25 +45,28 @@ library LibFund {
     }
 
     /// @notice This starts the new cycle and can only be called internally. Used upon deploy
+    /// @dev Rever if the fund is not in the right state or if it's too early to start a new cycle
     /// @param _termId The id of the term
     function _startNewCycle(uint _termId) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[_termId];
         // currentCycle is 0 when this is called for the first time
-        require(
-            block.timestamp > term.cycleTime * fund.currentCycle + fund.fundStart,
-            "Too early to start new cycle"
-        );
+        require(block.timestamp > term.cycleTime * fund.currentCycle + fund.fundStart, "TT-LF-01");
         require(
             fund.currentState == LibFundStorage.FundStates.InitializingFund ||
                 fund.currentState == LibFundStorage.FundStates.CycleOngoing,
-            "Wrong state"
+            "TT-LF-02"
         );
 
         ++fund.currentCycle;
         uint length = fund.beneficiariesOrder.length;
         for (uint i; i < length; ) {
-            fund.paidThisCycle[fund.beneficiariesOrder[i]] = false;
+            fund.paidThisCycle[fund.beneficiariesOrder[i]] = fund.paidNextCycle[
+                fund.beneficiariesOrder[i]
+            ];
+            fund.paidNextCycle[fund.beneficiariesOrder[i]] = false;
+
+            /// @custom:unchecked-block without risk, i can't be higher than beneficiariesOrder length
             unchecked {
                 ++i;
             }
@@ -73,12 +78,14 @@ library LibFund {
         _autoPay(_termId);
     }
 
-    /// @notice updates the state according to the input and makes sure the state can't be changed if the fund is closed. Also emits an event that this happened
+    /// @notice updates the state according to the input and makes sure the state can't be changed if
+    ///         the fund is closed. Also emits an event that this happened
+    /// @dev Reverts if the fund is closed
     /// @param _termId The id of the term
     /// @param _newState The new state of the fund
     function _setState(uint _termId, LibFundStorage.FundStates _newState) internal {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
-        require(fund.currentState != LibFundStorage.FundStates.FundClosed, "Fund closed");
+        require(fund.currentState != LibFundStorage.FundStates.FundClosed, "TT-LF-03");
         fund.currentState = _newState;
         emit OnFundStateChanged(_termId, fund.currentCycle, _newState);
     }
@@ -98,6 +105,7 @@ library LibFund {
             address autoPayer = autoPayers[i];
             // The beneficiary doesn't pay
             if (currentBeneficiary == autoPayer) {
+                /// @custom:unchecked-block without risk, i can't be higher than beneficiariesOrder length
                 unchecked {
                     ++i;
                 }
@@ -112,6 +120,7 @@ library LibFund {
                 _payContributionSafe(_termId, autoPayer, autoPayer);
             }
 
+            /// @custom:unchecked-block without risk, i can't be higher than beneficiariesOrder length
             unchecked {
                 ++i;
             }

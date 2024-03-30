@@ -6,6 +6,7 @@ const isMemnet = hre.network.name === "hardhat"
 
 const isMainnet = hre.network.name.startsWith("mainnet_")
 const isTestnet = hre.network.name.startsWith("testnet_")
+const isInternal = hre.network.name.startsWith("privatenet_")
 
 const isDevnet = isLocalhost || isMemnet
 const isRealChain = !isLocalhost && !isMemnet
@@ -76,6 +77,32 @@ const networkConfig = {
         defenderKey: process.env.DEFENDER_MAINNET_KEY,
         defenderSecret: process.env.DEFENDER_MAINNET_SECRET,
     },
+    92898932: {
+        name: "privatenet_remote",
+        decimals: "8",
+        initialPriceEthUsd: "200000000000", // 2000 USD
+        initialPriceUsdcUsd: "100000000", // 1 USD
+        ethUsdPriceFeed: "0x934aa086ad83600d7EF3Fa1704B7631D8ff822A9", // Mock contract
+        usdcUsdPriceFeed: "0x2fDE315f37170a9a8A687B00c8dC15EAbb96FB3E", // Mock contract
+        usdc: "0xCb3be877155E381dAE99dFCd56d8b6c752082b1F", // Mock contract
+        usdcWhale: "",
+        zaynfiZap: "0xa520D1B134fF05953Be740E56E81d99Bb471F39e", // Mock contract
+        zaynfiVault: "0x10A40F8D76a7A38bef8fF366329D9305D5Cc4986", // Mock contract
+        takaturnDiamond: "0xA22dA2f2e6556028984784C0B1d599F673bc1c01",
+    },
+    // /*Add the chain id*/ 0: {
+    //     name: "privatenet_local",
+    //     decimals: "8",
+    //     initialPriceEthUsd: "200000000000", // 2000 USD
+    //     initialPriceUsdcUsd: "100000000", // 1 USD
+    //     ethUsdPriceFeed: "", // Mock contract
+    //     usdcUsdPriceFeed: "", // Mock contract
+    //     usdc: "", // Mock contract
+    //     usdcWhale: "",
+    //     zaynfiZap: "", // Mock contract
+    //     zaynfiVault: "", // Mock contract
+    //     takaturnDiamond: "",
+    // },
 }
 
 const developmentChains = ["hardhat", "localhost"]
@@ -88,6 +115,7 @@ module.exports = {
     isMainnet,
     isTestnet,
     isDevnet,
+    isInternal,
     isRealChain,
     isProtocolChain,
     networkConfig,

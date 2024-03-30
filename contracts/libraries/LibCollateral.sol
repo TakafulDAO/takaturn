@@ -11,14 +11,15 @@ library LibCollateral {
         uint indexed termId,
         LibCollateralStorage.CollateralStates indexed oldState,
         LibCollateralStorage.CollateralStates indexed newState
-    );
+    ); // Emits when the state of the collateral changes
     event OnReimbursementWithdrawn(
         uint indexed termId,
         address indexed participant,
         address receiver,
         uint indexed amount
-    );
+    ); // Emits when a participant withdraws their reimbursement
 
+    /// @notice Sets the state of the collateral
     /// @param _termId term id
     /// @param _newState collateral state
     function _setState(uint _termId, LibCollateralStorage.CollateralStates _newState) internal {
@@ -30,20 +31,23 @@ library LibCollateral {
         emit OnCollateralStateChanged(_termId, oldState, _newState);
     }
 
+    /// @notice Allow a user to withdraw their reimbursement
+    /// @dev Reverts if the fund does not exists or if the user has nothing to claim
     /// @param _termId term id
     /// @param _participant Address of the depositor
+    /// @param _receiver Address of the receiver
     function _withdrawReimbursement(
         uint _termId,
         address _participant,
         address _receiver
     ) internal {
-        require(LibFundStorage._fundExists(_termId), "Fund does not exists");
+        require(LibFundStorage._fundExists(_termId), "TT-LC-01");
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[_termId];
 
         uint amount = collateral.collateralPaymentBank[_participant];
-        require(amount > 0, "Nothing to claim");
+        require(amount > 0, "TT-LC-02");
         collateral.collateralPaymentBank[_participant] = 0;
 
         (bool success, ) = payable(_receiver).call{value: amount}("");

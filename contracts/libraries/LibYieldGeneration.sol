@@ -39,6 +39,7 @@ library LibYieldGeneration {
     /// @param _termId The term id for which the collateral is being withdrawn
     /// @param _collateralAmount The amount of collateral being withdrawn
     /// @param _user The user address that is withdrawing the collateral
+    /// @return The amount of yield withdrawn
     function _withdrawYG(
         uint _termId,
         uint256 _collateralAmount,
@@ -48,13 +49,26 @@ library LibYieldGeneration {
             ._yieldStorage()
             .yields[_termId];
 
-        uint neededShares = _ethToShares(_collateralAmount, yield);
+        uint neededShares = _neededShares(_collateralAmount, yield.totalShares, yield.totalDeposit);
 
         yield.withdrawnCollateral[_user] += _collateralAmount;
         yield.currentTotalDeposit -= _collateralAmount;
 
         address zapAddress = yield.providerAddresses["ZaynZap"];
         address vaultAddress = yield.providerAddresses["ZaynVault"];
+
+        uint sharesBalance = IZaynVaultV2TakaDao(vaultAddress).balanceOf(_termId);
+
+        // Prevent rounding errors
+        if (neededShares > sharesBalance) {
+            if (neededShares - sharesBalance < 10000) {
+                neededShares = sharesBalance;
+            }
+        } else {
+            if (sharesBalance - neededShares < 10000) {
+                neededShares = sharesBalance;
+            }
+        }
 
         uint withdrawnAmount = IZaynZapV2TakaDAO(zapAddress).zapOutETH(
             vaultAddress,
@@ -76,6 +90,7 @@ library LibYieldGeneration {
     /// @notice Conversion from shares to eth
     /// @param _termId The term id
     /// @param _yield The yield generation struct
+    /// @return Wei equivalent of the shares
     function _sharesToEth(
         uint _termId,
         LibYieldGenerationStorage.YieldGeneration storage _yield
@@ -92,15 +107,16 @@ library LibYieldGeneration {
 
     /// @notice Conversion from eth to shares
     /// @param _collateralAmount The amount of collateral to withdraw
-    /// @param _yield The yield generation struct
-    function _ethToShares(
+    /// @param _totalShares The total shares in the yield from the term
+    /// @param _totalDeposit The total deposit in the yield from the term
+    /// @return The amount of shares equivalent to a collateral amount
+    function _neededShares(
         uint _collateralAmount,
-        LibYieldGenerationStorage.YieldGeneration storage _yield
-    ) internal view returns (uint) {
-        uint pricePerShare = IZaynVaultV2TakaDao(_yield.providerAddresses["ZaynVault"])
-            .getPricePerFullShare();
-
-        return ((_collateralAmount * 10 ** 18) / pricePerShare);
+        uint _totalShares,
+        uint _totalDeposit
+    ) internal pure returns (uint) {
+        if (_totalDeposit == 0) return 0;
+        return ((_collateralAmount * _totalShares) / _totalDeposit);
     }
 
     /// @notice This function is used to get the current total yield generated for a term
@@ -157,6 +173,10 @@ library LibYieldGeneration {
         return yieldDistributed;
     }
 
+    /// @notice This function is used to claim the available yield for a user
+    /// @param _termId The term id for which the yield is being claimed
+    /// @param _user The user for which the yield is being claimed
+    /// @param _receiver The receiver of the yield
     function _claimAvailableYield(uint _termId, address _user, address _receiver) internal {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
@@ -164,7 +184,7 @@ library LibYieldGeneration {
 
         uint availableYield = yield.availableYield[_user];
 
-        require(availableYield > 0, "No yield to withdraw");
+        require(availableYield > 0, "TT-LYG-01");
 
         yield.availableYield[_user] = 0;
         (bool success, ) = payable(_receiver).call{value: availableYield}("");

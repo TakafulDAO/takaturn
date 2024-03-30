@@ -2,8 +2,8 @@ const { assert, expect } = require("chai")
 const { isFork, isMainnet, networkConfig } = require("../../utils/_networks")
 const { network, ethers } = require("hardhat")
 const { impersonateAccount, advanceTime } = require("../../utils/_helpers")
-const { balanceForUser, registrationPeriod } = require("../utils/test-utils")
-const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
+const { balanceForUser } = require("../utils/test-utils")
+const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
 
 !isFork || isMainnet
     ? describe.skip
@@ -90,6 +90,11 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
 
                       zaynZapOwner = zaynZap.connect(zapOwnerSigner)
                       usdcWhaleSigner = usdc.connect(whale)
+
+                      await deployer.sendTransaction({
+                          to: zapOwner,
+                          value: ethers.parseEther("1"),
+                      })
 
                       await zaynZapOwner.toggleTrustedSender(takaturnDiamond, true, {
                           gasLimit: 1000000,
@@ -223,21 +228,37 @@ const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
-                          await takaturnDiamondParticipant_1.joinTerm(termId, true, {
-                              value: ethers.parseEther("0.19268"),
-                          })
+                          await takaturnDiamondParticipant_1["joinTerm(uint256,bool)"](
+                              termId,
+                              true,
+                              {
+                                  value: ethers.parseEther("0.19268"),
+                              }
+                          )
 
-                          await takaturnDiamondParticipant_2.joinTerm(termId, true, {
-                              value: ethers.parseEther("0.14507"),
-                          })
+                          await takaturnDiamondParticipant_2["joinTerm(uint256,bool)"](
+                              termId,
+                              true,
+                              {
+                                  value: ethers.parseEther("0.14507"),
+                              }
+                          )
 
-                          await takaturnDiamondParticipant_3.joinTerm(termId, true, {
-                              value: ethers.parseEther("0.09518"),
-                          })
+                          await takaturnDiamondParticipant_3["joinTerm(uint256,bool)"](
+                              termId,
+                              true,
+                              {
+                                  value: ethers.parseEther("0.09518"),
+                              }
+                          )
 
-                          await takaturnDiamondParticipant_4.joinTerm(termId, true, {
-                              value: ethers.parseEther("0.04735"),
-                          })
+                          await takaturnDiamondParticipant_4["joinTerm(uint256,bool)"](
+                              termId,
+                              true,
+                              {
+                                  value: ethers.parseEther("0.04735"),
+                              }
+                          )
 
                           await advanceTime(registrationPeriod + 1)
 

@@ -1,7 +1,7 @@
 const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
-const { advanceTimeByDate, advanceTime, impersonateAccount } = require("../../../utils/_helpers")
+const { advanceTime, impersonateAccount } = require("../../../utils/_helpers")
 const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
@@ -78,7 +78,7 @@ const { hour } = require("../../../utils/units")
                   // Each participant joins the term
                   await takaturnDiamondParticipant_1
                       .connect(accounts[i + 1])
-                      .joinTerm(termId, false, { value: entrance })
+                      ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
               }
 
               await advanceTime(registrationPeriod + 1)
@@ -156,7 +156,7 @@ const { hour } = require("../../../utils/units")
                               takaturnDiamondParticipant_1
                                   .connect(accounts[i + 1])
                                   .payContribution(termId)
-                          ).to.be.revertedWith("Beneficiary doesn't pay")
+                          ).to.be.revertedWith("TT-FF-14") // Beneficiary doesn't pay
                       } else {
                           await takaturnDiamondParticipant_1
                               .connect(accounts[i + 1])
@@ -196,7 +196,7 @@ const { hour } = require("../../../utils/units")
                               takaturnDiamondParticipant_1
                                   .connect(accounts[i + 1])
                                   .payContribution(termId)
-                          ).to.be.revertedWith("Beneficiary doesn't pay")
+                          ).to.be.revertedWith("TT-FF-14") // Beneficiary doesn't pay
                       } else {
                           await takaturnDiamondParticipant_1
                               .connect(accounts[i + 1])

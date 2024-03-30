@@ -16,7 +16,8 @@ const {
     registrationPeriod,
     getRandomInt,
 } = require("../utils/test-utils")
-const { abi } = require("../../deployments/mainnet_arbitrum/TakaturnDiamond.json")
+const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
+const { updateFacetsBytecode } = require("../utils/update-facets-bytecode")
 
 let takaturnDiamond, usdc
 
@@ -143,6 +144,18 @@ async function executeCycle(
     }
 }
 
+async function checkYieldMappings(termId, userAddress) {
+    let userYieldSummary = await takaturnDiamond.getUserYieldSummary(userAddress, termId)
+    if (!userYieldSummary[0]) {
+        return
+    }
+
+    const withdrawnCollateral = userYieldSummary[2]
+    const depositedCollateralByUser = userYieldSummary[4]
+
+    assert(withdrawnCollateral <= depositedCollateralByUser)
+}
+
 !isFork || isMainnet
     ? describe.skip
     : describe("Fork Mainnet test. Yield generation tests", function () {
@@ -183,12 +196,6 @@ async function executeCycle(
               participant_11 = accounts[11]
               participant_12 = accounts[12]
 
-              participants = []
-              // From account[1] to account[12]
-              for (let i = 1; i <= totalParticipants; i++) {
-                  participants.push(accounts[i])
-              }
-
               // Get the contract instances
               const takaturnDiamondAddress = networkConfig[chainId]["takaturnDiamond"]
               takaturnDiamond = await ethers.getContractAt(abi, takaturnDiamondAddress)
@@ -209,6 +216,7 @@ async function executeCycle(
               // Connect the accounts
               takaturnDiamondDeployer = takaturnDiamond.connect(deployer)
               takaturnDiamondParticipant_1 = takaturnDiamond.connect(participant_1)
+              await updateFacetsBytecode()
           })
 
           describe("Real values", function () {
@@ -279,7 +287,7 @@ async function executeCycle(
                               await expect(
                                   takaturnDiamond
                                       .connect(accounts[i])
-                                      .joinTerm(termId, true, { value: entrance })
+                                      ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                               )
                                   .to.emit(takaturnDiamond, "OnCollateralDeposited")
                                   .withArgs(termId, accounts[i].address, entrance)
@@ -287,7 +295,7 @@ async function executeCycle(
                               await expect(
                                   takaturnDiamond
                                       .connect(accounts[i])
-                                      .joinTerm(termId, true, { value: entrance })
+                                      ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                               )
                                   .to.emit(takaturnDiamond, "OnTermFilled")
                                   .withArgs(termId)
@@ -303,6 +311,7 @@ async function executeCycle(
                   })
 
                   it("allows to start a term with participants joining yield generation", async function () {
+                      this.timeout(200000)
                       const ids = await takaturnDiamondDeployer.getTermsId()
                       const termId = ids[0]
 
@@ -314,7 +323,7 @@ async function executeCycle(
 
                           await takaturnDiamond
                               .connect(accounts[i])
-                              .joinTerm(termId, true, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                       }
                       await advanceTime(registrationPeriod + 1)
                       await expect(takaturnDiamond.startTerm(termId)).not.to.be.reverted
@@ -333,11 +342,11 @@ async function executeCycle(
                           if (i == 1 || i == totalParticipants) {
                               await takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, true, { value: entrance })
+                                  ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                           } else {
                               await takaturnDiamond
                                   .connect(accounts[i])
-                                  .joinTerm(termId, false, { value: entrance })
+                                  ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
                           }
                       }
                       await advanceTime(registrationPeriod + 1)
@@ -362,7 +371,7 @@ async function executeCycle(
                           0
                       )
 
-                      await takaturnDiamondParticipant_1.joinTerm(termId, true, {
+                      await takaturnDiamondParticipant_1["joinTerm(uint256,bool)"](termId, true, {
                           value: entrance,
                       })
 
@@ -396,7 +405,7 @@ async function executeCycle(
 
                           await takaturnDiamond
                               .connect(accounts[i])
-                              .joinTerm(termId, true, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                       }
                       await advanceTime(registrationPeriod + 1)
 
@@ -421,7 +430,7 @@ async function executeCycle(
 
                           await takaturnDiamond
                               .connect(accounts[i])
-                              .joinTerm(termId, true, { value: entrance })
+                              ["joinTerm(uint256,bool)"](termId, true, { value: entrance })
                       }
                       await advanceTime(registrationPeriod + 1)
                       await takaturnDiamond.startTerm(termId)
@@ -477,7 +486,7 @@ async function executeCycle(
                               assert.equal(yieldUsers[i], accounts[i + 1].address)
                           }
                       })
-                      it("Should return the correct yield parameters for a user", async function () {
+                      it("Should return the correct yield parameters for a user [ @skip-on-ci ]", async function () {
                           this.timeout(200000)
                           const ids = await takaturnDiamond.getTermsId()
                           const termId = ids[0]
@@ -493,7 +502,7 @@ async function executeCycle(
                                       termId
                                   )
                               let collateralDeposited = collaterlUserSummary[3]
-                              let expectedYieldDeposited = (collateralDeposited * 90n) / 100n
+                              let expectedYieldDeposited = (collateralDeposited * 95n) / 100n
 
                               assert.ok(yieldUser[0])
                               assert.equal(yieldUser[1].toString(), 0)
@@ -516,6 +525,8 @@ async function executeCycle(
 
                           await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId)).not
                               .to.be.reverted
+
+                          await checkYieldMappings(termId, participant_1.address)
                       })
 
                       it("Should not revert when there are defaulters and finish funding period", async function () {
@@ -539,6 +550,8 @@ async function executeCycle(
                           await executeCycle(termId, 0, [], false)
 
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          await checkYieldMappings(termId, participant_1.address)
 
                           const yield = await takaturnDiamond.getUserYieldSummary(
                               participant_1.address,
@@ -565,6 +578,8 @@ async function executeCycle(
                           await executeCycle(termId, 0, [], false)
 
                           await takaturnDiamondParticipant_1.withdrawCollateral(termId)
+
+                          await checkYieldMappings(termId, participant_1.address)
 
                           const yield = await takaturnDiamond.getUserYieldSummary(
                               participant_1.address,

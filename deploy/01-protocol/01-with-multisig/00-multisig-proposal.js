@@ -2,24 +2,34 @@ const { network } = require("hardhat")
 const {
     networkConfig,
     developmentChains,
-    VERIFICATION_BLOCK_CONFIRMATIONS,
     isMainnet,
     isTestnet,
     isDevnet,
-} = require("../utils/_networks")
-const { verify } = require("../scripts/verify")
+} = require("../../../utils/_networks")
+const { verify } = require("../../../scripts/verify")
 const { writeFileSync } = require("fs")
-const path = require("path")
+const { getRawTransaction } = require("../../../utils/deployTx")
 
-module.exports = async ({ getNamedAccounts, deployments }) => {
-    const { diamond, log, catchUnknownSigner } = deployments
-    const { deployer, diamondOwner } = await getNamedAccounts()
+module.exports = async ({ deployments }) => {
+    const { log } = deployments
+
     const chainId = network.config.chainId
-    const waitBlockConfirmations = developmentChains.includes(network.name)
-        ? 1
-        : VERIFICATION_BLOCK_CONFIRMATIONS
+
     let ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress
     let zaynfiZapAddress, zaynfiVaultAddress
+    let facets
+
+    let diamondName = "TakaturnDiamond"
+    let args = []
+    let initContract = "DiamondInit"
+    let initMethod = "init"
+    let initArgs = [
+        ethUsdPriceFeedAddress,
+        usdcUsdPriceFeedAddress,
+        zaynfiZapAddress,
+        zaynfiVaultAddress,
+        false,
+    ]
 
     if (!isDevnet) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
@@ -27,73 +37,45 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
 
-        const args = []
-        const initArgs = [
-            ethUsdPriceFeedAddress,
-            usdcUsdPriceFeedAddress,
-            zaynfiZapAddress,
-            zaynfiVaultAddress,
-            false,
-        ]
-
         log("==========================================================================")
-
-        log("04. Deploying facets")
-        log("04. Creating raw transaction for proposal on multisig...")
-
-        let txData
+        log("01.01.00. Deploying facets")
+        log("01.01.00. Creating raw transaction for proposal on multisig...")
 
         if (isMainnet) {
-            rawProposal = await catchUnknownSigner(
-                diamond.deploy("TakaturnDiamond", {
-                    from: deployer,
-                    owner: diamondOwner,
-                    args: args,
-                    log: true,
-                    facets: [
-                        "CollateralFacet",
-                        "FundFacet",
-                        "TermFacet",
-                        "GettersFacet",
-                        "YGFacetZaynFi",
-                    ],
-                    execute: {
-                        contract: "DiamondInit",
-                        methodName: "init",
-                        args: initArgs,
-                    },
-                    waitConfirmations: waitBlockConfirmations,
-                })
+            facets = ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet", "YGFacetZaynFi"]
+
+            rawProposal = await getRawTransaction(
+                diamondName,
+                args,
+                facets,
+                initContract,
+                initMethod,
+                initArgs
             )
         } else {
-            rawProposal = await catchUnknownSigner(
-                diamond.deploy("TakaturnDiamond", {
-                    from: deployer,
-                    owner: diamondOwner,
-                    args: args,
-                    log: false,
-                    facets: [
-                        "CollateralFacet",
-                        "FundFacet",
-                        "TermFacet",
-                        "GettersFacet",
-                        "YGFacetZaynFi",
-                        "WithdrawTestEthFacet",
-                    ],
-                    execute: {
-                        contract: "DiamondInit",
-                        methodName: "init",
-                        args: initArgs,
-                    },
-                    waitConfirmations: waitBlockConfirmations,
-                })
+            facets = [
+                "CollateralFacet",
+                "FundFacet",
+                "TermFacet",
+                "GettersFacet",
+                "YGFacetZaynFi",
+                "WithdrawTestEthFacet",
+            ]
+
+            rawProposal = await getRawTransaction(
+                diamondName,
+                args,
+                facets,
+                initContract,
+                initMethod,
+                initArgs
             )
 
             withdrawTestEthFacet = await deployments.get("WithdrawTestEthFacet") // This facet is never deployed on mainnet
         }
 
-        log("04. Facets deployed")
-        log("04. Raw transaction created")
+        log("01.01.00. Facets deployed")
+        log("01.01.00. Raw transaction created")
         log("==========================================================================")
 
         takaturnDiamondUpgrade = await deployments.get("TakaturnDiamond")
@@ -137,17 +119,17 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         ]
 
         if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
-            log("01. Verifying Diamond...")
+            log("01.01.00. Verifying Diamond...")
             for (let i = 0; i < contractAddresses.length; i++) {
-                log(`01. Verifying "${contractNames[i]}"...`)
+                log(`01.01.00. Verifying "${contractNames[i]}"...`)
                 await verify(contractAddresses[i], args)
-                log(`01. Verified "${contractNames[i]}"...`)
+                log(`01.01.00. Verified "${contractNames[i]}"...`)
                 log("==========================================================================")
             }
             if (isTestnet) {
-                log("01. Verifying Withdraw Test Eth Facet...")
+                log("01.01.00. Verifying Withdraw Test Eth Facet...")
                 await verify(withdrawTestEthFacet.address, args)
-                log("01. Withdraw Test Eth Facet Verified!")
+                log("01.01.00. Withdraw Test Eth Facet Verified!")
             }
             log("==========================================================================")
         }
