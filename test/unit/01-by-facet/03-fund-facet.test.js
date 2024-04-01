@@ -170,7 +170,7 @@ const { hour } = require("../../../utils/units")
 
                   await takaturnDiamond.startNewCycle(termId)
 
-                  await takaturnDiamondDeployer.testInsufficientBalance(termId)
+                  await takaturnDiamondDeployer.testHelper_InsufficientBalance(termId)
 
                   await expect(
                       takaturnDiamondParticipant_1.withdrawFund(termId)
