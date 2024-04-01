@@ -77,20 +77,6 @@ interface IGetters {
     /// @return the next term id
     function getTermsId() external view returns (uint, uint);
 
-    // /// @notice Gets the yield object
-    // /// @param termId the collateral id
-    // /// @return if the yield is initialized
-    // /// @return start time stamp for yield deposit
-    // /// @return total deposit
-    // /// @return current amount in yield
-    // /// @return amount of total shares
-    // /// @return list of yield users
-    // /// @return address of vault
-    // /// @return address of zap
-    // function getYieldSummary(
-    //     uint termId
-    // ) external view returns (bool, uint, uint, uint, uint, address[] memory, address, address);
-
     /// @notice This function is used to get a term APY
     /// @param termId The term id for which the APY is being calculated
     /// @return The APY for the term

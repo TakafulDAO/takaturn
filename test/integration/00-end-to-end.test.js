@@ -25,7 +25,7 @@ const { ZeroAddress } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe.only("Integration tests. End to end", function () {
+    : describe("Integration tests. End to end", function () {
           const chainId = network.config.chainId
 
           let takaturnDiamond, aggregator, usdc, zaynZap
