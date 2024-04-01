@@ -211,7 +211,7 @@ const { ZeroAddress } = require("ethers")
               const termsIds = await takaturnDiamond.getTermsId()
               const termId = termsIds[0]
 
-              let term = await takaturnDiamond.getTermSummary(termId)
+              let term = (await takaturnDiamond.getTermRelatedSummary(termId))[0]
               let collateral = await takaturnDiamond.getCollateralSummary(termId)
 
               expect(term.initialized).to.equal(true)
@@ -404,7 +404,7 @@ const { ZeroAddress } = require("ethers")
 
               await takaturnDiamond.connect(participant_1).withdrawCollateral(termsIds[1])
 
-              let secondTerm = await takaturnDiamond.getTermSummary(termsIds[1])
+              let secondTerm = (await takaturnDiamond.getTermRelatedSummary(termsIds[1]))[0]
               let secondCollateral = await takaturnDiamond.getCollateralSummary(termsIds[1])
               secondCollateralDepositorSummary =
                   await takaturnDiamond.getDepositorCollateralSummary(
@@ -464,7 +464,7 @@ const { ZeroAddress } = require("ethers")
 
               assert.equal(remainingCycleTime, cycleTime)
 
-              term = await takaturnDiamond.getTermSummary(termId)
+              term = (await takaturnDiamond.getTermRelatedSummary(termId))[0]
               collateral = await takaturnDiamond.getCollateralSummary(termId)
 
               await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
@@ -1153,7 +1153,7 @@ const { ZeroAddress } = require("ethers")
 
               await takaturnDiamond.closeFundingPeriod(termId)
 
-              term = await takaturnDiamond.getTermSummary(termId)
+              term = (await takaturnDiamond.getTermRelatedSummary(termId))[0]
               collateral = await takaturnDiamond.getCollateralSummary(termId)
               fund = await takaturnDiamond.getFundSummary(termId)
 

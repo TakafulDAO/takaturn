@@ -77,11 +77,6 @@ interface IGetters {
     /// @return the next term id
     function getTermsId() external view returns (uint, uint);
 
-    /// @notice Gets the term object
-    /// @param termId the term id
-    /// @return the term object
-    function getTermSummary(uint termId) external view returns (LibTermStorage.Term memory);
-
     /// @notice Gets the collateral summary of a term
     /// @param termId the id of the term
     /// @return if collateral is initialized

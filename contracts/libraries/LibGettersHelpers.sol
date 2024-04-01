@@ -17,6 +17,7 @@ library LibGettersHelpers {
         bool collateralInitialized;
         uint collateralFirstDepositTime; // In seconds
         uint collateralCounterMembers; // Member count
+        address[] collateralMembers;
         // Fund related
         bool fundInitialized;
         uint fundStartTime; // In seconds

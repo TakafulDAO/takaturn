@@ -112,7 +112,7 @@ const { hour } = require("../../../utils/units")
                   await advanceTime(registrationPeriod + 1)
                   await takaturnDiamond.startTerm(termId)
 
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const termState = term.state
 
                   await expect(getTermStateFromIndex(termState)).to.equal(TermStates.ActiveTerm)
@@ -126,7 +126,7 @@ const { hour } = require("../../../utils/units")
                   const wrongTermId = termId + 1n
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -176,7 +176,7 @@ const { hour } = require("../../../utils/units")
                   }
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(0)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(0))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -216,7 +216,7 @@ const { hour } = require("../../../utils/units")
                   }
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(0)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(0))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -314,7 +314,7 @@ const { hour } = require("../../../utils/units")
                   const position = 7
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       position
@@ -449,7 +449,7 @@ const { hour } = require("../../../utils/units")
                   const termId = lastTerm[0]
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -474,7 +474,7 @@ const { hour } = require("../../../utils/units")
                   const termId = lastTerm[0]
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -501,7 +501,7 @@ const { hour } = require("../../../utils/units")
                   const wrongTermId = termId + 1n
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -557,7 +557,7 @@ const { hour } = require("../../../utils/units")
                   }
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(0)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(0))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -600,7 +600,7 @@ const { hour } = require("../../../utils/units")
                   }
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(0)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(0))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -710,7 +710,7 @@ const { hour } = require("../../../utils/units")
                   const position = 7
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       position
@@ -861,7 +861,7 @@ const { hour } = require("../../../utils/units")
                   const termId = lastTerm[0]
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -885,7 +885,7 @@ const { hour } = require("../../../utils/units")
                   const termId = lastTerm[0]
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -918,7 +918,7 @@ const { hour } = require("../../../utils/units")
                   const termId = lastTerm[0]
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -969,7 +969,7 @@ const { hour } = require("../../../utils/units")
                   const termId = lastTerm[0]
 
                   // Get the collateral payment deposit
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
                       term.termId,
                       0
@@ -1068,7 +1068,7 @@ const { hour } = require("../../../utils/units")
 
                   await expect(takaturnDiamond.expireTerm(termId)).to.not.be.reverted
 
-                  const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                  const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                   const termState = term.state
 
                   await expect(getTermStateFromIndex(termState)).to.equal(TermStates.ExpiredTerm)

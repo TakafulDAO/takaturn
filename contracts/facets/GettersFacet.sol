@@ -79,6 +79,7 @@ contract GettersFacet is IGetters {
             collateralInitialized: collateral.initialized,
             collateralFirstDepositTime: collateral.firstDepositTime,
             collateralCounterMembers: collateral.counterMembers,
+            collateralMembers: collateral.depositors,
             fundInitialized: fund.initialized,
             fundStartTime: fund.fundStart,
             fundEndTime: fund.fundEnd,
@@ -202,13 +203,6 @@ contract GettersFacet is IGetters {
         uint lastTermId = termStorage.nextTermId - 1;
         uint nextTermId = termStorage.nextTermId;
         return (lastTermId, nextTermId);
-    }
-
-    /// @notice Gets the term object
-    /// @param termId the term id
-    /// @return the term object
-    function getTermSummary(uint termId) external view returns (LibTermStorage.Term memory) {
-        return (LibTermStorage._termStorage().terms[termId]);
     }
 
     /// @notice function to get the collateral object

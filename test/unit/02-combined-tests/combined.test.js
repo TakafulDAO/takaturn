@@ -356,7 +356,7 @@ async function executeCycle(
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
-                      const term = await takaturnDiamondDeployer.getTermSummary(termId)
+                      const term = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[0]
                       const contributionAmount = term.contributionAmount
 
                       await expect(
