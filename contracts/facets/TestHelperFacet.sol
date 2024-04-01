@@ -12,7 +12,7 @@ import "hardhat/console.sol";
 
 contract TestHelperFacet {
     /// @notice Helper function to test the error InsufficientBalance on FundFacet is working
-    function testInsufficientBalance(uint termId) external {
+    function testHelper_InsufficientBalance(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         uint balance = fund.stableToken.balanceOf(address(this));
         bool success = fund.stableToken.transfer(msg.sender, balance);
@@ -20,36 +20,45 @@ contract TestHelperFacet {
     }
 
     /// @notice Helper function to test the Github CD workflows, and multisig deploys
-    function testGithubCDWorkflowsAndMultisigDeploys() external pure returns (string memory) {
+    function testHelper_GithubCDWorkflowsAndMultisigDeploys()
+        external
+        pure
+        returns (string memory)
+    {
         return "Test Workflow [demo]";
     }
 
-    /// @notice Helper function to test money pot liquidations
-    function testLiquidateMoneyPot(uint termId, address participant) external {
+    function testHelper_setCollateralMembersBank(
+        uint termId,
+        uint amount,
+        address participant
+    ) external {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
-        uint contributionAmountWei = IGetters(address(this)).getToCollateralConversionRate(
-            term.contributionAmount * 10 ** 18
-        );
-
-        collateral.collateralMembersBank[participant] = contributionAmountWei / 2;
+        collateral.collateralMembersBank[participant] = amount;
     }
 
-    function testLiquidateCollateralAndMoneyPot(uint termId, address participant) external {
+    function testHelper_setCollateralPaymentBank(
+        uint termId,
+        uint amount,
+        address participant
+    ) external {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
             ._collateralStorage()
             .collaterals[termId];
-        LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
+
+        collateral.collateralPaymentBank[participant] = amount;
+    }
+
+    function testHelper_setBeneficiariesPool(
+        uint termId,
+        uint amount,
+        address participant
+    ) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        uint contributionAmountWei = IGetters(address(this)).getToCollateralConversionRate(
-            term.contributionAmount * 10 ** 18
-        );
-
-        collateral.collateralMembersBank[participant] = contributionAmountWei / 2;
-        fund.beneficiariesPool[participant] = 0;
+        fund.beneficiariesPool[participant] = amount;
     }
 }
