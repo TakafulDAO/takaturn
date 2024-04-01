@@ -342,9 +342,12 @@ async function executeCycle(
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
-                      const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
-                      const collateralInit = collateral[0]
-                      const collateralState = collateral[1]
+                      const collateralInit = (
+                          await takaturnDiamond.getTermRelatedSummary(termId)
+                      )[3].collateralInitialized
+                      const collateralState = (
+                          await takaturnDiamond.getTermRelatedSummary(termId)
+                      )[1]
 
                       assert(collateralInit)
                       await expect(getCollateralStateFromIndex(collateralState)).to.equal(

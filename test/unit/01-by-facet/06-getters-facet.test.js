@@ -162,12 +162,17 @@ async function payTestContribution(termId, defaulterIndex) {
                               participant_1.address
                           )
 
-                      const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
+                      const collateral = (
+                          await takaturnDiamondDeployer.getTermRelatedSummary(termId)
+                      )[3]
+                      const collateralState = (
+                          await takaturnDiamondDeployer.getTermRelatedSummary(termId)
+                      )[1]
 
-                      await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                      await expect(getCollateralStateFromIndex(collateralState)).to.equal(
                           CollateralStates.AcceptingCollateral
                       )
-                      assert.equal(collateral[4][0], participant_1.address) // The participant 1 is on the collateral depositors array
+                      assert.equal(collateral.collateralMembers[0], participant_1.address) // The participant 1 is on the collateral depositors array
 
                       assert.equal(withdrawable.toString(), "0")
                   })
@@ -200,7 +205,9 @@ async function payTestContribution(termId, defaulterIndex) {
                               termId
                           )
 
-                      const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
+                      const collateralState = (
+                          await takaturnDiamondDeployer.getTermRelatedSummary(termId)
+                      )[1]
 
                       await expect(takaturnDiamondParticipant_1.withdrawCollateral(termId))
                           .to.emit(takaturnDiamond, "OnCollateralWithdrawal")
@@ -217,7 +224,7 @@ async function payTestContribution(termId, defaulterIndex) {
                       ) // Collateral members bank and collateral deposited by user are the same
                       assert.equal(collateralParticipantSummary[2].toString(), "0") // Collateral payment bank is 0
 
-                      await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                      await expect(getCollateralStateFromIndex(collateralState)).to.equal(
                           CollateralStates.ReleasingCollateral
                       )
 
@@ -308,9 +315,11 @@ async function payTestContribution(termId, defaulterIndex) {
                           )
                       }
 
-                      const collateral = await takaturnDiamondDeployer.getCollateralSummary(termId)
+                      const collateralState = (
+                          await takaturnDiamondDeployer.getTermRelatedSummary(termId)
+                      )[1]
 
-                      await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+                      await expect(getCollateralStateFromIndex(collateralState)).to.equal(
                           CollateralStates.ReleasingCollateral
                       )
                   })

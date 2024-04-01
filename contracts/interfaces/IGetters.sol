@@ -77,20 +77,6 @@ interface IGetters {
     /// @return the next term id
     function getTermsId() external view returns (uint, uint);
 
-    /// @notice Gets the collateral summary of a term
-    /// @param termId the id of the term
-    /// @return if collateral is initialized
-    /// @return current state of the collateral, see States struct in LibCollateralStorage.sol
-    /// @return time of first deposit in seconds, 0 if no deposit occured yet
-    /// @return current member count
-    /// @return list of depositors
-    function getCollateralSummary(
-        uint termId
-    )
-        external
-        view
-        returns (bool, LibCollateralStorage.CollateralStates, uint, uint, address[] memory);
-
     /// @notice Gets the fund summary of a term
     /// @param termId the id of the term
     /// @return if fund is initialized

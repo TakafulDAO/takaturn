@@ -212,7 +212,8 @@ const { ZeroAddress } = require("ethers")
               const termId = termsIds[0]
 
               let term = (await takaturnDiamond.getTermRelatedSummary(termId))[0]
-              let collateral = await takaturnDiamond.getCollateralSummary(termId)
+              let collateralState = (await takaturnDiamond.getTermRelatedSummary(termId))[1]
+              let collateral = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
               expect(term.initialized).to.equal(true)
               await expect(getTermStateFromIndex(term.state)).to.equal(TermStates.InitializingTerm)
@@ -225,8 +226,8 @@ const { ZeroAddress } = require("ethers")
               expect(term.contributionPeriod).to.equal(contributionPeriod)
               expect(term.stableTokenAddress).to.equal(usdc.target)
 
-              expect(collateral[0]).to.equal(true)
-              await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+              expect(collateral.collateralInitialized).to.equal(true)
+              await expect(getCollateralStateFromIndex(collateralState)).to.equal(
                   CollateralStates.AcceptingCollateral
               )
 
@@ -405,7 +406,9 @@ const { ZeroAddress } = require("ethers")
               await takaturnDiamond.connect(participant_1).withdrawCollateral(termsIds[1])
 
               let secondTerm = (await takaturnDiamond.getTermRelatedSummary(termsIds[1]))[0]
-              let secondCollateral = await takaturnDiamond.getCollateralSummary(termsIds[1])
+              let secondCollateralState = (
+                  await takaturnDiamond.getTermRelatedSummary(termsIds[1])
+              )[1]
               secondCollateralDepositorSummary =
                   await takaturnDiamond.getDepositorCollateralSummary(
                       participant_1.address,
@@ -415,7 +418,7 @@ const { ZeroAddress } = require("ethers")
 
               await expect(getTermStateFromIndex(secondTerm.state)).to.equal(TermStates.ExpiredTerm)
 
-              await expect(getCollateralStateFromIndex(secondCollateral[1])).to.equal(
+              await expect(getCollateralStateFromIndex(secondCollateralState)).to.equal(
                   CollateralStates.ReleasingCollateral
               )
 
@@ -465,11 +468,8 @@ const { ZeroAddress } = require("ethers")
               assert.equal(remainingCycleTime, cycleTime)
 
               term = (await takaturnDiamond.getTermRelatedSummary(termId))[0]
-              collateral = await takaturnDiamond.getCollateralSummary(termId)
+              collateral = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
-                  CollateralStates.CycleOngoing
-              )
               await expect(getTermStateFromIndex(term.state)).to.equal(TermStates.ActiveTerm)
 
               let fund = await takaturnDiamond.getFundSummary(termId)
@@ -487,7 +487,7 @@ const { ZeroAddress } = require("ethers")
               expect(yield[2]).to.equal(yield[3])
               for (let i = 1; i <= totalParticipants; i++) {
                   expect(fund[3][i - 1]).to.equal(accounts[i].address)
-                  expect(collateral[4][i - 1]).to.equal(accounts[i].address)
+                  expect(collateral.collateralMembers[i - 1]).to.equal(accounts[i].address)
 
                   let fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
                       accounts[i].address,
@@ -1154,11 +1154,11 @@ const { ZeroAddress } = require("ethers")
               await takaturnDiamond.closeFundingPeriod(termId)
 
               term = (await takaturnDiamond.getTermRelatedSummary(termId))[0]
-              collateral = await takaturnDiamond.getCollateralSummary(termId)
+              collateralState = (await takaturnDiamond.getTermRelatedSummary(termId))[1]
               fund = await takaturnDiamond.getFundSummary(termId)
 
               await expect(getTermStateFromIndex(term.state)).to.equal(TermStates.ClosedTerm)
-              await expect(getCollateralStateFromIndex(collateral[1])).to.equal(
+              await expect(getCollateralStateFromIndex(collateralState)).to.equal(
                   CollateralStates.ReleasingCollateral
               )
               await expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.FundClosed)

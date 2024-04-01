@@ -205,32 +205,6 @@ contract GettersFacet is IGetters {
         return (lastTermId, nextTermId);
     }
 
-    /// @notice function to get the collateral object
-    /// @param termId the collateral id
-    /// @return if collateral initialized
-    /// @return current collateral state
-    /// @return time of first deposit
-    /// @return current members count
-    /// @return list of depositors
-    function getCollateralSummary(
-        uint termId
-    )
-        external
-        view
-        returns (bool, LibCollateralStorage.CollateralStates, uint, uint, address[] memory)
-    {
-        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
-            ._collateralStorage()
-            .collaterals[termId];
-        return (
-            collateral.initialized,
-            collateral.state, // Current state of Collateral
-            collateral.firstDepositTime, // Time when the first deposit was made
-            collateral.counterMembers, // Current member count
-            collateral.depositors // List of depositors
-        );
-    }
-
     /// @notice function to get the cycle information in one go
     /// @param termId the fund id
     /// @return if fund initialized

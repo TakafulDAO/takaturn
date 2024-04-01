@@ -339,11 +339,11 @@ const { hour } = require("../../../utils/units")
                           termId
                       )
 
-                  const collateralSummary = await takaturnDiamond.getCollateralSummary(termId)
-
                   const isParticipant = participantFundSummary[0]
                   const isCollateralMember = participantCollateralSummary[0]
-                  const collateralDepositors = collateralSummary[4]
+                  const collateralDepositors = (
+                      await takaturnDiamond.getTermRelatedSummary(termId)
+                  )[3].collateralMembers
 
                   assert.ok(!isParticipant)
                   assert.ok(isCollateralMember)
@@ -739,11 +739,11 @@ const { hour } = require("../../../utils/units")
                           termId
                       )
 
-                  const collateralSummary = await takaturnDiamond.getCollateralSummary(termId)
-
                   const isParticipant = participantFundSummary[0]
                   const isCollateralMember = participantCollateralSummary[0]
-                  const collateralDepositors = collateralSummary[4]
+                  const collateralDepositors = (
+                      await takaturnDiamond.getTermRelatedSummary(termId)
+                  )[3].collateralMembers
 
                   assert.ok(!isParticipant)
                   assert.ok(isCollateralMember)
