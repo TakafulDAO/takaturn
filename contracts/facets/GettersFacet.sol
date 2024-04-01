@@ -205,36 +205,6 @@ contract GettersFacet is IGetters {
         return (lastTermId, nextTermId);
     }
 
-    /// @notice function to get the cycle information in one go
-    /// @param termId the fund id
-    /// @return if fund initialized
-    /// @return current fund state
-    /// @return stable token address used
-    /// @return list of beneficiaries order
-    /// @return when the fund starts in seconds
-    /// @return when the fund ended, 0 if not ended
-    /// @return current cycle number
-    /// @return total amount of cycles
-    function getFundSummary(
-        uint termId
-    )
-        external
-        view
-        returns (bool, LibFundStorage.FundStates, IERC20, address[] memory, uint, uint, uint, uint)
-    {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        return (
-            fund.initialized,
-            fund.currentState,
-            fund.stableToken,
-            fund.beneficiariesOrder,
-            fund.fundStart,
-            fund.fundEnd,
-            fund.currentCycle,
-            fund.totalAmountOfCycles
-        );
-    }
-
     /// @notice Gets the yield object
     /// @param termId the collateral id
     /// @return if the yield is initialized

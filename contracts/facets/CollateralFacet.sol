@@ -13,6 +13,7 @@ import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
+import {LibGettersHelpers} from "../libraries/LibGettersHelpers.sol";
 
 /// @title Takaturn Collateral Facet
 /// @author Aisha El Allam
@@ -194,7 +195,9 @@ contract CollateralFacet is ICollateral {
             ._yieldStorage()
             .yields[termId];
 
-        (, , , , , uint fundEnd, , ) = IGetters(address(this)).getFundSummary(termId);
+        (, , , LibGettersHelpers.NonUserRelated memory nonUserRelated) = IGetters(address(this))
+            .getTermRelatedSummary(termId);
+        uint fundEnd = nonUserRelated.fundEndTime;
         require(block.timestamp > fundEnd + 180 days, "TT-CF-03");
 
         uint totalToWithdraw;

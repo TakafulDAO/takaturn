@@ -23,13 +23,14 @@
 
 - Removed `getTermSummary` redundant
 - Removed `getCollateralSummary` redundant
-- 
+- Removed `getFundSummary` redundant
+   
 
 | Contract             | nSLoC |
 | :------------------- | :----:|
-| CollateralFacet      |   438    |
+| CollateralFacet      |   441    |
 | FundFacet            |     359  |
-| GettersFacet         |   631    |
+| GettersFacet         |   612    |
 | TermFacet            |    303   |
 | YGFacetZaynFi        |     355  |
 | LibCollateral        |    57   |

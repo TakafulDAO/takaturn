@@ -986,8 +986,8 @@ async function payTestContribution(termId, defaulterIndex) {
                   await takaturnDiamond.closeFundingPeriod(termId)
 
                   // Pay next cycle
-                  const fundSummary = await takaturnDiamond.getFundSummary(termId)
-                  const currentCycle = fundSummary[6]
+                  const currentCycle = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      .fundCurrentCycle
                   const nextCycle = currentCycle + 1n
 
                   await expect(takaturnDiamondParticipant_1.payContribution(termId))

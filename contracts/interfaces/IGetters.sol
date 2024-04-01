@@ -77,23 +77,6 @@ interface IGetters {
     /// @return the next term id
     function getTermsId() external view returns (uint, uint);
 
-    /// @notice Gets the fund summary of a term
-    /// @param termId the id of the term
-    /// @return if fund is initialized
-    /// @return current state of the fund, see States struct in LibFund.sol
-    /// @return stablecoin address used
-    /// @return list for order of beneficiaries
-    /// @return when the fund started in seconds
-    /// @return when the fund ended in seconds, 0 otherwise
-    /// @return current cycle of fund
-    /// @return total amount of cycles in this fund/term
-    function getFundSummary(
-        uint termId
-    )
-        external
-        view
-        returns (bool, LibFundStorage.FundStates, IERC20, address[] memory, uint, uint, uint, uint);
-
     /// @notice Gets the yield object
     /// @param termId the collateral id
     /// @return if the yield is initialized

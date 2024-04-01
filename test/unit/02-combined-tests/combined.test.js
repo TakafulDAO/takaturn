@@ -45,9 +45,9 @@ async function executeCycle(
 ) {
     let randomDefaulterIndices = specificDefaultersIndices
 
-    let fund = await takaturnDiamond.getFundSummary(termId)
+    let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-    let currentCycle = parseInt(fund[6])
+    let currentCycle = parseInt(fund.fundCurrentCycle)
     // console.log(`Current cycle is: ${currentCycle}`)
 
     while (defaultersAmount != randomDefaulterIndices.length) {
@@ -88,10 +88,9 @@ async function executeCycle(
 
     await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
-    fund = await takaturnDiamond.getFundSummary(termId)
-    let state = fund[1]
+    let state = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
     //console.log(`State is: ${getFundStateFromIndex(state)}`)
-    expect(getFundStateFromIndex(fund[1])).not.to.equal(FundStates.AcceptingContributions)
+    expect(getFundStateFromIndex(state)).not.to.equal(FundStates.AcceptingContributions)
 
     let fundClaimed = false
     let claimant
@@ -140,16 +139,15 @@ async function executeCycle(
         //console.log(e)
     }
 
-    fund = await takaturnDiamond.getFundSummary(termId)
+    fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-    let newCycle = parseInt(fund[6])
+    let newCycle = parseInt(fund.fundCurrentCycle)
 
     //console.log(`We enter to the new cycle. Cycle is: ${newCycle}`)
 
     let newCycleStarted = currentCycle + 1 == newCycle
     //console.log(`newCycleStarted: ${newCycleStarted}`)
-    fund = await takaturnDiamond.getFundSummary(termId)
-    state = fund[1]
+    state = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
     //console.log(`State is: ${getFundStateFromIndex(state)}`)
 
     let fundClosed = getFundStateFromIndex(state) == FundStates.FundClosed
@@ -414,12 +412,12 @@ async function executeCycle(
 
                       await takaturnDiamond.closeFundingPeriod(termId)
 
-                      const fundSummary = await takaturnDiamond.getFundSummary(termId)
-                      const nextCycle = fundSummary[6] + 1n
+                      const fundSummary = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      const fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
 
-                      expect(getFundStateFromIndex(fundSummary[1])).to.equal(
-                          FundStates.CycleOngoing
-                      )
+                      const nextCycle = fundSummary.fundCurrentCycle + 1n
+
+                      expect(getFundStateFromIndex(fundState)).to.equal(FundStates.CycleOngoing)
                       await expect(takaturnDiamondParticipant_1.payContribution(termId))
                           .to.emit(takaturnDiamond, "OnPaidContribution")
                           .withArgs(termId, participant_1.address, nextCycle)
@@ -454,8 +452,8 @@ async function executeCycle(
                       await executeCycle(termId, 0, [], false)
 
                       // Twelfth cycle
-                      let fundSummary = await takaturnDiamond.getFundSummary(termId)
-                      const currentCycle = fundSummary[6]
+                      let fundSummary = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      const currentCycle = fundSummary.fundCurrentCycle
 
                       // Allows to pay current cycle
                       await usdc
@@ -469,7 +467,7 @@ async function executeCycle(
                       await advanceTime(contributionPeriod + 1)
                       await takaturnDiamond.closeFundingPeriod(termId)
 
-                      fundSummary = await takaturnDiamond.getFundSummary(termId)
+                      const fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
 
                       // But reverts if try to pay in advance if we are in the last cycle
                       await expect(
@@ -477,7 +475,7 @@ async function executeCycle(
                       ).to.be.revertedWith("TT-FF-02") // Wrong state
 
                       assert.equal(currentCycle, totalParticipants)
-                      expect(getFundStateFromIndex(fundSummary[1])).to.equal(FundStates.FundClosed)
+                      expect(getFundStateFromIndex(fundState)).to.equal(FundStates.FundClosed)
                   })
 
                   it("can close the funding period after the given time", async function () {
@@ -488,8 +486,9 @@ async function executeCycle(
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
                       }
 
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      expect(getFundStateFromIndex(fund[1])).to.equal(
+                      let fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
+
+                      expect(getFundStateFromIndex(fundState)).to.equal(
                           FundStates.AcceptingContributions
                       )
 
@@ -500,14 +499,15 @@ async function executeCycle(
                       // Artifically increase time to skip the wait
                       await advanceTime(contributionPeriod + 1)
 
-                      fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      expect(getFundStateFromIndex(fund[1])).to.equal(
+                      fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
+
+                      expect(getFundStateFromIndex(fundState)).to.equal(
                           FundStates.AcceptingContributions
                       )
 
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
-                      fund = await takaturnDiamondDeployer.getFundSummary(termId)
+                      fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
 
                       const time = await takaturnDiamondDeployer.getRemainingContributionTime(
                           termId
@@ -521,7 +521,7 @@ async function executeCycle(
                           termId
                       )
 
-                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.CycleOngoing)
+                      expect(getFundStateFromIndex(fundState)).to.equal(FundStates.CycleOngoing)
                       assert.equal(time, 0)
                       assert.equal(remainingCycles, totalParticipants - 1)
                   })
@@ -556,8 +556,9 @@ async function executeCycle(
 
                       await everyonePaysAndCloseCycle(termId)
 
-                      const fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let beneficiariesOrder = fund[3]
+                      let beneficiariesOrder = (
+                          await takaturnDiamond.getTermRelatedSummary(termId)
+                      )[3].fundBeneficiariesOrder
                       let supposedBeneficiary = beneficiariesOrder[0]
 
                       assert.ok(supposedBeneficiary == participant_1.address)
@@ -651,12 +652,14 @@ async function executeCycle(
 
                       await takaturnDiamondParticipant_1.startNewCycle(termId)
 
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let beneficiariesOrder = fund[3]
+                      let beneficiariesOrder = (
+                          await takaturnDiamond.getTermRelatedSummary(termId)
+                      )[3].fundBeneficiariesOrder
                       let firstBeneficiary = beneficiariesOrder[0]
                       await executeCycle(termId, 1, [1])
-                      fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      beneficiariesOrder = fund[3]
+
+                      beneficiariesOrder = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                          .fundBeneficiariesOrder
                       let firstBeneficiaryAfterDefault = beneficiariesOrder[0]
                       assert.ok(firstBeneficiary == firstBeneficiaryAfterDefault)
                   })
@@ -667,8 +670,9 @@ async function executeCycle(
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let beneficiariesOrder = fund[3]
+                      let beneficiariesOrder = (
+                          await takaturnDiamond.getTermRelatedSummary(termId)
+                      )[3].fundBeneficiariesOrder
                       let supposedBeneficiary = beneficiariesOrder[0]
 
                       // Everyone pays but the first participant, which should be the first beneficiary
@@ -679,8 +683,8 @@ async function executeCycle(
                       await advanceTime(contributionPeriod + 1)
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
-                      fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      beneficiariesOrder = fund[3]
+                      beneficiariesOrder = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                          .fundBeneficiariesOrder
                       let supposedBeneficiaryAfterDefault = beneficiariesOrder[0]
                       let supposedBeneficiaryNewPosition = beneficiariesOrder[1]
 
@@ -694,8 +698,9 @@ async function executeCycle(
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let beneficiariesOrder = fund[3]
+                      let beneficiariesOrder = (
+                          await takaturnDiamond.getTermRelatedSummary(termId)
+                      )[3].fundBeneficiariesOrder
                       let supposedBeneficiary = beneficiariesOrder[0]
                       // Everyone pays but the first participant, which should be the first beneficiary
                       for (let i = 2; i <= totalParticipants; i++) {
@@ -705,8 +710,8 @@ async function executeCycle(
                       await advanceTime(contributionPeriod + 1)
                       await takaturnDiamondParticipant_1.closeFundingPeriod(termId)
 
-                      fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      beneficiariesOrder = fund[3]
+                      beneficiariesOrder = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                          .fundBeneficiariesOrder
                       let supposedBeneficiaryAfterDefault = beneficiariesOrder[0]
 
                       assert.ok(supposedBeneficiary == supposedBeneficiaryAfterDefault)
@@ -797,12 +802,14 @@ async function executeCycle(
 
                       // Close remaining cycles
 
-                      while ((await takaturnDiamondDeployer.getFundSummary(termId))[1] < 4) {
+                      while ((await takaturnDiamondDeployer.getTermRelatedSummary(termId))[2] < 4) {
                           await executeCycle(termId)
                       }
 
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.FundClosed)
+                      let fundState = (
+                          await takaturnDiamondDeployer.getTermRelatedSummary(termId)
+                      )[2]
+                      expect(getFundStateFromIndex(fundState)).to.equal(FundStates.FundClosed)
                   })
 
                   it("allows owner to withdraw any unclaimed funds after 180 days, but not earlier", async function () {
@@ -825,13 +832,15 @@ async function executeCycle(
                       assert.ok(balance > 0)
 
                       // Close remaining cycles
-                      while ((await takaturnDiamondDeployer.getFundSummary(termId))[1] < 4) {
+                      while ((await takaturnDiamondDeployer.getTermRelatedSummary(termId))[2] < 4) {
                           await executeCycle(termId, 0, [], false)
                       }
 
                       // Make sure fund is closed
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.FundClosed)
+                      let fundState = (
+                          await takaturnDiamondDeployer.getTermRelatedSummary(termId)
+                      )[2]
+                      expect(getFundStateFromIndex(fundState)).to.equal(FundStates.FundClosed)
 
                       // Attempt to withdraw after last cycle, this should fail
                       await expect(
@@ -861,9 +870,9 @@ async function executeCycle(
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let fundStart = fund[4]
-                      let currentCycle = fund[6]
+                      let fund = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[3]
+                      let fundStart = fund.fundStartTime
+                      let currentCycle = fund.fundCurrentCycle
 
                       let currentRemainingCycleTime =
                           await takaturnDiamondDeployer.getRemainingCycleTime(termId)
@@ -906,9 +915,9 @@ async function executeCycle(
                       const lastTerm = await takaturnDiamondDeployer.getTermsId()
                       const termId = lastTerm[0]
 
-                      let fund = await takaturnDiamondDeployer.getFundSummary(termId)
-                      let fundStart = fund[4]
-                      let currentCycle = fund[6]
+                      let fund = (await takaturnDiamondDeployer.getTermRelatedSummary(termId))[3]
+                      let fundStart = fund.fundStartTime
+                      let currentCycle = fund.fundCurrentCycle
 
                       let contributionEndTimestamp =
                           BigInt(cycleTime) * (currentCycle - 1n) +

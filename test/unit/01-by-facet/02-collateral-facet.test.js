@@ -549,8 +549,8 @@ const { hour } = require("../../../utils/units")
 
                   await advanceTime(cycleTime + 1)
 
-                  const fundSummary = await takaturnDiamond.getFundSummary(termId)
-                  const currentCycle = fundSummary[6]
+                  const currentCycle = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      .fundCurrentCycle
 
                   await expect(takaturnDiamond.closeFundingPeriod(termId))
                       .to.emit(takaturnDiamond, "OnDefaulterExpelled")

@@ -472,21 +472,21 @@ const { ZeroAddress } = require("ethers")
 
               await expect(getTermStateFromIndex(term.state)).to.equal(TermStates.ActiveTerm)
 
-              let fund = await takaturnDiamond.getFundSummary(termId)
+              let fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
+              let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
               let yield = await takaturnDiamond.getYieldSummary(termId)
 
-              expect(fund[0]).to.equal(true)
-              await expect(getFundStateFromIndex(fund[1])).to.equal(
+              expect(fund.fundInitialized).to.equal(true)
+              await expect(getFundStateFromIndex(fundState)).to.equal(
                   FundStates.AcceptingContributions
               )
-              expect(fund[2]).to.equal(term.stableTokenAddress)
-              expect(fund[6]).to.equal(1)
-              expect(fund[7]).to.equal(totalParticipants)
+              expect(fund.fundCurrentCycle).to.equal(1)
+              expect(fund.fundTotalCycles).to.equal(totalParticipants)
               expect(yield[0]).to.equal(true)
               assert(yield[2].toString() > 0)
               expect(yield[2]).to.equal(yield[3])
               for (let i = 1; i <= totalParticipants; i++) {
-                  expect(fund[3][i - 1]).to.equal(accounts[i].address)
+                  expect(fund.fundBeneficiariesOrder[i - 1]).to.equal(accounts[i].address)
                   expect(collateral.collateralMembers[i - 1]).to.equal(accounts[i].address)
 
                   let fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
@@ -511,15 +511,15 @@ const { ZeroAddress } = require("ethers")
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
-                      let fund = await takaturnDiamond.getFundSummary(termId)
-                      if (i == fund[6]) {
+                      let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      if (i == fund.fundCurrentCycle) {
                           await expect(
                               takaturnDiamond.connect(accounts[i]).payContribution(termId)
                           ).to.be.revertedWith("TT-FF-14") // Beneficiary doesn't pay
                       } else if (i == 3) {
                           await expect(takaturnDiamond.connect(accounts[i]).payContribution(termId))
                               .to.emit(takaturnDiamond, "OnPaidContribution")
-                              .withArgs(termId, accounts[i].address, fund[6])
+                              .withArgs(termId, accounts[i].address, fund.fundCurrentCycle)
 
                           await expect(
                               takaturnDiamond
@@ -527,7 +527,7 @@ const { ZeroAddress } = require("ethers")
                                   .payContributionOnBehalfOf(termId, participant_7.address)
                           )
                               .to.emit(takaturnDiamond, "OnPaidContribution")
-                              .withArgs(termId, participant_7.address, fund[6])
+                              .withArgs(termId, participant_7.address, fund.fundCurrentCycle)
 
                           fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
                               accounts[i].address,
@@ -570,7 +570,7 @@ const { ZeroAddress } = require("ethers")
 
               assert.equal(remainingContributionTime, 0)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
               let defaulter_collateralSummary_before =
                   await takaturnDiamond.getDepositorCollateralSummary(participant_8.address, termId)
@@ -582,27 +582,28 @@ const { ZeroAddress } = require("ethers")
               await Promise.all([
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnPaidContribution")
-                      .withArgs(termId, participant_10.address, fund[6]),
+                      .withArgs(termId, participant_10.address, fund.fundCurrentCycle),
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnPaidContribution")
-                      .withArgs(termId, participant_11.address, fund[6]),
+                      .withArgs(termId, participant_11.address, fund.fundCurrentCycle),
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnPaidContribution")
-                      .withArgs(termId, participant_12.address, fund[6]),
+                      .withArgs(termId, participant_12.address, fund.fundCurrentCycle),
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnParticipantDefaulted")
-                      .withArgs(termId, fund[6], participant_8.address),
+                      .withArgs(termId, fund.fundCurrentCycle, participant_8.address),
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnCollateralLiquidated")
                       .withArgs(termId, participant_8.address, contributionAmountWei),
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnBeneficiaryAwarded")
-                      .withArgs(termId, accounts[fund[6]].address),
+                      .withArgs(termId, accounts[fund.fundCurrentCycle].address),
               ])
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+              fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
 
-              await expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.CycleOngoing)
+              await expect(getFundStateFromIndex(fundState)).to.equal(FundStates.CycleOngoing)
 
               let participant_1_fundSummary = await takaturnDiamond.getParticipantFundSummary(
                   participant_1.address,
@@ -637,8 +638,8 @@ const { ZeroAddress } = require("ethers")
 
               // Check the auto payers
               for (let i = 10; i <= totalParticipants; i++) {
-                  let fund = await takaturnDiamond.getFundSummary(termId)
-                  if (i != fund[6]) {
+                  let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                  if (i != fund.fundCurrentCycle) {
                       let fundUserSummary = await takaturnDiamond.getParticipantFundSummary(
                           accounts[i].address,
                           termId
@@ -658,7 +659,7 @@ const { ZeroAddress } = require("ethers")
 
               //******************************************** Second cycle *********************************************************/
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
               let startNewCycleTx = takaturnDiamond.startNewCycle(termId)
               await Promise.all([
@@ -679,12 +680,13 @@ const { ZeroAddress } = require("ethers")
                   }
               }
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+              fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
 
-              await expect(getFundStateFromIndex(fund[1])).to.equal(
+              await expect(getFundStateFromIndex(fundState)).to.equal(
                   FundStates.AcceptingContributions
               )
-              assert.equal(fund[6], 2)
+              assert.equal(fund.fundCurrentCycle, 2)
 
               await expect(
                   takaturnDiamond.connect(participant_2).withdrawFund(termId)
@@ -741,8 +743,8 @@ const { ZeroAddress } = require("ethers")
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
-                      let fund = await takaturnDiamond.getFundSummary(termId)
-                      if (i == fund[6] || i == 7 || i == 8) {
+                      let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      if (i == fund.fundCurrentCycle || i == 7 || i == 8) {
                           continue
                       } else if (i == 3) {
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
@@ -764,9 +766,9 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Third cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 3)
+              assert.equal(fund.fundCurrentCycle, 3)
 
               await takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
               await takaturnDiamond.connect(participant_2).withdrawCollateral(termId)
@@ -795,8 +797,8 @@ const { ZeroAddress } = require("ethers")
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
-                      let fund = await takaturnDiamond.getFundSummary(termId)
-                      if (i == fund[6] || i == 1 || i == 7 || i == 8) {
+                      let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      if (i == fund.fundCurrentCycle || i == 1 || i == 7 || i == 8) {
                           continue
                       } else if (i == 3) {
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
@@ -819,7 +821,7 @@ const { ZeroAddress } = require("ethers")
               await Promise.all([
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnParticipantDefaulted")
-                      .withArgs(termId, fund[6], participant_1.address),
+                      .withArgs(termId, fund.fundCurrentCycle, participant_1.address),
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnCollateralLiquidated")
                       .withArgs(termId, participant_1.address, contributionAmountWei),
@@ -830,9 +832,9 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Fourth cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 4)
+              assert.equal(fund.fundCurrentCycle, 4)
 
               await takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
               await takaturnDiamond.connect(participant_2).withdrawCollateral(termId)
@@ -857,8 +859,8 @@ const { ZeroAddress } = require("ethers")
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
-                      let fund = await takaturnDiamond.getFundSummary(termId)
-                      if (i == fund[6] || i == 7 || i == 8) {
+                      let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      if (i == fund.fundCurrentCycle || i == 7 || i == 8) {
                           continue
                       } else if (i == 3) {
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
@@ -881,17 +883,17 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Fifth cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 5)
+              assert.equal(fund.fundCurrentCycle, 5)
 
               await takaturnDiamond.connect(participant_1).withdrawCollateral(termId)
               await takaturnDiamond.connect(participant_2).withdrawCollateral(termId)
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
-                      let fund = await takaturnDiamond.getFundSummary(termId)
-                      if (i == fund[6] || i == 7 || i == 8) {
+                      let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      if (i == fund.fundCurrentCycle || i == 7 || i == 8) {
                           continue
                       } else if (i == 3) {
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
@@ -925,14 +927,14 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Sixth cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 6)
+              assert.equal(fund.fundCurrentCycle, 6)
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
-                      let fund = await takaturnDiamond.getFundSummary(termId)
-                      if (i == fund[6] || i == 5 || i == 7 || i == 8) {
+                      let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      if (i == fund.fundCurrentCycle || i == 5 || i == 7 || i == 8) {
                           continue
                       } else if (i == 3) {
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
@@ -962,14 +964,14 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Seventh cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 7)
+              assert.equal(fund.fundCurrentCycle, 7)
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
-                      let fund = await takaturnDiamond.getFundSummary(termId)
-                      if (i == fund[6] || i == 4 || i == 5 || i == 6 || i == 8) {
+                      let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                      if (i == fund.fundCurrentCycle || i == 4 || i == 5 || i == 6 || i == 8) {
                           continue
                       } else if (i == 3) {
                           await takaturnDiamond.connect(accounts[i]).payContribution(termId)
@@ -999,10 +1001,10 @@ const { ZeroAddress } = require("ethers")
                   expect(closeFundingPeriodTx).to.emit(takaturnDiamond, "OnCollateralLiquidated"),
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnDefaulterExpelled")
-                      .withArgs(termId, fund[6], participant_4.address),
+                      .withArgs(termId, fund.fundCurrentCycle, participant_4.address),
                   expect(closeFundingPeriodTx)
                       .to.emit(takaturnDiamond, "OnDefaulterExpelled")
-                      .withArgs(termId, fund[6], participant_8.address),
+                      .withArgs(termId, fund.fundCurrentCycle, participant_8.address),
                   expect(closeFundingPeriodTx).to.emit(
                       takaturnDiamond,
                       "OnFrozenMoneyPotLiquidated"
@@ -1020,9 +1022,9 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Eight cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 8)
+              assert.equal(fund.fundCurrentCycle, 8)
 
               const expelledTerms = await takaturnDiamond.getExpelledTerms(participant_4.address)
 
@@ -1041,7 +1043,7 @@ const { ZeroAddress } = require("ethers")
 
                       let isExempted = await takaturnDiamond.isExempted(
                           termId,
-                          fund[6],
+                          fund.fundCurrentCycle,
                           accounts[i].address
                       )
                       assert(isExempted)
@@ -1050,7 +1052,7 @@ const { ZeroAddress } = require("ethers")
                       await takaturnDiamond.connect(accounts[i]).payContribution(termId)
                       let isExempted = await takaturnDiamond.isExempted(
                           termId,
-                          fund[6],
+                          fund.fundCurrentCycle,
                           accounts[i].address
                       )
                       assert(!isExempted)
@@ -1066,13 +1068,13 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Ninth cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 9)
+              assert.equal(fund.fundCurrentCycle, 9)
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 10) {
-                      if (i == 4 || i == 8 || i == fund[6]) {
+                      if (i == 4 || i == 8 || i == fund.fundCurrentCycle) {
                           continue
                       }
                       await takaturnDiamond.connect(accounts[i]).payContribution(termId)
@@ -1088,9 +1090,9 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Tenth cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 10)
+              assert.equal(fund.fundCurrentCycle, 10)
 
               await expect(
                   takaturnDiamond.connect(participant_9).withdrawFund(termId)
@@ -1116,9 +1118,9 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Eleventh cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 11)
+              assert.equal(fund.fundCurrentCycle, 11)
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 5 || i >= 8) {
@@ -1137,9 +1139,9 @@ const { ZeroAddress } = require("ethers")
               //******************************************** Twelfth cycle *********************************************************/
               await takaturnDiamond.startNewCycle(termId)
 
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
-              assert.equal(fund[6], 12)
+              assert.equal(fund.fundCurrentCycle, 12)
 
               for (let i = 1; i <= totalParticipants; i++) {
                   if (i < 5 || i >= 8) {
@@ -1155,13 +1157,14 @@ const { ZeroAddress } = require("ethers")
 
               term = (await takaturnDiamond.getTermRelatedSummary(termId))[0]
               collateralState = (await takaturnDiamond.getTermRelatedSummary(termId))[1]
-              fund = await takaturnDiamond.getFundSummary(termId)
+              fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+              fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
 
               await expect(getTermStateFromIndex(term.state)).to.equal(TermStates.ClosedTerm)
               await expect(getCollateralStateFromIndex(collateralState)).to.equal(
                   CollateralStates.ReleasingCollateral
               )
-              await expect(getFundStateFromIndex(fund[1])).to.equal(FundStates.FundClosed)
+              await expect(getFundStateFromIndex(fundState)).to.equal(FundStates.FundClosed)
               assert(fund[5] > 0)
 
               await advanceTime(cycleTime + 1)
