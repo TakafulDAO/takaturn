@@ -25,7 +25,7 @@ const { ZeroAddress } = require("ethers")
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe("Integration tests. End to end", function () {
+    : describe.only("Integration tests. End to end", function () {
           const chainId = network.config.chainId
 
           let takaturnDiamond, aggregator, usdc, zaynZap
@@ -474,7 +474,6 @@ const { ZeroAddress } = require("ethers")
 
               let fundState = (await takaturnDiamond.getTermRelatedSummary(termId))[2]
               let fund = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
-              let yield = await takaturnDiamond.getYieldSummary(termId)
 
               expect(fund.fundInitialized).to.equal(true)
               await expect(getFundStateFromIndex(fundState)).to.equal(
@@ -482,9 +481,9 @@ const { ZeroAddress } = require("ethers")
               )
               expect(fund.fundCurrentCycle).to.equal(1)
               expect(fund.fundTotalCycles).to.equal(totalParticipants)
-              expect(yield[0]).to.equal(true)
-              assert(yield[2].toString() > 0)
-              expect(yield[2]).to.equal(yield[3])
+              expect(fund.yieldInitialized).to.equal(true)
+              assert(fund.yieldTotalDeposit > 0)
+              expect(fund.yieldTotalDeposit).to.equal(fund.yieldCurrentTotalDeposit)
               for (let i = 1; i <= totalParticipants; i++) {
                   expect(fund.fundBeneficiariesOrder[i - 1]).to.equal(accounts[i].address)
                   expect(collateral.collateralMembers[i - 1]).to.equal(accounts[i].address)
