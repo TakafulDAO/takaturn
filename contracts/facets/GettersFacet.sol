@@ -92,7 +92,9 @@ contract GettersFacet is IGetters {
             yieldTotalDeposit: yield.totalDeposit,
             yieldCurrentTotalDeposit: yield.currentTotalDeposit,
             yieldTotalShares: yield.totalShares,
-            yieldUsers: yield.yieldUsers
+            yieldUsers: yield.yieldUsers,
+            vaultAddress: yield.providerAddresses["ZaynVault"],
+            zapAddress: yield.providerAddresses["ZaynZap"]
         });
     }
 
@@ -203,34 +205,6 @@ contract GettersFacet is IGetters {
         uint lastTermId = termStorage.nextTermId - 1;
         uint nextTermId = termStorage.nextTermId;
         return (lastTermId, nextTermId);
-    }
-
-    /// @notice Gets the yield object
-    /// @param termId the collateral id
-    /// @return if the yield is initialized
-    /// @return start time stamp for yield deposit
-    /// @return total deposit
-    /// @return current amount in yield
-    /// @return amount of total shares
-    /// @return list of yield users
-    /// @return address of vault
-    /// @return address of zap
-    function getYieldSummary(
-        uint termId
-    ) external view returns (bool, uint, uint, uint, uint, address[] memory, address, address) {
-        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
-            ._yieldStorage()
-            .yields[termId];
-        return (
-            yield.initialized,
-            yield.startTimeStamp,
-            yield.totalDeposit,
-            yield.currentTotalDeposit,
-            yield.totalShares,
-            yield.yieldUsers,
-            yield.providerAddresses["ZaynVault"],
-            yield.providerAddresses["ZaynZap"]
-        );
     }
 
     /// @notice This function is used to get a term APY

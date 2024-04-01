@@ -33,6 +33,8 @@ library LibGettersHelpers {
         uint yieldCurrentTotalDeposit; // In wei
         uint yieldTotalShares;
         address[] yieldUsers;
+        address vaultAddress;
+        address zapAddress;
     }
 
     struct UserRelated {

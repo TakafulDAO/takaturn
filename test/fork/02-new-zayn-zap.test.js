@@ -176,7 +176,7 @@ const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
 
                       await takaturnDiamond.closeFundingPeriod(termId)
 
-                      const yield = await takaturnDiamond.getYieldSummary(termId)
+                      const yield = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
 
                       let yieldUserSummary = await takaturnDiamond.getUserYieldSummary(
                           participant_1.address,
@@ -220,7 +220,7 @@ const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
                       assert(withdrawnYieldAfter > withdrawnYieldBefore)
                       assert(withdrawnCollateralAfter > withdrawnCollateralBefore)
 
-                      assert.equal(yield[7], zaynZap.target)
+                      assert.equal(yield.zapAddress, zaynZap.target)
                   })
 
                   describe("Proposed solution", function () {
@@ -264,8 +264,8 @@ const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
 
                           await takaturnDiamond.startTerm(termId)
 
-                          let yield = await takaturnDiamond.getYieldSummary(termId)
-                          const oldAddress = yield[7]
+                          let yield = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                          const oldAddress = yield.zapAddress
 
                           await takaturnDiamond.updateProviderAddressOnTerms(
                               termId,
@@ -273,8 +273,8 @@ const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
                               deployer.address
                           )
 
-                          yield = await takaturnDiamond.getYieldSummary(termId)
-                          const newAddress = yield[7]
+                          yield = (await takaturnDiamond.getTermRelatedSummary(termId))[3]
+                          const newAddress = yield.zapAddress
 
                           assert.notEqual(oldAddress, newAddress)
                           assert.equal(newAddress, deployer.address)
