@@ -10,6 +10,106 @@ import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibGettersHelpers} from "../libraries/LibGettersHelpers.sol";
 
 interface IGetters {
+    /// @notice function to get the expulsion limit for a depositor
+    /// @param termId the fund id
+    /// @param participant the depositor address
+    /// @return expulsionLimit expulsion limit
+    function getExpulsionLimit(
+        uint termId,
+        address participant
+    ) external view returns (uint expulsionLimit);
+
+    /// @notice Gets if a user is expelled from a specefic term
+    /// @param termId the id of the term
+    /// @param user address
+    /// @return true or false
+    function wasExpelled(uint termId, address user) external view returns (bool);
+
+    /// @notice Called to check how much collateral a user can withdraw
+    /// @param termId term id
+    /// @param user depositor address
+    /// @return allowedWithdrawal amount the amount of collateral the depositor can withdraw
+    function getWithdrawableUserBalance(
+        uint termId,
+        address user
+    ) external view returns (uint allowedWithdrawal);
+
+    /// @notice Called to check the minimum collateral amount to deposit in wei
+    /// @param termId term id
+    /// @param depositorIndex the index the depositor wants to join
+    /// @return amount the minimum collateral amount to deposit in wei
+    /// @dev The minimum collateral amount is calculated based on the index on the depositors array
+    /// @dev The return value should be the minimum msg.value when calling joinTerm
+    /// @dev C = 1.5 Cp (Tp - I) where C = minimum collateral amount, Cp = contribution amount,
+    ///      Tp = total participants, I = depositor index (starts at 0). 1.5
+    function minCollateralToDeposit(uint termId, uint depositorIndex) external view returns (uint);
+
+    /// @notice Gets the remaining positions in a term and the corresponding security amount
+    /// @param termId the term id
+    /// @dev Available positions starts at 0
+    /// @return availablePositions an array with the available positions
+    /// @return securityAmount an array with the security amount for each available position
+    function getAvailablePositionsAndSecurityAmount(
+        uint termId
+    ) external view returns (uint[] memory, uint[] memory);
+
+    /// @notice Gets all remaining cycles of a term
+    /// @param termId the id of the term
+    /// @return remaining cycles
+    function getRemainingCycles(uint termId) external view returns (uint);
+
+    /// @notice Gets the remaining registration period for a term
+    /// @dev Revert if nobody have deposited
+    /// @param termId the term id
+    /// @return remaining contribution period
+    function getRemainingRegistrationTime(uint termId) external view returns (uint);
+
+    /// @notice Must return 0 before closing a contribution period
+    /// @param termId the id of the term
+    /// @return remaining contribution time in seconds
+    function getRemainingContributionTime(uint termId) external view returns (uint);
+
+    /// @notice Must be 0 before starting a new cycle
+    /// @param termId the id of the term
+    /// @return remaining cycle time in seconds
+    function getRemainingCycleTime(uint termId) external view returns (uint);
+
+    /// @notice Gets latest ETH / USD price
+    /// @dev Revert if there is problem with chainlink data
+    /// @return uint latest price in Wei Note: 18 decimals
+    function getLatestPrice() external view returns (uint);
+
+    /// @notice Gets the conversion rate of an amount in USD to ETH
+    /// @param USDAmount The amount in USD with 18 decimals
+    /// @return uint converted amount in wei
+    function getToCollateralConversionRate(uint USDAmount) external view returns (uint);
+
+    /// @notice Gets the expected remaining contribution amount for users in a term
+    /// @param termId the id of the term
+    /// @return total remaining contribution in wei
+    function getRemainingCyclesContributionWei(uint termId) external view returns (uint);
+
+    /// @notice function to get the beneficiary from the current cycle
+    /// @param termId the fund id
+    /// @return currentBeneficiary current beneficiary
+    /// @return nextBeneficiary next beneficiary
+    function getCurrentAndNextBeneficiary(
+        uint termId
+    ) external view returns (address currentBeneficiary, address nextBeneficiary);
+
+    /// @notice Gets a users collateral summary
+    /// @param depositor address
+    /// @param termId the id of the term
+    /// @return if the user is a true member of the term
+    /// @return current users locked collateral balance in wei
+    /// @return current users unlocked collateral balance in wei
+    /// @return initial users deposit in wei
+    /// @return expulsion limit
+    function getDepositorCollateralSummary(
+        address depositor,
+        uint termId
+    ) external view returns (bool, uint, uint, uint, uint);
+
     /// @notice This function is used as a helper for front-end implementation
     /// @param termId The term id for which the summary is being requested
     /// @return term The term object
@@ -87,29 +187,6 @@ interface IGetters {
     /// @return the needed allowance
     function getNeededAllowance(address user) external view returns (uint);
 
-    /// @notice function to get the beneficiary from the current cycle
-    /// @param termId the fund id
-    /// @return the current beneficiary
-    function getCurrentBeneficiary(uint termId) external view returns (address);
-
-    /// @notice Gets the next beneficiary of a term
-    /// @param termId the id of the term
-    /// @return user address
-    function getNextBeneficiary(uint termId) external view returns (address);
-
-    /// @notice Gets a users collateral summary
-    /// @param depositor address
-    /// @param termId the id of the term
-    /// @return if the user is a true member of the term
-    /// @return current users locked collateral balance in wei
-    /// @return current users unlocked collateral balance in wei
-    /// @return initial users deposit in wei
-    /// @return expulsion limit
-    function getDepositorCollateralSummary(
-        address depositor,
-        uint termId
-    ) external view returns (bool, uint, uint, uint, uint);
-
     /// @notice function to get fund information of a specific participant
     /// @param participant the user to get the info from
     /// @param termId the fund id
@@ -145,15 +222,6 @@ interface IGetters {
     /// @return on beneficiary set
     /// @return on defaulter set
     function getUserSet(address participant, uint termId) external view returns (bool, bool, bool);
-
-    /// @notice Called to check how much collateral a user can withdraw
-    /// @param termId term id
-    /// @param user depositor address
-    /// @return allowedWithdrawal amount the amount of collateral the depositor can withdraw
-    function getWithdrawableUserBalance(
-        uint termId,
-        address user
-    ) external view returns (uint allowedWithdrawal);
 
     /// @notice Get all the terms a participant was expelled from
     /// @param participant the participant address
@@ -201,12 +269,6 @@ interface IGetters {
     /// @return true if the participant is a beneficiary
     function isBeneficiary(uint termId, address beneficiary) external view returns (bool);
 
-    /// @notice Gets if a user is expelled from a specefic term
-    /// @param termId the id of the term
-    /// @param user address
-    /// @return true or false
-    function wasExpelled(uint termId, address user) external view returns (bool);
-
     /// @notice checks if a participant have been expelled before being a beneficiary
     /// @param termId the id of the term
     /// @param user the address of the participant to check
@@ -217,36 +279,6 @@ interface IGetters {
     /// @param ethAmount The amount in ETH
     /// @return uint converted amount in USD correct to 18 decimals
     function getToStableConversionRate(uint ethAmount) external view returns (uint);
-
-    /// @notice Gets all remaining cycles of a term
-    /// @param termId the id of the term
-    /// @return remaining cycles
-    function getRemainingCycles(uint termId) external view returns (uint);
-
-    /// @notice Gets the expected remaining contribution amount for users in a term
-    /// @param termId the id of the term
-    /// @return total remaining contribution in wei
-    function getRemainingCyclesContributionWei(uint termId) external view returns (uint);
-
-    /// @notice Called to check the minimum collateral amount to deposit in wei
-    /// @param termId term id
-    /// @param depositorIndex the index the depositor wants to join
-    /// @return amount the minimum collateral amount to deposit in wei
-    /// @dev The minimum collateral amount is calculated based on the index on the depositors array
-    /// @dev The return value should be the minimum msg.value when calling joinTerm
-    /// @dev C = 1.5 Cp (Tp - I) where C = minimum collateral amount, Cp = contribution amount,
-    ///      Tp = total participants, I = depositor index (starts at 0). 1.5
-    function minCollateralToDeposit(uint termId, uint depositorIndex) external view returns (uint);
-
-    /// @notice Gets latest ETH / USD price
-    /// @dev Revert if there is problem with chainlink data
-    /// @return uint latest price in Wei Note: 18 decimals
-    function getLatestPrice() external view returns (uint);
-
-    /// @notice Gets the conversion rate of an amount in USD to ETH
-    /// @param USDAmount The amount in USD with 18 decimals
-    /// @return uint converted amount in wei
-    function getToCollateralConversionRate(uint USDAmount) external view returns (uint);
 
     /// @notice This function is used to get the total yield generated for a term
     /// @param termId The term id for which the yield is being calculated
@@ -266,29 +298,4 @@ interface IGetters {
         address participant,
         LibTermStorage.TermStates state
     ) external view returns (uint[] memory);
-
-    /// @notice Gets the remaining positions in a term and the corresponding security amount
-    /// @param termId the term id
-    /// @dev Available positions starts at 0
-    /// @return availablePositions an array with the available positions
-    /// @return securityAmount an array with the security amount for each available position
-    function getAvailablePositionsAndSecurityAmount(
-        uint termId
-    ) external view returns (uint[] memory, uint[] memory);
-
-    /// @notice Gets the remaining registration period for a term
-    /// @dev Revert if nobody have deposited
-    /// @param termId the term id
-    /// @return remaining contribution period
-    function getRemainingRegistrationTime(uint termId) external view returns (uint);
-
-    /// @notice Must return 0 before closing a contribution period
-    /// @param termId the id of the term
-    /// @return remaining contribution time in seconds
-    function getRemainingContributionTime(uint termId) external view returns (uint);
-
-    /// @notice Must be 0 before starting a new cycle
-    /// @param termId the id of the term
-    /// @return remaining cycle time in seconds
-    function getRemainingCycleTime(uint termId) external view returns (uint);
 }
