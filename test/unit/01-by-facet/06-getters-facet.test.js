@@ -899,7 +899,9 @@ async function payTestContribution(termId, defaulterIndex) {
               it("Should return the current beneficiary", async function () {
                   const termId = 1
 
-                  const currentBeneficiary = await takaturnDiamond.getCurrentBeneficiary(termId)
+                  const currentBeneficiary = (
+                      await takaturnDiamond.getCurrentAndNextBeneficiary(termId)
+                  )[0]
 
                   assert.equal(currentBeneficiary, participant_1.address)
               })
@@ -907,7 +909,9 @@ async function payTestContribution(termId, defaulterIndex) {
               it("Should return the next beneficiary", async function () {
                   const termId = 1
 
-                  const nextBeneficiary = await takaturnDiamond.getNextBeneficiary(termId)
+                  const nextBeneficiary = (
+                      await takaturnDiamond.getCurrentAndNextBeneficiary(termId)
+                  )[1]
 
                   assert.equal(nextBeneficiary, participant_2.address)
               })

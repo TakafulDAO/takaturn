@@ -177,9 +177,9 @@ const { hour } = require("../../../utils/units")
                               termId,
                               participant_1.address
                           )
-                          const currentBeneficiary = await takaturnDiamond.getCurrentBeneficiary(
-                              termId
-                          )
+                          const currentBeneficiary = (
+                              await takaturnDiamond.getCurrentAndNextBeneficiary(termId)
+                          )[0]
 
                           // Pay the contribution for the first cycle
                           for (let i = 1; i <= totalParticipants; i++) {
@@ -263,9 +263,9 @@ const { hour } = require("../../../utils/units")
                               termId,
                               participant_1.address
                           )
-                          const currentBeneficiary = await takaturnDiamond.getCurrentBeneficiary(
-                              termId
-                          )
+                          const currentBeneficiary = (
+                              await takaturnDiamond.getCurrentAndNextBeneficiary(termId)
+                          )[0]
 
                           // Pay the contribution for the first cycle
                           for (let i = 1; i <= totalParticipants; i++) {
