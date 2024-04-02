@@ -23,12 +23,7 @@ import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 /// @dev v3.0 (Diamond)
 contract TermFacet is ITerm {
     event OnTermCreated(uint indexed termId, address indexed termOwner); // Emits when a new term is created
-    event OnCollateralDeposited(
-        uint indexed termId,
-        address payer,
-        address indexed user,
-        uint amount
-    ); // TODO: To be deprecated, here to ensure backwards compatibility with the old event
+    event OnCollateralDeposited(uint indexed termId, address indexed user, uint amount); // TODO: To be deprecated, here to ensure backwards compatibility with the old event
     event OnCollateralDepositedNext(
         uint indexed termId,
         address payer,
@@ -270,7 +265,7 @@ contract TermFacet is ITerm {
         }
 
         // TODO: Emit both events to ensure backwards compatibility
-        emit OnCollateralDeposited(_termId, msg.sender, _newParticipant, msg.value);
+        emit OnCollateralDeposited(_termId, _newParticipant, msg.value);
         emit OnCollateralDepositedNext(_termId, msg.sender, _newParticipant, msg.value, _position);
 
         if (collateral.counterMembers == 1) {
