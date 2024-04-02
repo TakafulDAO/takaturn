@@ -71,10 +71,7 @@ library LibCollateral {
 
         if (!LibFundStorage._fundExists(_termId)) {
             // Only check here when starting the term
-            (, , , , collateralLimit) = IGetters(address(this)).getDepositorCollateralSummary(
-                _member,
-                _termId
-            );
+            collateralLimit = IGetters(address(this)).getExpulsionLimit(_termId, _member);
         } else {
             collateralLimit = IGetters(address(this)).getRemainingCyclesContributionWei(_termId);
         }

@@ -194,10 +194,9 @@ contract CollateralFacet is ICollateral {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
+        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        (, , , LibGettersHelpers.NonUserRelated memory nonUserRelated) = IGetters(address(this))
-            .getTermRelatedSummary(termId);
-        uint fundEnd = nonUserRelated.fundEndTime;
+        uint fundEnd = fund.fundEnd;
         require(block.timestamp > fundEnd + 180 days, "TT-CF-03");
 
         uint totalToWithdraw;
@@ -461,7 +460,8 @@ contract CollateralFacet is ICollateral {
             ._yieldStorage()
             .yields[_term.termId];
 
-        address beneficiary = IGetters(address(this)).getCurrentBeneficiary(_term.termId);
+        address beneficiary = _fund.beneficiariesOrder[_fund.currentCycle - 1];
+
         if (_defaulterState.payWithCollateral && !_defaulterState.payWithFrozenPool) {
             if (_defaulterState.gettingExpelled) {
                 if (_defaulterState.isBeneficiary) {

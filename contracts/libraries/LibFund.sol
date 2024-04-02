@@ -96,7 +96,7 @@ library LibFund {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[_termId];
 
         // Get the beneficiary for this cycle
-        address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(_termId);
+        address currentBeneficiary = fund.beneficiariesOrder[fund.currentCycle - 1];
 
         address[] memory autoPayers = fund.beneficiariesOrder; // use beneficiariesOrder because it is a single array with all participants
         uint autoPayersArray = autoPayers.length;

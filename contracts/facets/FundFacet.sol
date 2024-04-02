@@ -79,7 +79,7 @@ contract FundFacet is IFund {
         );
         require(fund.currentState == LibFundStorage.FundStates.AcceptingContributions, "TT-FF-02");
 
-        address currentBeneficiary = IGetters(address(this)).getCurrentBeneficiary(termId);
+        address currentBeneficiary = fund.beneficiariesOrder[fund.currentCycle - 1];
 
         // We attempt to make the autopayers pay their contribution right away
         LibFund._autoPay(termId);
@@ -212,7 +212,7 @@ contract FundFacet is IFund {
     function payContribution(uint termId) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        bool payNextCycle = _payContributionsChecks(fund, termId, msg.sender);
+        bool payNextCycle = _payContributionsChecks(fund, msg.sender);
 
         _payContribution(termId, msg.sender, msg.sender, payNextCycle);
     }
@@ -223,7 +223,7 @@ contract FundFacet is IFund {
     function payContributionOnBehalfOf(uint termId, address participant) external {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
-        bool payNextCycle = _payContributionsChecks(fund, termId, participant);
+        bool payNextCycle = _payContributionsChecks(fund, participant);
 
         _payContribution(termId, msg.sender, participant, payNextCycle);
     }
@@ -270,7 +270,7 @@ contract FundFacet is IFund {
         LibFundStorage.Fund storage _fund,
         LibTermStorage.Term storage _term
     ) internal {
-        address beneficiary = IGetters(address(this)).getCurrentBeneficiary(_term.termId);
+        address beneficiary = _fund.beneficiariesOrder[_fund.currentCycle - 1];
 
         // Request contribution from the collateral for those who have to pay this cycle and haven't paid
         if (EnumerableSet.length(_fund._defaulters) > 0) {
@@ -515,13 +515,11 @@ contract FundFacet is IFund {
     }
 
     /// @param _fund Fund object
-    /// @param _termId term Id
     /// @param _participant address
     /// @dev Revert if the fund is Closed or initializing
     /// @dev Revert if the caller is not a participant, is exempted, is the beneficiary or has already paid
     function _payContributionsChecks(
         LibFundStorage.Fund storage _fund,
-        uint _termId,
         address _participant
     ) internal view returns (bool _payNextCycle) {
         require(
@@ -538,13 +536,13 @@ contract FundFacet is IFund {
             require(!_fund.paidThisCycle[_participant], "TT-FF-13");
 
             _cycle = _fund.currentCycle;
-            _beneficiary = IGetters(address(this)).getCurrentBeneficiary(_termId);
+            _beneficiary = _fund.beneficiariesOrder[_fund.currentCycle - 1];
             _payNextCycle = false;
         } else {
             require(!_fund.paidNextCycle[_participant], "TT-FF-13");
 
             _cycle = _fund.currentCycle + 1;
-            _beneficiary = IGetters(address(this)).getNextBeneficiary(_termId);
+            _beneficiary = _fund.beneficiariesOrder[_fund.currentCycle];
             _payNextCycle = true;
         }
 
