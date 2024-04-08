@@ -7,6 +7,7 @@ import {IGetters} from "../interfaces/IGetters.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibTermStorage} from "../libraries/LibTermStorage.sol";
+import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 
 import "hardhat/console.sol";
 
@@ -60,5 +61,26 @@ contract TestHelperFacet {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
 
         fund.beneficiariesPool[participant] = amount;
+    }
+
+    function testHelper_positiveReimbursement(
+        uint originalWithdrawal,
+        uint originalShares
+    ) external {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[0];
+        uint correctedShares = (originalWithdrawal * yield.totalShares) / yield.totalDeposit;
+
+        if (correctedShares < originalShares) {
+            uint correction = (originalShares - correctedShares) * 2;
+            yield.totalShares =
+                yield.totalShares +
+                (correction * (yield.totalDeposit / originalWithdrawal));
+        }
+
+        uint newCorrectedShares = (originalWithdrawal * yield.totalShares) / yield.totalDeposit;
+
+        assert(newCorrectedShares > originalShares);
     }
 }

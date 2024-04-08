@@ -29,6 +29,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             "TermFacet",
             "GettersFacet",
             "YGFacetZaynFi",
+            "TestHelperFacet",
         ]
         const initContract = "DiamondInit"
         const initMethod = "init"
