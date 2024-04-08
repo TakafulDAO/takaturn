@@ -3,6 +3,7 @@
 pragma solidity 0.8.18;
 
 import {IGetters} from "../interfaces/IGetters.sol";
+import {IZaynVaultV2TakaDao} from "../interfaces/IZaynVaultV2TakaDao.sol";
 
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
@@ -91,5 +92,24 @@ contract TestHelperFacet {
             .yields[termId];
 
         yield.totalShares = yield.totalShares / 2;
+    }
+
+    function testHelper_reimburseExtraYieldSmallAmounts(uint termId) external {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        address vaultAddress = yield.providerAddresses["ZaynVault"];
+
+        uint neededShares = (yield.currentTotalDeposit * yield.totalShares) / yield.totalDeposit;
+        uint actualShares = IZaynVaultV2TakaDao(vaultAddress).balanceOf(termId);
+
+        if (actualShares == neededShares) {
+            yield.totalShares = yield.totalShares - 1;
+        }
+
+        uint newNeededShares = (yield.currentTotalDeposit * yield.totalShares) / yield.totalDeposit;
+
+        assert((actualShares - newNeededShares) < 100000);
     }
 }

@@ -1,8 +1,8 @@
-const { assert, expect } = require("chai")
+const { expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
 const { advanceTimeByDate, advanceTime, impersonateAccount } = require("../../../utils/_helpers")
-const { hour, erc20UnitsFormat } = require("../../../utils/units")
+const { hour } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -290,7 +290,8 @@ const { hour, erc20UnitsFormat } = require("../../../utils/units")
                   for (let i = 0; i < terms.length; i++) {
                       await takaturnDiamond.testHelper_positiveReimbursement(
                           originalWithdrawals[i],
-                          originalShares[i]
+                          originalShares[i],
+                          terms[i]
                       )
                   }
 
@@ -328,6 +329,24 @@ const { hour, erc20UnitsFormat } = require("../../../utils/units")
                       .to.not.be.reverted
               })
 
+              it("Small amounts", async function () {
+                  const termIds = await takaturnDiamond.getTermsId()
+                  const termId = termIds[0]
+
+                  const terms = [termId]
+
+                  // send 0.5 ether
+                  const valueToSend = ethers.parseEther("0.5")
+
+                  await takaturnDiamond.testHelper_reimburseExtraYieldSmallAmounts(termId)
+
+                  await expect(
+                      takaturnDiamond.reimburseExtraYield(terms, {
+                          value: valueToSend,
+                      })
+                  ).to.not.be.reverted
+              })
+
               it("Reimburse", async function () {
                   const termIds = await takaturnDiamond.getTermsId()
                   const termId = termIds[0]
@@ -351,6 +370,21 @@ const { hour, erc20UnitsFormat } = require("../../../utils/units")
                       expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldCompensated"),
                       expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldCompensated"),
                   ])
+              })
+          })
+
+          describe("restoreYieldBalance", function () {
+              it("No problems", async function () {
+                  const termIds = await takaturnDiamond.getTermsId()
+                  const termId = termIds[0]
+
+                  // send 0.5 ether
+                  const valueToSend = ethers.parseEther("0.5")
+
+                  const terms = [termId]
+
+                  await expect(takaturnDiamond.restoreYieldBalance(terms, { value: valueToSend }))
+                      .to.not.be.reverted
               })
           })
       })
