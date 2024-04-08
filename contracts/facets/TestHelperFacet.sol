@@ -65,11 +65,12 @@ contract TestHelperFacet {
 
     function testHelper_positiveReimbursement(
         uint originalWithdrawal,
-        uint originalShares
+        uint originalShares,
+        uint termId
     ) external {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
-            .yields[0];
+            .yields[termId];
         uint correctedShares = (originalWithdrawal * yield.totalShares) / yield.totalDeposit;
 
         if (correctedShares < originalShares) {
@@ -82,5 +83,13 @@ contract TestHelperFacet {
         uint newCorrectedShares = (originalWithdrawal * yield.totalShares) / yield.totalDeposit;
 
         assert(newCorrectedShares > originalShares);
+    }
+
+    function testHelper_reimburseExtraYield(uint termId) external {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        yield.totalShares = yield.totalShares / 2;
     }
 }

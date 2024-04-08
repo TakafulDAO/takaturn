@@ -313,4 +313,44 @@ const { hour, erc20UnitsFormat } = require("../../../utils/units")
                   ])
               })
           })
+
+          describe("reimburseExtraYield", function () {
+              it("nothing needed to reimburse", async function () {
+                  const termIds = await takaturnDiamond.getTermsId()
+                  const termId = termIds[0]
+
+                  const terms = [termId]
+
+                  // send 0.5 ether
+                  const valueToSend = ethers.parseEther("0.5")
+
+                  await expect(takaturnDiamond.reimburseExtraYield(terms, { value: valueToSend }))
+                      .to.not.be.reverted
+              })
+
+              it("Reimburse", async function () {
+                  const termIds = await takaturnDiamond.getTermsId()
+                  const termId = termIds[0]
+
+                  const terms = [termId]
+
+                  // send 0.5 ether
+                  const valueToSend = ethers.parseEther("0.5")
+
+                  await takaturnDiamond.testHelper_reimburseExtraYield(termId)
+
+                  const reimburseTx = takaturnDiamond.reimburseExtraYield(terms, {
+                      value: valueToSend,
+                  })
+
+                  await Promise.all([
+                      expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldCompensated"),
+                      expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldCompensated"),
+                      expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldCompensated"),
+                      expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldCompensated"),
+                      expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldCompensated"),
+                      expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldCompensated"),
+                  ])
+              })
+          })
       })
