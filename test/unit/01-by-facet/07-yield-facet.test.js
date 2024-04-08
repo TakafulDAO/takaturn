@@ -1,4 +1,4 @@
-const { expect } = require("chai")
+const { expect, assert } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
 const { advanceTimeByDate, advanceTime, impersonateAccount } = require("../../../utils/_helpers")
@@ -249,6 +249,21 @@ const { hour } = require("../../../utils/units")
               await takaturnDiamond.startNewCycle(termId)
           })
 
+          describe("change yield provider", function () {
+              it("Change yield provider", async function () {
+                  await takaturnDiamond.updateYieldProvider("ZaynZap", deployer.address)
+
+                  const constants = await takaturnDiamond.getConstants(
+                      "ETH/USD",
+                      "USDC/USD",
+                      "ZaynZap",
+                      "ZaynVault"
+                  )
+
+                  assert.equal(constants[2], deployer.address)
+              })
+          })
+
           describe("rescueStuckYields", function () {
               it("Negative reimbursement", async function () {
                   const termIds = await takaturnDiamond.getTermsId()
@@ -313,6 +328,38 @@ const { hour } = require("../../../utils/units")
                       expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldReimbursed"),
                   ])
               })
+
+              describe("yield not initialized", function () {
+                  beforeEach(async () => {
+                      await takaturnDiamondParticipant_1.createTerm(
+                          totalParticipants,
+                          registrationPeriod,
+                          cycleTime,
+                          contributionAmount,
+                          contributionPeriod,
+                          usdc
+                      )
+
+                      const termIds = await takaturnDiamond.getTermsId()
+                      const termId = termIds[0]
+                      // The participants join the term
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                              termId,
+                              i - 1
+                          )
+
+                          await takaturnDiamond
+                              .connect(accounts[i])
+                              ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
+                      }
+
+                      await advanceTime(registrationPeriod + 1)
+
+                      // First cycle
+                      await takaturnDiamond.startTerm(termId)
+                  })
+              })
           })
 
           describe("reimburseExtraYield", function () {
@@ -371,6 +418,52 @@ const { hour } = require("../../../utils/units")
                       expect(reimburseTx).to.emit(takaturnDiamond, "OnYieldCompensated"),
                   ])
               })
+
+              describe("yield not initialized", function () {
+                  beforeEach(async () => {
+                      await takaturnDiamondParticipant_1.createTerm(
+                          totalParticipants,
+                          registrationPeriod,
+                          cycleTime,
+                          contributionAmount,
+                          contributionPeriod,
+                          usdc
+                      )
+
+                      const termIds = await takaturnDiamond.getTermsId()
+                      const termId = termIds[0]
+                      // The participants join the term
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                              termId,
+                              i - 1
+                          )
+
+                          await takaturnDiamond
+                              .connect(accounts[i])
+                              ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
+                      }
+
+                      await advanceTime(registrationPeriod + 1)
+
+                      // First cycle
+                      await takaturnDiamond.startTerm(termId)
+                  })
+
+                  it("nothing needed to reimburse", async function () {
+                      const termIds = await takaturnDiamond.getTermsId()
+                      const termId = termIds[0]
+
+                      const terms = [termId]
+
+                      // send 0.5 ether
+                      const valueToSend = ethers.parseEther("0.5")
+
+                      await expect(
+                          takaturnDiamond.reimburseExtraYield(terms, { value: valueToSend })
+                      ).to.not.be.reverted
+                  })
+              })
           })
 
           describe("restoreYieldBalance", function () {
@@ -385,6 +478,52 @@ const { hour } = require("../../../utils/units")
 
                   await expect(takaturnDiamond.restoreYieldBalance(terms, { value: valueToSend }))
                       .to.not.be.reverted
+              })
+
+              describe("yield not initialized", function () {
+                  beforeEach(async () => {
+                      await takaturnDiamondParticipant_1.createTerm(
+                          totalParticipants,
+                          registrationPeriod,
+                          cycleTime,
+                          contributionAmount,
+                          contributionPeriod,
+                          usdc
+                      )
+
+                      const termIds = await takaturnDiamond.getTermsId()
+                      const termId = termIds[0]
+                      // The participants join the term
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                              termId,
+                              i - 1
+                          )
+
+                          await takaturnDiamond
+                              .connect(accounts[i])
+                              ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
+                      }
+
+                      await advanceTime(registrationPeriod + 1)
+
+                      // First cycle
+                      await takaturnDiamond.startTerm(termId)
+                  })
+
+                  it("nothing needed to reimburse", async function () {
+                      const termIds = await takaturnDiamond.getTermsId()
+                      const termId = termIds[0]
+
+                      // send 0.5 ether
+                      const valueToSend = ethers.parseEther("0.5")
+
+                      const terms = [termId]
+
+                      await expect(
+                          takaturnDiamond.restoreYieldBalance(terms, { value: valueToSend })
+                      ).to.not.be.reverted
+                  })
               })
           })
       })
