@@ -31,15 +31,15 @@ contract WithdrawTestEthFacet {
         LibWithdrawGoerliEth._addTrustedAddress(newManager);
     }
 
-    // The next function is to test the error InsufficientBalance on FundFacet is working
-    function testInsufficientBalance(uint termId) external onlyOwner onlyManager(msg.sender) {
-        LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
-        uint balance = fund.stableToken.balanceOf(address(this));
-        bool success = fund.stableToken.transfer(msg.sender, balance);
-        require(success, "Transfer failed");
-    }
+    // // The next function is to test the error InsufficientBalance on FundFacet is working
+    // function testInsufficientBalance(uint termId) external onlyOwner onlyManager(msg.sender) {
+    //     LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
+    //     uint balance = fund.stableToken.balanceOf(address(this));
+    //     bool success = fund.stableToken.transfer(msg.sender, balance);
+    //     require(success, "Transfer failed");
+    // }
 
-    function testGithubCDWorkflows() external pure returns (string memory) {
-        return "Test Workflow [demo]";
-    }
+    // function testGithubCDWorkflows() external pure returns (string memory) {
+    //     return "Test Workflow [demo]";
+    // }
 }

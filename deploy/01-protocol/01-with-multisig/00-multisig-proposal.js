@@ -2,34 +2,24 @@ const { network } = require("hardhat")
 const {
     networkConfig,
     developmentChains,
+    VERIFICATION_BLOCK_CONFIRMATIONS,
     isMainnet,
     isTestnet,
     isDevnet,
 } = require("../../../utils/_networks")
 const { verify } = require("../../../scripts/verify")
 const { writeFileSync } = require("fs")
-const { getRawTransaction } = require("../../../utils/deployTx")
 
-module.exports = async ({ deployments }) => {
-    const { log } = deployments
-
+module.exports = async ({ getNamedAccounts, deployments }) => {
+    const { diamond, log, catchUnknownSigner } = deployments
+    const { deployer, diamondOwner } = await getNamedAccounts()
     const chainId = network.config.chainId
-
+    const waitBlockConfirmations = developmentChains.includes(network.name)
+        ? 1
+        : VERIFICATION_BLOCK_CONFIRMATIONS
     let ethUsdPriceFeedAddress, usdcUsdPriceFeedAddress
     let zaynfiZapAddress, zaynfiVaultAddress
     let facets
-
-    let diamondName = "TakaturnDiamond"
-    let args = []
-    let initContract = "DiamondInit"
-    let initMethod = "init"
-    let initArgs = [
-        ethUsdPriceFeedAddress,
-        usdcUsdPriceFeedAddress,
-        zaynfiZapAddress,
-        zaynfiVaultAddress,
-        false,
-    ]
 
     if (!isDevnet) {
         ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
@@ -37,21 +27,22 @@ module.exports = async ({ deployments }) => {
         zaynfiZapAddress = networkConfig[chainId]["zaynfiZap"]
         zaynfiVaultAddress = networkConfig[chainId]["zaynfiVault"]
 
+        const args = []
+        const initArgs = [
+            ethUsdPriceFeedAddress,
+            usdcUsdPriceFeedAddress,
+            zaynfiZapAddress,
+            zaynfiVaultAddress,
+            false,
+        ]
+
         log("==========================================================================")
+
         log("01.01.00. Deploying facets")
         log("01.01.00. Creating raw transaction for proposal on multisig...")
 
         if (isMainnet) {
             facets = ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet", "YGFacetZaynFi"]
-
-            rawProposal = await getRawTransaction(
-                diamondName,
-                args,
-                facets,
-                initContract,
-                initMethod,
-                initArgs
-            )
         } else {
             facets = [
                 "CollateralFacet",
@@ -61,16 +52,25 @@ module.exports = async ({ deployments }) => {
                 "YGFacetZaynFi",
                 "WithdrawTestEthFacet",
             ]
+        }
 
-            rawProposal = await getRawTransaction(
-                diamondName,
-                args,
-                facets,
-                initContract,
-                initMethod,
-                initArgs
-            )
+        rawProposal = await catchUnknownSigner(
+            diamond.deploy("TakaturnDiamond", {
+                from: deployer,
+                owner: diamondOwner,
+                args: args,
+                log: true,
+                facets: facets,
+                execute: {
+                    contract: "DiamondInit",
+                    methodName: "init",
+                    args: initArgs,
+                },
+                waitConfirmations: waitBlockConfirmations,
+            })
+        )
 
+        if (isTestnet) {
             withdrawTestEthFacet = await deployments.get("WithdrawTestEthFacet") // This facet is never deployed on mainnet
         }
 
@@ -137,10 +137,10 @@ module.exports = async ({ deployments }) => {
         log("==========================================================================")
 
         if (rawProposal === null) {
-            log("There is nothing to upgrade")
+            log("01.01.00. There is nothing to upgrade")
         } else {
             log(
-                "Check the raw transaction on the file rawTransaction.txt on the root of this code base"
+                "01.01.00. Check the raw transaction on the file rawTransaction.txt on the root of this code base"
             )
             writeFileSync("rawTransaction.txt", rawProposal.data, {
                 flag: "a",

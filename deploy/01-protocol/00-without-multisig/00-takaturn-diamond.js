@@ -78,14 +78,25 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             initArgs
         )
     } else {
-        facets = [
-            "CollateralFacet",
-            "FundFacet",
-            "TermFacet",
-            "GettersFacet",
-            "YGFacetZaynFi",
-            "WithdrawTestEthFacet",
-        ]
+        if (isTestnet) {
+            facets = [
+                "CollateralFacet",
+                "FundFacet",
+                "TermFacet",
+                "GettersFacet",
+                "YGFacetZaynFi",
+                "WithdrawTestEthFacet",
+            ]
+        } else {
+            facets = [
+                "CollateralFacet",
+                "FundFacet",
+                "TermFacet",
+                "GettersFacet",
+                "YGFacetZaynFi",
+                "TestHelperFacet",
+            ]
+        }
 
         takaturnDiamondUpgrade = await deployUpgradeDiamond(
             diamondName,
@@ -96,8 +107,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             initMethod,
             initArgs
         )
-
-        withdrawTestEthFacet = await deployments.get("WithdrawTestEthFacet") // This facet is never deployed on mainnet
+        if (isTestnet) {
+            withdrawTestEthFacet = await deployments.get("WithdrawTestEthFacet") // This facet is never deployed on mainnet
+        }
     }
 
     collateralFacet = await deployments.get("CollateralFacet")
