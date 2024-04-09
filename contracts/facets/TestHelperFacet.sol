@@ -112,4 +112,35 @@ contract TestHelperFacet {
 
         assert((actualShares - newNeededShares) < 100000);
     }
+
+    function testHelper_restoreYieldBalanceInvalidCurrentTotalDeposit(
+        uint termId,
+        address user
+    ) external {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        uint withdraw = yield.withdrawnCollateral[user];
+        uint deposit = yield.depositedCollateralByUser[user];
+
+        if (withdraw < deposit) {
+            console.log("User has not withdrawn enough");
+            yield.withdrawnCollateral[user] = deposit + 1;
+        }
+    }
+
+    function testHelper_restoreYieldBalanceWithdrawnTooMuch(uint termId, address user) external {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        uint withdraw = yield.withdrawnCollateral[user];
+        uint deposit = yield.depositedCollateralByUser[user];
+
+        if (withdraw < deposit) {
+            console.log("User has not withdrawn enough");
+            yield.withdrawnCollateral[user] = deposit + 1;
+        }
+    }
 }

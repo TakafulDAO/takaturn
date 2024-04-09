@@ -480,6 +480,27 @@ const { hour } = require("../../../utils/units")
                       .to.not.be.reverted
               })
 
+              describe("reverts", function () {
+                  it("if the current total deposit is invalid", async function () {
+                      const termIds = await takaturnDiamond.getTermsId()
+                      const termId = termIds[0]
+
+                      // send 0.5 ether
+                      const valueToSend = ethers.parseEther("0.5")
+
+                      const terms = [termId]
+
+                      await takaturnDiamond.testHelper_restoreYieldBalanceInvalidCurrentTotalDeposit(
+                          termId,
+                          participant_1.address
+                      )
+
+                      await expect(
+                          takaturnDiamond.restoreYieldBalance(terms, { value: valueToSend })
+                      ).to.be.revertedWith("TT-YF-15")
+                  })
+              })
+
               describe("yield not initialized", function () {
                   beforeEach(async () => {
                       await takaturnDiamondParticipant_1.createTerm(

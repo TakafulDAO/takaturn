@@ -13,8 +13,6 @@ import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
 import {LibFundStorage} from "../libraries/LibFundStorage.sol";
 
-import "hardhat/console.sol";
-
 /// @title Takaturn Yield Facet
 /// @author Maikel Ordaz
 /// @notice Used to operate the yield generation feature
