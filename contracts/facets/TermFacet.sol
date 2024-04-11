@@ -284,7 +284,6 @@ contract TermFacet is ITerm {
     }
 
     /// @dev Revert if the term doesn't exist
-    /// @dev Revert if the term is not ready to start
     /// @dev Revert if the term is already active
     /// @dev Revert if someone is undercollaterized
     function _startTerm(uint _termId) internal {
@@ -298,11 +297,6 @@ contract TermFacet is ITerm {
         address[] memory depositors = collateral.depositors;
 
         uint depositorsArrayLength = depositors.length;
-
-        require(
-            block.timestamp > collateral.firstDepositTime + term.registrationPeriod,
-            "TT-TF-09"
-        );
 
         require(collateral.counterMembers == term.totalParticipants, "TT-TF-10");
 
