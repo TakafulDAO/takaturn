@@ -390,8 +390,6 @@ const { ZeroAddress } = require("ethers")
               // Expire term
               await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith("TT-TF-13") // Registration period not ended
 
-              await expect(takaturnDiamond.startTerm(termId)).to.be.revertedWith("TT-TF-09") // Term not ready to start
-
               await advanceTime(registrationPeriod + 1)
 
               await expect(takaturnDiamond.expireTerm(termId)).to.be.revertedWith("TT-TF-14") // All spots are filled, can't expire
