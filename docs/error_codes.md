@@ -3,23 +3,24 @@
 > [!IMPORTANT]
 > Errors triggered by `User but controlled by backend` should never be seen by the user if they use the UI
 
--   [Term Initialization Related](#term-initialization-related)
--   [Term Expiration Related](#term-expiration-related)
--   [Join Term Related](#join-term-related)
--   [Auto Pay Related](#auto-pay-related)
--   [Contribution Payment Related](#contribution-payment-related)
--   [Withdraw Money Pot Related](#withdraw-money-pot-related)
--   [Withdraw Collateral Related](#withdraw-collateral-related)
--   [Cycle Management Related](#cycle-management-related)
--   [Yield Related](#yield-related)
--   [Others](#others)
+- [Error codes](#error-codes)
+  - [Term Initialization Related](#term-initialization-related)
+  - [Term Expiration Related](#term-expiration-related)
+  - [Join Term Related](#join-term-related)
+  - [Auto Pay Related](#auto-pay-related)
+  - [Contribution Payment Related](#contribution-payment-related)
+  - [Withdraw Money Pot Related](#withdraw-money-pot-related)
+  - [Withdraw Collateral Related](#withdraw-collateral-related)
+  - [Cycle Management Related](#cycle-management-related)
+  - [Yield Related](#yield-related)
+  - [Others](#others)
 
 ## Term Initialization Related
 
 | Error code | Description                  | Trigger by |
 | :--------: | :--------------------------- | :--------: |
 |  TT-TF-01  | Invalid inputs               |  Backend   |
-|  TT-TF-09  | Term not ready to start      |  Backend   |
+|  TT-TF-09  | Term not ready to start (deprecated)      |  Backend   |
 |  TT-TF-10  | Positions are not filled     |  Backend   |
 |  TT-TF-11  | Eth prices dropped           |  Backend   |
 |  TT-TF-12  | Fund already exists          |  Backend   |
