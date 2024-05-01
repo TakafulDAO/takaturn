@@ -909,7 +909,7 @@ const { ZeroAddress } = require("ethers")
 
               await advanceTime(contributionPeriod + 1)
 
-              await aggregator.setPrice("146000000000")
+              await aggregator.setPrice("128000000000")
 
               await takaturnDiamond.closeFundingPeriod(termId)
 
