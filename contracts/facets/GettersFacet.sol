@@ -727,6 +727,8 @@ contract GettersFacet is IGetters {
             remainingCycles = getRemainingCycles(termId);
         } else if (fund.currentState == LibFundStorage.FundStates.CycleOngoing) {
             remainingCycles = getRemainingCycles(termId) - 1;
+        } else if (fund.currentState == LibFundStorage.FundStates.FundClosed) {
+            remainingCycles = 0;
         }
 
         uint contributionAmountWei = getToCollateralConversionRate(
