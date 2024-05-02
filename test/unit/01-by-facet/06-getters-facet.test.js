@@ -903,7 +903,6 @@ async function payTestContribution(termId, defaulterIndex) {
                   assert.equal(nextBeneficiary, participant_2.address)
               })
           })
-
           describe("Current or next cycle paid", function () {
               it("Nothing paid", async function () {
                   const termId = 1
@@ -1033,6 +1032,142 @@ async function payTestContribution(termId, defaulterIndex) {
                   assert.ok(!participant1Payments[1])
                   assert.ok(participant3Payments[0]) // Current cycle paid
                   assert.ok(!participant3Payments[1])
+              })
+          })
+
+          describe("Remaining cycles contribution in wei", function () {
+              beforeEach(async () => {
+                  await takaturnDiamondParticipant_1.createTerm(
+                      totalParticipants,
+                      registrationPeriod,
+                      cycleTime,
+                      contributionAmount,
+                      contributionPeriod,
+                      usdc
+                  )
+
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      // Get the collateral payment deposit
+                      const entrance = await takaturnDiamondDeployer.minCollateralToDeposit(
+                          termId,
+                          i - 1
+                      )
+                      // Each participant joins the term
+                      await takaturnDiamond
+                          .connect(accounts[i])
+                          ["joinTerm(uint256,bool)"](termId, false, { value: entrance })
+                  }
+              })
+              it("Should return the correct amount at every point", async function () {
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+
+                  const rccWei_Initializing =
+                      await takaturnDiamond.getRemainingCyclesContributionWei(termId)
+
+                  await advanceTime(registrationPeriod + 1)
+
+                  // First cycle
+                  await takaturnDiamond.startTerm(termId)
+
+                  const rccWei_AcceptingContributionsFirstCycle =
+                      await takaturnDiamond.getRemainingCyclesContributionWei(termId)
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      try {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } catch {}
+                  }
+
+                  await advanceTime(contributionPeriod + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const rccWei_CycleOnGoingFirstCycle =
+                      await takaturnDiamond.getRemainingCyclesContributionWei(termId)
+
+                  await advanceTime(cycleTime + 1)
+
+                  // Second cycle
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  const rccWei_AcceptingContributionsSecondCycle =
+                      await takaturnDiamond.getRemainingCyclesContributionWei(termId)
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      try {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } catch {}
+                  }
+
+                  await advanceTime(contributionPeriod + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const rccWei_CycleOnGoingSecondCycle =
+                      await takaturnDiamond.getRemainingCyclesContributionWei(termId)
+
+                  await advanceTime(cycleTime + 1)
+
+                  // Third cycle
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  const rccWei_AcceptingContributionsThirdCycle =
+                      await takaturnDiamond.getRemainingCyclesContributionWei(termId)
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      try {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } catch {}
+                  }
+
+                  await advanceTime(contributionPeriod + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const rccWei_CycleOnGoingThirdCycle =
+                      await takaturnDiamond.getRemainingCyclesContributionWei(termId)
+
+                  await advanceTime(cycleTime + 1)
+
+                  // Fourth cycle
+                  await takaturnDiamond.startNewCycle(termId)
+
+                  const rccWei_AcceptingContributionsFourthCycle =
+                      await takaturnDiamond.getRemainingCyclesContributionWei(termId)
+
+                  for (let i = 1; i <= totalParticipants; i++) {
+                      try {
+                          await takaturnDiamond.connect(accounts[i]).payContribution(termId)
+                      } catch {}
+                  }
+
+                  await advanceTime(contributionPeriod + 1)
+                  await takaturnDiamond.closeFundingPeriod(termId)
+
+                  const rccWei_CycleOnGoingFourthCycle =
+                      await takaturnDiamond.getRemainingCyclesContributionWei(termId)
+
+                  await advanceTime(cycleTime + 1)
+                  await expect(takaturnDiamond.startNewCycle(termId)).to.be.revertedWith("TT-LF-02")
+
+                  assert.equal(rccWei_Initializing, rccWei_AcceptingContributionsFirstCycle)
+                  assert(rccWei_AcceptingContributionsFirstCycle > rccWei_CycleOnGoingFirstCycle)
+                  assert.equal(
+                      rccWei_CycleOnGoingFirstCycle,
+                      rccWei_AcceptingContributionsSecondCycle
+                  )
+                  assert(rccWei_AcceptingContributionsSecondCycle > rccWei_CycleOnGoingSecondCycle)
+                  assert.equal(
+                      rccWei_CycleOnGoingSecondCycle,
+                      rccWei_AcceptingContributionsThirdCycle
+                  )
+                  assert(rccWei_AcceptingContributionsThirdCycle > rccWei_CycleOnGoingThirdCycle)
+                  assert.equal(
+                      rccWei_CycleOnGoingThirdCycle,
+                      rccWei_AcceptingContributionsFourthCycle
+                  )
+                  assert(rccWei_AcceptingContributionsFourthCycle > rccWei_CycleOnGoingFourthCycle)
+                  assert.equal(rccWei_CycleOnGoingFourthCycle, 0n)
               })
           })
       })
