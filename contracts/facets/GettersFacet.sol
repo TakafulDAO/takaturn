@@ -716,7 +716,21 @@ contract GettersFacet is IGetters {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
-        uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
+        uint remainingCycles;
+
+        if (fund.currentState == LibFundStorage.FundStates.InitializingFund) {
+            remainingCycles = term.totalParticipants;
+        } else if (
+            fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
+            fund.currentState == LibFundStorage.FundStates.AwardingBeneficiary
+        ) {
+            remainingCycles = getRemainingCycles(termId);
+        } else if (fund.currentState == LibFundStorage.FundStates.CycleOngoing) {
+            remainingCycles = getRemainingCycles(termId) - 1;
+        } else if (fund.currentState == LibFundStorage.FundStates.FundClosed) {
+            remainingCycles = 0;
+        }
+
         uint contributionAmountWei = getToCollateralConversionRate(
             term.contributionAmount * 10 ** 18
         );
