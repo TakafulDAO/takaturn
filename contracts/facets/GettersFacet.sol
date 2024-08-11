@@ -770,8 +770,8 @@ contract GettersFacet is IGetters {
         (
             uint80 roundID_ethUSD,
             int256 price_ethUSD,
+            uint256 timeStamp_ethUSD,
             ,
-            /*uint startedAt*/ uint256 timeStamp_ethUSD,
             uint80 answeredInRound_ethUSD
         ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["ETH/USD"]).latestRoundData(); //8 decimals
 
@@ -784,8 +784,8 @@ contract GettersFacet is IGetters {
         (
             uint80 roundID_usdUSDC,
             int256 price_usdUSDC,
+            uint256 timeStamp_usdUSDC,
             ,
-            /*uint startedAt*/ uint256 timeStamp_usdUSDC,
             uint80 answeredInRound_usdUSDC
         ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["USDC/USD"]).latestRoundData(); //8 decimals
 
