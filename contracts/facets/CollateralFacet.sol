@@ -193,6 +193,8 @@ contract CollateralFacet is ICollateral {
         LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
             ._yieldStorage()
             .yields[termId];
+        LibTermStorage.Term memory term = LibTermStorage._termStorage().terms[termId];
+        require(term.state != LibTermStorage.TermStates.ExpiredTerm, "TT-TF-15");
 
         (, , , , , uint fundEnd, , ) = IGetters(address(this)).getFundSummary(termId);
         require(block.timestamp > fundEnd + 180 days, "TT-CF-03");
