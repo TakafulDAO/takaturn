@@ -768,30 +768,28 @@ contract GettersFacet is IGetters {
         LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
 
         (
-            uint80 roundID_ethUSD,
+            ,
             int256 price_ethUSD,
             uint256 timeStamp_ethUSD,
             ,
-            uint80 answeredInRound_ethUSD
+            
         ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["ETH/USD"]).latestRoundData(); //8 decimals
 
         // Check if chainlink data is not stale or incorrect
         require(
-            timeStamp_ethUSD != 0 && answeredInRound_ethUSD >= roundID_ethUSD && price_ethUSD > 0,
+            timeStamp_ethUSD != 0 && price_ethUSD > 0,
             "TT-GF-02"
         );
 
         (
-            uint80 roundID_usdUSDC,
+            ,
             int256 price_usdUSDC,
             uint256 timeStamp_usdUSDC,
             ,
-            uint80 answeredInRound_usdUSDC
         ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["USDC/USD"]).latestRoundData(); //8 decimals
 
         require(
             timeStamp_usdUSDC != 0 &&
-                answeredInRound_usdUSDC >= roundID_usdUSDC &&
                 price_usdUSDC > 0,
             "TT-GF-02"
         );
