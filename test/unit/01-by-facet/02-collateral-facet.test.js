@@ -645,7 +645,7 @@ const { hour, day } = require("../../../utils/units")
           })
 
           describe("Empty Collateral", function () {
-              it.only("Wait 180 days to empty collateral in expired terms", async () => {
+              it("Wait 180 days to empty collateral in expired terms", async () => {
                   // participant_1 creating a new term
                   await takaturnDiamond
                       .connect(participant_1)
