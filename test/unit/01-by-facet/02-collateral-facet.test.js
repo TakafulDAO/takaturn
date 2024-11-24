@@ -2,7 +2,7 @@ const { assert, expect } = require("chai")
 const { network, deployments, ethers } = require("hardhat")
 const { developmentChains, isDevnet, isFork, networkConfig } = require("../../../utils/_networks")
 const { advanceTimeByDate, advanceTime, impersonateAccount } = require("../../../utils/_helpers")
-const { hour } = require("../../../utils/units")
+const { hour, day } = require("../../../utils/units")
 
 !developmentChains.includes(network.name)
     ? describe.skip
@@ -906,6 +906,52 @@ const { hour } = require("../../../utils/units")
                           .to.emit(takaturnDiamond, "OnDefaulterExpelled")
                           .withArgs(termId, currentCycle, participant_5.address)
                   })
+              })
+          })
+
+          describe("Empty Collateral", function () {
+              it("Wait 180 days to empty collateral in expired terms", async () => {
+                  // participant_1 creating a new term
+                  await takaturnDiamond
+                      .connect(participant_1)
+                      .createTerm(
+                          totalParticipants,
+                          registrationPeriod,
+                          cycleTime,
+                          contributionAmount,
+                          contributionPeriod,
+                          usdc
+                      )
+                  const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                  const termId = lastTerm[0]
+                  const collat1 = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 0)
+
+                  // participant_2 joins the term
+                  await takaturnDiamond
+                      .connect(participant_2)
+                      ["joinTerm(uint256,bool)"](termId, false, { value: collat1 })
+
+                  const collat2 = await takaturnDiamondDeployer.minCollateralToDeposit(termId, 1)
+
+                  // participant_3 joins the term
+                  await takaturnDiamond
+                      .connect(participant_3)
+                      ["joinTerm(uint256,bool)"](termId, false, { value: collat2 })
+
+                  // contribution period ends, not enough contributors (2/3), the term will be expired
+                  await advanceTime(contributionPeriod + 1)
+                  await takaturnDiamond.connect(participant_1).expireTerm(termId) // the term's owner expire it
+
+                  // participant_1 is the term owner who expired it, he can steal both participants collateral
+                  const ethBalanceBefore = await ethers.provider.getBalance(participant_1.address)
+                  await expect(
+                      takaturnDiamond.connect(participant_1).emptyCollateralAfterEnd(termId)
+                  ).to.be.revertedWith("TT-TF-15")
+
+                  await advanceTime(181 * day)
+                  await expect(
+                      takaturnDiamond.connect(participant_1).emptyCollateralAfterEnd(termId)
+                  )
               })
           })
       })

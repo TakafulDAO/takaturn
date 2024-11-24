@@ -716,7 +716,21 @@ contract GettersFacet is IGetters {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         LibTermStorage.Term storage term = LibTermStorage._termStorage().terms[termId];
 
-        uint remainingCycles = 1 + fund.totalAmountOfCycles - fund.currentCycle;
+        uint remainingCycles;
+
+        if (fund.currentState == LibFundStorage.FundStates.InitializingFund) {
+            remainingCycles = term.totalParticipants;
+        } else if (
+            fund.currentState == LibFundStorage.FundStates.AcceptingContributions ||
+            fund.currentState == LibFundStorage.FundStates.AwardingBeneficiary
+        ) {
+            remainingCycles = getRemainingCycles(termId);
+        } else if (fund.currentState == LibFundStorage.FundStates.CycleOngoing) {
+            remainingCycles = getRemainingCycles(termId) - 1;
+        } else if (fund.currentState == LibFundStorage.FundStates.FundClosed) {
+            remainingCycles = 0;
+        }
+
         uint contributionAmountWei = getToCollateralConversionRate(
             term.contributionAmount * 10 ** 18
         );
@@ -754,30 +768,28 @@ contract GettersFacet is IGetters {
         LibTermStorage.TermConsts storage termConsts = LibTermStorage._termConsts();
 
         (
-            uint80 roundID_ethUSD,
-            int256 price_ethUSD,
             ,
-            /*uint startedAt*/ uint256 timeStamp_ethUSD,
-            uint80 answeredInRound_ethUSD
+            int256 price_ethUSD,
+            uint256 timeStamp_ethUSD,
+            ,
+            
         ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["ETH/USD"]).latestRoundData(); //8 decimals
 
         // Check if chainlink data is not stale or incorrect
         require(
-            timeStamp_ethUSD != 0 && answeredInRound_ethUSD >= roundID_ethUSD && price_ethUSD > 0,
+            timeStamp_ethUSD != 0 && price_ethUSD > 0,
             "TT-GF-02"
         );
 
         (
-            uint80 roundID_usdUSDC,
-            int256 price_usdUSDC,
             ,
-            /*uint startedAt*/ uint256 timeStamp_usdUSDC,
-            uint80 answeredInRound_usdUSDC
+            int256 price_usdUSDC,
+            uint256 timeStamp_usdUSDC,
+            ,
         ) = AggregatorV3Interface(termConsts.aggregatorsAddresses["USDC/USD"]).latestRoundData(); //8 decimals
 
         require(
             timeStamp_usdUSDC != 0 &&
-                answeredInRound_usdUSDC >= roundID_usdUSDC &&
                 price_usdUSDC > 0,
             "TT-GF-02"
         );
