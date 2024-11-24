@@ -1,3 +1,3 @@
 module.exports = {
-    skipFiles: ["mocks/", "interfaces/", "facets/WithdrawGoerliEthFacet.sol", "libraries/", "DiamondInit.sol"]
+    skipFiles: ["mocks/", "interfaces/", "facets/WithdrawGoerliEthFacet.sol", "facets/TestHelperFacet.sol", "libraries/", "DiamondInit.sol"]
 }

@@ -213,7 +213,7 @@ module.exports = {
                 //chainId: 42161,
                 accounts: [DEPLOYER_PK],
                 url: ARBITRUM_MAINNET_RPC_URL,
-                blockNumber: 175144195,
+                blockNumber: 180084035,
                 enabled: FORK === "true",
             },
         },

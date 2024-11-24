@@ -13,7 +13,6 @@
     "erc-20-abi": "^1.0.0",
     "exceljs": "^4.3.0",
     "hardhat-helpers": "^0.1.51",
-    "hardhat-tracer": "^2.5.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
