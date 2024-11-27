@@ -223,6 +223,45 @@ contract CollateralFacet is ICollateral {
         require(success);
     }
 
+    /// @notice allow the owner to empty the Collateral for any user due to emergency issues
+    /// @dev Revert if the collateral is not at releasing collateral
+    /// @dev Revert if the caller is not the term owner
+    /// @dev Revert if the time is not met
+    /// @param termId The term id
+    /// @param user The user to empty the collateral
+    function emptyCollateralByUser(
+        uint termId,
+        address user
+    )
+        external
+        onlyTermOwner(termId)
+        atState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral)
+    {
+        LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
+            ._collateralStorage()
+            .collaterals[termId];
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+        LibTermStorage.Term memory term = LibTermStorage._termStorage().terms[termId];
+        require(term.state != LibTermStorage.TermStates.ExpiredTerm, "TT-TF-15");
+
+        (, , , , , uint fundEnd, , ) = IGetters(address(this)).getFundSummary(termId);
+        require(block.timestamp > fundEnd + 180 days, "TT-CF-03");
+
+        uint amount = collateral.collateralMembersBank[user];
+        uint paymentAmount = collateral.collateralPaymentBank[user];
+
+        collateral.collateralMembersBank[user] = 0;
+        collateral.collateralPaymentBank[user] = 0;
+        uint withdrawnYield = _withdrawFromYield(termId, user, amount, yield);
+
+        uint toWithdraw = (amount + paymentAmount + withdrawnYield);
+
+        (bool success, ) = payable(msg.sender).call{value: toWithdraw}("");
+        require(success);
+    }
+
     /// @param _collateral Collateral object
     /// @param _term Term object
     /// @param _fund Fund object
