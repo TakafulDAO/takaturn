@@ -782,6 +782,58 @@ async function executeCycle(
                           .to.be.reverted
                   })
 
+                  it("simulates a whole fund cycle and empty a user collateral", async function () {
+                      this.timeout(200000)
+
+                      const lastTerm = await takaturnDiamondDeployer.getTermsId()
+                      const termId = lastTerm[0]
+
+                      for (let i = 1; i <= totalParticipants; i++) {
+                          await everyonePaysAndCloseCycle(termId)
+                          await advanceTime(cycleTime + 1)
+                          if (i < totalParticipants) {
+                              await takaturnDiamondParticipant_1.startNewCycle(termId)
+                          }
+                          for (let j = 1; j <= totalParticipants; j++) {
+                              await usdc
+                                  .connect(accounts[j])
+                                  .approve(takaturnDiamond, contributionAmount * 10 ** 6)
+                          }
+                      }
+
+                      await advanceTimeByDate(180, day)
+
+                      await expect(
+                          takaturnDiamondDeployer.emptyCollateralByUser(termId, participant_1)
+                      ).to.be.revertedWith("TT-LTO-01") // TermOwnable: caller is not the owner
+
+                      const participant1_balanceBefore = await ethers.provider.getBalance(
+                          participant_1
+                      )
+
+                      let userRelatedSummary = await takaturnDiamond.getUserRelatedSummary(
+                          participant_1,
+                          termId
+                      )
+                      assert(userRelatedSummary.membersBank > 0)
+
+                      await expect(
+                          takaturnDiamondParticipant_1.emptyCollateralByUser(termId, participant_1)
+                      ).not.to.be.reverted
+
+                      userRelatedSummary = await takaturnDiamond.getUserRelatedSummary(
+                          participant_1,
+                          termId
+                      )
+                      assert.equal(userRelatedSummary.membersBank, 0)
+
+                      const participant1_balanceAfter = await ethers.provider.getBalance(
+                          participant_1
+                      )
+
+                      assert(participant1_balanceAfter > participant1_balanceBefore)
+                  })
+
                   it("makes sure the fund is closed correctly", async function () {
                       this.timeout(200000)
 
