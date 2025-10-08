@@ -13,6 +13,7 @@ import {LibCollateralStorage} from "../libraries/LibCollateralStorage.sol";
 import {LibYieldGeneration} from "../libraries/LibYieldGeneration.sol";
 import {LibYieldGenerationStorage} from "../libraries/LibYieldGenerationStorage.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
+import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
 
 /// @title Takaturn Collateral Facet
 /// @author Aisha El Allam
@@ -59,9 +60,8 @@ contract CollateralFacet is ICollateral {
         _;
     }
 
-    /// @param termId term id
-    modifier onlyTermOwner(uint termId) {
-        LibTermOwnership._ensureTermOwner(termId);
+    modifier onlyOwner() {
+        LibDiamond.enforceIsContractOwner();
         _;
     }
 
@@ -177,14 +177,14 @@ contract CollateralFacet is ICollateral {
 
     /// @notice allow the owner to empty the Collateral after 180 days
     /// @dev Revert if the collateral is not at releasing collateral
-    /// @dev Revert if the caller is not the term owner
+    /// @dev Revert if the caller is not the contract owner
     /// @dev Revert if the time is not met
     /// @param termId The term id
     function emptyCollateralAfterEnd(
         uint termId
     )
         external
-        onlyTermOwner(termId)
+        onlyOwner
         atState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral)
     {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
@@ -225,7 +225,7 @@ contract CollateralFacet is ICollateral {
 
     /// @notice allow the owner to empty the Collateral for any user due to emergency issues
     /// @dev Revert if the collateral is not at releasing collateral
-    /// @dev Revert if the caller is not the term owner
+    /// @dev Revert if the caller is not the contract owner
     /// @dev Revert if the time is not met
     /// @param termId The term id
     /// @param user The user to empty the collateral
@@ -234,7 +234,7 @@ contract CollateralFacet is ICollateral {
         address user
     )
         external
-        onlyTermOwner(termId)
+        onlyOwner
         atState(termId, LibCollateralStorage.CollateralStates.ReleasingCollateral)
     {
         LibCollateralStorage.Collateral storage collateral = LibCollateralStorage
