@@ -911,6 +911,12 @@ const { hour, day } = require("../../../utils/units")
 
           describe("Empty Collateral", function () {
               it("Wait 180 days to empty collateral in expired terms", async () => {
+                  const diamondOwnerAddress = await takaturnDiamondDeployer.owner()
+
+                  await impersonateAccount(diamondOwnerAddress)
+                  diamondOwnerSigner = await ethers.getSigner(diamondOwnerAddress)
+                  diamondOwner = takaturnDiamond.connect(diamondOwnerSigner)
+
                   // participant_1 creating a new term
                   await takaturnDiamond
                       .connect(participant_1)
@@ -942,16 +948,12 @@ const { hour, day } = require("../../../utils/units")
                   await advanceTime(contributionPeriod + 1)
                   await takaturnDiamond.connect(participant_1).expireTerm(termId) // the term's owner expire it
 
-                  // participant_1 is the term owner who expired it, he can steal both participants collateral
-                  const ethBalanceBefore = await ethers.provider.getBalance(participant_1.address)
-                  await expect(
-                      takaturnDiamond.connect(participant_1).emptyCollateralAfterEnd(termId)
-                  ).to.be.revertedWith("TT-TF-15")
+                  await expect(diamondOwner.emptyCollateralAfterEnd(termId)).to.be.revertedWith(
+                      "TT-TF-15"
+                  )
 
                   await advanceTime(181 * day)
-                  await expect(
-                      takaturnDiamond.connect(participant_1).emptyCollateralAfterEnd(termId)
-                  )
+                  await expect(diamondOwner.emptyCollateralAfterEnd(termId))
               })
           })
       })
