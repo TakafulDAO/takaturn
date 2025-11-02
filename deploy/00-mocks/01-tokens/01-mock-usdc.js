@@ -14,7 +14,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const usdc = await deploySimpleContract(contractName)
         log("00.01.01. USDC mock Deployed!...")
         log("==========================================================================")
-        if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
+        if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
             log("00.01.01. Verifying USDC Mock...")
             await verify(usdc.address, args)
             log("00.01.01. USDC Verified!")
