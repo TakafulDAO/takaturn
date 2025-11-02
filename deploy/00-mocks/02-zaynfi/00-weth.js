@@ -18,7 +18,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
         if (
             !developmentChains.includes(network.name) &&
-            process.env.ETHERSCAN_API_KEY &&
+            process.env.ARBISCAN_API_KEY &&
             !isInternal
         ) {
             log("00.02.00. Verifying Weth...")

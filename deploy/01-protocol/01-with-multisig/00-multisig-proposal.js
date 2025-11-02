@@ -118,7 +118,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             diamondERC165Init.address,
         ]
 
-        if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
+        if (!developmentChains.includes(network.name) && process.env.ARBISCAN_API_KEY) {
             log("01.01.00. Verifying Diamond...")
             for (let i = 0; i < contractAddresses.length; i++) {
                 log(`01.01.00. Verifying "${contractNames[i]}"...`)
