@@ -14,6 +14,7 @@ import {LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {LibCollateral} from "../libraries/LibCollateral.sol";
 import {LibTermOwnership} from "../libraries/LibTermOwnership.sol";
 import {LibFund} from "../libraries/LibFund.sol";
+import {LibDiamond} from "hardhat-deploy/solc_0.8/diamond/libraries/LibDiamond.sol";
 
 /// @title Takaturn Fund Facet
 /// @author Mohammed Haddouti
@@ -47,9 +48,8 @@ contract FundFacet is IFund {
     ); // Emits when a defaulter can't compensate with the collateral
     event OnAutoPayToggled(uint indexed termId, address indexed participant, bool indexed enabled); // Emits when a participant succesfully toggles autopay
 
-    /// @param termId term Id
-    modifier onlyTermOwner(uint termId) {
-        LibTermOwnership._ensureTermOwner(termId);
+    modifier onlyOwner() {
+        LibDiamond.enforceIsContractOwner();
         _;
     }
 
@@ -159,7 +159,7 @@ contract FundFacet is IFund {
     /// @dev Revert if the caller is not the term owner
     /// @dev Revert if the time is not met (180 days)
     /// @param termId the id of the term
-    function emptyFundAfterEnd(uint termId) external onlyTermOwner(termId) {
+    function emptyFundAfterEnd(uint termId) external onlyOwner {
         LibFundStorage.Fund storage fund = LibFundStorage._fundStorage().funds[termId];
         require(
             fund.currentState == LibFundStorage.FundStates.FundClosed &&

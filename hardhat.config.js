@@ -47,7 +47,6 @@ const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RP
 const ETHEREUM_TESTNET_SEPOLIA_RPC_URL = process.env.ETHEREUM_TESTNET_SEPOLIA_RPC_URL
 
 /************************************** Networks Scans *************************************************/
-const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 
 /************************************** Coinmarketcap **************************************************/
@@ -266,9 +265,9 @@ module.exports = {
     },
     etherscan: {
         apiKey: {
-            arbitrumOne: ARBISCAN_API_KEY,
-            arbitrumGoerli: ARBISCAN_API_KEY,
-            arbitrumSepolia: ARBISCAN_API_KEY,
+            arbitrumOne: ETHERSCAN_API_KEY,
+            arbitrumGoerli: ETHERSCAN_API_KEY,
+            arbitrumSepolia: ETHERSCAN_API_KEY,
             sepolia: ETHERSCAN_API_KEY,
         },
         customChains: [

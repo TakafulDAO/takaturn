@@ -14,7 +14,7 @@ const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_
 const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RPC_URL
 
 /************************************** Networks Scans *************************************************/
-const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 
 /***************************************** Config ******************************************************/
 
@@ -77,8 +77,8 @@ module.exports = {
     },
     etherscan: {
         apiKey: {
-            arbitrumGoerli: ARBISCAN_API_KEY,
-            arbitrumSepolia: ARBISCAN_API_KEY,
+            arbitrumGoerli: ETHERSCAN_API_KEY,
+            arbitrumSepolia: ETHERSCAN_API_KEY,
         },
         customChains: [
             {

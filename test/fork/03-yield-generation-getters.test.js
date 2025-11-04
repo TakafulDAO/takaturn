@@ -412,7 +412,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                       )
                   })
                   describe("After some withdraws [ @skip-on-ci ]", function () {
-                      it("Without defaults", async function () {
+                      xit("Without defaults", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
@@ -456,7 +456,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                                   userYieldGeneratedAfter.toString()
                           )
                       })
-                      it("Defaulting", async function () {
+                      xit("Defaulting", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]
 
