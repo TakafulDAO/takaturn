@@ -142,7 +142,7 @@ const { abi } = require("../../deployments/localhost/TakaturnDiamond.json")
                           .connect(participant_4)
                           .approve(takaturnDiamond, contributionAmount * 10 ** 6)
                   })
-                  xit("should allow to withdraw", async function () {
+                  xit("should allow to withdraw [ @skip-on-ci ]", async function () {
                       // todo: correct ethers v6 migration
                       // We simulate the exact behaviour from term 2
                       const terms = await takaturnDiamond.getTermsId()
