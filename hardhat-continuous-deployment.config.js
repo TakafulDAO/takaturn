@@ -10,7 +10,6 @@ const TESTNET_DEPLOYER_PK = process.env.TESTNET_DEPLOYER_PK
 const TESTNET_DEPLOYER = process.env.TESTNET_DEPLOYER_ADDRESS
 
 /******************************************* RPC providers **********************************************/
-const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_URL
 const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RPC_URL
 
 /************************************** Networks Scans *************************************************/
