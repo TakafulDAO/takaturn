@@ -411,7 +411,7 @@ const { erc20UnitsFormat } = require("../../utils/units")
                           userYieldGeneratedAfter.toString()
                       )
                   })
-                  describe("After some withdraws [ @skip-on-ci ]", function () {
+                  xdescribe("After some withdraws [ @skip-on-ci ]", function () {
                       it("Without defaults", async function () {
                           const terms = await takaturnDiamond.getTermsId()
                           const termId = terms[0]

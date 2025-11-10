@@ -42,12 +42,10 @@ const DIAMOND_SEPOLIA_OWNER = process.env.DIAMOND_SEPOLIA_OWNER
 const ARBITRUM_MAINNET_RPC_URL = process.env.ARBITRUM_MAINNET_RPC_URL
 const PRIVATENET_REMOTE_RPC_URL = process.env.PRIVATENET_REMOTE_RPC_URL
 const PRIVATENET_LOCAL_RPC_URL = process.env.PRIVATENET_LOCAL_RPC_URL
-const ARBITRUM_TESTNET_GOERLI_RPC_URL = process.env.ARBITRUM_TESTNET_GOERLI_RPC_URL
 const ARBITRUM_TESTNET_SEPOLIA_RPC_URL = process.env.ARBITRUM_TESTNET_SEPOLIA_RPC_URL
 const ETHEREUM_TESTNET_SEPOLIA_RPC_URL = process.env.ETHEREUM_TESTNET_SEPOLIA_RPC_URL
 
 /************************************** Networks Scans *************************************************/
-const ARBISCAN_API_KEY = process.env.ARBISCAN_API_KEY
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY
 
 /************************************** Coinmarketcap **************************************************/
@@ -213,7 +211,8 @@ module.exports = {
                 //chainId: 42161,
                 accounts: [DEPLOYER_PK],
                 url: ARBITRUM_MAINNET_RPC_URL,
-                blockNumber: 180084035,
+                // blockNumber: 180084035,
+                blockNumber: 396378530,
                 enabled: FORK === "true",
             },
         },
@@ -225,13 +224,6 @@ module.exports = {
             chainId: 42161,
             accounts: [DEPLOYER_PK || ARBITRUM_MAINNET_DEPLOYER_PK],
             url: ARBITRUM_MAINNET_RPC_URL,
-            blockConfirmations: 6,
-            timeout: 900000,
-        },
-        testnet_arbitrum_goerli: {
-            chainId: 421613,
-            accounts: [TESTNET_DEPLOYER_PK, PARTICIPANT_1_PK, PARTICIPANT_2_PK, PARTICIPANT_3_PK],
-            url: ARBITRUM_TESTNET_GOERLI_RPC_URL,
             blockConfirmations: 6,
             timeout: 900000,
         },
@@ -266,9 +258,9 @@ module.exports = {
     },
     etherscan: {
         apiKey: {
-            arbitrumOne: ARBISCAN_API_KEY,
-            arbitrumGoerli: ARBISCAN_API_KEY,
-            arbitrumSepolia: ARBISCAN_API_KEY,
+            arbitrumOne: ETHERSCAN_API_KEY,
+            arbitrumGoerli: ETHERSCAN_API_KEY,
+            arbitrumSepolia: ETHERSCAN_API_KEY,
             sepolia: ETHERSCAN_API_KEY,
         },
         customChains: [
