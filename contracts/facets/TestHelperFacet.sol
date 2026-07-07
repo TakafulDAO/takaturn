@@ -64,6 +64,29 @@ contract TestHelperFacet {
         fund.beneficiariesPool[participant] = amount;
     }
 
+    function testHelper_setAvailableYield(
+        uint termId,
+        uint amount,
+        address participant
+    ) external {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        yield.availableYield[participant] = amount;
+    }
+
+    function testHelper_getAvailableYield(
+        uint termId,
+        address participant
+    ) external view returns (uint) {
+        LibYieldGenerationStorage.YieldGeneration storage yield = LibYieldGenerationStorage
+            ._yieldStorage()
+            .yields[termId];
+
+        return yield.availableYield[participant];
+    }
+
     function testHelper_positiveReimbursement(
         uint originalWithdrawal,
         uint originalShares,
