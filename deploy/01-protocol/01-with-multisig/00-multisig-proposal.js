@@ -42,7 +42,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         log("01.01.00. Creating raw transaction for proposal on multisig...")
 
         if (isMainnet) {
-            facets = ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet", "YGFacetZaynFi"]
+            facets = [
+                "CollateralFacet",
+                "FundFacet",
+                "TermFacet",
+                "GettersFacet",
+                "YGFacetZaynFi",
+                "YGOwnerClaimFacetZaynFi",
+            ]
         } else {
             facets = [
                 "CollateralFacet",
@@ -50,6 +57,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
                 "TermFacet",
                 "GettersFacet",
                 "YGFacetZaynFi",
+                "YGOwnerClaimFacetZaynFi",
                 "WithdrawTestEthFacet",
             ]
         }
@@ -84,6 +92,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         termFacet = await deployments.get("TermFacet")
         gettersFacet = await deployments.get("GettersFacet")
         yieldFacet = await deployments.get("YGFacetZaynFi")
+        yieldClaimFacet = await deployments.get("YGOwnerClaimFacetZaynFi")
         diamondInit = await deployments.get("DiamondInit")
         diamondCutFacet = await deployments.get("_DefaultDiamondCutFacet")
         diamondOwnershipFacet = await deployments.get("_DefaultDiamondOwnershipFacet")
@@ -97,6 +106,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             "TermFacet",
             "GettersFacet",
             "YGFacetZaynFi",
+            "YGOwnerClaimFacetZaynFi",
             "DiamondInit",
             "_DefaultDiamondCutFacet",
             "_DefaultDiamondOwnershipFacet",
@@ -111,6 +121,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
             termFacet.address,
             gettersFacet.address,
             yieldFacet.address,
+            yieldClaimFacet.address,
             diamondInit.address,
             diamondCutFacet.address,
             diamondOwnershipFacet.address,

@@ -29,6 +29,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         termFacet,
         gettersFacet,
         yieldFacet,
+        yieldClaimFacet,
         diamondInit,
         diamondCutFacet,
         diamondOwnershipFacet,
@@ -66,7 +67,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let facets = []
 
     if (isMainnet) {
-        facets = ["CollateralFacet", "FundFacet", "TermFacet", "GettersFacet", "YGFacetZaynFi"]
+        facets = [
+            "CollateralFacet",
+            "FundFacet",
+            "TermFacet",
+            "GettersFacet",
+            "YGFacetZaynFi",
+            "YGOwnerClaimFacetZaynFi",
+        ]
 
         takaturnDiamondUpgrade = await deployUpgradeDiamond(
             diamondName,
@@ -85,6 +93,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
                 "TermFacet",
                 "GettersFacet",
                 "YGFacetZaynFi",
+                "YGOwnerClaimFacetZaynFi",
                 "WithdrawTestEthFacet",
             ]
         } else {
@@ -94,6 +103,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
                 "TermFacet",
                 "GettersFacet",
                 "YGFacetZaynFi",
+                "YGOwnerClaimFacetZaynFi",
                 "TestHelperFacet",
             ]
         }
@@ -117,6 +127,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     termFacet = await deployments.get("TermFacet")
     gettersFacet = await deployments.get("GettersFacet")
     yieldFacet = await deployments.get("YGFacetZaynFi")
+    yieldClaimFacet = await deployments.get("YGOwnerClaimFacetZaynFi")
     diamondInit = await deployments.get("DiamondInit")
     diamondCutFacet = await deployments.get("_DefaultDiamondCutFacet")
     diamondOwnershipFacet = await deployments.get("_DefaultDiamondOwnershipFacet")
@@ -130,6 +141,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         "TermFacet",
         "GettersFacet",
         "YGFacetZaynFi",
+        "YGOwnerClaimFacetZaynFi",
         "DiamondInit",
         "_DefaultDiamondCutFacet",
         "_DefaultDiamondOwnershipFacet",
@@ -144,6 +156,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         termFacet.address,
         gettersFacet.address,
         yieldFacet.address,
+        yieldClaimFacet.address,
         diamondInit.address,
         diamondCutFacet.address,
         diamondOwnershipFacet.address,
